@@ -1,0 +1,11 @@
+@use '../components/display.scss';
+@use '../components/height.scss';
+
+#header{
+  @include display.flex(row, space-between, center);
+  border: 1px solid black;
+  height: height.$headerHeight;
+  & > div{
+    padding: 20px;
+  }
+}

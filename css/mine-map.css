@@ -1,0 +1,14 @@
+#mine-map {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+  width: 100%;
+}
+#mine-map > div {
+  border: 1px solid black;
+  width: 100%;
+  height: 100%;
+}

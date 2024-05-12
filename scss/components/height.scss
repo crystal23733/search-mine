@@ -1,0 +1,8 @@
+// *전체(바디) 높이
+$bodyHeight: 100vh;
+
+// *헤더 높이
+$headerHeight: 10vh;
+
+// *지뢰맵 높이
+$mineMapHeight: $bodyHeight - $headerHeight;

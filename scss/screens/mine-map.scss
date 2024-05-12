@@ -1,0 +1,13 @@
+@use '../components/display.scss';
+@use '../components/height.scss';
+
+#mine-map{
+  @include display.grid(repeat(9, 1fr), repeat(9, 1fr), center, center);
+  height: height.$mineMapHeight;
+  width: 100%;
+  & > div{
+    border: 1px solid black;
+    width: 100%;
+    height: 100%;
+  }
+}

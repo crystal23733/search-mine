@@ -3,11 +3,6 @@
   padding: 0;
 }
 
-body {
-  width: 100vw;
-  height: 100vh;
-}
-
 #header {
   display: flex;
   flex-direction: row;
@@ -22,12 +17,10 @@ body {
 
 #mine-map {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  grid-template-rows: repeat(9, 1fr);
+  grid-template-columns: repeat(9, 80px);
+  grid-template-rows: repeat(9, 80px);
   justify-content: center;
   align-items: center;
-  height: 90vh;
-  width: 100%;
 }
 #mine-map > div {
   border: 1px solid black;

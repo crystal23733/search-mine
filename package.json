@@ -1,8 +1,0 @@
-{
-  "name": "mine",
-  "version": "1.0.0",
-  "main": "index.js",
-  "repository": "https://github.com/crystal23733/search-mine.git",
-  "author": "Hoyeong Yoo <crystal23733@gmail.com>",
-  "license": "MIT"
-}

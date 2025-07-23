@@ -6,9 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest"
   },
   "dependencies": {
+    "@testing-library/dom": "^10.4.0",
     "framer-motion": "^12.23.6",
     "i18next": "^25.3.2",
     "next": "15.4.2",
@@ -16,7 +18,8 @@
     "next-i18next": "^15.4.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-i18next": "^15.6.0"
+    "react-i18next": "^15.6.0",
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

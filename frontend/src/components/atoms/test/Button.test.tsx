@@ -1,5 +1,5 @@
 import { screen, fireEvent, render } from "@testing-library/react";
-import Button from "./Button";
+import Button from "../Button";
 import { FiUser } from "react-icons/fi";
 
 describe("Button", () => {
@@ -39,7 +39,10 @@ describe("Button", () => {
 
   it("renders left and right icons", () => {
     render(
-      <Button leftIcon={<FiUser data-testid="left-icon" />} rightIcon={<FiUser data-testid="right-icon" />}>
+      <Button
+        leftIcon={<FiUser data-testid="left-icon" />}
+        rightIcon={<FiUser data-testid="right-icon" />}
+      >
         With Icons
       </Button>
     );

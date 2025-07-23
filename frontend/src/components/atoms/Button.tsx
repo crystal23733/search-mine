@@ -49,4 +49,4 @@ export default function Button({
       {rightIcon && <span className="ml-2 flex items-center">{rightIcon}</span>}
     </button>
   );
-} 
+}

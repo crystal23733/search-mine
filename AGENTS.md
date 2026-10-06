@@ -2,7 +2,7 @@
 
 ## 현재 단계와 우선순위
 
-이 저장소는 사용자 설계 변경·개발 시작 지시를 반영했고 설계 PR 병합을 기다린다. 최신 사용자 지시가 우선이고, 승인된 PRD/설계/ADR→이 문서와 workflow→docs/planning 원문 순으로 해석한다. 원문의 Next/Nest·스팀·포털·Cloudflare DO 아이디어는 채택하지 않았다. 오래된 HANDOFF의 브랜치/커밋 관례는 [새 workflow](docs/workflow/git-workflow.md)가 대체한다.
+M0 설계·작업 체계가 develop에 병합됐고 M1 구현 단계다. 최신 사용자 지시가 우선이고, 승인된 PRD/설계/ADR→이 문서와 workflow→docs/planning 원문 순으로 해석한다. 원문의 Next/Nest·스팀·포털·Cloudflare DO 아이디어는 채택하지 않았다. 오래된 HANDOFF의 브랜치/커밋 관례는 [새 workflow](docs/workflow/git-workflow.md)가 대체한다.
 
 `docs/workflow/design-approval.json`과 승인 근거를 읽는다. OAuth/화면 변경과 구현 시작은 승인되었지만 **승인 기록 PR이 develop에 병합되고 선행 이슈가 닫힌 뒤 제품 작업을 시작한다.** 2026-10-07 사용자가 이후 모든 작업의 검토·병합·이슈 종료·순차 진행을 에이전트에 위임했다. 검증·코드 리뷰 후 병합하며 사용자에게 매번 승인을 다시 요구하지 않는다. 자동 승인 검토 거절은 우회하지 않고 최신 권한 근거로 처리한다. 기술 스파이크는 사용자 승인 범위와 `spikes/` 위치를 확인한다.
 
@@ -36,4 +36,4 @@ develop이 기본 브랜치다. main은 선택적 release 대상이고 삭제·r
 
 ## 검사와 보고
 
-`python scripts/validate_docs.py`와 [Mermaid 검사 절차](CONTRIBUTING.md)를 실행한다. 제품 검사 명령은 #4에서 확정한다. 아직 수행하지 않은 cargo/pnpm/Playwright 검사를 통과했다고 주장하지 않는다. 비밀값·사용자 파일·보존 원문을 커밋에서 누락/노출하지 않게 diff를 검토한다.
+`python scripts/validate_docs.py`와 [Mermaid 검사 절차](CONTRIBUTING.md)를 실행한다. 제품 검사는 scripts/check.ps1, README의 실제 DB 명령, GitHub product workflow를 사용한다. 아직 수행하지 않은 cargo/pnpm/Playwright 검사를 통과했다고 주장하지 않는다. 비밀값·사용자 파일·보존 원문을 커밋에서 누락/노출하지 않게 diff를 검토한다.

@@ -18,3 +18,4 @@ secrets/
 backups/
 __pycache__/
 *.pyc
+.vitest/

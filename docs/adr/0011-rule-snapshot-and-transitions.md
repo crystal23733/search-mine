@@ -21,6 +21,8 @@ zero opening만으로 미인증 판을 수락하지 않는다. 시작 생성 wor
 
 공개 projection은 본인 관측·flag·gauge·stun·숫자 이력과 상대 safe progress/stun만 포함한다. Board·seed·overlay·source·논리 truth·후보·상대 셀은 projection에 없다. 정확한 지목 ack는 해당 행동의 결과이며 지목 전 lie 표시를 추가하지 않는다.
 
+공개 revision도 플레이어마다 분리한다. 숨은 공격 등록과 상대 flag로 defender의 revision이 늘어나지 않는다. 같은 tick에서 공격 전후 전체 defender projection이 일치하는 테스트로 숫자 필드 외의 시점 누출도 검사한다. 분석용 숫자 revision과 transport ingress 순서를 이 공개 카운터로 내보내지 않는다.
+
 ## 확인 근거
 
 구성 parser는 [TOML Rust 공식 문서](https://docs.rs/toml/latest/toml/)와 [Serde unknown-field 계약](https://serde.rs/attributes.html), hash는 [BLAKE3 공식 Rust API](https://docs.rs/blake3/latest/blake3/)를 따른다. 최신 라이브러리를 버전 인자 없이 추가하고 lockfile에 기록한다. 명령8192 한계는 네트워크20/s·4분+30초유예의 최대5400보다 크며 메모리/동접 검증에서 #18/#26이 평가한다.

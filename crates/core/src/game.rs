@@ -142,7 +142,7 @@ pub struct RuleEngine {
     start: u64,
     deadline: u64,
     now: u64,
-    revision: u64,
+    public_revision: [u64; 2],
     end: Option<MatchEnd>,
 }
 pub struct AnalysisJob {
@@ -209,7 +209,7 @@ impl RuleEngine {
             start,
             deadline,
             now,
-            revision: 0,
+            public_revision: [0; 2],
             end: None,
         })
     }
@@ -230,13 +230,14 @@ impl RuleEngine {
                 opened_safe: opponent.view.opened_safe() as u16,
                 stun_ms: opponent.stun_until.saturating_sub(now) as u32,
             },
-            revision: self.revision,
+            revision: self.public_revision[seat.index()],
             countdown_ms: self.start.saturating_sub(now) as u32,
             remaining_ms: self.deadline.saturating_sub(now.max(self.start)) as u32,
             end: self.end,
         }
     }
     pub fn apply(&mut self, command: Command) -> Ack {
+        let index = command.seat.index();
         let reject = |reason, revision| Ack {
             command_id: command.id,
             revision,
@@ -244,11 +245,10 @@ impl RuleEngine {
             duplicate: false,
         };
         if let Err(error) = self.advance(command.received_at) {
-            return reject(error, self.revision);
+            return reject(error, self.public_revision[index]);
         }
-        let index = command.seat.index();
         if command.epoch != self.players[index].epoch {
-            return reject(Rejection::InvalidEpoch, self.revision);
+            return reject(Rejection::InvalidEpoch, self.public_revision[index]);
         }
         if let Some(cached) = self.players[index].commands.get(&command.id) {
             return if cached.seq == command.seq && cached.action == command.action {
@@ -257,20 +257,23 @@ impl RuleEngine {
                     ..cached.ack
                 }
             } else {
-                reject(Rejection::CommandConflict, self.revision)
+                reject(Rejection::CommandConflict, self.public_revision[index])
             };
         }
         if command.seq <= self.players[index].last_seq {
-            return reject(Rejection::InvalidSequence, self.revision);
+            return reject(Rejection::InvalidSequence, self.public_revision[index]);
         }
         if self.players[index].commands.len() >= usize::from(self.rules.rules.max_commands_per_seat)
         {
-            return reject(Rejection::CommandLimit, self.revision);
+            return reject(Rejection::CommandLimit, self.public_revision[index]);
         }
         self.players[index].last_seq = command.seq;
         let status = match self.act(command.seat, command.action) {
             Ok(()) => {
-                self.revision += 1;
+                match command.action {
+                    Action::Attack | Action::ToggleFlag(_) => self.public_revision[index] += 1,
+                    _ => self.bump_both(),
+                }
                 if self.players[index].view.opened_safe() == self.board.safe_total() {
                     self.finish(EndReason::Clear, Some(command.seat), self.now);
                 }
@@ -280,7 +283,7 @@ impl RuleEngine {
         };
         let ack = Ack {
             command_id: command.id,
-            revision: self.revision,
+            revision: self.public_revision[index],
             status,
             duplicate: false,
         };
@@ -518,7 +521,12 @@ impl RuleEngine {
     fn finish(&mut self, reason: EndReason, winner: Option<Seat>, at: u64) {
         if self.end.is_none() {
             self.end = Some(MatchEnd { reason, winner, at });
-            self.revision += 1;
+            self.bump_both();
+        }
+    }
+    fn bump_both(&mut self) {
+        for revision in &mut self.public_revision {
+            *revision += 1;
         }
     }
     pub fn disconnect(&mut self, seat: Seat, now: u64) -> Result<(), Rejection> {
@@ -533,7 +541,6 @@ impl RuleEngine {
         let player = &mut self.players[seat.index()];
         if player.disconnected_at.is_none() {
             player.disconnected_at = Some(now);
-            self.revision += 1;
         }
         Ok(())
     }
@@ -553,7 +560,7 @@ impl RuleEngine {
         }
         player.disconnected_at = None;
         player.epoch = epoch;
-        self.revision += 1;
+        self.public_revision[seat.index()] += 1;
         self.advance(now)
     }
     pub fn abort(&mut self, now: u64) -> Result<(), Rejection> {

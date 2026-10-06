@@ -558,3 +558,24 @@ fn zero_opening_alone_does_not_authorize_an_uncertified_stalled_board() {
         Some(Rejection::InvalidBoard)
     );
 }
+#[test]
+fn hidden_attack_and_opponent_flags_do_not_change_the_defenders_public_revision() {
+    let mut g = tuned_game(1, 8192);
+    for seat in [Seat::One, Seat::Two] {
+        g.apply(command(1, seat, 3000, Action::Open(CellId(8))));
+    }
+    g.commit_proof(g.proof_work(Seat::Two).run().unwrap())
+        .unwrap();
+    let before = g.projection(Seat::Two);
+    assert_eq!(
+        g.apply(command(2, Seat::One, 3000, Action::Attack)).status,
+        ActionStatus::Applied
+    );
+    assert_eq!(g.projection(Seat::Two), before);
+    assert_eq!(
+        g.apply(command(3, Seat::One, 3000, Action::ToggleFlag(CellId(6))))
+            .status,
+        ActionStatus::Applied
+    );
+    assert_eq!(g.projection(Seat::Two), before);
+}

@@ -1,0 +1,42 @@
+name: Repository checks
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [develop]
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python scripts/validate_docs.py
+      - run: npm install --prefix .tmp/docs-tools --no-audit --no-fund mermaid@11.12.2 jsdom@26.1.0
+      - run: node scripts/check_mermaid.mjs .tmp/docs-tools
+  contribution-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python scripts/check_contribution.py
+        env:
+          GH_TOKEN: ${{ github.token }}

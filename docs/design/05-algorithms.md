@@ -58,6 +58,26 @@ flowchart TD
 
 증명 표현은 rules/solver version, 공개 상태 fingerprint, 안전칸 집합, lie 식별 근거, 검증 노드 수다. 증명·후보 위치·숨은 판은 온라인 응답에 넣지 않는다. 초기 설명용 튜토리얼의 알려진 공격 위치는 별도 연습 데이터다.
 
+### #6 구현 계약과 보수적인 증명
+
+`KnowledgeSolver`는 공개 Observation과 공개 정보에서 이미 증명한 KnowledgeMemory만 받는다. 모든 미교정 비제로 숫자는 truth 또는 ±1 lie일 수 있고 visible lie 수는0~2다. zero·지목 결과로 확인한 truth는 고정한다. flag는 증명된 mine과 별개다. 가능한 mine 배치·lie 여부를 연결 frontier에서 완전히 열거하고 구성요소의 mine 수/lie 수를 전체 mine 수·최대2에 결합한다. 직접적인 범위/전체 mine 수 추론도 허용하지만 일부 모델을 근거로 안전/lie를 반환하지 않는다.
+
+자동 zero opening은 공격 입력을 받기 전에 공개된다. opening의 연결된 zero 영역과 경계 숫자는 공개 진행 순서로 truth임을 알 수 있고, 이미 열린 셀은 이후 공격할 수 없다. `KnowledgeMemory::from_initial_opening`은 그 연결 영역만 추적해 trusted로 기록한다. 현재 snapshot의 다른 열린 숫자는 이 이유로 신뢰하지 않는다. 이를 서버만 아는 “아직 공격이 없다”라는 가정과 구분한다. 무출처 관측의 `new`는 모든 비제로 숫자에 최대2 lie를 허용한다.
+
+정답 배치는 변하지 않으므로 한 번 증명한 safe/mine 사실은 지목으로 숫자가 복원되거나 새 닫힌 공격이 생겨도 유지된다. PlayerBoard마다 새 memory를 만들고 관측 기반 증거만 흡수한다. 교정/오지목으로 확인한 열린 truth는 다시 공격할 수 없어 trusted clue로 기록한다. 사용자 flag나 숨은 Board를 memory에 넣지 않는다.
+
+초기 LieValidator는 일반적인 깊은 AND/OR 탐색을 통과했다고 주장하지 않는다. **닫힌 후보가 모든 모델에서 safe이고 모든 이웃의 mine/safe 상태도 확정**이면 정확한 truth를 공개 정보로 계산할 수 있다. 비제로±1 변형을 적용한 후보를 안전하게 open하면 가능한 모든 후보 관측 분기에서 이웃 mine 수와 불일치해 해당 lie가 확정된다. 이것은 AND/OR 증명의 깊이2 특수형이며, fixed delta의 모든 가능한 모델에서 동일한 관측값을 얻는 것을 증명한다. 조건을 충족하지 않는 다른 후보는 거절한다. 후보 범위를 좁힌 선택 전략이며 보드/게이지/공격 규칙을 바꾸지 않는다.
+
+이 증명은 기존 overlay의 위치/개수를 추론에 제공하지 않고 최대2를 항상 허용하므로 두 overlay 조합에 적용한다. 서버의 active count는 용량 거절에만 사용한다. 추가/교정/열기에 따른 상태 변경은 memory의 확정 사실을 유지하고 새 준비 결과를 현재 match/player revision에 묶는다. 원본 관측/memory의 완전한 일치와 revision을 확인하며 fingerprint hash만으로 적용하지 않는다. 예산·모호성·불일치·후보 부재는 게이지 보존이다.
+
+TS07/E4는 작은 판의 모든 공개 부분집합·0/1/2 lie·동일 관측의 다른 정답 세계에서 추론을 대조하고, 채택한 후보를 가능한 각 세계에 적용해 안전 open→확정 지목 경로를 검사한다. 실제16×16 corpus에서 준비 실패·공격 후보 채택률·비용을 별도로 보고한다. 이 제한된 전략의 낮은 채택률과 normal no-guess 판이 lie-aware 관측에서 막히는 문제는 출시 판단 과제이며 숨기지 않는다.
+
+### 공개 선택 전략의 합법적 세계
+
+넓은 임의2lie 모델의 1,000판 완주0을 확인해 [ADR0010](../adr/0010-public-certified-attack-strategy.md)에 후보 전략/이력 조건을 명시했다. `known-neighborhood-v1`은 관측 이력의 증거로 등록한 후보만 공격한다. `PolicyKnowledge`는 등록될 수 없었던 새 열린 숫자를 truth로, 등록된 셀은 당시 공개 증거가 확정한 원래 숫자로 해석한다. 화면 값은 변경하지 않으며 known lie가 열리면 확정 지목을 제공한다. 모든 합법적 모델에서 같은 논리 값이므로 NoGuessSolver의 생성 증거 경로가 보존된다. 서버의 숨은 Board/overlay를 이 추론에 입력하지 않는다.
+
+이력 없는 raw 관측은 기존 KnowledgeSolver의 보수적인0~2lie 모델로 처리하고 성공을 가장하지 않는다. 온라인 snapshot/reconnect는 본인 공개 이력을 재생하며 전략/version을 함께 검증한다. flag는 이력의 mine 증명이 아니다. 프로토콜의 공개 DTO에 내부 등록 목록·확정 mine 목록·truth/lie flag를 넣지 않는다.
+
 ## 계산 복잡도와 예산
 
 N=256, frontier 크기 f. 단일 추론은 인접 합 O(N), 부분집합 비교 O(f²), 완전 모델 탐색은 최악 O(2^f); 두 lie 위치·delta 조합은 최악 O(f²) 계수를 더하며 미래 관측 증명은 추가 지수 탐색이다. 다항 시간이나 100ms를 보장하지 않는다. frontier 분할·memoization·고정 노드 상한을 적용하고 timeout이면 fail closed한다.

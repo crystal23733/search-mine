@@ -46,6 +46,8 @@
 
 상대 열린 칸·숫자, 숨은 seed·지뢰, active lie 표시·target·source·truth는 보내지 않는다. command_id별 최근 응답을 매치 기간+유예 동안 보관해 재전송을 같은 결과로 돌려준다. client_seq 재사용/역행과 epoch 불일치 거절; revision gap은 snapshot으로 복구한다. 구버전은 unsupported_version 응답 후 재로드 안내한다.
 
+`known-neighborhood-v1`의 재접속 snapshot에는 본인의 공개 숫자 변경 이력을 포함한다. 최초 zero opening과 이후 변경 배치만 전달하고 상대 이력·solver의 safe/mine 결론·등록 후보·논리 truth·lie flag를 넣지 않는다. 이력은 서버가 만든 최대512개의 비어 있지 않은 배치이며 중복 셀·범위 밖 셀·닫힘 복귀·변경 없는 배치는 거절한다. 클라이언트가 제출한 이력으로 온라인 상태를 교체하지 않는다. [ADR0010](../adr/0010-public-certified-attack-strategy.md)
+
 ## 빠른 매칭과 친구 방
 
 ```mermaid

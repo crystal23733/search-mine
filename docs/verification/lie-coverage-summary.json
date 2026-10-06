@@ -1,0 +1,287 @@
+{
+  "source_commit": "86c63c7c60c9c5c33d3b0c01a99f109804cbc033",
+  "tool": "cargo-llvm-cov 0.9.1",
+  "scope": "liar-core source, --tests; tests/examples excluded",
+  "totals": {
+    "branches": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "functions": {
+      "count": 135,
+      "covered": 131,
+      "percent": 97.03703703703704
+    },
+    "instantiations": {
+      "count": 271,
+      "covered": 132,
+      "percent": 48.708487084870846
+    },
+    "lines": {
+      "count": 1536,
+      "covered": 1491,
+      "percent": 97.0703125
+    },
+    "mcdc": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "regions": {
+      "count": 2423,
+      "covered": 2322,
+      "notcovered": 101,
+      "percent": 95.83161370202228
+    }
+  },
+  "files": {
+    "board.rs": {
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "functions": {
+        "count": 20,
+        "covered": 20,
+        "percent": 100.0
+      },
+      "instantiations": {
+        "count": 40,
+        "covered": 20,
+        "percent": 50.0
+      },
+      "lines": {
+        "count": 149,
+        "covered": 149,
+        "percent": 100.0
+      },
+      "regions": {
+        "count": 228,
+        "covered": 225,
+        "notcovered": 3,
+        "percent": 98.68421052631578
+      }
+    },
+    "generator.rs": {
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "functions": {
+        "count": 7,
+        "covered": 7,
+        "percent": 100.0
+      },
+      "instantiations": {
+        "count": 14,
+        "covered": 7,
+        "percent": 50.0
+      },
+      "lines": {
+        "count": 109,
+        "covered": 104,
+        "percent": 95.41284403669725
+      },
+      "regions": {
+        "count": 147,
+        "covered": 136,
+        "notcovered": 11,
+        "percent": 92.51700680272108
+      }
+    },
+    "knowledge.rs": {
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "functions": {
+        "count": 39,
+        "covered": 39,
+        "percent": 100.0
+      },
+      "instantiations": {
+        "count": 78,
+        "covered": 39,
+        "percent": 50.0
+      },
+      "lines": {
+        "count": 522,
+        "covered": 513,
+        "percent": 98.27586206896551
+      },
+      "regions": {
+        "count": 889,
+        "covered": 862,
+        "notcovered": 27,
+        "percent": 96.962879640045
+      }
+    },
+    "lie.rs": {
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "functions": {
+        "count": 12,
+        "covered": 8,
+        "percent": 66.66666666666666
+      },
+      "instantiations": {
+        "count": 24,
+        "covered": 8,
+        "percent": 33.33333333333333
+      },
+      "lines": {
+        "count": 92,
+        "covered": 79,
+        "percent": 85.86956521739131
+      },
+      "regions": {
+        "count": 95,
+        "covered": 82,
+        "notcovered": 13,
+        "percent": 86.31578947368422
+      }
+    },
+    "policy.rs": {
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "functions": {
+        "count": 23,
+        "covered": 23,
+        "percent": 100.0
+      },
+      "instantiations": {
+        "count": 46,
+        "covered": 23,
+        "percent": 50.0
+      },
+      "lines": {
+        "count": 242,
+        "covered": 234,
+        "percent": 96.69421487603306
+      },
+      "regions": {
+        "count": 345,
+        "covered": 328,
+        "notcovered": 17,
+        "percent": 95.07246376811594
+      }
+    },
+    "random.rs": {
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "functions": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100.0
+      },
+      "instantiations": {
+        "count": 7,
+        "covered": 4,
+        "percent": 57.14285714285714
+      },
+      "lines": {
+        "count": 20,
+        "covered": 20,
+        "percent": 100.0
+      },
+      "regions": {
+        "count": 34,
+        "covered": 34,
+        "notcovered": 0,
+        "percent": 100.0
+      }
+    },
+    "solver.rs": {
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0.0
+      },
+      "functions": {
+        "count": 31,
+        "covered": 31,
+        "percent": 100.0
+      },
+      "instantiations": {
+        "count": 62,
+        "covered": 31,
+        "percent": 50.0
+      },
+      "lines": {
+        "count": 402,
+        "covered": 392,
+        "percent": 97.51243781094529
+      },
+      "regions": {
+        "count": 685,
+        "covered": 655,
+        "notcovered": 30,
+        "percent": 95.62043795620438
+      }
+    }
+  }
+}

@@ -72,7 +72,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         cases.push(json!({"seed":seed,"difficulty":difficulty,"initial":initial,"events":events}));
     }
-    let source = serde_json::to_string_pretty(&json!({"v":1,"cases":cases}))? + "\n";
+    // Generated full public snapshots are compact; review the explicit replay inputs above.
+    let source = serde_json::to_string(&json!({"v":1,"cases":cases}))? + "\n";
     let target =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/native-wasm.json");
     if env::args().any(|arg| arg == "--check") {

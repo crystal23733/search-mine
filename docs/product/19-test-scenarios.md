@@ -3,13 +3,13 @@
 > 적용: pm-execution:test-scenarios · 입력: [Stories](17-stories.md), [PRD](16-PRD.md)
 > 설계 단계 시나리오이며 테스트 코드를 실행했다는 뜻이 아니다. 각 항목은 목적·전제·역할·행동·예상 결과·경계를 함께 정의한다.
 
-## TS01: 게스트 시작·삭제 (US01)
+## TS01: OAuth 시작·닉네임·삭제 (US01)
 
-- 목적: 게스트 시작·삭제의 관찰 가능한 행동을 보장한다.
-- 전제·역할: 고정 Clock과 세션 저장소, 방문자.
-- 단계와 각 결과: 닉네임을 제출해 쿠키를 받는다 → 신원 유지; 삭제한다 → 세션 철회; 재사용한다 → 거절.
-- 최종 기대·예외: HttpOnly·Secure·유효성·NFC·1/20/21 grapheme 경계 확인.
-- 테스트 경계·계층: GuestService / GuestRepository / 통합+E2E.
+- 목적: 기존 계정으로 최소 정보만 제공해 서비스 계정을 만들고 삭제한다.
+- 전제·역할: fake provider/Clock/Repository, 최초 방문자.
+- 단계와 각 결과: 4개 제공자 중 하나로 인증 → 검증된 식별자만 매핑; 닉네임 → 계정 완성/세션 회전; 삭제 → 세션 철회·신원/순위 식별자 제거; 이전 쿠키 → 거절.
+- 최종 기대·예외: 비밀번호 입력/API/컬럼 없음; 이메일/실명/사진 미보관; 1/2/16/17 grapheme·NFC 경계; 취소 시 원래 화면 복귀.
+- 테스트 경계·계층: AuthService / OAuthProvider / AccountRepository / 통합+E2E.
 
 ## TS02: 동일 판·비밀 미전송 (US02)
 
@@ -94,10 +94,10 @@
 ## TS12: 친구 방 (US07)
 
 - 목적: 친구 방의 관찰 가능한 행동을 보장한다.
-- 전제·역할: host/friend/third guest, 만료 clock.
+- 전제·역할: host/friend/third account, 만료 clock.
 - 단계와 각 결과: create→code/link; friend join→2seat; third join→full; 만료 후 join→expired.
 - 최종 기대·예외: room code가 player session을 대체하지 않음, 중복 탭·ready 경계.
-- 테스트 경계·계층: RoomService / GuestRepository / 통합+E2E.
+- 테스트 경계·계층: RoomService / AccountRepository / 통합+E2E.
 
 ## TS13: 튜토리얼 (US08)
 
@@ -230,8 +230,8 @@
 ## TS29: 이벤트·삭제·보존 (US16)
 
 - 목적: 이벤트·삭제·보존의 관찰 가능한 행동을 보장한다.
-- 전제·역할: 중복 event_id·30일/180일 데이터·delete guest, 운영자.
-- 단계와 각 결과: 중복저장→한 건; retention 실행→삭제/집계; guest삭제→토큰철회·식별자제거.
+- 전제·역할: 중복 event_id·30일/180일 데이터·delete account, 운영자.
+- 단계와 각 결과: 중복저장→한 건; retention 실행→삭제/집계; account삭제→토큰철회·식별자제거.
 - 최종 기대·예외: 정답·IP·토큰 미포함, 비필수 동의거부면 client 분석0, 백업잔존 고지.
 - 테스트 경계·계층: EventRepository / RetentionService / 통합.
 
@@ -243,9 +243,57 @@
 - 최종 기대·예외: 도메인 infra 의존0, coverage95/80 목표, 승인전 제품파일 CI거절.
 - 테스트 경계·계층: TypeGenerator / CI / 정적검사+CI.
 
+## TS31: 최소 권한·정보 allowlist (US01)
+
+- 목적: Google·Apple·카카오·네이버가 필요한 정보만 요청/보관한다.
+- 전제·역할: 어댑터별 authorize URL, 콘솔 권한 체크리스트, 불필요한 claim이 포함된 토큰/profile fixture.
+- 단계와 각 결과: Google/Kakao → openid만; Apple → name/email scope 없음; Naver → 기본 id만; claim 매핑 → identity digest/내부 id/닉네임만; 공개 API/DB/로그/event 검사 → 이메일·실명·사진·전화·비밀번호 없음.
+- 예외: Apple 철회용 refresh token은 CredentialVault에서 암호화 보관, 공개 응답/로그/내보내기에 없음. 콘솔 설정과 4개 실제 계정 검수도 수행한다.
+- 경계·계층: OAuthProvider / IdentityMapper / CredentialVault / 계약+실DB+수동.
+
+## TS32: OAuth 트랜잭션 바인딩·재전송 (US01)
+
+- 목적: 로그인 CSRF·callback replay·code 탈취를 거절한다.
+- 전제·역할: 브라우저 A/B, provider/intent 다른 state, 5분 경계, 동시 callback.
+- 단계와 각 결과: 누락/위조/다른 브라우저 state → 거절; 만료/재사용/다른 provider나 link intent → 거절; 동시 정상 callback → 1회만 소비; 허용 없는 return URL → 거절; Google verifier 불일치 → 거절.
+- 예외: 오류/취소도 거래를 소비, callback token/code/body 로그 없음; form_post 도입 시 전용 cookie 경계 검증.
+- 경계·계층: AuthTransactionRepository / AuthService / 통합+E2E.
+
+## TS33: 제공자 신원 검증·공급자 추가 (US01)
+
+- 목적: 검증되지 않은 token/profile과 공급자 혼동을 막는다.
+- 전제·역할: JWKS rotation, 틀린 sig/alg/iss/aud/azp/nonce/exp/sub, Naver 실패/빈 id, 비활성 provider.
+- 단계와 각 결과: 각 변조 fixture → 거절; 검증된 응답 → 최소 identity; token endpoint 실패 → 계정/세션 생성 없음; 알 수 없는 provider → allowlist 거절; fake 새 adapter 등록 → AuthService 변경 없이 계약 재사용.
+- 예외: OIDC 아닌 Naver token을 JWT로 신뢰하지 않음; 오류는 안정 코드, raw 응답 미노출.
+- 경계·계층: OAuthProvider / ProviderRegistry / 계약+통합.
+
+## TS34: 계정 연결·해제 (US01)
+
+- 목적: 같은 이메일/닉네임으로 계정이 자동 합쳐지거나 탈취되지 않는다.
+- 전제·역할: 계정 A/B, 같은 이메일 fixture, 다른 subject, 최근 재인증 세션.
+- 단계와 각 결과: 독립 제공자 로그인 → 별도 계정; A가 재인증 후 새 provider 연결 → A에 추가; B에 연결된 subject → conflict; 마지막 수단 해제 → 거절; 두 callback 레이스 → DB unique 보호.
+- 예외: link 시작 시 계정과 intent 고정, 중도 세션 변경은 거절, 성공 후 세션 회전.
+- 경계·계층: AuthService / AuthIdentityRepository / 실DB+E2E.
+
+## TS35: 내보내기·계정 삭제·토큰 철회 (US01/16)
+
+- 목적: 추가 개인정보 없이 본인 데이터를 내보내고 목적 종료 시 삭제한다.
+- 전제·역할: 여러 세션/제공자/순위/이벤트/백업, revoke 실패 fixture.
+- 단계와 각 결과: 재인증 export → 본인 최소 데이터, credential/subject/숨은 판 제외; delete → 전 세션·identity·닉네임/순위 연결 제거; Apple revoke → credential 제거; 공급자 장애 → 로컬 삭제 완료, 제한 retry/수동 안내; 백업 restore → 삭제 tombstone 재적용 후 ready.
+- 예외: 철회 queue 최대24h·백업 최대28일 고지, 서명 없는 Apple 알림 거절, 삭제 완료 여부를 정확히 표시.
+- 경계·계층: AccountService / CredentialVault / RetentionService / 실DB+E2E+복구훈련.
+
+## TS36: 로그인 없는 로컬 연습·화면 기준 (US01/08/10/11/13)
+
+- 목적: 인증/광고 동의 부담 없이 로컬 연습과 접근성 설정을 제공한다.
+- 전제·역할: 비로그인·광고 거부·provider 장애·캐시 유무, 360/768/1440px 화면.
+- 단계와 각 결과: 로컬 연습 → 서버 계정/identity 생성 없음; 온라인/공식 제출 → 로그인 안내; OAuth 취소 → 링크/언어 유지; 광고 거부 → 게임 가능; 18개 참조 화면 상태 → 보안/규칙 명세와 일치.
+- 예외: 무계정 결과 자동 업로드 없음, 로그인 후 명시적 제출만; 첫 오프라인 미캐시 안내; 4개 필수 제공자 노출, 선택 분석/광고 별도.
+- 경계·계층: AuthPort / Router / StoragePort / UI E2E+시각·키보드 수동.
+
 ## 결정 사항
 
-TS01~30을 백로그 이슈와 PR 검증 근거에 연결한다. fake는 도메인 경계에 주입하되 DB·WS 통합은 실제 구현체로 확인한다. 단위·속성·E2E·수동·성능을 서로 대체하지 않는다.
+TS01~36을 백로그 이슈와 PR 검증 근거에 연결한다. fake는 도메인 경계에 주입하되 DB·WS 통합은 실제 구현체로 확인한다. 단위·속성·E2E·수동·성능을 서로 대체하지 않는다.
 
 ## 열린 질문
 

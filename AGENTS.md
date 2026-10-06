@@ -2,9 +2,9 @@
 
 ## 현재 단계와 우선순위
 
-이 저장소는 기획·설계 리뷰 단계다. 최신 사용자 지시가 우선이고, 승인된 PRD/설계/ADR→이 문서와 workflow→docs/planning 원문 순으로 해석한다. 원문의 Next/Nest·스팀·포털·Cloudflare DO 아이디어는 채택하지 않았다. 오래된 HANDOFF의 브랜치/커밋 관례는 [새 workflow](docs/workflow/git-workflow.md)가 대체한다.
+이 저장소는 사용자 설계 변경·개발 시작 지시를 반영했고 설계 PR 병합을 기다린다. 최신 사용자 지시가 우선이고, 승인된 PRD/설계/ADR→이 문서와 workflow→docs/planning 원문 순으로 해석한다. 원문의 Next/Nest·스팀·포털·Cloudflare DO 아이디어는 채택하지 않았다. 오래된 HANDOFF의 브랜치/커밋 관례는 [새 workflow](docs/workflow/git-workflow.md)가 대체한다.
 
-`docs/workflow/design-approval.json`은 현재 pending이다. **사용자의 명시적 설계 승인을 기록하기 전 제품 코드·테스트·패키지·Docker 구성·스파이크를 생성하지 않는다.** 문서 검사·GitHub 템플릿·작업 자동화는 이번 초기 설정 범위다. 기술 스파이크는 별도 사용자 승인과 `spikes/` 위치가 필요하다.
+`docs/workflow/design-approval.json`과 승인 근거를 읽는다. OAuth/화면 변경과 구현 시작은 승인되었지만 **승인 기록 PR이 develop에 병합되고 선행 이슈가 닫힌 뒤 제품 작업을 시작한다.** PR 병합 승인은 별도이며 자동 승인 검토 거절을 우회하지 않는다. 기술 스파이크는 사용자 승인 범위와 `spikes/` 위치를 확인한다.
 
 ## 시작할 때
 
@@ -14,7 +14,7 @@
 
 ## 제품 불변 조건
 
-웹 PC/모바일 전용, 1:1 동일 판 대전·봇·데일리, 자체 광고만, 결제 없음. 집 미니 PC+Docker PostgreSQL+Cloudflare Tunnel, IP/DB/포트 공개 금지. 8언어 en/ko/ja/zh-CN/es/pt-BR/de/fr. 제품 규칙은 Rust 하나, online 정답/seed는 서버만 가진다. 광고는 게임 중 표시하지 않는다.
+웹 PC/모바일 전용, 1:1 동일 판 대전·봇·데일리, 자체 광고만, 결제 없음. 집 미니 PC+Docker PostgreSQL+Cloudflare Tunnel, IP/DB/포트 공개 금지. 8언어 en/ko/ja/zh-CN/es/pt-BR/de/fr. 제품 규칙은 Rust 하나, online 정답/seed는 서버만 가진다. 광고는 게임 중 표시하지 않는다. OAuth 전용: Google·Apple·카카오·네이버 필수, provider port로 확장. 비밀번호 미보관; 이메일/실명/사진/전화 등 불필요한 권한·필드 없음. 내부 계정 ID·게임용 nickname·provider subject digest만; Apple 철회 credential 예외는 설계를 따른다. 무계정 로컬 연습은 서버 계정을 만들지 않는다.
 
 ## 설계와 구현
 
@@ -34,6 +34,6 @@ develop이 기본 브랜치다. main은 선택적 release 대상이고 삭제·r
 - [liar-tdd](.agents/skills/liar-tdd/SKILL.md): 승인 뒤 제품 이슈의 행동 중심 TDD.
 - [liar-issue-pr](.agents/skills/liar-issue-pr/SKILL.md): 이슈 시작부터 검토 PR·병합 후 정리.
 
-## 이번 단계 검사
+## 검사와 보고
 
-`python scripts/validate_docs.py`와 [Mermaid 검사 절차](CONTRIBUTING.md)를 실행한다. 제품이 없으므로 cargo/pnpm/Playwright 검사를 이번 PR에서 통과했다고 주장하지 않는다. 비밀값·사용자 파일·보존 원문을 커밋에서 누락/노출하지 않게 diff를 검토한다.
+`python scripts/validate_docs.py`와 [Mermaid 검사 절차](CONTRIBUTING.md)를 실행한다. 제품 검사 명령은 #4에서 확정한다. 아직 수행하지 않은 cargo/pnpm/Playwright 검사를 통과했다고 주장하지 않는다. 비밀값·사용자 파일·보존 원문을 커밋에서 누락/노출하지 않게 diff를 검토한다.

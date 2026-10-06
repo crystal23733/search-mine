@@ -5,8 +5,8 @@
 | 단계 | 접점 / 행동 | 감정 가설 | 고통 | 개선과 측정 |
 |---|---|---|---|---|
 | 발견 | 친구 링크·공유 카드 클릭 | 호기심 | 규칙을 모름 | 한 문장 설명; invite_open |
-| 판단 | 로컬 언어 랜딩 확인 | 기대 | 로그인 걱정 | 게스트 즉시 시작; landing_view → tutorial_start |
-| 입장 | 언어 확인·익명 세션 생성 | 안도 | CMP가 게임을 막음 | 광고 거부 후에도 시작; guest_created |
+| 판단 | 로컬 언어 랜딩 확인 | 기대 | 로그인 걱정 | 무계정 로컬 연습; landing_view → tutorial_start |
+| 입장 | OAuth 최소 로그인·게임 닉네임 | 안도 | CMP가 게임을 막음 | 광고 거부 후에도 시작; account_created |
 | 학습 | 30초 봇전, 공격·지목 체험 | 의심→성취 | 숨은 숫자를 믿기 어려움 | 최소 안내, 재학습 가능; tutorial_complete |
 | 대전 | 친구 방 또는 빠른 대전 | 긴장 | 10초 이상 대기·끊김 | 봇 표시, 재접속 피드백; match_start |
 | 결과 | 승패와 반사 수 확인·재대결 | 기쁨/아쉬움 | 광고가 재대결을 막음 | 광고 실패 시 즉시 진행; rematch_selected |
@@ -15,7 +15,7 @@
 
 ```mermaid
 flowchart LR
-  Invite[링크 유입] --> Locale[언어와 게스트]
+  Invite[링크 유입] --> Locale[언어와 최소 OAuth]
   Locale --> Tutorial[공격과 지목 학습]
   Tutorial --> Match[대전]
   Match --> Result[결과]

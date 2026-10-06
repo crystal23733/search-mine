@@ -19,7 +19,7 @@ DESIGN = [
     "03-domain-model", "04-game-rules-spec", "05-algorithms", "06-protocol",
     "07-database", "08-client-architecture", "09-screens-ux", "10-i18n",
     "11-ads-consent", "12-security", "13-performance", "14-testing-strategy",
-    "15-repo-structure", "16-observability-ops",
+    "15-repo-structure", "16-observability-ops", "17-auth-privacy", "18-design-layout",
 ]
 
 
@@ -66,9 +66,14 @@ def validate():
         for field in ("approved_by", "approved_at", "evidence", "reviewed_commit"):
             if not approval.get(field):
                 errors.append(f"Approved design lacks {field}")
+        evidence = (ROOT / approval.get("evidence", "")).resolve()
+        if not evidence.is_relative_to(ROOT) or not evidence.is_file():
+            errors.append("Approval evidence must be an existing repository file")
+        if not re.fullmatch(r"[0-9a-f]{40}", approval.get("reviewed_commit", "")):
+            errors.append("Approval reviewed_commit must be a full commit SHA")
     scenarios = (ROOT / "docs/product/19-test-scenarios.md").read_text(encoding="utf-8")
     checklist = (ROOT / "docs/design/00-review-checklist.md").read_text(encoding="utf-8")
-    for number in range(1, 31):
+    for number in range(1, 37):
         scenario = f"TS{number:02d}"
         if f"## {scenario}:" not in scenarios or scenario not in checklist:
             errors.append(f"Scenario lacks definition or trace: {scenario}")
@@ -76,7 +81,7 @@ def validate():
         print(error, file=sys.stderr)
     if errors:
         return 1
-    print(f"Validated {len(files)} Markdown files, 21 product documents, 16 designs, 30 scenario traces.")
+    print(f"Validated {len(files)} Markdown files, {len(PRODUCT)} product documents, {len(DESIGN) - 1} designs, 36 scenario traces.")
     return 0
 
 

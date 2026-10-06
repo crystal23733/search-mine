@@ -803,6 +803,8 @@ name = "liar-wasm"
 version = "0.1.0"
 dependencies = [
  "liar-core",
+ "liar-protocol",
+ "serde_json",
  "wasm-bindgen",
 ]
 

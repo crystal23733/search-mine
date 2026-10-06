@@ -147,6 +147,7 @@ fn candidate_failure_keeps_full_gauge_and_two_attacks_reflect_on_correct_accusat
         Some(liar_core::board::ObservedCell::Number(1))
     );
     assert_eq!(g.projection(Seat::One).own.stun_ms, 2000);
+    assert_eq!(g.projection(Seat::Two).own.stats.correct_accusations, 1);
     assert_eq!(g.projection(Seat::One).own.gauge, 0);
     assert!(
         g.apply(Command {
@@ -578,4 +579,26 @@ fn hidden_attack_and_opponent_flags_do_not_change_the_defenders_public_revision(
         ActionStatus::Applied
     );
     assert_eq!(g.projection(Seat::Two), before);
+}
+#[test]
+fn own_mistakes_and_accusations_are_counted_once_without_exposing_opponent_stats() {
+    let mut g = game();
+    let mine = command(1, Seat::One, 3000, Action::Open(CellId(5)));
+    g.apply(mine);
+    g.apply(Command {
+        received_at: 3001,
+        ..mine
+    });
+    assert_eq!(g.projection(Seat::One).own.stats.mistakes, 1);
+    let wrong = command(2, Seat::One, 6000, Action::Accuse(CellId(1)));
+    g.apply(wrong);
+    g.apply(Command {
+        received_at: 6001,
+        ..wrong
+    });
+    let stats = g.projection(Seat::One).own.stats;
+    assert_eq!(stats.mistakes, 2);
+    assert_eq!(stats.accusation_attempts, 1);
+    assert_eq!(stats.correct_accusations, 0);
+    assert_eq!(g.projection(Seat::Two).own.stats.mistakes, 0);
 }

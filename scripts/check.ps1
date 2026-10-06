@@ -11,6 +11,8 @@ Invoke-Check cargo @('clippy', '--locked', '--workspace', '--all-targets', '--',
 Invoke-Check cargo @('test', '--locked', '--workspace')
 Invoke-Check cargo @('check', '--locked', '-p', 'liar-wasm', '--target', 'wasm32-unknown-unknown')
 Invoke-Check pnpm @('types:check')
+Invoke-Check pnpm @('wasm:build')
+Invoke-Check pnpm @('fixtures:check')
 Invoke-Check pnpm @('lint')
 Invoke-Check pnpm @('typecheck')
 Invoke-Check pnpm @('test')

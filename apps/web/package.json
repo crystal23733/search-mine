@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@liar/core-bridge": "workspace:*",
     "@liar/protocol": "workspace:*",
     "preact": "^11.0.0"
   },

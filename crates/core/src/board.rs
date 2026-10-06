@@ -65,12 +65,7 @@ impl BoardSpec {
 
 impl Default for BoardSpec {
     fn default() -> Self {
-        Self {
-            width: 16,
-            height: 16,
-            mines: 40,
-            opening: CellId(0),
-        }
+        crate::rules::RulesSnapshot::bundled().rules.board_spec()
     }
 }
 

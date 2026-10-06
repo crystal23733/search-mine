@@ -33,6 +33,8 @@
 
 서버 응답: v, type, server_seq, revision, command_id(응답 연결), server_time_ms, payload. 클라이언트 시간은 승패에 사용하지 않는다. 단일 프레임 최대8KiB 제안. 숫자 cell은 0..255, UUID/enum/길이/version을 경계에서 검증한다.
 
+server_seq/revision은 본인의 공개 stream 기준이다. 상대 flag·상대에게 보이지 않는 gauge/공격 등록만 변경됐을 때 본인의 revision을 증가시키거나 빈 delta를 보내지 않는다. 내부 전역 ingress sequence·analysis revision을 public 카운터로 내보내 공격 시점/개수를 추측하게 만들지 않는다.
+
 | 방향 | type | 주요 payload |
 |---|---|---|
 | C→S | queue_join / queue_cancel | difficulty / queue_id |

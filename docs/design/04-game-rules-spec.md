@@ -4,7 +4,7 @@
 
 ## 설정 원천
 
-M1에서 `config/game-rules.toml` 하나를 만들고 Rust RulesSnapshot으로 로드·검증한다. UI와 WASM은 이 snapshot의 공개 필드를 사용하며 TS에 규칙 숫자를 재정의하지 않는다.
+[config/game-rules.toml](../../config/game-rules.toml) 하나를 Rust RulesSnapshot으로 로드·검증한다. 공개 수치·canonical hash·solver/RNG 버전을 시작 때 고정하며 UI와 WASM은 이 snapshot을 사용한다. TS에 규칙 숫자를 재정의하지 않는다. [ADR0011](../adr/0011-rule-snapshot-and-transitions.md), [실행된 규칙 검증](../verification/07-rule-engine.md).
 
 | 항목 | 기본 제안 |
 |---|---|

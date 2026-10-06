@@ -103,6 +103,10 @@ impl PolicyKnowledge {
             })
             .collect()
     }
+    /// Difficulty budgets limit safe planning after canonical public-history classification.
+    pub fn limited_safe(&self, budget: SolverBudget) -> Result<Vec<CellId>, SolverError> {
+        Ok(NoGuessSolver::deduce(&self.logical, budget)?.safe)
+    }
     pub fn known_lies(&self) -> Vec<CellId> {
         self.public
             .cells()
@@ -268,29 +272,35 @@ impl PolicyKnowledge {
         }
         let mut ledger = Self::start(initial, budget)?;
         for batch in history.iter().skip(1) {
-            if batch.is_empty() {
-                return Err(PolicyError::InvalidProjection);
-            }
-            let mut projection = ledger.public.clone();
-            let mut seen = vec![false; initial.spec().area()];
-            for update in batch {
-                let i = usize::from(update.cell.0);
-                if i >= seen.len()
-                    || seen[i]
-                    || update.observed == ObservedCell::Unknown
-                    || projection.cell(update.cell) == Some(update.observed)
-                {
-                    return Err(PolicyError::InvalidProjection);
-                }
-                seen[i] = true;
-                projection
-                    .set(update.cell, update.observed)
-                    .map_err(|_| PolicyError::InvalidProjection)?;
-            }
-            ledger.observe(&projection)?;
-            ledger.refresh()?;
+            ledger.replay_batch(batch)?;
         }
         Ok(ledger)
+    }
+    pub fn replay_batch(&mut self, batch: &[PublicCellUpdate]) -> Result<(), PolicyError> {
+        if batch.is_empty() {
+            return Err(PolicyError::InvalidProjection);
+        }
+        let mut projection = self.public.clone();
+        let mut seen = vec![false; self.public.spec().area()];
+        for update in batch {
+            let i = usize::from(update.cell.0);
+            if i >= seen.len()
+                || seen[i]
+                || update.observed == ObservedCell::Unknown
+                || projection.cell(update.cell) == Some(update.observed)
+            {
+                return Err(PolicyError::InvalidProjection);
+            }
+            seen[i] = true;
+            projection
+                .set(update.cell, update.observed)
+                .map_err(|_| PolicyError::InvalidProjection)?;
+        }
+        let mut next = self.clone();
+        next.observe(&projection)?;
+        next.refresh()?;
+        *self = next;
+        Ok(())
     }
 }
 fn updates(view: &Observation) -> Vec<PublicCellUpdate> {

@@ -22,6 +22,58 @@ pub struct GameRules {
     pub room_expiry_ms: u32,
     pub max_commands_per_seat: u16,
     pub attack_strategy: String,
+    pub bots: BotProfiles,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts-rs", derive(ts_rs::TS))]
+#[serde(deny_unknown_fields)]
+pub struct BotSettings {
+    pub decision_ms: u32,
+    pub accusation_ms: u32,
+    pub max_nodes: u32,
+    pub max_component_cells: u8,
+    pub max_constraints: u16,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts-rs", derive(ts_rs::TS))]
+#[serde(deny_unknown_fields)]
+pub struct BotProfiles {
+    pub easy: BotSettings,
+    pub normal: BotSettings,
+    pub hard: BotSettings,
+}
+impl BotSettings {
+    pub fn budget(&self) -> crate::solver::SolverBudget {
+        crate::solver::SolverBudget {
+            max_nodes: self.max_nodes as usize,
+            max_component_cells: usize::from(self.max_component_cells),
+            max_constraints: usize::from(self.max_constraints),
+        }
+    }
+    fn valid(&self) -> bool {
+        (50..=10_000).contains(&self.decision_ms)
+            && self.accusation_ms <= 10_000
+            && (1..=200_000).contains(&self.max_nodes)
+            && (1..=22).contains(&self.max_component_cells)
+            && (1..=1024).contains(&self.max_constraints)
+    }
+}
+impl BotProfiles {
+    fn valid(&self) -> bool {
+        [&self.easy, &self.normal, &self.hard]
+            .iter()
+            .all(|p| p.valid())
+            && self.easy.decision_ms > self.normal.decision_ms
+            && self.normal.decision_ms > self.hard.decision_ms
+            && self.easy.accusation_ms >= self.normal.accusation_ms
+            && self.normal.accusation_ms >= self.hard.accusation_ms
+            && self.easy.max_nodes <= self.normal.max_nodes
+            && self.normal.max_nodes <= self.hard.max_nodes
+            && self.easy.max_component_cells <= self.normal.max_component_cells
+            && self.normal.max_component_cells <= self.hard.max_component_cells
+            && self.easy.max_constraints <= self.normal.max_constraints
+            && self.normal.max_constraints <= self.hard.max_constraints
+    }
 }
 impl GameRules {
     pub fn board_spec(&self) -> BoardSpec {
@@ -60,6 +112,7 @@ impl GameRules {
             || !(1..=86_400_000).contains(&self.room_expiry_ms)
             || !(1..=32768).contains(&self.max_commands_per_seat)
             || self.attack_strategy != ATTACK_STRATEGY
+            || !self.bots.valid()
         {
             return Err(RulesError::Invalid);
         }

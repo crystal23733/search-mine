@@ -88,4 +88,6 @@ N=256, frontier 크기 f. 단일 추론은 인접 합 O(N), 부분집합 비교 
 
 BotPolicy는 공개 PlayerView와 KnowledgeSolver, Clock/RandomSource 포트만 사용한다. 쉬움/보통/어려움은 결정 간격·메모리 예산·지목 지연 설정으로 조절하고 정답 접근으로 난도를 올리지 않는다. 확정 안전칸 없으면 추측하지 않고 대기/확정 지목한다. 연습 봇은 동일한 규칙이지만 로컬 기기는 정답 접근을 막을 수 없어 공식 대전 검증과 구분한다.
 
+[ADR0012](../adr/0012-public-observation-bot-policy.md)의 구현은 공개 전략 이력 분류와 난이도별 safe 계획 예산을 분리한다. canonical 이력의 등록 증거를 작은 난이도 예산으로 약화해 false number를 truth로 해석하지 않는다. 프로필은 단일 TOML에서 읽고 해당 프로필에서 완성한 safe 증거를 보존한다. [실행 결과](../verification/08-public-bots.md).
+
 데일리는 UTC 날짜+공개 알고리즘 버전으로 전 세계 같은 판을 만든다. 이미 배포·캐시된 버전으로 오프라인 재생 가능하게 하고 변경일에는 별도 daily_id를 사용한다. 공개 seed 정답은 보안 비밀이 아니다. [제출 검증](06-protocol.md)은 자동 풀이 방지의 완전한 증명이 아니다.

@@ -7,14 +7,18 @@
   },
   "scripts": {
     "dev": "pnpm --filter @liar/web dev",
-    "build": "pnpm --filter @liar/web build",
+    "build": "pnpm wasm:build && pnpm --filter @liar/web build",
     "lint": "oxlint apps packages scripts tests --deny-warnings",
     "typecheck": "pnpm -r typecheck && tsc --noEmit -p tsconfig.tools.json",
     "test": "pnpm --filter @liar/web test",
     "test:e2e": "playwright test",
     "docs:check": "python scripts/validate_docs.py && node scripts/check_mermaid.mjs .",
     "types:generate": "cargo run --locked -p liar-protocol --bin export-types",
-    "types:check": "cargo run --locked -p liar-protocol --bin export-types -- --check"
+    "types:check": "cargo run --locked -p liar-protocol --bin export-types -- --check",
+    "wasm:build": "node scripts/build-wasm.mjs --check",
+    "wasm:generate": "node scripts/build-wasm.mjs",
+    "fixtures:generate": "cargo run --locked --release -p liar-wasm --bin native-fixture",
+    "fixtures:check": "cargo run --locked --release -p liar-wasm --bin native-fixture -- --check"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

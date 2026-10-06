@@ -94,6 +94,13 @@ pub struct OwnView {
     pub gauge: u16,
     pub stun_ms: u32,
     pub history: Vec<Vec<PublicCellUpdate>>,
+    pub stats: GameStats,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct GameStats {
+    pub mistakes: u16,
+    pub accusation_attempts: u16,
+    pub correct_accusations: u16,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpponentView {
@@ -133,6 +140,7 @@ struct Player {
     last_seq: u64,
     disconnected_at: Option<u64>,
     commands: BTreeMap<u128, Cached>,
+    stats: GameStats,
 }
 // Never Serialize/Debug: Board and hidden overlays stay inside the domain.
 pub struct RuleEngine {
@@ -201,6 +209,7 @@ impl RuleEngine {
             last_seq: 0,
             disconnected_at: None,
             commands: BTreeMap::new(),
+            stats: GameStats::default(),
         };
         Ok(Self {
             board,
@@ -225,6 +234,7 @@ impl RuleEngine {
                 gauge: me.gauge,
                 stun_ms: me.stun_until.saturating_sub(now) as u32,
                 history: me.knowledge.public_history().to_vec(),
+                stats: me.stats,
             },
             opponent: OpponentView {
                 opened_safe: opponent.view.opened_safe() as u16,
@@ -348,6 +358,7 @@ impl RuleEngine {
                     .min(u32::from(self.rules.rules.gauge_capacity))
                     as u16;
                 if hit_mine {
+                    player.stats.mistakes += 1;
                     player.stun_until = player.stun_until.max(
                         self.now
                             .saturating_add(u64::from(self.rules.rules.mine_stun_ms)),
@@ -381,6 +392,8 @@ impl RuleEngine {
                         .map_err(|_| Rejection::InvalidBoard)?;
                     self.commit_view(seat, view)?;
                     self.players[index].overlays.remove(lie_index);
+                    self.players[index].stats.accusation_attempts += 1;
+                    self.players[index].stats.correct_accusations += 1;
                     let attacker = &mut self.players[source.index()];
                     attacker.gauge = 0;
                     attacker.stun_until = attacker.stun_until.max(
@@ -388,6 +401,8 @@ impl RuleEngine {
                             .saturating_add(u64::from(self.rules.rules.reflect_stun_ms)),
                     );
                 } else {
+                    self.players[index].stats.accusation_attempts += 1;
+                    self.players[index].stats.mistakes += 1;
                     self.players[index].stun_until = self.players[index].stun_until.max(
                         self.now
                             .saturating_add(u64::from(self.rules.rules.wrong_accuse_stun_ms)),

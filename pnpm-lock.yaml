@@ -187,6 +187,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@liar/core-bridge':
+        specifier: workspace:*
+        version: link:../../packages/core-bridge
       '@liar/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
@@ -212,6 +215,12 @@ importers:
       vitest:
         specifier: ^5.0.3
         version: 5.0.3(@types/node@26.6.4)(jsdom@30.1.2)(vite@8.3.2(@types/node@26.6.4))
+
+  packages/core-bridge:
+    dependencies:
+      '@liar/protocol':
+        specifier: workspace:*
+        version: link:../protocol
 
   packages/protocol: {}
 

@@ -72,7 +72,14 @@ jobs:
         with:
           node-version: '24'
       - uses: pnpm/action-setup@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install wasm-bindgen-cli --locked
       - run: pnpm install --frozen-lockfile
+      - run: pnpm wasm:build
+      - run: pnpm fixtures:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

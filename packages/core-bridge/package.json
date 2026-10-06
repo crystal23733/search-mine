@@ -1,0 +1,15 @@
+{
+  "name": "@liar/core-bridge",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./worker": "./src/worker.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@liar/protocol": "workspace:*"
+  }
+}

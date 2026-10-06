@@ -5,22 +5,13 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact",
     "lib": [
       "ES2022",
       "DOM",
-      "DOM.Iterable",
       "ESNext.Disposable"
-    ],
-    "types": [
-      "vite/client",
-      "vitest/globals"
     ]
   },
   "include": [
-    "src",
-    "vite.config.ts",
-    "vitest.config.ts"
+    "src"
   ]
 }

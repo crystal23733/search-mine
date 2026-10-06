@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0와 #4~7 병합 완료, M1 코어 구현 중. #8 공개 관측만 사용하는 세 난이도 봇을 구현·검증했습니다. WASM·화면·OAuth 연동을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0와 #4~8 병합 완료. #9 공개 WASM 세션·Worker·native/browser 재현 일치를 구현·검증했습니다. 화면·OAuth 연동을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -27,7 +27,7 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~7은 병합·종료됐고 #8 봇을 검증합니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~8은 병합·종료됐고 #9 WASM을 검증했습니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 
@@ -39,7 +39,10 @@ Node.js 24.15 이상, 최신 Rust stable, pnpm을 사용합니다. 의존성 추
 npm install --global pnpm
 pnpm install --frozen-lockfile
 rustup update stable
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --locked
 pnpm types:check
+pnpm wasm:build
 pnpm dev
 # 다른 터미널: health 서버 (기본 127.0.0.1:3000)
 cargo run --locked -p liar-server
@@ -59,7 +62,7 @@ cargo test --locked -p liar-server --test postgres -- --ignored
 docker compose -f tests/compose.postgres.yml down
 ```
 
-`pnpm docs:check`, `pnpm lint/typecheck/test/build/test:e2e`는 각 script를 개별 실행합니다. GitHub Actions의 docs/contribution-gate/rust/web/database를 모두 확인한 뒤 develop에 병합합니다. DB 없는 기본 cargo test에서 무시되는 PostgreSQL 테스트를 통과로 계산하지 않습니다.
+`pnpm docs:check`, `pnpm lint/typecheck/test/build/test:e2e`는 각 script를 개별 실행합니다. `pnpm build`는 공개 WASM도 생성하며 `wasm:generate`/`fixtures:generate`는 Rust 계약 변경 시 생성 선언/재생 fixture를 갱신합니다. CI는 freshness와 실제 Chromium 재생을 검사합니다. GitHub Actions의 docs/contribution-gate/rust/web/database/coverage를 모두 확인한 뒤 develop에 병합합니다. DB 없는 기본 cargo test에서 무시되는 PostgreSQL 테스트를 통과로 계산하지 않습니다.
 
 서버 사양·실측 요금·도메인·OAuth 키·광고/CMP 승인·정책 운영자 정보는 [외부 준비 목록](docs/workflow/external-inputs.md)에 기록합니다. 필요한 입력을 만들지 않고 독립적인 개발은 계속합니다.
 

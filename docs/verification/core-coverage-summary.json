@@ -1,0 +1,177 @@
+{
+  "tool": "cargo-llvm-cov 0.9.1",
+  "scope": "liar-core source, tests/examples excluded",
+  "branch_coverage_measured": false,
+  "totals": {
+    "lines": {
+      "count": 680,
+      "covered": 665,
+      "percent": 97.79411764705883
+    },
+    "functions": {
+      "count": 61,
+      "covered": 61,
+      "percent": 100
+    },
+    "regions": {
+      "count": 1094,
+      "covered": 1050,
+      "notcovered": 44,
+      "percent": 95.97806215722122
+    }
+  },
+  "files": [
+    {
+      "file": "board.rs",
+      "summary": {
+        "branches": {
+          "count": 0,
+          "covered": 0,
+          "notcovered": 0,
+          "percent": 0.0
+        },
+        "mcdc": {
+          "count": 0,
+          "covered": 0,
+          "notcovered": 0,
+          "percent": 0.0
+        },
+        "functions": {
+          "count": 20,
+          "covered": 20,
+          "percent": 100.0
+        },
+        "instantiations": {
+          "count": 40,
+          "covered": 20,
+          "percent": 50.0
+        },
+        "lines": {
+          "count": 149,
+          "covered": 149,
+          "percent": 100.0
+        },
+        "regions": {
+          "count": 228,
+          "covered": 225,
+          "notcovered": 3,
+          "percent": 98.68421052631578
+        }
+      }
+    },
+    {
+      "file": "generator.rs",
+      "summary": {
+        "branches": {
+          "count": 0,
+          "covered": 0,
+          "notcovered": 0,
+          "percent": 0.0
+        },
+        "mcdc": {
+          "count": 0,
+          "covered": 0,
+          "notcovered": 0,
+          "percent": 0.0
+        },
+        "functions": {
+          "count": 7,
+          "covered": 7,
+          "percent": 100.0
+        },
+        "instantiations": {
+          "count": 14,
+          "covered": 7,
+          "percent": 50.0
+        },
+        "lines": {
+          "count": 109,
+          "covered": 104,
+          "percent": 95.41284403669725
+        },
+        "regions": {
+          "count": 147,
+          "covered": 136,
+          "notcovered": 11,
+          "percent": 92.51700680272108
+        }
+      }
+    },
+    {
+      "file": "random.rs",
+      "summary": {
+        "branches": {
+          "count": 0,
+          "covered": 0,
+          "notcovered": 0,
+          "percent": 0.0
+        },
+        "mcdc": {
+          "count": 0,
+          "covered": 0,
+          "notcovered": 0,
+          "percent": 0.0
+        },
+        "functions": {
+          "count": 3,
+          "covered": 3,
+          "percent": 100.0
+        },
+        "instantiations": {
+          "count": 7,
+          "covered": 4,
+          "percent": 57.14285714285714
+        },
+        "lines": {
+          "count": 20,
+          "covered": 20,
+          "percent": 100.0
+        },
+        "regions": {
+          "count": 34,
+          "covered": 34,
+          "notcovered": 0,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "file": "solver.rs",
+      "summary": {
+        "branches": {
+          "count": 0,
+          "covered": 0,
+          "notcovered": 0,
+          "percent": 0.0
+        },
+        "mcdc": {
+          "count": 0,
+          "covered": 0,
+          "notcovered": 0,
+          "percent": 0.0
+        },
+        "functions": {
+          "count": 31,
+          "covered": 31,
+          "percent": 100.0
+        },
+        "instantiations": {
+          "count": 62,
+          "covered": 31,
+          "percent": 50.0
+        },
+        "lines": {
+          "count": 402,
+          "covered": 392,
+          "percent": 97.51243781094529
+        },
+        "regions": {
+          "count": 685,
+          "covered": 655,
+          "notcovered": 30,
+          "percent": 95.62043795620438
+        }
+      }
+    }
+  ]
+}

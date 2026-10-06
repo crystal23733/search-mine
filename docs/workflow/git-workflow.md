@@ -33,7 +33,7 @@ GitHub 자동 이슈 종료는 PR이 기본 브랜치에 병합될 때 작동한
 
 ## 1인 리뷰·브랜치 보호
 
-자기 PR에는 공식 Approve 리뷰를 할 수 없어 required review count=0을 제안한다. 필수 PR·docs/contribution-gate checks·conversation resolution·force push/delete 금지와 **사용자 위임에 따른 에이전트 코드 리뷰·검사·병합**을 결합한다. 형식적인 GitHub 자기 Approve 리뷰는 만들지 않고 실제 코드/테스트 리뷰 결과를 PR에 기록한다. 추가 리뷰어가 생기면 count1로 바꾼다. GitHub 기능/플랜 제약으로 보호 API 적용이 불가하면 그 사실을 기록하고 workflow 검사는 계속 유지한다.
+자기 PR에는 공식 Approve 리뷰를 할 수 없어 required review count=0을 적용한다. 필수 PR·docs/contribution-gate/rust/web/database checks·conversation resolution·force push/delete 금지와 **사용자 위임에 따른 에이전트 코드 리뷰·검사·병합**을 결합한다. #5의 core coverage 검사도 통과 확인 뒤 필수로 추가한다. 형식적인 GitHub 자기 Approve 리뷰는 만들지 않고 실제 코드/테스트 리뷰 결과를 PR에 기록한다. 추가 리뷰어가 생기면 count1로 바꾼다. GitHub 기능/플랜 제약으로 보호 API 적용이 불가하면 그 사실을 기록하고 workflow 검사는 계속 유지한다.
 
 제품 경로 변경 PR은 base develop의 design-approval.json이 approved여야 CI가 통과한다. 승인 기록과 제품 구현을 같은 PR에 묶어 게이트를 우회하지 않는다. approved_by/approved_at/evidence/reviewed_commit을 승인 근거와 함께 기록한다. 사용자 채팅 또는 PR의 명시적 설계 승인 없이는 기록을 바꾸지 않는다.
 

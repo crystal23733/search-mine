@@ -12,7 +12,8 @@ Preact 화면은 최소 빌드 진입점만 준비한다. 제공된 디자인의
 - Green: public account id/nickname만, liveness no-store, DB 미설정 readiness503. Rust 단위3개·웹 단위1개·Chromium desktop/mobile E2E2개 통과.
 - fmt/clippy/native/WASM 컴파일·Rust TS 생성 일치·Mermaid34 실제 parse 확인.
 - 최신 TypeScript7과 typescript-eslint의 지원 범위 충돌 → [TypeScript7 기반 Oxlint](https://oxc.rs/docs/guide/usage/linter)로 변경. 최신 Vitest5/jest-dom 타입 충돌 → 기본 assertion과 실제 Playwright visibility 검사로 분리; 숨기는 skipLibCheck는 쓰지 않았다.
-- Docker Desktop의 engine이 로컬에서 ready가 되지 않았다. 실제 PostgreSQL 검사는 database CI에서 실행하고 결과를 PR에서 확인한다. 로컬 미실행을 통과로 보고하지 않는다.
+- Docker Desktop의 engine이 로컬에서 ready가 되지 않았다. 실제 PostgreSQL18의 연결·pool 종료 뒤 readiness 전이를 database CI에서 실행해 통과했다([실행 근거](https://github.com/crystal23733/search-mine/actions/runs/37489680143/job/112358803641)). 로컬 미실행을 통과로 보고하지 않는다.
+- CI의 Node20 폐기 경고를 확인해 공식 최신 릴리스의 checkout/setup-node/setup-python/upload-artifact v7, pnpm/action-setup v6으로 갱신하고 새 head의 CI를 재검증한다.
 - 코드 리뷰: 도메인 crate infra 의존 없음, 공개 프로토콜 secret 필드 없음, generation check 읽기 전용, HTTP health 내부 오류 미노출·timeout/no-store, 기본 bind loopback, 개발 DB port loopback만, CI read 권한.
 
 현재 Web gzip JS 약5KiB는 브랜드 진입점만의 크기다. Pixi/WASM/게임을 포함한 최종 번들 예산 달성 근거가 아니다. core/wasm 게임 동작과 OAuth 실인증은 아직 구현되지 않았다.

@@ -1,0 +1,23 @@
+name: 버그
+description: 재현 조건과 기대 동작을 정의합니다.
+title: "fix: "
+body:
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 단계와 실제·기대 결과
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 버전·기기·언어·규칙 버전
+      description: 토큰·쿠키·숨은 판·개인정보를 붙이지 않습니다.
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: 관련 요구·시나리오·마일스톤·검증
+    validations:
+      required: true

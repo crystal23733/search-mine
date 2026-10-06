@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0 설계·작업 체계 병합 완료, M1 개발 환경 구성 중. Rust/TS workspace·공개 타입 생성·health·웹 진입점과 CI를 구현했으며 게임/OAuth 연동은 후속 이슈에서 진행합니다.** 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0와 개발 환경 #4 병합 완료, M1 코어 구현 중. 결정론 보드·일반 노게스 생성/솔버를 구현·검증합니다. 거짓말 간파 검증·게임 규칙·화면·OAuth 연동은 후속 이슈에서 진행합니다.** 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -27,7 +27,7 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. 초기 설정 #2와 설계 수정 #3은 병합됐고 #4 Rust·pnpm 개발 환경을 검증합니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~4는 병합·종료됐고 #5 코어 생성·솔버를 검증합니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 
@@ -62,3 +62,12 @@ docker compose -f tests/compose.postgres.yml down
 `pnpm docs:check`, `pnpm lint/typecheck/test/build/test:e2e`는 각 script를 개별 실행합니다. GitHub Actions의 docs/contribution-gate/rust/web/database를 모두 확인한 뒤 develop에 병합합니다. DB 없는 기본 cargo test에서 무시되는 PostgreSQL 테스트를 통과로 계산하지 않습니다.
 
 서버 사양·실측 요금·도메인·OAuth 키·광고/CMP 승인·정책 운영자 정보는 [외부 준비 목록](docs/workflow/external-inputs.md)에 기록합니다. 필요한 입력을 만들지 않고 독립적인 개발은 계속합니다.
+
+코어는 거짓말 없는 생성 인증과 온라인 간파 검증을 분리합니다. [#5 검증 결과](docs/verification/05-generation-solver.md)는 작은 판 전수·seed corpus·개발 PC release 벤치의 실제 근거입니다. 아직 #6 공정성이나 미니 PC 성능 검증을 대신하지 않습니다.
+
+```powershell
+cargo run --locked --release -p liar-core --example generate_bench -- 10000 .tmp/generation.csv
+rustup component add llvm-tools-preview
+cargo install cargo-llvm-cov --locked
+cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](tests|examples)[/\\]' --fail-under-lines 95
+```

@@ -113,3 +113,46 @@ fn zero_flood_opens_every_reachable_safe_cell_once_and_skips_flags() {
     );
     assert_eq!(view.cell(CellId(8)), Some(ObservedCell::Mine));
 }
+
+#[test]
+fn public_observation_and_reveal_reject_malformed_input_without_mutation() {
+    let spec = BoardSpec {
+        width: 3,
+        height: 3,
+        mines: 1,
+        opening: CellId(0),
+    };
+    let board = Board::from_mines(spec, &[CellId(8)]).unwrap();
+    let mut view = Observation::closed(spec).unwrap();
+    let original = view.clone();
+    assert_eq!(
+        board.reveal(&mut view, CellId(9), &[false; 9]),
+        Err(BoardError::InvalidCell)
+    );
+    assert_eq!(
+        board.reveal(&mut view, CellId(0), &[false; 8]),
+        Err(BoardError::ObservationMismatch)
+    );
+    assert_eq!(view, original);
+    assert_eq!(
+        view.set(CellId(9), ObservedCell::Number(1)),
+        Err(BoardError::InvalidCell)
+    );
+    assert_eq!(
+        view.set(CellId(0), ObservedCell::Number(9)),
+        Err(BoardError::ObservationMismatch)
+    );
+    assert_eq!(
+        Observation::new(spec, vec![ObservedCell::Number(9); 9]),
+        Err(BoardError::ObservationMismatch)
+    );
+    assert_eq!(
+        Observation::new(spec, vec![]),
+        Err(BoardError::ObservationMismatch)
+    );
+    assert!(
+        BoardSpec { width: 0, ..spec }
+            .neighbors(CellId(0))
+            .is_empty()
+    );
+}

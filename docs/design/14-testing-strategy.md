@@ -32,10 +32,10 @@ flowchart LR
   Unit --> DB[실DB WS 통합]
   DB --> Web[build와 Playwright]
   Web --> Audit[보안 감사와 예산]
-  Audit --> Review[사용자 리뷰]
+  Audit --> Review[위임된 에이전트 코드 리뷰]
   Review --> Merge[병합과 이슈 종료]
 ```
 
-M0에는 docs와 contribution-gate만 실제 구현한다. 제품 테스트·coverage·DB·빌드 CI는 승인 뒤 M1 첫 이슈에서 추가하고, 현재 통과했다고 주장하지 않는다. PR은 해당 변경에 필요한 검사만 실행하되 전체 구현 단계별 required checks를 확장한다. k6·복구는 사용자 장비에서 별도 수동 증거를 PR에 첨부한다.
+M0의 docs/contribution-gate에 이어 #4에서 Rust·웹·실제 PostgreSQL·WASM·공유 타입·Playwright CI를 병합했다. #5는 테스트/벤치 파일을 분모에서 제외한 core source line coverage≥95%를 CI로 검증한다. 전체 애플리케이션80%는 아직 측정되지 않은 후속 목표다. PR은 해당 변경에 필요한 검사만 실행하며 단계별 required checks를 확장한다. k6·복구는 사용자 장비에서 별도 수동 증거를 PR에 첨부한다.
 
 CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존성 추가와 lockfile 재현 설치과 무료 실행량을 확인한다. Mermaid는 GitHub 지원 chart 문법만 사용해 실제 parse 검사한다.

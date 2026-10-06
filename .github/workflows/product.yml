@@ -80,6 +80,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm wasm:build
       - run: pnpm fixtures:check
+      - run: pnpm tokens:check
+      - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

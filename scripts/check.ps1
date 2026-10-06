@@ -13,6 +13,8 @@ Invoke-Check cargo @('check', '--locked', '-p', 'liar-wasm', '--target', 'wasm32
 Invoke-Check pnpm @('types:check')
 Invoke-Check pnpm @('wasm:build')
 Invoke-Check pnpm @('fixtures:check')
+Invoke-Check pnpm @('tokens:check')
+Invoke-Check pnpm @('format:check')
 Invoke-Check pnpm @('lint')
 Invoke-Check pnpm @('typecheck')
 Invoke-Check pnpm @('test')

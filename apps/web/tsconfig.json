@@ -7,20 +7,9 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable",
-      "ESNext.Disposable"
-    ],
-    "types": [
-      "vite/client",
-      "vitest/globals"
-    ]
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
+    "types": ["vite/client", "vitest/globals"],
+    "resolveJsonModule": true
   },
-  "include": [
-    "src",
-    "vite.config.ts",
-    "vitest.config.ts"
-  ]
+  "include": ["src", "vite.config.ts", "vitest.config.ts"]
 }

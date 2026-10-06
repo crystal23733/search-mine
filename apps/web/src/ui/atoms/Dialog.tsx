@@ -1,0 +1,68 @@
+import type { ComponentChildren } from "preact";
+import { useEffect, useRef } from "preact/hooks";
+import { Button } from "./Button";
+import { useUi } from "../context";
+export function Dialog({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose(): void;
+  title: string;
+  children: ComponentChildren;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const { t } = useUi();
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const previous =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const dialog = ref.current;
+    dialog.showModal();
+    return () => {
+      dialog.close();
+      previous?.focus();
+    };
+  }, [open]);
+  return (
+    <dialog
+      ref={ref}
+      class="sheet"
+      aria-labelledby="sheet-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Tab") return;
+        const elements = [
+          ...event.currentTarget.querySelectorAll<HTMLElement>(
+            'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+          ),
+        ];
+        const first = elements[0];
+        const last = elements.at(-1);
+        if (
+          first &&
+          last &&
+          (event.shiftKey
+            ? document.activeElement === first
+            : document.activeElement === last)
+        ) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        }
+      }}
+    >
+      <h2 id="sheet-title">{title}</h2>
+      {children}
+      <Button variant="primary" onClick={onClose}>
+        {t("close")}
+      </Button>
+    </dialog>
+  );
+}

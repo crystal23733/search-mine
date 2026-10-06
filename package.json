@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @liar/web dev",
-    "build": "pnpm wasm:build && pnpm --filter @liar/web build",
+    "build": "pnpm tokens:check && pnpm wasm:build && pnpm --filter @liar/web build",
     "lint": "oxlint apps packages scripts tests --deny-warnings",
     "typecheck": "pnpm -r typecheck && tsc --noEmit -p tsconfig.tools.json",
     "test": "pnpm --filter @liar/web test",
@@ -18,7 +18,10 @@
     "wasm:build": "node scripts/build-wasm.mjs --check",
     "wasm:generate": "node scripts/build-wasm.mjs",
     "fixtures:generate": "cargo run --locked --release -p liar-wasm --bin native-fixture",
-    "fixtures:check": "cargo run --locked --release -p liar-wasm --bin native-fixture -- --check"
+    "fixtures:check": "cargo run --locked --release -p liar-wasm --bin native-fixture -- --check",
+    "tokens:generate": "node scripts/generate-tokens.mjs",
+    "tokens:check": "node scripts/generate-tokens.mjs --check",
+    "format:check": "prettier --check apps/web/src apps/web/vitest.config.ts apps/web/tsconfig.json tests/e2e/shell.spec.ts tests/e2e/bootstrap.spec.ts packages/design-tokens/tokens.json"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -26,6 +29,7 @@
     "jsdom": "^30.1.2",
     "mermaid": "^12.1.0",
     "oxlint": "^1.87.0",
+    "prettier": "^3.9.9",
     "typescript": "^7.0.2"
   },
   "packageManager": "pnpm@12.9.1"

@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: OAuth·최소 수집·화면 설계 변경과 개발 시작 지시 반영, 설계 PR 병합 대기. 제품은 아직 구현되지 않았습니다.** 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0 설계·작업 체계 병합 완료, M1 개발 환경 구성 중. Rust/TS workspace·공개 타입 생성·health·웹 진입점과 CI를 구현했으며 게임/OAuth 연동은 후속 이슈에서 진행합니다.** 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -27,16 +27,38 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. 초기 설정 #2와 설계 수정 #3을 병합한 뒤 #4 Rust·pnpm 개발 환경으로 진행합니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. 초기 설정 #2와 설계 수정 #3은 병합됐고 #4 Rust·pnpm 개발 환경을 검증합니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 
-## 문서 검사
+## 개발 실행
+
+Node.js 24.15 이상, 최신 Rust stable, pnpm을 사용합니다. 의존성 추가에는 버전을 붙이지 않고 최신 안정 릴리스를 받습니다. 설치 결과는 Cargo.lock/pnpm-lock.yaml에 기록하고 검증/CI는 locked/frozen으로 재현합니다.
 
 ```powershell
-python scripts/validate_docs.py
-npm install --prefix .tmp/docs-tools --no-audit --no-fund mermaid@11.12.2 jsdom@26.1.0
-node scripts/check_mermaid.mjs .tmp/docs-tools
+npm install --global pnpm
+pnpm install --frozen-lockfile
+rustup update stable
+pnpm types:check
+pnpm dev
+# 다른 터미널: health 서버 (기본 127.0.0.1:3000)
+cargo run --locked -p liar-server
 ```
 
-GitHub Actions는 문서·Mermaid와 브랜치/이슈/승인 게이트를 검사합니다. 제품 실행·빌드·테스트 명령은 설계 승인 뒤 첫 구현 이슈에서 추가합니다. 서버 사양·실측 요금·도메인·Google 광고 승인·정책 운영자 정보는 공개 전에 사용자가 확인합니다.
+현재 웹은 브랜드 진입점이며 게임·로그인 완료 화면을 가장하지 않습니다. 제공된 화면은 #10부터 적용합니다. 아직 로그인 제공자 키를 요구하지 않으며 #15에서 실제 연동 준비 항목을 별도 기록합니다.
+
+## 검증
+
+```powershell
+pnpm exec playwright install chromium
+./scripts/check.ps1
+# 실제 DB 통합 (개발용 loopback DB, 운영 DB는 host 포트 없음)
+docker compose -f tests/compose.postgres.yml up -d --wait
+$env:DATABASE_URL = 'postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
+cargo test --locked -p liar-server --test postgres -- --ignored
+docker compose -f tests/compose.postgres.yml down
+```
+
+`pnpm docs:check`, `pnpm lint/typecheck/test/build/test:e2e`는 각 script를 개별 실행합니다. GitHub Actions의 docs/contribution-gate/rust/web/database를 모두 확인한 뒤 develop에 병합합니다. DB 없는 기본 cargo test에서 무시되는 PostgreSQL 테스트를 통과로 계산하지 않습니다.
+
+서버 사양·실측 요금·도메인·OAuth 키·광고/CMP 승인·정책 운영자 정보는 [외부 준비 목록](docs/workflow/external-inputs.md)에 기록합니다. 필요한 입력을 만들지 않고 독립적인 개발은 계속합니다.

@@ -27,7 +27,7 @@ flowchart TD
 flowchart LR
   PR[develop 대상 PR] --> Docs[문서와 Mermaid 검사]
   Docs --> Gate[브랜치 이슈와 승인 게이트]
-  Gate --> Lint[fmt clippy ESLint typecheck]
+  Gate --> Lint[fmt clippy Oxlint typecheck]
   Lint --> Unit[단위 속성와 생성 타입 검사]
   Unit --> DB[실DB WS 통합]
   DB --> Web[build와 Playwright]

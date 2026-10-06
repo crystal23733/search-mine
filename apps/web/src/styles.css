@@ -1,0 +1,6 @@
+:root { color: #f4f0e6; background: #0b1015; font-family: system-ui, sans-serif; color-scheme: dark; }
+body { margin: 0; min-width: 320px; }
+main { max-width: 960px; margin: 0 auto; padding: 64px 24px; }
+h1 { font-size: clamp(2rem, 6vw, 4rem); letter-spacing: -0.04em; }
+h1 span { color: #f4bb46; }
+p { color: #a6b3bd; line-height: 1.6; }

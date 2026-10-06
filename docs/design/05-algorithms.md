@@ -72,6 +72,12 @@ flowchart TD
 
 TS07/E4는 작은 판의 모든 공개 부분집합·0/1/2 lie·동일 관측의 다른 정답 세계에서 추론을 대조하고, 채택한 후보를 가능한 각 세계에 적용해 안전 open→확정 지목 경로를 검사한다. 실제16×16 corpus에서 준비 실패·공격 후보 채택률·비용을 별도로 보고한다. 이 제한된 전략의 낮은 채택률과 normal no-guess 판이 lie-aware 관측에서 막히는 문제는 출시 판단 과제이며 숨기지 않는다.
 
+### 공개 선택 전략의 합법적 세계
+
+넓은 임의2lie 모델의 1,000판 완주0을 확인해 [ADR0010](../adr/0010-public-certified-attack-strategy.md)에 후보 전략/이력 조건을 명시했다. `known-neighborhood-v1`은 관측 이력의 증거로 등록한 후보만 공격한다. `PolicyKnowledge`는 등록될 수 없었던 새 열린 숫자를 truth로, 등록된 셀은 당시 공개 증거가 확정한 원래 숫자로 해석한다. 화면 값은 변경하지 않으며 known lie가 열리면 확정 지목을 제공한다. 모든 합법적 모델에서 같은 논리 값이므로 NoGuessSolver의 생성 증거 경로가 보존된다. 서버의 숨은 Board/overlay를 이 추론에 입력하지 않는다.
+
+이력 없는 raw 관측은 기존 KnowledgeSolver의 보수적인0~2lie 모델로 처리하고 성공을 가장하지 않는다. 온라인 snapshot/reconnect는 본인 공개 이력을 재생하며 전략/version을 함께 검증한다. flag는 이력의 mine 증명이 아니다. 프로토콜의 공개 DTO에 내부 등록 목록·확정 mine 목록·truth/lie flag를 넣지 않는다.
+
 ## 계산 복잡도와 예산
 
 N=256, frontier 크기 f. 단일 추론은 인접 합 O(N), 부분집합 비교 O(f²), 완전 모델 탐색은 최악 O(2^f); 두 lie 위치·delta 조합은 최악 O(f²) 계수를 더하며 미래 관측 증명은 추가 지수 탐색이다. 다항 시간이나 100ms를 보장하지 않는다. frontier 분할·memoization·고정 노드 상한을 적용하고 timeout이면 fail closed한다.

@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 pub const SOLVER_VERSION: u16 = 1;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SolverBudget {
     pub max_nodes: usize,
     pub max_component_cells: usize,

@@ -3,5 +3,6 @@ pub mod board;
 pub mod generator;
 pub mod knowledge;
 pub mod lie;
+pub mod policy;
 pub mod random;
 pub mod solver;

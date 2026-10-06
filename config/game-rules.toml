@@ -1,0 +1,17 @@
+version = 1
+width = 16
+height = 16
+mines = 40
+opening = 0
+duration_ms = 240000
+countdown_ms = 3000
+mine_stun_ms = 3000
+wrong_accuse_stun_ms = 3000
+reflect_stun_ms = 2000
+gauge_capacity = 20
+safe_gain = 1
+max_lies = 2
+reconnect_grace_ms = 30000
+room_expiry_ms = 600000
+max_commands_per_seat = 8192
+attack_strategy = "known-neighborhood-v1"

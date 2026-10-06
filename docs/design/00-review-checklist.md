@@ -1,5 +1,7 @@
 # 설계 리뷰·승인 체크리스트
 
+> 아래 초기 검토 결과와 검사 기록은 M0 당시 기록이다. 현재 작업 권한은 [최신 사용자 위임](../workflow/approval-record.md)과 [AGENTS](../../AGENTS.md)가 우선한다. #4·#5는 병합했고 #6은 [공개 후보 전략 ADR0010](../adr/0010-public-certified-attack-strategy.md)과 실제 검증 결과를 추가한다. 제품 코드가 없다는 아래 문장은 초기 시점의 기록이다.
+
 > 2026-10-06 · **사용자 변경·구현 시작 지시 반영, PR 병합 대기** · M0 문서 PR에 연결.
 > [지시 근거](../workflow/approval-record.md)를 기록했다. 공정성/성능 검증과 PR 병합 승인은 별도다. [승인 상태](../workflow/design-approval.json)
 

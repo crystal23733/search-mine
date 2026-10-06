@@ -4,7 +4,7 @@
 
 ## 이벤트 계약
 
-공통 필드는 event_id(UUID), event_version, occurred_at(UTC), received_at, guest_id(동의된 제품 분석 또는 필수 서버 기록 구분), session_id, locale, rules_version, source(server/client), mode다. 닉네임·원시 IP·토큰·시드·채팅·정답을 이벤트에 넣지 않는다. event_id unique로 중복 제거한다.
+공통 필드는 event_id(UUID), event_version, occurred_at(UTC), received_at, account_id(동의된 제품 분석 또는 필수 서버 기록 구분), session_id, locale, rules_version, source(server/client), mode다. 닉네임·OAuth subject·이메일·실명·사진·전화·원시 IP·토큰·시드·채팅·정답을 이벤트에 넣지 않는다. event_id unique로 중복 제거한다.
 
 | 이벤트 | 생성 주체 / 필드 | 신뢰 |
 |---|---|---|
@@ -22,13 +22,13 @@
 
 | 지표 | 분자 / 분모 / 창 | 출처 / 시각화 | 목표 / 조사 기준 |
 |---|---|---|---|
-| NSM | UTC주 정상 완료≥2 guest 수, 튜토리얼·abort 제외 | match_end / 주 추세 | 베이스라인 뒤 목표, 2주 연속 20% 감소 조사 |
+| NSM | UTC주 정상 완료≥2 account 수, 튜토리얼·abort 제외 | match_end / 주 추세 | 베이스라인 뒤 목표, 2주 연속 20% 감소 조사 |
 | 학습 완료율 | 완료 session / 시작 session, 24h 내 | tutorial / funnel | ≥80%, <60% 조사; skip 별도 |
-| 첫 판 완료율 | 정상 완료 guest / 첫 match_start guest, 24h | server / 비율 | 베타 기준선 설정 |
-| 재대결률 | 결과 10분 이내 다음 시작 guest / 정상 첫 결과 guest | server / 비율 | E2≥60%, <40% 재설계 |
+| 첫 판 완료율 | 정상 완료 account / 첫 match_start account, 24h | server / 비율 | 베타 기준선 설정 |
+| 재대결률 | 결과 10분 이내 다음 시작 account / 정상 첫 결과 account | server / 비율 | E2≥60%, <40% 재설계 |
 | 초대 전환 | invite_open 후 10분 내 친구 시작 session / invite_open session | client+server / funnel | 베이스라인 뒤 목표 |
 | 공유 클릭률 | share_click session / daily 완료 session | 동의 코호트 / 비율 | ≥5%, <2% 문구 조사 |
-| D7 | 첫 정상 판 날짜+7 UTC일 정상 판 guest / 해당 첫 판 guest | server / cohort | 표본≥100 뒤 목표 |
+| D7 | 첫 정상 판 날짜+7 UTC일 정상 판 account / 해당 첫 판 account | server / cohort | 표본≥100 뒤 목표 |
 | 입력 처리 | enqueue→상태 commit ms p95 / 5분 | 운영 histogram | ≤20ms, 15분 초과 조사 |
 | abort율 | 서버 abort / 시작 매치, 24h | server / 비율 | <1% 목표, ≥1% 조사 |
 | 현금 손익 | 실제 28일 광고 정산−전력·도메인·여유 | 월 수동 정산 / 숫자 | ≥0 목표, 음수면 확장 동결 |

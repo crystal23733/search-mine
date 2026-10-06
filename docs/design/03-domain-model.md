@@ -48,6 +48,6 @@ classDiagram
 | BotPolicy | 관측 기반 의사결정 | solver와 fake clock 입력, 진실 접근 없음 |
 | RulesSnapshot | 튜닝 불변 버전 | match 시작 hash 고정 |
 
-Clock, RandomSource, MatchRepository, GuestRepository, DailyRepository, Transport는 애플리케이션 포트다. SystemClock, SeededRng, SqlxRepositories, WsTransport는 인프라 어댑터다. 보드 생성의 난수와 게스트 토큰 생성의 암호학적 난수는 별도 구현체로 분리한다.
+Clock, RandomSource, MatchRepository, AccountRepository, AuthIdentityRepository, SessionRepository, OAuthProvider, CredentialVault, DailyRepository, Transport는 애플리케이션 포트다. SystemClock, SeededRng, SqlxRepositories, WsTransport는 인프라 어댑터다. 보드 생성의 난수와 계정 토큰 생성의 암호학적 난수는 별도 구현체로 분리한다.
 
 온라인 SnapshotProjection은 애플리케이션에서 비밀 필드를 제거한다. 인증·DB 저장·매칭·광고는 RuleEngine 책임 밖이다. Player/Match에 네트워크 핸들이나 sqlx 타입을 넣지 않는다.

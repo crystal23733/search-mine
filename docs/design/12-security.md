@@ -1,6 +1,6 @@
 # 12. STRIDE 위협 모델
 
-> 대응: FR01/07/09/12~14/16, NFR02/07 · 자산: 숨은 판·세션·게스트 개인정보·결과·가용성·백업.
+> 대응: FR01/07/09/12~14/16, NFR02/07 · 자산: 숨은 판·세션·계정 개인정보·결과·가용성·백업.
 
 ```mermaid
 flowchart LR
@@ -31,14 +31,14 @@ flowchart LR
 | Tampering | client 승패·지뢰·게이지·시간 조작 | intent만 수신·타입/범위 검사·서버 tick·revision/dedup | TS21 잘못된 메시지 |
 | Repudiation | 중복 명령·결과 부인 | command_id·server_seq·최종 결과 transaction·최소 감사 기록 | TS15 replay 중복 |
 | Information disclosure | seed·상대 셀·실제 lie 값 노출, 로그 토큰 | public DTO 분리·응답 회귀 검사·로그 redact·내부 DB | TS02/TS22 비밀 |
-| Denial of service | 메시지 폭주·생성 지수 탐색·코드 열거 | guest/IP rate·frame cap·연결/queue 상한·bounded worker·용량 초과 입장 거절 | TS21/TS27 부하 |
+| Denial of service | 메시지 폭주·생성 지수 탐색·코드 열거 | account/IP rate·frame cap·연결/queue 상한·bounded worker·용량 초과 입장 거절 | TS21/TS27 부하 |
 | Elevation of privilege | migration 권한 악용·광고 script XSS·컨테이너 root | DML 계정·별도 migration·CSP·escape·non-root·최소 mount | TS20/TS28 복구 |
 
 ## 인증·입력 한도 제안
 
-HTTPS 동일 origin. WS handshake Origin exact match, 쿠키/epoch 검사; CORS는 다른 origin을 허용하지 않는다. 상태 변경 HTTP는 CSRF token+Origin 검사. 세션 토큰은 CSPRNG≥256bit, 쿠키 최대30일, 삭제 즉시 철회. guest별1 active connection 제안, 재접속 시 이전 epoch 무효화.
+HTTPS 동일 origin. WS handshake Origin exact match, 쿠키/epoch 검사; CORS는 다른 origin을 허용하지 않는다. 상태 변경 HTTP는 CSRF token+Origin 검사. 세션 토큰은 CSPRNG≥256bit, 쿠키 최대30일, 삭제 즉시 철회. account별1 active connection 제안, 재접속 시 이전 epoch 무효화.
 
-WS8KiB/frame, 평균20cmd/s·burst40; guest 생성·room join·daily replay는 각각 별도 작은 quota. IP 한도는 NAT 공유 사용자 고려, trusted proxy만 IP 해석, 원시 IP 지속 저장 없이 단기 rate key. 닉네임은 HTML escape·Unicode 길이 제한; sqlx query parameters only. injection 문자열을 SQL이나 로그 포맷으로 조립하지 않는다.
+WS8KiB/frame, 평균20cmd/s·burst40; OAuth start/callback·room join·daily replay는 각각 별도 작은 quota. IP 한도는 NAT 공유 사용자 고려, trusted proxy만 IP 해석, 원시 IP 지속 저장 없이 단기 rate key. 닉네임은 HTML escape·Unicode 길이 제한; sqlx query parameters only. injection 문자열을 SQL이나 로그 포맷으로 조립하지 않는다.
 
 ## 치트 한계
 
@@ -51,3 +51,7 @@ online 비밀 seed와 정답을 숨기고 상대 진행률만 공개한다. 동�
 lockfile·보안 감사(cargo audit/pnpm audit)·최소 CI permissions, PR에서 비밀값 접근 금지. secret은 gitignore+host 권한으로 관리, 유출시 commit 삭제만 하지 않고 토큰을 회전한다. 백업·DB 접근은 운영자만; Tunnel 토큰·DB 사용자 분리. 종속성 취약점 예외는 근거·기간·이슈를 명시하고 조용히 감사 실패를 무시하지 않는다.
 
 정책·지역 동의는 [11](11-ads-consent.md), 개인정보 보존은 [07](07-database.md)에 둔다. 위협 모델은 광고 공급자 추가·프로토콜 변경 때 갱신한다.
+
+## OAuth 위협과 최소 개인정보
+
+[17 인증 설계](17-auth-privacy.md)와 TS31~35를 적용한다. provider mix-up/state replay/login CSRF → 고정 issuer/callback·브라우저/intent 바인딩·1회 소비. ID token 위조 → JWKS/signature/iss/aud/nonce/expiry 검증. 계정 연결 탈취 → 양쪽 재인증·unique constraint·이메일 자동 합치기 금지. token/과잉 claim 유출 → whitelist·로그 redact·서버 교환·Apple CredentialVault 목적 제한. 비밀번호·이메일 회원가입 경로는 만들지 않는다.

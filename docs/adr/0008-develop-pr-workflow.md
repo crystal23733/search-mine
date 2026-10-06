@@ -1,7 +1,7 @@
 # ADR 0008: develop과 이슈별 검토 PR
 
 - 날짜: 2026-10-06
-- 상태: 제안 — 사용자 설계 승인 대기
+- 상태: 채택 — 사용자 구현 시작 지시, PR 병합 승인 별도
 
 ## 배경
 
@@ -17,7 +17,7 @@ develop에서 type/issue-slug 분기, Conventional Commits, develop 대상 PR, s
 
 ## 영향과 검증
 
-1인 소유자는 자기 PR 공식 approval 불가. review count0+checks+사용자 수동 검토/명시 승인으로 운영하며 자동 병합하지 않는다.
+1인 소유자는 자기 PR 공식 approval 불가. review count0+checks를 사용한다. 2026-10-07 사용자가 모든 순차 작업의 검토·병합을 에이전트에 위임했다. 에이전트가 실제 코드/diff/검증을 리뷰하고 최신 head의 checks 통과 후 squash merge한다. 형식적인 자기 Approve 리뷰는 만들지 않는다.
 
 ## 관련 설계
 

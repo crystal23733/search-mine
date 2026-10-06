@@ -26,7 +26,7 @@ search-mine/
   tests/{fixtures,e2e,load}/
 ```
 
-Rust workspace와 pnpm workspace를 사용하되 버전은 구현 첫 이슈에서 공식 호환성 확인 후 pin한다. workspace root lockfiles를 커밋한다. 제품 파일은 설계 승인 전 생성하지 않는다. 문서 검사 스크립트·GitHub 템플릿·CI는 초기 작업 체계이므로 이번 PR에 포함한다.
+Rust workspace와 pnpm workspace를 사용한다. 사용자 지시에 따라 cargo add / pnpm add에는 버전 인자를 붙이지 않고 최신 안정 릴리스를 추가한다. manifest 자동 생성 범위와 lockfile로 실제 해결된 버전을 기록하고 CI는 locked/frozen 설치한다. 최신 릴리스 간 호환성은 검사하며 필요한 toolchain을 갱신한다. workspace root lockfiles를 커밋한다. 제품 파일은 설계 승인 전 생성하지 않는다. 문서 검사 스크립트·GitHub 템플릿·CI는 초기 작업 체계이므로 이번 PR에 포함한다.
 
 ```mermaid
 flowchart LR

@@ -6,16 +6,24 @@
 
 | 경로 | 계약 |
 |---|---|
-| POST /api/v1/guests | nickname 검증, guest view; HttpOnly Secure SameSite=Lax 쿠키 발급 |
-| PATCH /api/v1/guest | 닉네임 변경; CSRF·Origin 검사 |
-| DELETE /api/v1/guest | 세션 철회·참여 이탈·관련 개인정보 삭제 요청 |
+| GET /api/v1/auth/providers | 서버에서 설정/검수된 제공자 목록만, client secret/endpoint 없음 |
+| POST /api/v1/auth/{provider}/start | CSRF/Origin, login intent, one-use state·nonce·browser binding; authorize URL |
+| GET /api/v1/auth/{provider}/callback | provider별 code/state 거래 검증·서버 token 교환; 세션 회전/닉네임 진입; no-store |
+| GET /api/v1/me | 인증 필요, 내부 account ID와 게임용 nickname만, no-store |
+| PATCH /api/v1/me | 닉네임/약관 버전 검증, CSRF·Origin; 새 인증 후 onboarding 완료 |
+| POST /api/v1/auth/logout | 서비스 세션 철회, 제공자 전체 로그아웃과 구분 |
+| POST /api/v1/me/identities/{provider}/start | 최근 재인증 필요, account에 바인딩한 link 거래 |
+| DELETE /api/v1/me/identities/{provider} | 최근 재인증·CSRF, 마지막 로그인 수단은 해제 불가 |
+| POST /api/v1/me/export | 최근 재인증·CSRF, 본인 최소 데이터, token/subject 제외 |
+| DELETE /api/v1/me | 최근 재인증·CSRF, 전 세션 철회·개인정보 삭제·제공자 token 철회 |
+| POST /api/v1/auth/apple/notifications | Apple 서버 알림 서명/iss/aud 검증, 사용자 브라우저 API와 별도 |
 | GET /api/v1/bootstrap | 지원 locale·공개 rules·daily versions·server availability, 정답/시드 없음 |
 | GET /api/v1/daily/{date} | UTC date·공개 seed/solver version·rules hash, 캐시 가능 |
 | POST /api/v1/daily/{id}/attempts | attempt_id, input_log, elapsed 주장, version; replay 결과와 verification status |
 | GET /api/v1/daily/{id}/leaderboard | 페이지 제한, verified/local 구분, 닉네임 안전 렌더 |
 | GET /health/live, /health/ready | live 프로세스, ready DB·큐·capacity 상태, 내부 상세는 공개 금지 |
 
-변경 HTTP는 same-origin·CSRF 토큰 검사, 크기/레이트 제한을 적용한다. WS는 쿠키 인증과 Origin 검증, guest별 한 active session epoch로 탈취·다중 탭을 제어한다.
+변경 HTTP는 same-origin·CSRF 토큰 검사, 크기/레이트 제한을 적용한다. WS는 쿠키 인증과 Origin 검증, account별 한 active session epoch로 탈취·다중 탭을 제어한다.
 
 ## WS envelope와 상태 노출
 
@@ -122,9 +130,13 @@ sequenceDiagram
   C->>D: submit versioned attempt after recovery
   D->>R: replay public seed and input log
   R-->>D: valid rules and completion or rejection
-  D->>DB: first valid result per guest and day
+  D->>DB: first valid result per account and day
   DB-->>D: idempotent result
   D-->>C: verified completion with timing class
 ```
 
 서버가 start ticket·heartbeat로 측정한 online attempt만 verified_time 순위에 들어간다. 오프라인 replay는 verified_completion으로 **완료/오류 순위**에 별도 표기하며 클라이언트 시간은 개인 참고값이다. 입력 replay는 규칙 일관성을 검증하지만 수동 풀이·실제 오프라인 경과시간을 증명하지 못한다. 첫 유효 완료 한 건만 공식 기록, 이후 재시도는 연습. 구버전 replay verifier는 최소7일 보존 제안, 만료 기록은 개인 로컬 기록으로 유지한다.
+
+## OAuth 경계
+
+[17 인증](17-auth-privacy.md)을 따른다. Apple은 name/email scope 없는 code/query callback을 사용하고 form_post 추가는 별도 cookie 계약을 요구한다. callback은 일반 CSRF 헤더 대신 거래 검증을 수행한다. nickname 미설정 세션은 onboarding/me/logout/delete만 허용하고 대전·공식 기록에는 사용할 수 없다. 공식 attempt와 account 소유권을 검증하며 무계정 로컬 기록은 로그인 뒤 명시적 제출만 허용한다.

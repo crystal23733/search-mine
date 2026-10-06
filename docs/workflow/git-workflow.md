@@ -25,15 +25,15 @@ short kebab slug, 이슈 번호 필수. 오래된 `feature/front-atoms/develop` 
 3. 설계 승인 상태·요구 추적 확인. 승인 후 시나리오→Red→Green→Refactor.
 4. 관련 검사와 diff·비밀 점검 후 commit/push, develop base PR을 연다.
 5. PR에 `Closes #N`, milestone, 검증 결과, 설계 변경과 남은 가정을 적는다. 설계 승인처럼 별도 판단 이슈는 `Refs #N`으로만 연결한다.
-6. 사용자 검토/수정 요청 반영. 리뷰 없이 자동 병합하지 않는다.
-7. 명시 병합 승인과 checks 통과·최신 head 확인 후 squash merge한다. 완료 이슈 상태를 조회하고 자동종료 안 됐으면 수동 종료한다.
+6. 에이전트가 코드/diff·인수 조건·테스트를 리뷰하고 수정한다. 사용자 추가 지시는 즉시 반영한다.
+7. 2026-10-07 전체 작업·병합 위임에 따라 checks 통과·최신 head 확인 후 squash merge한다. 매 PR마다 사용자 승인 대기를 반복하지 않는다. 완료 이슈 상태를 조회하고 자동종료 안 됐으면 수동 종료한다.
 8. 모든 이슈와 출구가 충족된 milestone만 닫고 다음 작업을 시작한다.
 
 GitHub 자동 이슈 종료는 PR이 기본 브랜치에 병합될 때 작동한다. develop이 기본이므로 `Closes #N`을 사용할 수 있지만 실제 상태를 반드시 확인한다. [공식 문서](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue)
 
 ## 1인 리뷰·브랜치 보호
 
-자기 PR에는 공식 Approve 리뷰를 할 수 없어 required review count=0을 제안한다. 필수 PR·docs/contribution-gate checks·conversation resolution·force push/delete 금지와 **사용자의 PR 검토 및 수동/명시 승인 병합**을 결합한다. 사용자 리뷰를 자동 self-review로 대체하지 않는다. 추가 리뷰어가 생기면 count1로 바꾼다. GitHub 기능/플랜 제약으로 보호 API 적용이 불가하면 그 사실을 기록하고 workflow 검사는 계속 유지한다.
+자기 PR에는 공식 Approve 리뷰를 할 수 없어 required review count=0을 제안한다. 필수 PR·docs/contribution-gate checks·conversation resolution·force push/delete 금지와 **사용자 위임에 따른 에이전트 코드 리뷰·검사·병합**을 결합한다. 형식적인 GitHub 자기 Approve 리뷰는 만들지 않고 실제 코드/테스트 리뷰 결과를 PR에 기록한다. 추가 리뷰어가 생기면 count1로 바꾼다. GitHub 기능/플랜 제약으로 보호 API 적용이 불가하면 그 사실을 기록하고 workflow 검사는 계속 유지한다.
 
 제품 경로 변경 PR은 base develop의 design-approval.json이 approved여야 CI가 통과한다. 승인 기록과 제품 구현을 같은 PR에 묶어 게이트를 우회하지 않는다. approved_by/approved_at/evidence/reviewed_commit을 승인 근거와 함께 기록한다. 사용자 채팅 또는 PR의 명시적 설계 승인 없이는 기록을 바꾸지 않는다.
 

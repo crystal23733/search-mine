@@ -38,4 +38,4 @@ flowchart LR
 
 M0에는 docs와 contribution-gate만 실제 구현한다. 제품 테스트·coverage·DB·빌드 CI는 승인 뒤 M1 첫 이슈에서 추가하고, 현재 통과했다고 주장하지 않는다. PR은 해당 변경에 필요한 검사만 실행하되 전체 구현 단계별 required checks를 확장한다. k6·복구는 사용자 장비에서 별도 수동 증거를 PR에 첨부한다.
 
-CI는 contents read 기본, untrusted PR에 secret 금지, dependency version pin과 무료 실행량을 확인한다. Mermaid는 GitHub 지원 chart 문법만 사용해 실제 parse 검사한다.
+CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존성 추가와 lockfile 재현 설치과 무료 실행량을 확인한다. Mermaid는 GitHub 지원 chart 문법만 사용해 실제 parse 검사한다.

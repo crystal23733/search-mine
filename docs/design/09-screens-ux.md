@@ -5,8 +5,11 @@
 ```mermaid
 flowchart TD
   Entry[언어 URL과 초대 링크] --> Consent[필수 저장소 고지와 CMP 선택]
-  Consent --> Guest[게스트 이름]
-  Guest --> Tutorial[첫 접속 튜토리얼]
+  Consent --> Auth[OAuth 최소 로그인]
+  Consent --> Local[무계정 로컬 연습]
+  Auth --> Nickname[게임용 닉네임]
+  Nickname --> Tutorial[첫 접속 튜토리얼]
+  Local --> Tutorial
   Tutorial --> Home[홈]
   Home --> Quick[빠른 대전 대기]
   Home --> Friend[친구 방]
@@ -22,7 +25,7 @@ flowchart TD
   Home --> Offline[서버 장애 로컬 연습]
 ```
 
-CMP는 광고 선택 흐름이며 미동의도 게스트/튜토리얼로 진행한다. 초대 링크의 만료/입장 상태는 튜토리얼 뒤 확인하며 방 코드 외 신원정보를 URL에 넣지 않는다.
+CMP는 광고 선택 흐름이며 미동의도 OAuth/로컬 연습/튜토리얼로 진행한다. 초대 링크의 만료/입장 상태는 튜토리얼 뒤 확인하며 방 코드 외 신원정보를 URL에 넣지 않는다.
 
 ```text
 홈 (좁은 화면)
@@ -64,3 +67,7 @@ PC: 클릭 open, 우클릭 flag, 열린 숫자의 메뉴에서 accuse, A로 지�
 접근 가능한 DOM grid에 cell label(좌표·공개 숫자·flag·상태), roving tabindex와 aria-live 결과/기절/연결을 둔다. 공개 숫자만 읽으며 숨은 true value·lie 여부를 aria-label에 넣지 않는다. 키보드만으로 대전·지목·설정·동의 가능. reduced-motion, 충분한 대비, 색+아이콘, 광고와 조작의 간격, 초점 복구를 E2E와 수동 검수한다.
 
 오류 상태는 만료 방·full·unsupported version·reconnect·offline cache missing·daily rejected·ads unavailable을 안정된 번역키로 제공한다. 서버 장애는 승패로 표시하지 않고 “대전 취소”라고 표시한다.
+
+## 제공된 디자인 적용
+
+[18 화면별 기준](18-design-layout.md)에 design_layout 원본 18개와 상태·반응형·토큰·차이를 연결했다. 로그인 기본 영역에 Google·Apple·카카오·네이버를 제공한다. 이미지의 Discord 기본 버튼은 확장 영역 후보로 이동한다. 로그인 없이 즉시 가능한 기능은 로컬 연습이며 온라인 대전은 OAuth가 필요하다. 닉네임은 제공자 실명 대신 직접 정한다.

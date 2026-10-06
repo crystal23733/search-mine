@@ -1,38 +1,37 @@
-# 마일스톤과 작업 백로그
+# 마일스톤·작업 백로그
 
-> GitHub 실제 생성 완료 · 선행 작업의 PR 병합·이슈 종료 후 다음 작업을 시작한다.
-> 현재는 M0 초기 설정 PR과 별도 설계 승인 대기이며 M1~M6는 시작하지 않았다.
+> 기본 브랜치 develop. 작업은 선행 PR 병합/이슈 종료 후 시작하고 완료 PR을 사용자 리뷰 뒤 병합한다.
 
 ## 마일스톤
 
-| 마일스톤 | 완료 결과 |
+| 마일스톤 | 출구 결과 |
 |---|---|
 | [M0 · 기획·설계·작업 체계](https://github.com/crystal23733/search-mine/milestone/1) | 초기화와 문서·작업 규칙 PR 검토, 사용자 설계 승인 기록. 승인 전 제품 구현 금지. |
 | [M1 · 공정한 Rust 코어](https://github.com/crystal23733/search-mine/milestone/2) | 노게스·두 거짓말 간파·규칙·공개 관측 봇·native/WASM 재현. E4 반례0과 성능/채택률 근거. |
 | [M2 · 싱글 플레이 웹 경험](https://github.com/crystal23733/search-mine/milestone/3) | Atomic UI·8언어·접근성·로컬 봇/튜토리얼·데일리·오프라인. 첫 가치와 E1/E2 검증. |
-| [M3 · 권위 서버와 온라인 대전](https://github.com/crystal23733/search-mine/milestone/4) | 게스트·PostgreSQL·WS·매칭/친구방·재접속·데일리 순위·자체 이벤트. 실DB/WS/E2E 통과. |
+| [M3 · 권위 서버와 온라인 대전](https://github.com/crystal23733/search-mine/milestone/4) | 최소 OAuth 계정(Google·Apple·카카오·네이버)·PostgreSQL·WS·매칭/친구방·재접속·데일리 순위·자체 이벤트. 실DB/WS/E2E 통과. |
 | [M4 · 동의·광고·다국어 공개 준비](https://github.com/crystal23733/search-mine/milestone/5) | Google 인증 CMP·8언어 정책·실제ads.txt·3판 빈도·SEO. 동의 거부/실패 무차단. |
 | [M5 · 홈서버 운영 검증](https://github.com/crystal23733/search-mine/milestone/6) | Compose·Tunnel·DB 격리·별도 매체 백업·복구/롤백·실측 용량·회선 약관 확인. |
 | [M6 · 베타와 현금 손익 검증](https://github.com/crystal23733/search-mine/milestone/7) | 플레이테스트·수치튜닝·NSM·광고 정산/전력 실측. 28일 현금 손익을 평가하고 확장은 사용자 결정. |
 
-## 작업 이슈
+## 이슈
 
-| 이슈 / 작업 | 단계 | 선행 | 요구 / 시나리오 | 인수 조건 |
+| 작업 | 단계 | 선행 작업 | 요구 / 시나리오 | 인수 조건 |
 |---|---|---|---|---|
 | [#2 chore: 프로젝트 초기화와 설계 리뷰 준비](https://github.com/crystal23733/search-mine/issues/2) | M0 | 없음 | NFR08 / TS30 | 원문 보존·기존 프로젝트 삭제; 기획21·설계16·ADR8·에이전트 규칙; 링크/Mermaid 검사와 develop 검토 PR |
-| [#3 docs: 제품 설계 승인과 구현 게이트 기록](https://github.com/crystal23733/search-mine/issues/3) | M0 | [#2](https://github.com/crystal23733/search-mine/issues/2) | FR01~16, NFR01~08 / TS01~30 | 사용자가 검토 체크리스트의 제안을 명시 승인; approved_by/approved_at/evidence/reviewed_commit 기록; 승인 기록 PR을 먼저 병합 |
-| [#4 chore: Rust·pnpm 워크스페이스와 제품 CI 구성](https://github.com/crystal23733/search-mine/issues/4) | M1 | [#3](https://github.com/crystal23733/search-mine/issues/3) | NFR01/05/08 / TS30 | 공식 호환 버전 pin·lockfile; fmt/clippy/lint/typecheck·단위/실DB/E2E 실행 경로; 공유 타입 생성 검사 |
+| [#3 docs: OAuth·최소 정보·디자인 설계 수정과 구현 시작 기록](https://github.com/crystal23733/search-mine/issues/3) | M0 | [#2](https://github.com/crystal23733/search-mine/issues/2) | FR01~16, NFR01~08 / TS01~36 | 사용자의 OAuth/최소 수집/4개 제공자/디자인·개발 지시 반영; 설계18·ADR9·TS36; 승인 근거 기록; 선행 PR과 설계 수정 PR 검증·승인 후 병합 |
+| [#4 chore: Rust·pnpm 워크스페이스와 제품 CI 구성](https://github.com/crystal23733/search-mine/issues/4) | M1 | [#3](https://github.com/crystal23733/search-mine/issues/3) | NFR01/05/08 / TS30 | 최신 안정 의존성 버전 인자 없이 추가·lockfile; fmt/clippy/lint/typecheck·단위/실DB/E2E 실행 경로; 공유 타입 생성 검사 |
 | [#5 feat(core): 결정론 보드와 노게스 생성·솔버](https://github.com/crystal23733/search-mine/issues/5) | M1 | [#4](https://github.com/crystal23733/search-mine/issues/4) | FR02, NFR04 / TS02/03/27 | 고정 오프닝·seed 버전; 관측 기반 안전 추론과 풀이 증거; 작은 판 전수·10k seed 생성 벤치 |
 | [#6 feat(core): 두 거짓말의 안전 간파 증명 검증](https://github.com/crystal23733/search-mine/issues/6) | M1 | [#5](https://github.com/crystal23733/search-mine/issues/5) | FR04 / TS06/07 | 공개 정보만으로 모델·증명 구성; 두 overlay·모호성·timeout fail closed; E4 반례0과 공격 채택률 보고 |
 | [#7 feat(core): 게이지·지목·기절·승패 규칙](https://github.com/crystal23733/search-mine/issues/7) | M1 | [#6](https://github.com/crystal23733/search-mine/issues/6) | FR03/04/05/15 / TS04/05/06/08/09/14/27 | 단일 config와 시작 snapshot; 기절/동시입력/종료 경계; 중복 safe·command 효과 방지 |
 | [#8 feat(core): 공개 관측으로 동작하는 3단계 봇](https://github.com/crystal23733/search-mine/issues/8) | M1 | [#7](https://github.com/crystal23733/search-mine/issues/7) | FR06 / TS11 | BotPolicy에 숨은 Board 접근 없음; 난이도 간격·지목 지연; 막힌 판에서 추측하지 않음 |
 | [#9 feat(core): WASM 브리지와 public 프로토콜 타입 생성](https://github.com/crystal23733/search-mine/issues/9) | M1 | [#8](https://github.com/crystal23733/search-mine/issues/8) | NFR01/02 / TS02/22/30 | wasm-bindgen local 경계; native/WASM fixture 일치; Rust public DTO→TS, secret 타입 제외 |
-| [#10 feat(web): Atomic UI·디자인 토큰·8언어 shell](https://github.com/crystal23733/search-mine/issues/10) | M2 | [#9](https://github.com/crystal23733/search-mine/issues/9) | FR11, NFR01/03/06 / TS19/26 | Atoms~Pages 경계·DI; en키 계약과8언어 URL; 초기 번들·모션/대비 |
+| [#10 feat(web): Atomic UI·디자인 토큰·8언어 shell](https://github.com/crystal23733/search-mine/issues/10) | M2 | [#9](https://github.com/crystal23733/search-mine/issues/9) | FR11, NFR01/03/06 / TS19/26/36 | Atoms~Pages 경계·DI; en키 계약과8언어 URL; 초기 번들·모션/대비; design_layout 18개·설계18 토큰/모바일/PC 기준 |
 | [#11 feat(web): Pixi 보드·터치·키보드 조작](https://github.com/crystal23733/search-mine/issues/11) | M2 | [#10](https://github.com/crystal23733/search-mine/issues/10) | FR03/04/05 / TS04/09/26 | 공개 View만 렌더; pan/zoom/long-press중복 방지; DOM grid와 접근성·fps 측정 |
 | [#12 feat(web): 튜토리얼과 로컬 봇 대전](https://github.com/crystal23733/search-mine/issues/12) | M2 | [#11](https://github.com/crystal23733/search-mine/issues/11) | FR06/08 / TS11/13 | 공격/지목 각1회; skip/replay와 초대 유지; E1 이해 관찰·3난이도 local 표시 |
 | [#13 feat(web): UTC 데일리·개인 기록·공유 카드](https://github.com/crystal23733/search-mine/issues/13) | M2 | [#12](https://github.com/crystal23733/search-mine/issues/12) | FR09 / TS17/18 | UTC/버전 재현; 정답·닉네임 없는 공유; 개인/unverified 결과 구분 |
 | [#14 feat(web): 오프라인 캐시와 대기 제출 저장](https://github.com/crystal23733/search-mine/issues/14) | M2 | [#13](https://github.com/crystal23733/search-mine/issues/13) | FR10 / TS18 | shell/core/locale/daily cache; 저장소 실패 fallback; 온라인 권위 이관 금지·업데이트 경계 |
-| [#15 feat(server): 게스트 인증과 PostgreSQL 저장 경계](https://github.com/crystal23733/search-mine/issues/15) | M3 | [#14](https://github.com/crystal23733/search-mine/issues/14) | FR01/16, NFR02 / TS01/20/29 | sqlx migration·DML 분리; HttpOnly token hash·CSRF/Origin; 삭제/만료·실DB 테스트 |
+| [#15 feat(server): 4개 OAuth 인증과 최소 계정·PostgreSQL 저장 경계](https://github.com/crystal23733/search-mine/issues/15) | M3 | [#14](https://github.com/crystal23733/search-mine/issues/14) | FR01/16, NFR02 / TS01/20/29/31~36 | Google·Apple·카카오·네이버 실제 연동; provider port/adapter; 최소 scope·claim whitelist·비밀번호 없음; 거래 바인딩/JWKS·HttpOnly·CSRF; 명시적 연결/export/delete·Apple 암호화 credential/철회; sqlx migration·실DB·E2E |
 | [#16 feat(server): 권위 매치 actor와 WebSocket 계약](https://github.com/crystal23733/search-mine/issues/16) | M3 | [#15](https://github.com/crystal23733/search-mine/issues/15) | FR02~05/15 / TS14/20/21/22 | 직렬입력·deadline·공개DTO; frame/rate/capacity; 결과 transaction 1회 |
 | [#17 feat(server): 빠른 대전 백필과 친구 방](https://github.com/crystal23733/search-mine/issues/17) | M3 | [#16](https://github.com/crystal23733/search-mine/issues/16) | FR06/07 / TS10/12 | 10초 원자 백필·봇표시; 만료8문자 코드·2seat; cancel/ready/열거제한 |
 | [#18 feat(server): 재접속·중복 명령·장애 판정](https://github.com/crystal23733/search-mine/issues/18) | M3 | [#17](https://github.com/crystal23733/search-mine/issues/17) | FR14 / TS15/16 | 30초유예·epoch·snapshot; duplicate ack; forfeit/abandon/abort 구분 |
@@ -47,19 +46,6 @@
 | [#27 chore(product): 플레이테스트·공정성·튜닝 평가](https://github.com/crystal23733/search-mine/issues/27) | M6 | [#26](https://github.com/crystal23733/search-mine/issues/26) | FR15/16 / TS07/13/27 | E1/E2 모집·원자료/표본; 수치수정은설계먼저; NSM·재대결·공정성 출구평가 |
 | [#28 chore(product): 28일 광고 현금 손익과 성장 평가](https://github.com/crystal23733/search-mine/issues/28) | M6 | [#27](https://github.com/crystal23733/search-mine/issues/27) | FR12/16 / TS23/29 | 전력·도메인·정산실측; 동의/광고코호트 편향; E5·확장여부 사용자 결정 |
 
-## 상태와 운영
+사용자가 전체 작업의 리뷰·검사·병합·순차 진행을 위임했다. M0 #29→#30 병합 후 #4부터 TDD 구현한다. 외부 키가 없는 #15 실계정 검수는 후속 사용자 입력 이슈에 남기고 계약 테스트를 포함한 구현과 이후 작업을 계속한다. 실제 인증/검수 완료를 가장하지 않는다.
 
-#2는 초기 설정/문서 PR 검토, #3은 사용자 명시 설계 승인 기록이다. #2 병합만으로 #3을 자동 종료하지 않는다. #4부터는 승인 기록이 develop에 병합된 뒤 시작한다. `status:blocked`는 선행 이슈/승인 대기를 뜻하며 작업 시작 시 해당 이슈만 제거한다.
-
-기존 [#1 원자 컴포넌트 작업](https://github.com/crystal23733/search-mine/issues/1)은 삭제한 과거 프로젝트의 작업이다. 초기화 PR에서 함께 종료하도록 연결하며 새 컴포넌트는 #10/#11에서 설계에 맞춰 작성한다. 기존 원격 main·feature 브랜치는 보존한다.
-
-완료 이슈는 PR 병합 뒤 상태를 조회하고 자동종료가 안 됐으면 닫는다. 마일스톤은 모든 작업과 출구 결과가 충족된 뒤 닫는다. 이 문서는 실시간 상태판이 아니며 실제 open/closed는 GitHub를 기준으로 확인한다. `backlog.json`은 작업 정의와 번호 연결의 기계 판독 원천이다.
-
-## 적용된 저장소 설정
-
-- 기본 브랜치: develop 유지.
-- develop 보호: PR 필수, docs/contribution-gate 필수 checks, 최신 base 요구, 대화 해결, 관리자 포함, 선형 이력, 강제 푸시/삭제 금지.
-- squash merge 사용, rebase merge/auto merge 비활성화, 병합 후 작업 브랜치 자동 삭제.
-- 1인 저장소 공식 approval count는0; 사용자 수동 검토/명시 승인 뒤 병합한다.
-
-초기 PR의 검사 workflow가 develop에 들어가기 전에도 해당 PR에서 두 checks를 실행한다. 정책 출처는 [Git workflow](git-workflow.md)에 있다.
+백로그 데이터의 원천은 [backlog.json](backlog.json)이다. 변경 때 GitHub 이슈 제목·인수 조건과 함께 갱신한다.

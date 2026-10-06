@@ -1,0 +1,59 @@
+{
+  "source_commit": "93866018e77ba3c780225c76d3f0424fd4012767",
+  "tool": "cargo-llvm-cov 0.9.1",
+  "scope": "liar-core source; tests/examples excluded",
+  "totals": {
+    "branches": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "functions": {
+      "count": 185,
+      "covered": 181,
+      "percent": 97.83783783783784
+    },
+    "instantiations": {
+      "count": 372,
+      "covered": 183,
+      "percent": 49.193548387096776
+    },
+    "lines": {
+      "count": 2180,
+      "covered": 2133,
+      "percent": 97.8440366972477
+    },
+    "mcdc": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "regions": {
+      "count": 3389,
+      "covered": 3267,
+      "notcovered": 122,
+      "percent": 96.40011802891708
+    }
+  },
+  "wasm_bytes": 409780,
+  "wasm_gzip_bytes": 154908,
+  "fixture_sha256": "5bcbb4435d6ec7d17812386a52d69576f42bbfef5808ff6cf2317be3eafd5195",
+  "fixture_bytes": 578883,
+  "browser_projects": [
+    "Chromium desktop",
+    "Chromium Pixel 7 viewport"
+  ],
+  "native_wasm_seeds": [
+    "0",
+    "42",
+    "18446744073709551615"
+  ],
+  "not_measured": [
+    "branch coverage",
+    "overall application coverage",
+    "mini PC performance",
+    "physical device FPS"
+  ]
+}

@@ -15,3 +15,24 @@ reconnect_grace_ms = 30000
 room_expiry_ms = 600000
 max_commands_per_seat = 8192
 attack_strategy = "known-neighborhood-v1"
+
+[bots.easy]
+decision_ms = 900
+accusation_ms = 1500
+max_nodes = 5000
+max_component_cells = 12
+max_constraints = 256
+
+[bots.normal]
+decision_ms = 500
+accusation_ms = 800
+max_nodes = 50000
+max_component_cells = 18
+max_constraints = 512
+
+[bots.hard]
+decision_ms = 180
+accusation_ms = 250
+max_nodes = 200000
+max_component_cells = 22
+max_constraints = 1024

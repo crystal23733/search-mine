@@ -2,5 +2,7 @@
 export type PublicAccount = { id: string, nickname: string, };
 export type ServiceStatus = "ok" | "unavailable";
 export type HealthResponse = { status: ServiceStatus, };
-export type GameRules = { version: number, width: number, height: number, mines: number, opening: number, duration_ms: number, countdown_ms: number, mine_stun_ms: number, wrong_accuse_stun_ms: number, reflect_stun_ms: number, gauge_capacity: number, safe_gain: number, max_lies: number, reconnect_grace_ms: number, room_expiry_ms: number, max_commands_per_seat: number, attack_strategy: string, };
+export type GameRules = { version: number, width: number, height: number, mines: number, opening: number, duration_ms: number, countdown_ms: number, mine_stun_ms: number, wrong_accuse_stun_ms: number, reflect_stun_ms: number, gauge_capacity: number, safe_gain: number, max_lies: number, reconnect_grace_ms: number, room_expiry_ms: number, max_commands_per_seat: number, attack_strategy: string, bots: BotProfiles, };
 export type RulesSnapshot = { rules: GameRules, hash: string, solver_version: number, rng_version: number, };
+export type BotSettings = { decision_ms: number, accusation_ms: number, max_nodes: number, max_component_cells: number, max_constraints: number, };
+export type BotProfiles = { easy: BotSettings, normal: BotSettings, hard: BotSettings, };

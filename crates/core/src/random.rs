@@ -22,7 +22,7 @@ impl RandomSource for SeededRng {
     }
 }
 /// Deterministic Fisher–Yates using unbiased bounded draws from the supplied source.
-pub fn shuffle<T>(values: &mut [T], random: &mut impl RandomSource) {
+pub fn shuffle<T>(values: &mut [T], random: &mut (impl RandomSource + ?Sized)) {
     for index in (1..values.len()).rev() {
         let upper = (index + 1) as u64;
         let threshold = upper.wrapping_neg() % upper;

@@ -75,7 +75,7 @@
       "deps": [
         "approval"
       ],
-      "acceptance": "공식 호환 버전 pin·lockfile; fmt/clippy/lint/typecheck·단위/실DB/E2E 실행 경로; 공유 타입 생성 검사",
+      "acceptance": "최신 안정 의존성 버전 인자 없이 추가·lockfile; fmt/clippy/lint/typecheck·단위/실DB/E2E 실행 경로; 공유 타입 생성 검사",
       "issue": 4
     },
     {

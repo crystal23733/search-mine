@@ -27,7 +27,7 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→사용자 리뷰→승인 후 squash merge→이슈 종료 확인→다음 작업 순서입니다. 초기 설정 #2와 설계 수정 #3을 병합한 뒤 #4 Rust·pnpm 개발 환경으로 진행합니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. 초기 설정 #2와 설계 수정 #3을 병합한 뒤 #4 Rust·pnpm 개발 환경으로 진행합니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 

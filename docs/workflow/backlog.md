@@ -20,7 +20,7 @@
 |---|---|---|---|---|
 | [#2 chore: 프로젝트 초기화와 설계 리뷰 준비](https://github.com/crystal23733/search-mine/issues/2) | M0 | 없음 | NFR08 / TS30 | 원문 보존·기존 프로젝트 삭제; 기획21·설계16·ADR8·에이전트 규칙; 링크/Mermaid 검사와 develop 검토 PR |
 | [#3 docs: OAuth·최소 정보·디자인 설계 수정과 구현 시작 기록](https://github.com/crystal23733/search-mine/issues/3) | M0 | [#2](https://github.com/crystal23733/search-mine/issues/2) | FR01~16, NFR01~08 / TS01~36 | 사용자의 OAuth/최소 수집/4개 제공자/디자인·개발 지시 반영; 설계18·ADR9·TS36; 승인 근거 기록; 선행 PR과 설계 수정 PR 검증·승인 후 병합 |
-| [#4 chore: Rust·pnpm 워크스페이스와 제품 CI 구성](https://github.com/crystal23733/search-mine/issues/4) | M1 | [#3](https://github.com/crystal23733/search-mine/issues/3) | NFR01/05/08 / TS30 | 공식 호환 버전 pin·lockfile; fmt/clippy/lint/typecheck·단위/실DB/E2E 실행 경로; 공유 타입 생성 검사 |
+| [#4 chore: Rust·pnpm 워크스페이스와 제품 CI 구성](https://github.com/crystal23733/search-mine/issues/4) | M1 | [#3](https://github.com/crystal23733/search-mine/issues/3) | NFR01/05/08 / TS30 | 최신 안정 의존성 버전 인자 없이 추가·lockfile; fmt/clippy/lint/typecheck·단위/실DB/E2E 실행 경로; 공유 타입 생성 검사 |
 | [#5 feat(core): 결정론 보드와 노게스 생성·솔버](https://github.com/crystal23733/search-mine/issues/5) | M1 | [#4](https://github.com/crystal23733/search-mine/issues/4) | FR02, NFR04 / TS02/03/27 | 고정 오프닝·seed 버전; 관측 기반 안전 추론과 풀이 증거; 작은 판 전수·10k seed 생성 벤치 |
 | [#6 feat(core): 두 거짓말의 안전 간파 증명 검증](https://github.com/crystal23733/search-mine/issues/6) | M1 | [#5](https://github.com/crystal23733/search-mine/issues/5) | FR04 / TS06/07 | 공개 정보만으로 모델·증명 구성; 두 overlay·모호성·timeout fail closed; E4 반례0과 공격 채택률 보고 |
 | [#7 feat(core): 게이지·지목·기절·승패 규칙](https://github.com/crystal23733/search-mine/issues/7) | M1 | [#6](https://github.com/crystal23733/search-mine/issues/6) | FR03/04/05/15 / TS04/05/06/08/09/14/27 | 단일 config와 시작 snapshot; 기절/동시입력/종료 경계; 중복 safe·command 효과 방지 |
@@ -46,6 +46,6 @@
 | [#27 chore(product): 플레이테스트·공정성·튜닝 평가](https://github.com/crystal23733/search-mine/issues/27) | M6 | [#26](https://github.com/crystal23733/search-mine/issues/26) | FR15/16 / TS07/13/27 | E1/E2 모집·원자료/표본; 수치수정은설계먼저; NSM·재대결·공정성 출구평가 |
 | [#28 chore(product): 28일 광고 현금 손익과 성장 평가](https://github.com/crystal23733/search-mine/issues/28) | M6 | [#27](https://github.com/crystal23733/search-mine/issues/27) | FR12/16 / TS23/29 | 전력·도메인·정산실측; 동의/광고코호트 편향; E5·확장여부 사용자 결정 |
 
-M0 #29 초기 설정과 #3 설계 변경 PR은 사용자 병합 승인 대기다. 이후 #4부터 TDD 구현한다. #15는 필수 4개 OAuth 제공자의 실제 검수까지 포함하며 명세만 작성하고 완료 처리하지 않는다.
+사용자가 전체 작업의 리뷰·검사·병합·순차 진행을 위임했다. M0 #29→#30 병합 후 #4부터 TDD 구현한다. 외부 키가 없는 #15 실계정 검수는 후속 사용자 입력 이슈에 남기고 계약 테스트를 포함한 구현과 이후 작업을 계속한다. 실제 인증/검수 완료를 가장하지 않는다.
 
 백로그 데이터의 원천은 [backlog.json](backlog.json)이다. 변경 때 GitHub 이슈 제목·인수 조건과 함께 갱신한다.

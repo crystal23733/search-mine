@@ -64,6 +64,8 @@ flowchart TD
 
 Pixi도 CellDisplay→BoardDisplay, FlagDisplay, StunEffect, GaugeDisplay로 나누고 재사용한다. CellAtom은 DOM 접근성 표현이고 CellDisplay는 Canvas 표시로 역할이 다르다. 숫자/상태의 판정 로직을 복제하지 않고 같은 PublicCellView를 사용한다.
 
+#11의 pool/dirty 렌더·DOM fallback·조작 경계는 [ADR0015](../adr/0015-public-board-rendering-and-input.md)를 따른다. 게임 명령 처리와 실제 로컬 대전 연결은 #12 controller가 맡는다.
+
 ## 토큰과 상태
 
 design-tokens 원천에 semantic color(background/surface/text/danger/flag/lieFeedback), spacing(4/8/12/16/24), typography(scale·locale fonts), radius, elevation, duration, motion policy를 둔다. CSS custom property와 Pixi 숫자값을 생성한다. 색만으로 mine/flag/stun을 구분하지 않는다. 예산과 토큰값은 실제 저사양 기기 테스트로 조정한다.

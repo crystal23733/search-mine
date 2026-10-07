@@ -174,7 +174,9 @@ test("zoom and keyboard scrolling remain inside the viewport across sizes", asyn
 test("manual dirty renderer records development-browser timings", async ({
   page,
 }, info) => {
-  await mount(page);
+  // This benchmark measures one renderer, matching the application's single board.
+  test.setTimeout(60_000);
+  await page.goto("/en/settings");
   const measurement = await page.evaluate(async (initial) => {
     const path = "/src/board/pixi.ts";
     const { createPixiBoard } = await import(/* @vite-ignore */ path);
@@ -221,13 +223,11 @@ test("manual dirty renderer records development-browser timings", async ({
   expect(measurement.renderMs.every((n) => Number.isFinite(n) && n >= 0)).toBe(
     true,
   );
-  if (process.env.LIAR_CAPTURE_DESIGN) {
-    mkdirSync(".tmp/board-metrics", { recursive: true });
-    writeFileSync(
-      `.tmp/board-metrics/${info.project.name}.json`,
-      JSON.stringify(measurement),
-    );
-  }
+  mkdirSync(".tmp/board-metrics", { recursive: true });
+  writeFileSync(
+    `.tmp/board-metrics/${info.project.name}.json`,
+    JSON.stringify(measurement),
+  );
   await test.info().attach("board-development-timings", {
     body: JSON.stringify(measurement),
     contentType: "application/json",

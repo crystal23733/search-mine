@@ -1,5 +1,7 @@
 # #12 로컬 봇 대전·튜토리얼 검증
 
+PR39 초기 CI head2a1f578에서 제품 동작35개는 통과했지만 모바일 renderer120표본 측정이30초 test timeout으로 실패했다. 측정 전용 검사에서 불필요한 다른 보드 context를 없애 실제 앱과 같은 renderer1개를 사용한다. 표본120개는 유지하며 이 측정만60초 실행 상한을 사용한다. FPS 목표를 완화한 것이 아니고16.7ms 목표 검증은 #26에 남는다. PC/모바일 원표본을 CI artifact로 보존하며 수정 뒤 전체 Chromium36개와 docs88/Mermaid34가 다시 통과했다. 최신 수정 head의 원격 검사도 별도 확인한다.
+
 FR06/08, TS11/13/36 · [ADR0016](../adr/0016-local-match-controller-and-training-fixture.md). 코드 `1f7bc94500c9ed07010444b804de52e21f0f6393`, 선행 PR38/#11의 병합·종료를 확인한 뒤 구현했다.
 
 `/locale/practice`는 실제 WASM RuleEngine과 공개 관측 BotPolicy의 easy/normal/hard를 사용한다. 로컬 CSPRNG seed·Worker·단일 FIFO controller, 양쪽 동일 zero 오프닝·countdown·공개 진행/시간/gauge/stun/stat/result를 연결했다. UI는 성공·숫자·승패를 추측하지 않고 public view/ack를 반영한다. 입력 ID/seq 재전송, 64입력 상한·tick 합치기, 처리 시각·terminal·늦은 init·unmount·실패 시 타이머/Worker 정리를 검증했다. 난이도/새 대전은 세션을 교체하고 locale/접근성은 세션을 유지한다.

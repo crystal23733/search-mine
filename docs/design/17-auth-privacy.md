@@ -106,7 +106,7 @@ Apple 토큰은 비밀번호가 아니다. [TN3194](https://developer.apple.com/
 
 - [OAuth 보안 BCP RFC9700](https://www.rfc-editor.org/rfc/rfc9700.html), [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html): code flow·state/nonce·ID token 검증.
 - [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect): openid만 요청, email을 계정 키로 사용하지 않음.
-- [Apple authorization](https://developer.apple.com/documentation/signinwithapplerestapi/request-an-authorization-to-the-sign-in-with-apple-server): name/email 없이 요청 가능, scope 없는 code/query 흐름.
+- [Apple authorization](https://developer.apple.com/documentation/signinwithapplerestapi/request-an-authorization-to-the-sign-in-with-apple-server.): name/email 없이 요청 가능, scope 없는 code/query 흐름.
 - [Kakao REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api): OIDC 활성화와 openid scope.
 - [Naver API](https://developers.naver.com/docs/login/api/api.md), [사전 검수](https://developers.naver.com/docs/login/verify/verify.md): code/state와 기본 이용자 식별자, 추가 제공 정보는 선택 안 함.
 

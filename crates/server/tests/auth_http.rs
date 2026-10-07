@@ -503,3 +503,167 @@ async fn disabled_auth_preserves_local_mode_and_never_sets_credentials() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
+#[tokio::test]
+async fn overlapping_transactions_resolve_their_own_locale_even_when_callbacks_reverse() {
+    let store = Store::default();
+    let router = router(store.clone());
+    let (browser, bootstrap) = bootstrap(&router, None).await;
+    let csrf = bootstrap["csrf"].as_str().unwrap();
+    let korean = start(&router, &browser, csrf).await;
+    let response = router
+        .clone()
+        .oneshot(mutation(
+            "POST",
+            "/api/v1/auth/google/start",
+            &browser,
+            csrf,
+            r#"{"locale":"fr","return_path":"settings"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: serde_json::Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 8192).await.unwrap()).unwrap();
+    let french = url::Url::parse(body["authorize_url"].as_str().unwrap())
+        .unwrap()
+        .query_pairs()
+        .find(|(k, _)| k == "state")
+        .unwrap()
+        .1
+        .to_string();
+    for (state, path) in [
+        (french, "/fr/onboarding?return_path=settings"),
+        (korean, "/ko/onboarding?return_path=daily"),
+    ] {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!(
+                        "/api/v1/auth/google/callback?state={state}&code=valid-code"
+                    ))
+                    .header(header::COOKIE, &browser)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers()[header::LOCATION], path);
+    }
+    assert!(store.0.transactions.lock().unwrap().is_empty());
+}
+#[tokio::test]
+async fn nickname_response_uses_normalized_authority_and_failed_exchange_consumes_state() {
+    let store = Store::default();
+    let router = router(store.clone());
+    let (browser, value) = bootstrap(&router, None).await;
+    let csrf = value["csrf"].as_str().unwrap();
+    let state = start(&router, &browser, csrf).await;
+    let response = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!(
+                    "/api/v1/auth/google/callback?state={state}&code=invalid-code"
+                ))
+                .header(header::COOKIE, &browser)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert!(store.0.sessions.lock().unwrap().is_empty());
+    assert!(store.0.transactions.lock().unwrap().is_empty());
+    let state = start(&router, &browser, csrf).await;
+    let response = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!(
+                    "/api/v1/auth/google/callback?state={state}&code=valid-code"
+                ))
+                .header(header::COOKIE, &browser)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let session = response.headers()[header::SET_COOKIE]
+        .to_str()
+        .unwrap()
+        .split(';')
+        .next()
+        .unwrap();
+    let cookies = format!("{browser}; {session}");
+    let (_, logged) = bootstrap(&router, Some(&cookies)).await;
+    let response = router
+        .clone()
+        .oneshot(mutation(
+            "PATCH",
+            "/api/v1/me",
+            &cookies,
+            logged["csrf"].as_str().unwrap(),
+            "{\"nickname\":\"e\\u0301clair\"}",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let value: serde_json::Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 8192).await.unwrap()).unwrap();
+    assert_eq!(value["nickname"], "éclair");
+}
+#[tokio::test]
+async fn duplicate_cookies_oversized_bodies_and_start_quota_fail_without_extra_transactions() {
+    let store = Store::default();
+    let router = router(store.clone());
+    let (browser, value) = bootstrap(&router, None).await;
+    let csrf = value["csrf"].as_str().unwrap();
+    let request = mutation(
+        "POST",
+        "/api/v1/auth/google/start",
+        &format!("{browser}; {browser}"),
+        csrf,
+        r#"{"locale":"ko","return_path":"daily"}"#,
+    );
+    assert_eq!(
+        router.clone().oneshot(request).await.unwrap().status(),
+        StatusCode::BAD_REQUEST
+    );
+    let body = format!(
+        "{{\"locale\":\"{}\",\"return_path\":\"daily\"}}",
+        "a".repeat(4096)
+    );
+    assert!(
+        !router
+            .clone()
+            .oneshot(mutation(
+                "POST",
+                "/api/v1/auth/google/start",
+                &browser,
+                csrf,
+                &body
+            ))
+            .await
+            .unwrap()
+            .status()
+            .is_success()
+    );
+    assert!(store.0.transactions.lock().unwrap().is_empty());
+    for _ in 0..5 {
+        let _ = start(&router, &browser, csrf).await;
+    }
+    let response = router
+        .oneshot(mutation(
+            "POST",
+            "/api/v1/auth/google/start",
+            &browser,
+            csrf,
+            r#"{"locale":"ko","return_path":"daily"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(store.0.transactions.lock().unwrap().len(), 5);
+}

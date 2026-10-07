@@ -1,0 +1,96 @@
+{
+  "source_commit": "e4af79772c693535cc03944c5a811bfe8b826547",
+  "scope": "All apps/web/src TS/TSX including unimported source; only tests/setup excluded",
+  "tool": "Vitest 5.0.3 V8",
+  "web_coverage": {
+    "lines": {
+      "total": 194,
+      "covered": 163,
+      "skipped": 0,
+      "pct": 84.02
+    },
+    "statements": {
+      "total": 212,
+      "covered": 177,
+      "skipped": 0,
+      "pct": 83.49
+    },
+    "functions": {
+      "total": 77,
+      "covered": 69,
+      "skipped": 0,
+      "pct": 89.61
+    },
+    "branches": {
+      "total": 113,
+      "covered": 78,
+      "skipped": 0,
+      "pct": 69.02
+    }
+  },
+  "javascript": [
+    {
+      "name": "common--atTYw7m.js",
+      "bytes": 2826,
+      "gzip_bytes": 1359
+    },
+    {
+      "name": "common-2HxlTOT-.js",
+      "bytes": 3162,
+      "gzip_bytes": 1535
+    },
+    {
+      "name": "common-Bmt8MKYj.js",
+      "bytes": 3123,
+      "gzip_bytes": 1521
+    },
+    {
+      "name": "common-CM7wq0c1.js",
+      "bytes": 2615,
+      "gzip_bytes": 1401
+    },
+    {
+      "name": "common-De0pxPVw.js",
+      "bytes": 2859,
+      "gzip_bytes": 1363
+    },
+    {
+      "name": "common-dEZM4viO.js",
+      "bytes": 2973,
+      "gzip_bytes": 1397
+    },
+    {
+      "name": "common-YabO9LVw.js",
+      "bytes": 2917,
+      "gzip_bytes": 1394
+    },
+    {
+      "name": "core-D3ZJbdrm.js",
+      "bytes": 1493,
+      "gzip_bytes": 665
+    },
+    {
+      "name": "index-B9qfOsmM.js",
+      "bytes": 74255,
+      "gzip_bytes": 25677
+    },
+    {
+      "name": "worker-CbVJkmCZ.js",
+      "bytes": 1001,
+      "gzip_bytes": 591
+    }
+  ],
+  "all_asset_js_gzip_bytes": 36903,
+  "locales": 8,
+  "common_keys": 46,
+  "browser_tests": 20,
+  "not_verified": [
+    "native-speaker/legal review",
+    "physical devices",
+    "LCP/FPS on mini PC",
+    "whole application branch coverage"
+  ],
+  "gzip_method": "Python gzip.compress level=9 mtime=0",
+  "public_glue_js_gzip_bytes": 2751,
+  "wasm_gzip_bytes": 154908
+}

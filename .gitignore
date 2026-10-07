@@ -20,3 +20,4 @@ __pycache__/
 *.pyc
 .vitest/
 apps/web/public/core/
+/review/

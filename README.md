@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~13 병합 완료. #14 공개 오프라인 캐시·다중 탭 안전 업데이트·미검증 제출 후보를 구현·검증했습니다. 이후 OAuth와 온라인을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14 병합 완료. OAuth 인증 기반 #43 구현을 진행합니다. 이후 OAuth와 온라인을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -27,7 +27,7 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~13은 병합·종료됐고 #14 오프라인/대기를 검증했습니다. 일별 코드 리뷰는 Git에서 제외한 로컬 `review/YYYY-MM-DD.md`에 기록합니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~14는 병합·종료됐습니다. OAuth는 #43→44→45→46으로 순차 구현하고 #42 실제 계정 검수는 별도 출시 조건입니다. 일별 코드 리뷰는 Git에서 제외한 로컬 `review/YYYY-MM-DD.md`에 기록합니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 

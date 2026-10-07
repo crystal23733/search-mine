@@ -1,4 +1,5 @@
 //! HTTP composition root. Domain logic is owned by liar-core.
+pub mod auth;
 use axum::{
     Json, Router,
     extract::State,

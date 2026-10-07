@@ -46,6 +46,8 @@
 
 코어 시나리오는 Clock/RNG fake로 제어하고, DB/WS는 실제 통합으로, UI/광고/언어는 DI port로 테스트한다. [백로그](../workflow/backlog.md)는 각 작업의 시나리오를 연결한다.
 
+OAuth 기반 FR01/NFR02·TS01/20/31/32/35 → [ADR0019](../adr/0019-auth-foundation-and-delivery.md) → #43(AuthStore/CredentialVault). 이후 #44 provider/HTTP, #45 계정 권리, #46 UI를 순차 병합하고 #42 실제 계정 검수는 별도 출시 조건이다.
+
 ## 구현 기준과 남은 검증
 
 1. **공정성:** 모든 관측 모델의 안전 진행·lie 식별 증거를 요구하고 불명확/timeout 후보는 거절. 실현 가능성은 M1 E4에서 평가하며 반례가 있으면 출시 차단.

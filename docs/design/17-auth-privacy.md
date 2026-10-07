@@ -20,7 +20,7 @@
 
 첫 공개 버전에는 위 4개를 모두 실제 연결하고 검수한다. 설정 키 미발급을 로그인 성공으로 가장하지 않는다. Discord/Microsoft/LINE 등은 후속 확장 후보이며 공개 전에 각 공급자의 최신 공식 계약을 확인한다. 국가/지역에서 특정 공급자 접속이 안 될 때 다른 제공자와 로컬 연습을 안내한다.
 
-PKCE 지원 여부는 어댑터 capability에 명시한다. 문서로 확인된 Google에는 S256을 강제한다. Apple·카카오·네이버에 확인되지 않은 PKCE 매개변수를 일괄 보내거나 지원된다고 가정하지 않는다. 이들은 서버 client 인증, provider별 고정 callback, state 브라우저 바인딩과 OIDC nonce(지원 제공자)를 적용하고 TS32/33으로 검증한다. 신규 제공자는 code flow와 동등한 보호, 최소 권한이 확인된 후 활성화한다.
+PKCE 지원 여부는 어댑터 capability에 명시한다. Google 및 공식 discovery에서 확인한 Kakao에는 S256을 강제한다. Apple·네이버에는 확인되지 않은 PKCE 매개변수를 보내지 않는다. 서버 client 인증, provider별 고정 callback, state 브라우저 바인딩과 OIDC nonce를 적용하고 TS32/33으로 검증한다. Google openid-only 실제 상호운용은 #42 검수 대상이며 추가 개인정보 scope를 임의 요청하지 않는다. [ADR0019](../adr/0019-auth-foundation-and-delivery.md)는 저장 경계와 순차 구현을 구체화한다. 신규 제공자는 최소 권한과 동등한 보호를 확인한 후 활성화한다.
 
 ## 포트와 어댑터
 

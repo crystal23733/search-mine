@@ -1,0 +1,59 @@
+{
+  "source_commit": "2434da61ab225596f03c50d51d565e3b8f7ff09b",
+  "measured_at_kst": "2026-10-08T01:03:03.112216+09:00",
+  "environment": "Windows 11 / Ryzen 9 3900X / headless Chromium desktop and Pixel 7 viewport emulation",
+  "checks": {
+    "web_tests": 64,
+    "complete_browser_suite": 50,
+    "final_production_offline_tests": 8,
+    "postgres_local": "ignored; latest head real PostgreSQL 18 CI required",
+    "rust_core": "unchanged; latest head coverage CI required"
+  },
+  "web_coverage": {
+    "lines": {
+      "total": 1216,
+      "covered": 1075,
+      "skipped": 0,
+      "pct": 88.4
+    },
+    "statements": {
+      "total": 1334,
+      "covered": 1163,
+      "skipped": 0,
+      "pct": 87.18
+    },
+    "functions": {
+      "total": 390,
+      "covered": 334,
+      "skipped": 0,
+      "pct": 85.64
+    },
+    "branches": {
+      "total": 845,
+      "covered": 667,
+      "skipped": 0,
+      "pct": 78.93
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "bundle": {
+    "initial_js_gzip_bytes": 34124,
+    "maximum_selected_locale_extra_gzip_bytes": 4053,
+    "initial_with_locale_gzip_bytes": 38177,
+    "service_worker_bytes": 20589,
+    "service_worker_gzip_bytes": 6943,
+    "precache_entries": 41,
+    "precache_bytes": 1268854
+  },
+  "limitations": [
+    "browser may evict cache; first uncached offline navigation unavailable",
+    "pending candidates unverified; real auth and server submission follow issues15/19",
+    "worker URL change tests activation gate, not a historical binary migration",
+    "offline cache total is separate from initial critical JS budget; mini-PC/FPS and E1/E2 people tests pending issues26/27"
+  ]
+}

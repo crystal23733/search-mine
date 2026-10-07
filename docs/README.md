@@ -11,7 +11,9 @@
 - `planning/`: 제공된 브레인스토밍·핸드오프 원문, 내용 그대로 보존.
 - `product/01~21`: 비전·경쟁·세그먼트·여정·가치·경제·리스크·요구·테스트·지표·로드맵.
 - `design/01~18`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준.
-- `adr/0001~0016`: 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·공개 보드 조작·로컬 대전/학습의 결정.
+- `adr/0001~0017`: 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·공개 보드 조작·로컬 대전/학습·솔로 데일리의 결정.
 - `workflow/`: develop·이슈/마일스톤·승인 상태·작업 백로그·스킬 출처.
 
-현재 M0/M1과 #4~11 구현은 develop에 병합됐고 [#12 로컬 대전/학습 검증](verification/12-local-practice-tutorial.md)을 마쳤다. 실제 사람의 E1/E2 관찰은 #27/M2 수동 게이트로 유지한다. [#10 Atomic shell](verification/10-atomic-shell.md)도 확인한다. 승인/실행 결과/가정을 구분한다. 참조 기술 문서는 각 실제 구현/공개 시 다시 확인한다.
+현재 M0/M1과 #4~12 구현은 develop에 병합됐고 [#13 데일리/기록/공유 검증](verification/13-utc-daily-records-share.md)을 마쳤다. 실제 사람의 E1/E2 관찰은 #27/M2 수동 게이트로 유지한다. [#10 Atomic shell](verification/10-atomic-shell.md)도 확인한다. 승인/실행 결과/가정을 구분한다. 참조 기술 문서는 각 실제 구현/공개 시 다시 확인한다.
+
+[#13 UTC 데일리·개인 미검증 기록·공유 검증](verification/13-utc-daily-records-share.md)과 [ADR0017](adr/0017-deterministic-solo-daily-and-local-records.md)을 추가했다. 공식 기록/순위는 #19, 캐시/제출 대기는 #14다.

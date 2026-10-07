@@ -14,12 +14,18 @@ import { Button } from "../atoms/Button";
 import { Dialog } from "../atoms/Dialog";
 import { useUi } from "../context";
 export interface BoardProps {
-  view: GameView;
+  view: Pick<GameView, "rules" | "phase" | "own">;
+  allowedModes?: readonly Mode[];
   createRenderer: BoardRendererFactory;
   onAction(action: PublicAction): void;
 }
 type Mode = "open" | "flag" | "accuse";
-export function Board({ view, createRenderer, onAction }: BoardProps) {
+export function Board({
+  view,
+  createRenderer,
+  onAction,
+  allowedModes = ["open", "flag", "accuse"],
+}: BoardProps) {
   const { t, locale, preferences } = useUi();
   const { width, height } = view.rules.rules;
   const viewport = useRef<HTMLDivElement>(null),
@@ -29,6 +35,9 @@ export function Board({ view, createRenderer, onAction }: BoardProps) {
   const [renderMode, setRenderMode] = useState("dom");
   const [selected, setSelected] = useState(0),
     [mode, setMode] = useState<Mode>("open");
+  const currentMode = allowedModes.includes(mode)
+    ? mode
+    : (allowedModes[0] ?? "open");
   const [menu, setMenu] = useState<number | null>(null),
     [help, setHelp] = useState(false);
   const [zoom, setZoom] = useState<number>(preferences.zoom);
@@ -47,14 +56,16 @@ export function Board({ view, createRenderer, onAction }: BoardProps) {
   const latest = useRef({
     locked,
     onAction,
-    mode,
+    mode: currentMode,
+    allowedModes,
     view,
     contrast: preferences.contrast,
   });
   latest.current = {
     locked,
     onAction,
-    mode,
+    mode: currentMode,
+    allowedModes,
     view,
     contrast: preferences.contrast,
   };
@@ -79,7 +90,8 @@ export function Board({ view, createRenderer, onAction }: BoardProps) {
     }
   };
   const emit = (cell: number, action: Mode = latest.current.mode) => {
-    if (!latest.current.locked) latest.current.onAction({ type: action, cell });
+    if (!latest.current.locked && latest.current.allowedModes.includes(action))
+      latest.current.onAction({ type: action, cell });
   };
   const paint = (frame: BoardFrame): boolean => {
     try {
@@ -257,13 +269,13 @@ export function Board({ view, createRenderer, onAction }: BoardProps) {
       !event.metaKey
     ) {
       event.preventDefault();
-      setMode(
+      const next =
         event.key.toLowerCase() === "a"
           ? "accuse"
           : event.key.toLowerCase() === "f"
             ? "flag"
-            : "open",
-      );
+            : "open";
+      if (allowedModes.includes(next)) setMode(next);
     } else if (event.key === "F10" && event.shiftKey) {
       event.preventDefault();
       if (!locked) setMenu(cell);
@@ -381,11 +393,11 @@ export function Board({ view, createRenderer, onAction }: BoardProps) {
       <div class="board-bottom">
         <fieldset class="board-modes">
           <legend class="visually-hidden">{t("board.mode")}</legend>
-          {(["open", "flag", "accuse"] as const).map((value) => (
+          {allowedModes.map((value) => (
             <Button
               key={value}
-              aria-pressed={mode === value}
-              variant={mode === value ? "primary" : "secondary"}
+              aria-pressed={currentMode === value}
+              variant={currentMode === value ? "primary" : "secondary"}
               onClick={() => setMode(value)}
             >
               {t(`board.${value}`)}
@@ -434,7 +446,7 @@ export function Board({ view, createRenderer, onAction }: BoardProps) {
       </div>
       <p class="muted">
         {t("board.selected", { cell: coordinate(selected, width) })} ·{" "}
-        {t(`board.${mode}`)}
+        {t(`board.${currentMode}`)}
       </p>
       <Dialog
         open={menu !== null || help}
@@ -447,11 +459,15 @@ export function Board({ view, createRenderer, onAction }: BoardProps) {
         }
       >
         {help ? (
-          <p>{t("board.helpText")}</p>
+          <p>
+            {t(
+              allowedModes.includes("accuse") ? "board.helpText" : "daily.help",
+            )}
+          </p>
         ) : (
           menuCell && (
             <div class="cell-menu">
-              {(["open", "flag", "accuse"] as const).map((value) => (
+              {allowedModes.map((value) => (
                 <Button
                   key={value}
                   disabled={

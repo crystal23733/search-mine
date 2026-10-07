@@ -76,4 +76,6 @@ design-tokens 원천에 semantic color(background/surface/text/danger/flag/lieFe
 
 ## 오프라인 경계
 
+#13의 UTC 솔로 데일리·개인 미검증 기록·공유 allowlist와 IndexedDB 경계는 [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md)를 따른다. #14 캐시/제출 대기와 #19 공식 검증을 구분한다.
+
 service worker는 versioned shell/locale/core/daily metadata를 캐시하고 API write·세션·광고를 캐시하지 않는다. IndexedDB는 locale·튜토리얼·개인 기록·대기 제출을 저장한다. 저장 용량·private mode 실패 시 메모리 fallback과 기록 유실 안내. 업데이트는 판 중간에 적용하지 않고 결과/홈에서 사용자에게 재로드한다. 최초 미캐시 접속은 서버 장애 시 정적 점검 안내만 가능하다.

@@ -144,3 +144,5 @@ sequenceDiagram
 ## OAuth 경계
 
 [17 인증](17-auth-privacy.md)을 따른다. Apple은 name/email scope 없는 code/query callback을 사용하고 form_post 추가는 별도 cookie 계약을 요구한다. callback은 일반 CSRF 헤더 대신 거래 검증을 수행한다. nickname 미설정 세션은 onboarding/me/logout/delete만 허용하고 대전·공식 기록에는 사용할 수 없다. 공식 attempt와 account 소유권을 검증하며 무계정 로컬 기록은 로그인 뒤 명시적 제출만 허용한다.
+
+#13 public DailyMetadata/View/Step/Replay와 strict 입력·로그 경계는 [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md)를 따른다. 공개 UTC seed와 online 비밀 seed를 구분하며 로컬 replay는 서버 검증 전 unverified다. [실제 native/WASM 재현](../verification/13-utc-daily-records-share.md).

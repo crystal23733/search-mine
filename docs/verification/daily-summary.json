@@ -1,0 +1,68 @@
+{
+  "source_commit": "8f7e5b6eddbe35492d7b32962778d2d6460f05e2",
+  "environment": "Windows 11 / Ryzen 9 3900X / headless Chromium PC and Pixel 7 viewport emulation",
+  "checks": {
+    "web_tests": 49,
+    "browser_tests": 42,
+    "postgres_local": "ignored; required real database CI pending"
+  },
+  "core_lines": {
+    "count": 2366,
+    "covered": 2314,
+    "percent": 97.8021978021978
+  },
+  "web_coverage": {
+    "lines": {
+      "total": 935,
+      "covered": 817,
+      "skipped": 0,
+      "pct": 87.37
+    },
+    "statements": {
+      "total": 1017,
+      "covered": 878,
+      "skipped": 0,
+      "pct": 86.33
+    },
+    "functions": {
+      "total": 309,
+      "covered": 264,
+      "skipped": 0,
+      "pct": 85.43
+    },
+    "branches": {
+      "total": 663,
+      "covered": 522,
+      "skipped": 0,
+      "pct": 78.73
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "bundle": {
+    "initial_js_gzip_bytes": 31860,
+    "maximum_selected_locale_extra_gzip_bytes": 3659,
+    "initial_with_locale_gzip_bytes": 35519,
+    "static_dynamic_extra_gzip_bytes": {
+      "src/board/pixi.ts": 108639,
+      "src/pages/DailyPage.tsx": 6782,
+      "src/pages/MatchPage.tsx": 6479,
+      "src/pages/TutorialPage.tsx": 6465,
+      "src/services/core.ts": 792
+    },
+    "all_asset_js_gzip_bytes": 229802,
+    "wasm_bytes": 486773,
+    "wasm_gzip_bytes": 179615,
+    "glue_bytes": 22284,
+    "glue_gzip_bytes": 3035
+  },
+  "limitations": [
+    "local completion/time unverified; server submission/ranking issue19",
+    "static closures overlap; dynamic single-game requests and real mini-PC/FPS pending issue26",
+    "first uncached offline visit and cache issue14"
+  ]
+}

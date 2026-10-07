@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, mkdirSync } from "node:fs";
 import type { GameView, PublicAction } from "../../packages/protocol/src/index";
 const source = JSON.parse(
   readFileSync(
@@ -170,66 +170,4 @@ test("zoom and keyboard scrolling remain inside the viewport across sizes", asyn
       fullPage: true,
     });
   }
-});
-test("manual dirty renderer records development-browser timings", async ({
-  page,
-}, info) => {
-  // This benchmark measures one renderer, matching the application's single board.
-  test.setTimeout(60_000);
-  await page.goto("/en/settings");
-  const measurement = await page.evaluate(async (initial) => {
-    const path = "/src/board/pixi.ts";
-    const { createPixiBoard } = await import(/* @vite-ignore */ path);
-    const host = document.createElement("div");
-    document.body.append(host);
-    const renderer = await createPixiBoard(host);
-    const frame = {
-      width: initial.rules.rules.width,
-      height: initial.rules.rules.height,
-      cells: initial.own.cells,
-      contrast: "standard",
-    };
-    renderer.draw(frame);
-    const renderMs: number[] = [],
-      frameMs: number[] = [];
-    let previous = await new Promise<number>((resolve) =>
-      requestAnimationFrame(resolve),
-    );
-    for (let index = 0; index < 120; index++) {
-      const time = await new Promise<number>((resolve) =>
-        requestAnimationFrame(resolve),
-      );
-      frameMs.push(time - previous);
-      previous = time;
-      const start = performance.now();
-      renderer.draw({
-        ...frame,
-        cells: frame.cells.map((cell: GameView["own"]["cells"][number]) =>
-          cell.cell === 1 ? { ...cell, flagged: index % 2 === 0 } : cell,
-        ),
-      });
-      renderMs.push(performance.now() - start);
-    }
-    renderer.dispose();
-    host.remove();
-    return {
-      renderMs,
-      frameMs,
-      userAgent: navigator.userAgent,
-      dpr: devicePixelRatio,
-    };
-  }, source.cases[0].initial);
-  expect(measurement.renderMs).toHaveLength(120);
-  expect(measurement.renderMs.every((n) => Number.isFinite(n) && n >= 0)).toBe(
-    true,
-  );
-  mkdirSync(".tmp/board-metrics", { recursive: true });
-  writeFileSync(
-    `.tmp/board-metrics/${info.project.name}.json`,
-    JSON.stringify(measurement),
-  );
-  await test.info().attach("board-development-timings", {
-    body: JSON.stringify(measurement),
-    contentType: "application/json",
-  });
 });

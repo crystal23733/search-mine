@@ -1,3 +1,4 @@
+import { dailyTestPorts } from "./daily-ports";
 import { createLearning } from "../src/services/learning";
 import { h, render } from "preact";
 import type { GameView, PublicAction } from "@liar/protocol";
@@ -16,6 +17,7 @@ export async function mountBoard(initial: GameView) {
     preferences: preferences.read(),
     selectLocale() {},
     services: {
+      ...dailyTestPorts(),
       i18n,
       preferences,
       navigation: createNavigation(window),

@@ -4,6 +4,8 @@ import { createI18n } from "./services/i18n";
 import { createNavigation } from "./services/navigation";
 import { createPreferences } from "./services/preferences";
 import { createLearning } from "./services/learning";
+import { createDailyRecords } from "./services/daily-records";
+import { createSharePort } from "./services/daily-share";
 import { chooseLocale, localizedPath } from "./services/locale";
 import "@liar/design-tokens/tokens.css";
 import "./styles.css";
@@ -16,6 +18,12 @@ try {
   /* Essential preferences use memory when storage is unavailable. */
 }
 const preferences = createPreferences(storage);
+let database: IDBFactory | undefined;
+try {
+  database = window.indexedDB;
+} catch {
+  /* Local records remain available in memory. */
+}
 const locale = chooseLocale(
   location.pathname,
   preferences.read().locale,
@@ -36,6 +44,11 @@ render(
       navigation,
       preferences,
       learning: createLearning(storage),
+      dailyRecords: createDailyRecords(database),
+      share: createSharePort(),
+      wallClock: () => Date.now(),
+      dailyCore: async () =>
+        (await import("./services/core")).createDailyCore(),
       trainingCore: async () =>
         (await import("./services/core")).createTrainingCore(),
       practiceCore: async () =>

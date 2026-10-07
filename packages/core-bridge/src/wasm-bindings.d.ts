@@ -1,6 +1,16 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export class DailySession {
+    free(): void;
+    [Symbol.dispose](): void;
+    advance(time_ms: number): string;
+    constructor(date: string, seed_version: number);
+    replay(): string;
+    snapshot(): string;
+    step(input: string, time_ms: number): string;
+}
+
 export class LocalSession {
     free(): void;
     [Symbol.dispose](): void;
@@ -23,8 +33,14 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly __wbg_dailysession_free: (a: number, b: number) => void;
     readonly __wbg_localsession_free: (a: number, b: number) => void;
     readonly __wbg_trainingsession_free: (a: number, b: number) => void;
+    readonly dailysession_advance: (a: number, b: number, c: number) => void;
+    readonly dailysession_new: (a: number, b: number, c: number, d: number) => void;
+    readonly dailysession_replay: (a: number, b: number) => void;
+    readonly dailysession_snapshot: (a: number, b: number) => void;
+    readonly dailysession_step: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly localsession_advance: (a: number, b: number, c: number) => void;
     readonly localsession_new: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly localsession_snapshot: (a: number, b: number) => void;

@@ -71,6 +71,8 @@ OIDC는 공식 JWKS 서명과 알고리즘 allowlist, issuer, audience/azp, exp/
 
 ## 개인정보와 credential 인벤토리
 
+#44 [ADR0020](../adr/0020-oauth-providers-and-http.md)은 JWT 서명과 Google bare issuer, 수동 azp/nonce/time 검증, 고정 endpoint/제한 JWKS cache, 메모리 CSRF·공개 세션 revision을 구체화한다. 8locale는 auth transaction에만5분 보존하며 계정의 추가 개인정보 필드로 저장하지 않는다. 익명 browser cookie·rate hash는 장기 계정/이벤트를 만들지 않는다. rate 메모리는 최대4096개/5분이며 일반 start5회/callback20회 제한, unknown kid 강제 refresh는 coalesce·30초 제한한다. 분산 공격 방어와 실제 제공자 검수의 완료를 의미하지 않는다.
+
 | 항목 | 목적 / 처리 | 보존 |
 |---|---|---|
 | 내부 account UUID, 게임용 nickname | 계정 소유권·대전 표시 | 계정 삭제까지, 목적별 기록은 [07 DB](07-database.md) |
@@ -104,7 +106,7 @@ Apple 토큰은 비밀번호가 아니다. [TN3194](https://developer.apple.com/
 
 - [OAuth 보안 BCP RFC9700](https://www.rfc-editor.org/rfc/rfc9700.html), [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html): code flow·state/nonce·ID token 검증.
 - [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect): openid만 요청, email을 계정 키로 사용하지 않음.
-- [Apple authorization](https://developer.apple.com/documentation/signinwithapplerestapi/request-an-authorization-to-the-sign-in-with-apple-server): name/email 없이 요청 가능, scope 없는 code/query 흐름.
+- [Apple authorization](https://developer.apple.com/documentation/signinwithapplerestapi/request-an-authorization-to-the-sign-in-with-apple-server.): name/email 없이 요청 가능, scope 없는 code/query 흐름.
 - [Kakao REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api): OIDC 활성화와 openid scope.
 - [Naver API](https://developers.naver.com/docs/login/api/api.md), [사전 검수](https://developers.naver.com/docs/login/verify/verify.md): code/state와 기본 이용자 식별자, 추가 제공 정보는 선택 안 함.
 

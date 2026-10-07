@@ -1,0 +1,44 @@
+{
+  "source_commit": "83aae2bd2897b26edabf871a0988ad92bbd1280e",
+  "ci_run": 37666888928,
+  "database_job": 112948294988,
+  "database_tests": {
+    "passed": 5,
+    "ignored": 0
+  },
+  "coverage": {
+    "auth_domain_lines": {
+      "covered": 277,
+      "count": 278
+    },
+    "whole_server_lines": {
+      "covered": 1727,
+      "count": 1940
+    },
+    "includes_main_and_migrate": true
+  },
+  "local_full_check": {
+    "exit_code": 0,
+    "web_unit_tests": 64,
+    "chromium_tests": 50,
+    "chromium_seconds": 59.9,
+    "docs": 96,
+    "mermaid": 34,
+    "source_commit": "4da5b8f58118be22e4f95849708e4731a87cdd94"
+  },
+  "additional_http_tests": {
+    "passed": 9,
+    "previous": 5,
+    "google_response_issuer_red_green": true
+  },
+  "limits": [
+    "Actual provider accounts and console scopes #42",
+    "Apple credentials and account rights #45",
+    "Login/account UI #46",
+    "Policy operator and legal launch review #21",
+    "Distributed abuse and real mini PC performance not measured"
+  ],
+  "local_server_tests": 32,
+  "local_database_ignored": 5,
+  "final_docs_after_evidence": 97
+}

@@ -7,9 +7,197 @@ use liar_server::auth::*;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Row, migrate::Migrator};
 use std::path::Path;
+use std::sync::Arc;
 use std::{env, time::Duration};
 use tower::ServiceExt;
 use uuid::Uuid;
+use zeroize::Zeroizing;
+
+struct HttpClock;
+impl AuthClock for HttpClock {
+    fn now(&self) -> i64 {
+        1100
+    }
+}
+struct HttpProvider {
+    subject: String,
+}
+impl OAuthProvider for HttpProvider {
+    fn available(&self, p: Provider) -> bool {
+        p == Provider::Google
+    }
+    fn authorize(&self, _p: Provider, a: &Authorization) -> Result<String, AuthError> {
+        Ok(format!(
+            "https://fixture.example/?state={}",
+            a.state.expose().as_str()
+        ))
+    }
+    async fn exchange(
+        &self,
+        _t: &AuthTransaction,
+        _s: &SecretToken,
+        code: &str,
+        _v: Option<&[u8]>,
+        _now: i64,
+    ) -> Result<VerifiedIdentity, AuthError> {
+        if code != "fixture-code" {
+            return Err(AuthError::Invalid);
+        }
+        Ok(VerifiedIdentity {
+            subject: Zeroizing::new(self.subject.clone()),
+            apple_refresh: None,
+        })
+    }
+}
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn http_auth_with_real_storage_binds_locale_consumes_once_and_rotates_revision() {
+    let pool = auth_pool().await;
+    let router = auth_router(
+        AuthService::new(
+            PgAuthStore::new(pool.clone()),
+            AeadVault::new(1, vec![(1, [7; 32])]).unwrap(),
+            DigestKeys::new(1, vec![(1, [8; 32])]).unwrap(),
+        ),
+        HttpProvider {
+            subject: Uuid::new_v4().to_string(),
+        },
+        BrowserSecurity::new("https://game.example", [9; 32]).unwrap(),
+        Arc::new(HttpClock),
+    );
+    let mut cookies = String::new();
+    let mut revision = None;
+    let mut account_id = None;
+    for round in 0..2 {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/auth/bootstrap")
+                    .header("cookie", &cookies)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let browser = response
+            .headers()
+            .get_all("set-cookie")
+            .iter()
+            .find(|v| v.to_str().unwrap().starts_with("__Host-liar_browser="))
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .split(';')
+            .next()
+            .unwrap()
+            .to_string();
+        let bootstrap: serde_json::Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), 8192).await.unwrap()).unwrap();
+        let csrf = bootstrap["csrf"].as_str().unwrap();
+        if round == 0 {
+            cookies = browser.clone();
+        }
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/v1/auth/google/start")
+                    .header("cookie", &cookies)
+                    .header("origin", "https://game.example")
+                    .header("x-liar-csrf", csrf)
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"locale":"ko","return_path":"daily"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let start: serde_json::Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), 8192).await.unwrap()).unwrap();
+        let url = url::Url::parse(start["authorize_url"].as_str().unwrap()).unwrap();
+        let state = url
+            .query_pairs()
+            .find(|(k, _)| k == "state")
+            .unwrap()
+            .1
+            .to_string();
+        let state_token = SecretToken::parse(&state).unwrap();
+        let saved: String =
+            sqlx::query_scalar("SELECT locale FROM auth_transactions WHERE state_hash=$1")
+                .bind(state_token.hash().as_slice())
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(saved, "ko");
+        let callback = format!(
+            "/api/v1/auth/google/callback?state={state}&code=fixture-code&iss=https%3A%2F%2Faccounts.google.com"
+        );
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(&callback)
+                    .header("cookie", &cookies)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        let session_cookie = response.headers()["set-cookie"]
+            .to_str()
+            .unwrap()
+            .split(';')
+            .next()
+            .unwrap()
+            .to_string();
+        let token = SecretToken::parse(session_cookie.split_once('=').unwrap().1).unwrap();
+        let session = PgAuthStore::new(pool.clone())
+            .session(token.hash(), 1100)
+            .await
+            .unwrap()
+            .unwrap();
+        if let Some(id) = account_id {
+            assert_eq!(session.account.id, id);
+        } else {
+            account_id = Some(session.account.id);
+        }
+        if let Some(old) = revision {
+            assert_ne!(session.id, old);
+            let old_token =
+                SecretToken::parse(cookies.split("__Host-liar_session=").nth(1).unwrap()).unwrap();
+            assert!(
+                PgAuthStore::new(pool.clone())
+                    .session(old_token.hash(), 1100)
+                    .await
+                    .unwrap()
+                    .is_none()
+            );
+        }
+        revision = Some(session.id);
+        cookies = format!("{browser}; {session_cookie}");
+        let replay = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(&callback)
+                    .header("cookie", &cookies)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(replay.status(), StatusCode::BAD_REQUEST);
+    }
+    sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
+        .bind(account_id.unwrap())
+        .execute(&pool)
+        .await
+        .unwrap();
+}
 
 async fn auth_pool() -> sqlx::PgPool {
     let url = env::var("DATABASE_URL").expect("DATABASE_URL is required");

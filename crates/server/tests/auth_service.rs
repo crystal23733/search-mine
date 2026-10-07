@@ -8,6 +8,38 @@ struct FakeStore {
     transactions: Mutex<Vec<AuthTransaction>>,
     logins: Mutex<Vec<LoginWrite>>,
 }
+#[tokio::test]
+async fn localized_transaction_keeps_only_an_allowed_server_bound_locale() {
+    let service = AuthService::new(
+        FakeStore::default(),
+        AeadVault::new(1, vec![(1, [1; 32])]).unwrap(),
+        DigestKeys::new(1, vec![(1, [2; 32])]).unwrap(),
+    );
+    let browser = SecretToken::generate().unwrap();
+    let a = service
+        .start_localized(
+            &browser,
+            Provider::Google,
+            AuthIntent::Login,
+            ReturnPath::Daily,
+            AuthLocale::parse("ko").unwrap(),
+            1000,
+        )
+        .await
+        .unwrap();
+    let transaction = service
+        .consume(&a.state, &browser, Provider::Google, 1001)
+        .await
+        .unwrap();
+    assert_eq!(transaction.locale.as_str(), "ko");
+    assert_eq!(transaction.return_path, ReturnPath::Daily);
+    for locale in ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"] {
+        assert_eq!(AuthLocale::parse(locale).unwrap().as_str(), locale);
+    }
+    for locale in ["zh", "EN", "../../evil", "en?url=evil", ""] {
+        assert!(AuthLocale::parse(locale).is_err());
+    }
+}
 impl AuthStore for FakeStore {
     async fn insert_transaction(&self, value: AuthTransaction) -> Result<(), AuthError> {
         self.transactions.lock().unwrap().push(value);

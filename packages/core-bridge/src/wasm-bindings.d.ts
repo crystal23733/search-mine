@@ -10,15 +10,29 @@ export class LocalSession {
     step(input: string, time_ms: number): string;
 }
 
+export class TrainingSession {
+    free(): void;
+    [Symbol.dispose](): void;
+    advance(time_ms: number): string;
+    constructor();
+    snapshot(): string;
+    step(input: string, time_ms: number): string;
+}
+
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_localsession_free: (a: number, b: number) => void;
+    readonly __wbg_trainingsession_free: (a: number, b: number) => void;
     readonly localsession_advance: (a: number, b: number, c: number) => void;
     readonly localsession_new: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly localsession_snapshot: (a: number, b: number) => void;
     readonly localsession_step: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly trainingsession_advance: (a: number, b: number, c: number) => void;
+    readonly trainingsession_new: (a: number) => void;
+    readonly trainingsession_snapshot: (a: number, b: number) => void;
+    readonly trainingsession_step: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
     readonly __wbindgen_export: (a: number, b: number, c: number) => void;
     readonly __wbindgen_export2: (a: number, b: number) => number;

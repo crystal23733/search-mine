@@ -1,0 +1,7 @@
+width = 3
+height = 3
+mine_cells = [5, 7]
+first_open = 8
+reveal_cell = 2
+gauge_capacity = 1
+countdown_ms = 0

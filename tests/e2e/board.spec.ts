@@ -7,6 +7,11 @@ const source = JSON.parse(
     "utf8",
   ),
 ) as { cases: Array<{ initial: GameView }> };
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("liar.tutorial.v1", '"skipped"'),
+  );
+});
 declare global {
   interface Window {
     __board: {

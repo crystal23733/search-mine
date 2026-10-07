@@ -57,11 +57,36 @@ async fn apple_credentials_and_authorized_erasure_are_atomic() {
             .as_slice(),
         b"fixture-refresh-secret"
     );
-    sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
-        .bind(result.account.id)
-        .execute(&pool)
+    let erased = store
+        .erase_authorized(SessionAuthority {
+            account: result.account.id,
+            hash: token.hash(),
+            now: 4001,
+        })
         .await
-        .unwrap();
+        .expect("local erasure must succeed without a reachable provider");
+    assert!(!erased.manual_apple_disconnect);
+    assert!(store.session(token.hash(), 4001).await.unwrap().is_none());
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM auth_deletion_tombstones WHERE account_id=$1"
+        )
+        .bind(result.account.id)
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        1
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM auth_apple_revoke_queue WHERE identity_id=$1"
+        )
+        .bind(result.identity_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        1
+    );
     pool.close().await;
 }
 impl AuthClock for HttpClock {
@@ -272,7 +297,10 @@ async fn auth_pool() -> sqlx::PgPool {
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account_and_old_session() {
     let pool = auth_pool().await;
-    let store = PgAuthStore::new(pool.clone());
+    let store = PgAuthStore::with_vault(
+        pool.clone(),
+        Arc::new(AeadVault::new(1, vec![(1, [13; 32])]).unwrap()),
+    );
     let keys = DigestKeys::new(2, vec![(1, [1; 32]), (2, [2; 32])]).unwrap();
     let subject = Uuid::new_v4().to_string();
     let first_token = SecretToken::generate().unwrap();
@@ -335,7 +363,7 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
     let failed = LoginWrite {
         intent: AuthIntent::Login,
         bound_session: None,
-        apple_refresh: None,
+        apple_refresh: Some(Zeroizing::new("fixture-apple-refresh".into())),
         provider: Provider::Apple,
         digests: keys.digest(Provider::Apple, &subject).unwrap(),
         session_hash: second_token.hash(),
@@ -350,7 +378,7 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
         .login(LoginWrite {
             intent: AuthIntent::Login,
             bound_session: None,
-            apple_refresh: None,
+            apple_refresh: Some(Zeroizing::new("fixture-apple-refresh".into())),
             provider: Provider::Apple,
             digests: keys.digest(Provider::Apple, &subject).unwrap(),
             session_hash: fresh.hash(),

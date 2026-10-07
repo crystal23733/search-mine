@@ -135,12 +135,12 @@ pub(crate) fn bounded_text(value: &str, max: usize) -> bool {
 }
 #[derive(Deserialize)]
 #[serde(untagged)]
-enum Audience {
+pub(super) enum Audience {
     One(String),
     Many(Vec<String>),
 }
 impl Audience {
-    fn matches(&self, client: &str) -> bool {
+    pub(super) fn matches(&self, client: &str) -> bool {
         match self {
             Self::One(a) => a == client,
             Self::Many(a) => a.len() == 1 && a[0] == client,
@@ -220,6 +220,50 @@ pub fn verify_id_token(
     {
         return Err(AuthError::Invalid);
     }
+    let issuers = if config.provider == Provider::Google {
+        vec![config.provider.issuer(), "accounts.google.com"]
+    } else {
+        vec![config.provider.issuer()]
+    };
+    let claims: IdClaims = decode_signed(
+        jwks,
+        token,
+        &config.client_id,
+        &issuers,
+        &["exp", "iss", "aud", "sub"],
+    )?;
+    if !claims.aud.matches(&config.client_id)
+        || claims.azp.as_ref().is_some_and(|a| a != &config.client_id)
+        || claims.exp <= now
+        || claims.iat < transaction.created_at.saturating_sub(30)
+        || claims.iat > now.saturating_add(30)
+        || claims.exp <= claims.iat
+        || claims.nbf.is_some_and(|n| n > now)
+        || claims.sub.is_empty()
+        || claims.sub.len() > 512
+        || claims.sub.chars().any(char::is_control)
+        || SecretToken::parse(&claims.nonce)?.hash() != transaction.nonce_hash
+    {
+        return Err(AuthError::Invalid);
+    }
+    if let Some(hash) = claims.at_hash {
+        let access = access_token
+            .filter(|t| bounded_text(t, 8192))
+            .ok_or(AuthError::Invalid)?;
+        if hash != URL_SAFE_NO_PAD.encode(&Sha256::digest(access.as_bytes())[..16]) {
+            return Err(AuthError::Invalid);
+        }
+    }
+    Ok(Zeroizing::new(claims.sub))
+}
+
+pub(super) fn decode_signed<T: serde::de::DeserializeOwned>(
+    jwks: &[u8],
+    token: &str,
+    audience: &str,
+    issuers: &[&str],
+    required: &[&str],
+) -> Result<T, AuthError> {
     let kid = token_kid(token)?;
     let set = parse_jwks(jwks)?;
     let jwk = set.find(&kid).ok_or(AuthError::Invalid)?;
@@ -259,40 +303,12 @@ pub fn verify_id_token(
     }
     let key = DecodingKey::from_jwk(jwk).map_err(|_| AuthError::Invalid)?;
     let mut validation = Validation::new(Algorithm::RS256);
-    validation.set_required_spec_claims(&["exp", "iss", "aud", "sub"]);
-    validation.set_audience(&[&config.client_id]);
-    let issuers = if config.provider == Provider::Google {
-        vec![config.provider.issuer(), "accounts.google.com"]
-    } else {
-        vec![config.provider.issuer()]
-    };
-    validation.set_issuer(&issuers);
+    validation.set_required_spec_claims(required);
+    validation.set_audience(&[audience]);
+    validation.set_issuer(issuers);
     // Time is checked below with the same injected server clock as the transaction.
     validation.validate_exp = false;
-    let claims = jsonwebtoken::decode::<IdClaims>(token, &key, &validation)
-        .map_err(|_| AuthError::Invalid)?
-        .claims;
-    if !claims.aud.matches(&config.client_id)
-        || claims.azp.as_ref().is_some_and(|a| a != &config.client_id)
-        || claims.exp <= now
-        || claims.iat < transaction.created_at.saturating_sub(30)
-        || claims.iat > now.saturating_add(30)
-        || claims.exp <= claims.iat
-        || claims.nbf.is_some_and(|n| n > now)
-        || claims.sub.is_empty()
-        || claims.sub.len() > 512
-        || claims.sub.chars().any(char::is_control)
-        || SecretToken::parse(&claims.nonce)?.hash() != transaction.nonce_hash
-    {
-        return Err(AuthError::Invalid);
-    }
-    if let Some(hash) = claims.at_hash {
-        let access = access_token
-            .filter(|t| bounded_text(t, 8192))
-            .ok_or(AuthError::Invalid)?;
-        if hash != URL_SAFE_NO_PAD.encode(&Sha256::digest(access.as_bytes())[..16]) {
-            return Err(AuthError::Invalid);
-        }
-    }
-    Ok(Zeroizing::new(claims.sub))
+    jsonwebtoken::decode::<T>(token, &key, &validation)
+        .map(|data| data.claims)
+        .map_err(|_| AuthError::Invalid)
 }

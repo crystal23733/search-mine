@@ -1,10 +1,11 @@
-use super::{AuthError, Provider};
+use super::{AuthError, Provider, SecretToken};
 use aes_gcm::{
     Aes256Gcm, KeyInit, Nonce,
     aead::{Aead, Payload},
 };
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, Mac};
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use uuid::Uuid;
 use zeroize::{Zeroize, Zeroizing};
@@ -31,6 +32,14 @@ impl Keyring {
     }
 }
 pub struct DigestKeys(Keyring);
+pub trait SubjectDigester: Send + Sync {
+    fn digest(&self, provider: Provider, subject: &str) -> Result<Vec<(u32, [u8; 32])>, AuthError>;
+}
+impl SubjectDigester for DigestKeys {
+    fn digest(&self, provider: Provider, subject: &str) -> Result<Vec<(u32, [u8; 32])>, AuthError> {
+        DigestKeys::digest(self, provider, subject)
+    }
+}
 impl DigestKeys {
     pub fn new(current: u32, keys: Vec<(u32, [u8; 32])>) -> Result<Self, AuthError> {
         Keyring::new(current, keys).map(Self)
@@ -153,5 +162,42 @@ impl CredentialVault for AeadVault {
             )
             .map(Zeroizing::new)
             .map_err(|_| AuthError::Invalid)
+    }
+}
+
+impl SecretToken {
+    pub fn generate() -> Result<Self, AuthError> {
+        let mut bytes = [0; 32];
+        getrandom::fill(&mut bytes).map_err(|_| AuthError::Unavailable)?;
+        Ok(Self(bytes))
+    }
+    pub fn parse(value: &str) -> Result<Self, AuthError> {
+        if value.len() != 43 {
+            return Err(AuthError::Invalid);
+        }
+        let bytes = Zeroizing::new(
+            URL_SAFE_NO_PAD
+                .decode(value)
+                .map_err(|_| AuthError::Invalid)?,
+        );
+        let token = Self(
+            bytes
+                .as_slice()
+                .try_into()
+                .map_err(|_| AuthError::Invalid)?,
+        );
+        if token.expose().as_str() != value {
+            return Err(AuthError::Invalid);
+        }
+        Ok(token)
+    }
+    pub fn expose(&self) -> Zeroizing<String> {
+        Zeroizing::new(URL_SAFE_NO_PAD.encode(self.0))
+    }
+    pub fn hash(&self) -> [u8; 32] {
+        Sha256::digest(self.0).into()
+    }
+    pub fn pkce_challenge(&self) -> String {
+        URL_SAFE_NO_PAD.encode(Sha256::digest(self.expose().as_bytes()))
     }
 }

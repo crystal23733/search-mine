@@ -12,13 +12,13 @@ pub struct IssuedSession {
     pub identity_id: Uuid,
     pub token: SecretToken,
 }
-pub struct AuthService<S, V> {
+pub struct AuthService<S, V, D = DigestKeys> {
     pub store: S,
     vault: V,
-    digests: DigestKeys,
+    digests: D,
 }
-impl<S: AuthStore, V: CredentialVault> AuthService<S, V> {
-    pub fn new(store: S, vault: V, digests: DigestKeys) -> Self {
+impl<S: AuthStore, V: CredentialVault, D: SubjectDigester> AuthService<S, V, D> {
+    pub fn new(store: S, vault: V, digests: D) -> Self {
         Self {
             store,
             vault,
@@ -84,10 +84,15 @@ impl<S: AuthStore, V: CredentialVault> AuthService<S, V> {
         provider: Provider,
         now: i64,
     ) -> Result<AuthTransaction, AuthError> {
-        self.store
+        let transaction = self
+            .store
             .consume_transaction(state.hash(), browser.hash(), provider, now)
             .await?
-            .ok_or(AuthError::Invalid)
+            .ok_or(AuthError::Invalid)?;
+        if !transaction.matches(state, browser, provider, now) {
+            return Err(AuthError::Invalid);
+        }
+        Ok(transaction)
     }
     pub fn verifier(
         &self,

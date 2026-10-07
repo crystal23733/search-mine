@@ -63,6 +63,16 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --locked -p liar-server --test postgres -- --ignored
+      - run: rustup component add llvm-tools-preview
+      - run: cargo install cargo-llvm-cov --locked
+      - run: cargo llvm-cov --locked -p liar-server --tests --ignore-filename-regex '[/\\](tests|examples)[/\\]' --json --output-path target/auth-coverage.json -- --include-ignored
+      - run: python scripts/check_auth_coverage.py target/auth-coverage.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: auth-coverage
+          path: target/auth-coverage.json
+          retention-days: 7
   web:
     runs-on: ubuntu-latest
     timeout-minutes: 20

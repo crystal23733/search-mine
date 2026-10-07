@@ -3,6 +3,88 @@ use liar_server::auth::{AuthError, Nickname, SecretToken};
 use uuid::Uuid;
 
 #[test]
+fn provider_and_return_boundaries_reject_arbitrary_identity_or_redirect_targets() {
+    for provider in [
+        Provider::Google,
+        Provider::Apple,
+        Provider::Kakao,
+        Provider::Naver,
+    ] {
+        assert_eq!(Provider::parse(provider.as_str()).unwrap(), provider);
+        assert!(provider.issuer().starts_with("https://"));
+    }
+    for value in ["discord", "GOOGLE", "google/../apple", ""] {
+        assert!(Provider::parse(value).is_err())
+    }
+    for path in [
+        liar_server::auth::ReturnPath::Home,
+        liar_server::auth::ReturnPath::Daily,
+        liar_server::auth::ReturnPath::Friends,
+        liar_server::auth::ReturnPath::Settings,
+    ] {
+        assert_eq!(
+            liar_server::auth::ReturnPath::parse(path.as_str()).unwrap(),
+            path
+        );
+    }
+    for value in [
+        "https://evil.example/",
+        "//evil.example/",
+        "/home",
+        "home?next=https://evil.example",
+    ] {
+        assert!(liar_server::auth::ReturnPath::parse(value).is_err())
+    }
+    use liar_server::auth::AuthIntent;
+    let account = Uuid::new_v4();
+    for intent in [
+        AuthIntent::Login,
+        AuthIntent::Link(account),
+        AuthIntent::Reauth(account),
+    ] {
+        assert_eq!(
+            AuthIntent::restore(intent.kind(), intent.account()).unwrap(),
+            intent
+        );
+    }
+    for (kind, account) in [
+        ("login", Some(account)),
+        ("link", None),
+        ("reauth", None),
+        ("delete", None),
+    ] {
+        assert!(AuthIntent::restore(kind, account).is_err())
+    }
+}
+
+#[test]
+fn session_reauthentication_is_bounded_and_pkce_matches_the_rfc_vector() {
+    use liar_server::auth::{Account, Session};
+    let session = Session {
+        account: Account {
+            id: Uuid::new_v4(),
+            nickname: None,
+        },
+        created_at: 1000,
+        expires_at: 2000,
+        authenticated_at: 1010,
+    };
+    assert!(!session.fresh(999, 300));
+    assert!(!session.fresh(1009, 300));
+    assert!(session.fresh(1010, 300));
+    assert!(session.fresh(1309, 300));
+    assert!(!session.fresh(1310, 300));
+    assert!(!session.fresh(2000, 3000));
+    assert!(!session.fresh(1010, 0));
+    assert_eq!(
+        SecretToken::parse("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
+            .unwrap()
+            .pkce_challenge(),
+        "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+    );
+}
+
+#[test]
 fn subject_digest_is_namespaced_and_rotates_without_losing_old_lookup() {
     let old = DigestKeys::new(1, vec![(1, [1; 32])]).unwrap();
     let rotated = DigestKeys::new(2, vec![(1, [1; 32]), (2, [2; 32])]).unwrap();

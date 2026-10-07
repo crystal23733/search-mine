@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 #[derive(Default)]
 struct FakeStore {
+    malicious: bool,
     transactions: Mutex<Vec<AuthTransaction>>,
     logins: Mutex<Vec<LoginWrite>>,
 }
@@ -20,6 +21,9 @@ impl AuthStore for FakeStore {
         now: i64,
     ) -> Result<Option<AuthTransaction>, AuthError> {
         let mut values = self.transactions.lock().unwrap();
+        if self.malicious {
+            return Ok(values.pop());
+        }
         let index = values.iter().position(|t| {
             t.state_hash == state
                 && t.browser_hash == browser
@@ -61,6 +65,48 @@ fn service() -> AuthService<FakeStore, AeadVault> {
         AeadVault::new(1, vec![(1, [1; 32])]).unwrap(),
         DigestKeys::new(1, vec![(1, [2; 32])]).unwrap(),
     )
+}
+
+#[tokio::test]
+async fn service_rejects_a_repository_returning_misbound_or_expired_transactions() {
+    let service = AuthService::new(
+        FakeStore {
+            malicious: true,
+            ..FakeStore::default()
+        },
+        AeadVault::new(1, vec![(1, [1; 32])]).unwrap(),
+        DigestKeys::new(1, vec![(1, [2; 32])]).unwrap(),
+    );
+    let browser = SecretToken::generate().unwrap();
+    for (provider, now, foreign) in [
+        (Provider::Apple, 1001, false),
+        (Provider::Google, 999, false),
+        (Provider::Google, 1300, false),
+        (Provider::Google, 1001, true),
+    ] {
+        let auth = service
+            .start(
+                &browser,
+                Provider::Google,
+                AuthIntent::Login,
+                ReturnPath::Home,
+                1000,
+            )
+            .await
+            .unwrap();
+        let other = SecretToken::generate().unwrap();
+        assert!(matches!(
+            service
+                .consume(
+                    &auth.state,
+                    if foreign { &other } else { &browser },
+                    provider,
+                    now
+                )
+                .await,
+            Err(AuthError::Invalid)
+        ));
+    }
 }
 
 #[tokio::test]

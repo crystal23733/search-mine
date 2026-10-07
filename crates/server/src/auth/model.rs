@@ -1,10 +1,8 @@
-use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
-use sha2::{Digest, Sha256};
 use std::fmt;
 use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
 use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
-use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AuthError {
@@ -83,49 +81,12 @@ impl Nickname {
 }
 
 #[derive(Zeroize, ZeroizeOnDrop)]
-pub struct SecretToken([u8; 32]);
+pub struct SecretToken(pub(super) [u8; 32]);
 impl fmt::Debug for SecretToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("SecretToken([REDACTED])")
     }
 }
-impl SecretToken {
-    pub fn generate() -> Result<Self, AuthError> {
-        let mut bytes = [0; 32];
-        getrandom::fill(&mut bytes).map_err(|_| AuthError::Unavailable)?;
-        Ok(Self(bytes))
-    }
-    pub fn parse(value: &str) -> Result<Self, AuthError> {
-        if value.len() != 43 {
-            return Err(AuthError::Invalid);
-        }
-        let bytes = Zeroizing::new(
-            URL_SAFE_NO_PAD
-                .decode(value)
-                .map_err(|_| AuthError::Invalid)?,
-        );
-        let token = Self(
-            bytes
-                .as_slice()
-                .try_into()
-                .map_err(|_| AuthError::Invalid)?,
-        );
-        if token.expose().as_str() != value {
-            return Err(AuthError::Invalid);
-        }
-        Ok(token)
-    }
-    pub fn expose(&self) -> Zeroizing<String> {
-        Zeroizing::new(URL_SAFE_NO_PAD.encode(self.0))
-    }
-    pub fn hash(&self) -> [u8; 32] {
-        Sha256::digest(self.0).into()
-    }
-    pub fn pkce_challenge(&self) -> String {
-        URL_SAFE_NO_PAD.encode(Sha256::digest(self.expose().as_bytes()))
-    }
-}
-
 pub const TRANSACTION_SECONDS: i64 = 300;
 pub const SESSION_SECONDS: i64 = 30 * 24 * 60 * 60;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -93,6 +93,8 @@ test("UTC daily preserves a running board across midnight and locale, completes 
   page,
   context,
 }, info) => {
+  // Traverse all 64 real keyboard inputs, then persist, export and reload on software-rendered CI.
+  test.setTimeout(60_000);
   const requests: string[] = [];
   page.on("request", (request) => requests.push(request.url()));
   await page.goto("/en/daily?code=ABCD1234#invite");

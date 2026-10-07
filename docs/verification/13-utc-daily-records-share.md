@@ -1,5 +1,7 @@
 # #13 UTC 솔로 데일리·개인 기록·공유 검증
 
+PR40 초기 head6812542의 웹 CI는64개 실제 키보드 입력을 통과하는 데일리 완주 검사의30초 전체 예산에서 PC/모바일 timeout을 보였으며 모바일은 retry도 실패했다. 병행 renderer 측정도60초 timeout 뒤 retry로 통과했다. 기능 검사40개가 먼저 끝난 뒤 독립 measurement project에서 PC/모바일 각각 한 context로120표본을 순차 수집하도록 바꿨다. 완주+DB+PNG+reload 검사만60초 전체 예산을 사용하고 개별 상태 assertion5초·표본120개·FPS16.7ms 목표는 유지한다. 소프트웨어 CI의 GPU 간섭을 줄이는 검사 구조 변경이며 제품 성능 목표 달성으로 세지 않는다. 수정 뒤 로컬 전체42개 통과, 최신 CI는 별도 확인한다.
+
 FR09, TS17/18/36 · [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md). 제품 코드 `8f7e5b6eddbe35492d7b32962778d2d6460f05e2`, 선행 PR39/#12의 병합·종료를 확인한 뒤 구현했다.
 
 엄격한 Gregorian UTC 날짜·seed version·solo mode·rules hash·solver/RNG version을 canonical BLAKE3 공개 seed에 묶는다. 같은 날짜의 native/WASM 판과 입력 결과가 같고 날짜/윤년·버전/숫자 truncation 오류를 거절한다. shared RuleEngine의 솔로 모드는 open/flag만 허용하며 공격·상대 입력 거절도 idempotent다. zero만으로 전부 연 솔로 판의 clear와 대전의 동시 clear draw를 구분한다. timeout은 퍼즐 완료가 아니며 clear의 개인 elapsed만 고정한다.

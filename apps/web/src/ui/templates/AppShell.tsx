@@ -2,6 +2,7 @@ import type { ComponentChildren } from "preact";
 import { useUi } from "../context";
 import { Header } from "../organisms/Header";
 import { NavLink } from "../molecules/NavLink";
+import { OfflineNotice } from "../organisms/OfflineNotice";
 export function AppShell({ children }: { children: ComponentChildren }) {
   const { t } = useUi();
   return (
@@ -10,6 +11,7 @@ export function AppShell({ children }: { children: ComponentChildren }) {
         {t("skip")}
       </a>
       <Header />
+      <OfflineNotice />
       <main id="main" tabIndex={-1}>
         {children}
       </main>

@@ -1,27 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { IDBFactory } from "fake-indexeddb";
-import { createDailyRecords, dailyId, type DailyRecord } from "./daily-records";
-export function record(date = "2026-10-07", attempt = "first"): DailyRecord {
-  const metadata = {
-    date,
-    seed_version: 1,
-    mode: "solo-v1",
-    seed: "42",
-    rules_hash: "hash",
-    solver_version: 1,
-    rng_version: 1,
-  };
-  return {
-    v: 1,
-    id: dailyId(metadata),
-    status: "unverified",
-    metadata,
-    attempt_id: attempt,
-    elapsed_ms: 5000,
-    mistakes: 0,
-    replay: { v: 1, metadata, inputs: [], final_time_ms: 8000 },
-  };
-}
+import { record } from "../../test/daily-record";
+import { createDailyRecords, type DailyRecord } from "./daily-records";
 test("two repositories atomically keep the first local clear and reload without claiming server verification", async () => {
   const db = new IDBFactory();
   const first = createDailyRecords(db),
@@ -47,6 +27,7 @@ test("keeps at most 30 dates and missing or failed storage falls back to this ta
     );
   const loaded = await persistent.list();
   expect(loaded.value).toHaveLength(30);
+  expect((await persistent.pending()).value).toHaveLength(30);
   expect(
     loaded.value.some((value) => value.metadata.date === "2026-10-01"),
   ).toBe(false);
@@ -82,7 +63,7 @@ test("ignores corrupt database rows with a warning and a stalled open has a boun
   const factory = new IDBFactory();
   const records = createDailyRecords(factory);
   await records.saveFirst(record());
-  const request = factory.open("liar.daily.v1", 1);
+  const request = factory.open("liar.daily.v1");
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = reject;

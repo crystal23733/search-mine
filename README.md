@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~12 병합 완료. 실제 로컬 대전·튜토리얼에 이어 #13 UTC 솔로 데일리·개인 미검증 기록·공유를 구현·검증했습니다. 이후 오프라인과 OAuth를 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~13 병합 완료. #14 공개 오프라인 캐시·다중 탭 안전 업데이트·미검증 제출 후보를 구현·검증했습니다. 이후 OAuth와 온라인을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -27,7 +27,7 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~12는 병합·종료됐고 #13 데일리/기록/공유를 검증했습니다. 일별 코드 리뷰는 Git에서 제외한 로컬 `review/YYYY-MM-DD.md`에 기록합니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~13은 병합·종료됐고 #14 오프라인/대기를 검증했습니다. 일별 코드 리뷰는 Git에서 제외한 로컬 `review/YYYY-MM-DD.md`에 기록합니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 
@@ -48,7 +48,11 @@ pnpm dev
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정을 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 게임·계정·정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 아직 로그인 제공자 키를 요구하지 않으며 #15에서 실제 연동 준비 항목을 별도 기록합니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 온라인 계정·대전·정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 아직 로그인 제공자 키를 요구하지 않으며 #15에서 실제 연동 준비 항목을 별도 기록합니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+
+## 오프라인 확인
+
+`pnpm build` 뒤 `pnpm --filter @liar/web preview --port 4173`으로 production을 연다. 설정의 캐시 준비를 확인한 뒤 연결을 끊으면 저장된8언어·WASM·로컬 봇/데일리를 이용할 수 있다. 개발 서버5173에서는 SW를 켜지 않는다. 최초 미캐시 offline 방문은 지원하지 않으며 브라우저가 캐시를 지울 수 있다. 업데이트는 열린 모든 탭이 홈으로 돌아온 뒤 버튼으로 적용한다. 설정에서 공개 cache와 개인 기록/제출 대기를 각각 삭제할 수 있다. 제출 후보는 미검증이며 실제 로그인/공식 전송은 #15/#19에서 연결한다.
 
 ## 검증
 

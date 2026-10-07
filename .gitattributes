@@ -4,3 +4,5 @@
 *.mjs text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+# Unified patches require a space prefix for empty context lines.
+patches/*.patch whitespace=-blank-at-eol

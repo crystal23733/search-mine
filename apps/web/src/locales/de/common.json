@@ -143,5 +143,22 @@
   "daily.shareError": "Teilen ist nicht verfügbar oder wurde abgebrochen. Kopiere das Ergebnis oder lade ein PNG herunter.",
   "daily.memory": "Lokaler Speicher ist eingeschränkt. Manche Ergebnisse bleiben nur in diesem Tab.",
   "daily.unavailable": "Dieses Rätsel ist nicht verfügbar. Starte ein neues Rätsel, um es erneut zu versuchen.",
-  "daily.help": "Klicken öffnet, Rechtsklick setzt eine Flagge. Pfeiltasten bewegen, Enter oder Leertaste führen aus, O/F wechseln den Modus und Umschalt+F10 öffnet das Feldmenü. Ziehen verschiebt, Pinch vergrößert und langes Drücken öffnet das Menü."
+  "daily.help": "Klicken öffnet, Rechtsklick setzt eine Flagge. Pfeiltasten bewegen, Enter oder Leertaste führen aus, O/F wechseln den Modus und Umschalt+F10 öffnet das Feldmenü. Ziehen verschiebt, Pinch vergrößert und langes Drücken öffnet das Menü.",
+  "offline.title": "Offline spielen",
+  "offline.ready": "Offline: Lokales Spielen mit Cache ist verfügbar. Onlinepartien und offizielle Ergebnisse benötigen eine Verbindung.",
+  "offline.missing": "Offline: Auf diesem Gerät ist kein Cache bereit. Verbinde dich einmal zur Vorbereitung.",
+  "offline.updateHint": "Ein Update ist bereit. Kehre in allen offenen Tabs zur Startseite zurück, bevor du es anwendest.",
+  "offline.update": "Update anwenden",
+  "offline.error": "Der Vorgang konnte nicht abgeschlossen werden. Ein anderer Tab spielt möglicherweise oder der Speicher ist nicht verfügbar. Versuche es auf der Startseite erneut.",
+  "offline.disabled": "Der Offlinecache ist auf diesem Gerät deaktiviert.",
+  "offline.cached": "Die öffentlichen Dateien für lokales Spielen sind auf diesem Gerät zwischengespeichert.",
+  "offline.notCached": "Der Cache ist noch nicht bereit. Verbinde dich zur Vorbereitung.",
+  "offline.pending": "Ausstehende lokale Ergebnisse: {{count}}",
+  "offline.pendingHint": "Diese ungeprüften Kandidaten bleiben auf diesem Gerät. Anmeldung und offizielle Übermittlung folgen nach Anbindung des Onlinedienstes.",
+  "offline.clearCache": "Offlinecache löschen",
+  "offline.enableCache": "Offlinecache vorbereiten",
+  "offline.clearRecords": "Lokale Ergebnisse löschen",
+  "offline.cleared": "Lokale und ausstehende Ergebnisse gelöscht.",
+  "offline.clearConfirm": "Persönliche Ergebnisse und ausstehende Replays auf diesem Gerät löschen? Dies kann nicht rückgängig gemacht werden.",
+  "offline.confirm": "Ergebnisse löschen"
 }

@@ -45,6 +45,7 @@ export function DailyPage() {
   useEffect(() => {
     if (!complete || !state.view) return;
     let active = true;
+    const release = services.activity.hold();
     const view = state.view;
     void run
       .replay()
@@ -70,7 +71,8 @@ export function DailyPage() {
       })
       .catch(() => {
         if (active) setStorageWarning(true);
-      });
+      })
+      .finally(release);
     return () => {
       active = false;
     };

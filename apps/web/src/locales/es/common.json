@@ -143,5 +143,22 @@
   "daily.shareError": "Compartir no está disponible o se canceló. Prueba copiar el resultado o descargar un PNG.",
   "daily.memory": "El almacenamiento local está limitado. Algunos registros solo podrían durar en esta pestaña.",
   "daily.unavailable": "Este puzle no está disponible. Empieza uno nuevo para reintentar.",
-  "daily.help": "Haz clic para abrir y clic derecho para marcar. Las flechas mueven, Enter o Espacio actúan, O/F cambian el modo y Mayús+F10 abre el menú. Arrastra para mover, pellizca para ampliar y mantén pulsado para el menú."
+  "daily.help": "Haz clic para abrir y clic derecho para marcar. Las flechas mueven, Enter o Espacio actúan, O/F cambian el modo y Mayús+F10 abre el menú. Arrastra para mover, pellizca para ampliar y mantén pulsado para el menú.",
+  "offline.title": "Juego sin conexión",
+  "offline.ready": "Sin conexión: puedes jugar localmente con la caché. Las partidas en línea y los registros oficiales requieren conexión.",
+  "offline.missing": "Sin conexión: este dispositivo no tiene caché lista. Conéctate una vez para prepararla.",
+  "offline.updateHint": "Hay una actualización. Vuelve al inicio en todas las pestañas antes de aplicarla.",
+  "offline.update": "Aplicar actualización",
+  "offline.error": "No se pudo terminar. Otra pestaña puede estar jugando o el almacenamiento no está disponible. Reintenta desde el inicio.",
+  "offline.disabled": "La caché sin conexión está desactivada en este dispositivo.",
+  "offline.cached": "Los archivos públicos de juego local están en la caché de este dispositivo.",
+  "offline.notCached": "La caché no está lista. Conéctate para prepararla.",
+  "offline.pending": "Resultados locales pendientes: {{count}}",
+  "offline.pendingHint": "Estos candidatos sin verificar permanecen en este dispositivo. El inicio de sesión y el envío oficial estarán disponibles al conectar el servicio en línea.",
+  "offline.clearCache": "Eliminar caché sin conexión",
+  "offline.enableCache": "Preparar caché sin conexión",
+  "offline.clearRecords": "Eliminar registros locales",
+  "offline.cleared": "Registros locales y pendientes eliminados.",
+  "offline.clearConfirm": "¿Eliminar los registros personales y las repeticiones pendientes de este dispositivo? No se puede deshacer.",
+  "offline.confirm": "Eliminar registros"
 }

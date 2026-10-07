@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useId } from "preact/hooks";
 import { Button } from "./Button";
 import { useUi } from "../context";
 export function Dialog({
@@ -14,6 +14,7 @@ export function Dialog({
   children: ComponentChildren;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   const { t } = useUi();
   useEffect(() => {
     if (!open || !ref.current) return;
@@ -32,7 +33,7 @@ export function Dialog({
     <dialog
       ref={ref}
       class="sheet"
-      aria-labelledby="sheet-title"
+      aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -58,7 +59,7 @@ export function Dialog({
         }
       }}
     >
-      <h2 id="sheet-title">{title}</h2>
+      <h2 id={titleId}>{title}</h2>
       {children}
       <Button variant="primary" onClick={onClose}>
         {t("close")}

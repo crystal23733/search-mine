@@ -1,6 +1,11 @@
 import { createDailyRecords } from "../src/services/daily-records";
+import { createActivity } from "../src/services/activity";
+import { createOffline } from "../src/services/offline";
 export function dailyTestPorts() {
+  const activity = createActivity();
   return {
+    activity,
+    offline: createOffline(activity),
     dailyCore: async () => {
       throw Error("unavailable");
     },

@@ -76,10 +76,11 @@ export class LocalController<View> {
     this.core?.dispose();
     this.core = undefined;
   }
-  async start() {
+  async start(guard?: () => void) {
     if (this.started || this.disposed) return;
     this.started = true;
     try {
+      guard?.();
       const core = await this.factory();
       if (this.disposed) {
         core.dispose();

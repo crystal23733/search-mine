@@ -1,0 +1,13 @@
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+index e641b0a4d688f61b4684134d0d4051c35ffe902b..e7cdd8d74d2ba9c4ebd4efcad8bbffae17ab7680 100644
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -5,7 +5,7 @@ export * from "unconfig-core";
+ 
+ //#region src/index.d.ts
+ declare function createConfigLoader<T>(options: LoadConfigOptions): {
+-  load: quansync$1.QuansyncFn<LoadConfigResult<T>, [force?: Args[0] | undefined]>;
++  load: quansync$1.QuansyncFn<LoadConfigResult<T>, [force?: boolean | undefined]>;
+   findConfigs: quansync$1.QuansyncFn<string[], []>;
+ };
+ declare const loadConfig: {

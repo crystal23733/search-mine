@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { useUi } from "../ui/context";
 import { Card } from "../ui/atoms/Card";
 import { Button } from "../ui/atoms/Button";
@@ -6,13 +6,86 @@ import { Dialog } from "../ui/atoms/Dialog";
 import { LanguageSelect } from "../ui/molecules/LanguageSelect";
 import { AccountCard } from "../ui/organisms/AccountCard";
 import type { Preferences } from "../services/preferences";
+import { useSnapshot } from "../ui/useSnapshot";
 export function SettingsPage() {
   const { t, locale, preferences, services } = useUi();
   const [notice, setNotice] = useState(false);
+  const offline = useSnapshot(services.offline);
+  const activity = useSnapshot(services.activity);
+  const [pending, setPending] = useState(0);
+  const [result, setResult] = useState<"idle" | "cleared" | "error">("idle");
+  const [confirm, setConfirm] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void services.dailyRecords
+      .pending()
+      .then((value) => {
+        if (active) setPending(value.value.length);
+      })
+      .catch(() => {
+        if (active) setResult("error");
+      });
+    return () => {
+      active = false;
+    };
+  }, [services]);
   return (
     <div class="reading-page">
       <h1>{t("settings")}</h1>
       <AccountCard />
+      <h2>{t("offline.title")}</h2>
+      <Card>
+        <p>
+          {t(
+            offline.disabled
+              ? "offline.disabled"
+              : offline.ready
+                ? "offline.cached"
+                : "offline.notCached",
+          )}
+        </p>
+        <p>{t("offline.pending", { count: pending })}</p>
+        <p class="muted">{t("offline.pendingHint")}</p>
+        <div class="match-controls">
+          <Button
+            disabled={
+              offline.working ||
+              !offline.ready ||
+              activity.busy ||
+              activity.locked
+            }
+            onClick={() => {
+              void services.offline.clear();
+            }}
+          >
+            {t("offline.clearCache")}
+          </Button>
+          <Button
+            disabled={
+              offline.working ||
+              !offline.online ||
+              (!offline.disabled && offline.ready)
+            }
+            onClick={() => {
+              void services.offline.enable();
+            }}
+          >
+            {t("offline.enableCache")}
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={activity.busy || activity.locked}
+            onClick={() => setConfirm(true)}
+          >
+            {t("offline.clearRecords")}
+          </Button>
+        </div>
+        {result !== "idle" && (
+          <output>
+            {t(result === "cleared" ? "offline.cleared" : "offline.error")}
+          </output>
+        )}
+      </Card>
       <h2>{t("settings.accessibility")}</h2>
       <Card class="settings-list">
         <label>
@@ -73,6 +146,37 @@ export function SettingsPage() {
             : "settings.memory",
         )}
       </output>
+      <Dialog
+        open={confirm}
+        onClose={() => setConfirm(false)}
+        title={t("offline.clearRecords")}
+      >
+        <p>{t("offline.clearConfirm")}</p>
+        <Button
+          disabled={activity.busy || activity.locked}
+          onClick={() => {
+            if (
+              services.activity.read().busy ||
+              services.activity.read().locked
+            ) {
+              setResult("error");
+              return;
+            }
+            setConfirm(false);
+            const release = services.activity.hold();
+            void services.dailyRecords
+              .clear()
+              .then((value) => {
+                setPending(0);
+                setResult(value.warning ? "error" : "cleared");
+              })
+              .catch(() => setResult("error"))
+              .finally(release);
+          }}
+        >
+          {t("offline.confirm")}
+        </Button>
+      </Dialog>
       <Dialog
         open={notice}
         onClose={() => setNotice(false)}

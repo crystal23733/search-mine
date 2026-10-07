@@ -45,12 +45,11 @@
 | [#26 test(perf): 미니 PC 부하·번들·글로벌 지연 측정](https://github.com/crystal23733/search-mine/issues/26) | M5 | [#25](https://github.com/crystal23733/search-mine/issues/25) | NFR03/04/07 / TS21/27 | 실사양·k6 실제매치/공격; admission측정안정치70%; 초기/게임/WASM·RTT별도 |
 | [#27 chore(product): 플레이테스트·공정성·튜닝 평가](https://github.com/crystal23733/search-mine/issues/27) | M6 | [#26](https://github.com/crystal23733/search-mine/issues/26) | FR15/16 / TS07/13/27 | E1/E2 모집·원자료/표본; 수치수정은설계먼저; NSM·재대결·공정성 출구평가 |
 | [#28 chore(product): 28일 광고 현금 손익과 성장 평가](https://github.com/crystal23733/search-mine/issues/28) | M6 | [#27](https://github.com/crystal23733/search-mine/issues/27) | FR12/16 / TS23/29 | 전력·도메인·정산실측; 동의/광고코호트 편향; E5·확장여부 사용자 결정 |
-
 | [#42 chore(auth): 실제 OAuth 등록·키·최소 권한 실계정 검수](https://github.com/crystal23733/search-mine/issues/42) | M3 | 외부 입력 | FR01/16, NFR01/02 / TS01/20/29/31~36 | 등록 도메인·네 제공자 키·최소 권한·실계정 로그인/연결/삭제 검수; 비밀값 공개 금지 |
-| [#43 feat(auth): 최소 계정·인증 거래·세션·PostgreSQL 기반](https://github.com/crystal23733/search-mine/issues/43) | M3 | offline | FR01/16, NFR01/02 / TS01/20/29/31~36 | 최소 도메인·HMAC/AEAD·5분 거래 원자 소비·세션 회전/철회·별도 migration·실DB 검증 |
-| [#44 feat(auth): 네 OAuth 어댑터와 인증 HTTP 경계](https://github.com/crystal23733/search-mine/issues/44) | M3 | auth-foundation | FR01/16, NFR01/02 / TS01/20/29/31~36 | 네 최소 제공자·JWT/JWKS·bootstrap/start/callback/session·Origin/CSRF·HTTP 계약 |
-| [#45 feat(auth): 명시적 연결·계정 권리·Apple 철회](https://github.com/crystal23733/search-mine/issues/45) | M3 | auth-providers | FR01/16, NFR01/02 / TS01/20/29/31~36 | 최근 재인증·연결/충돌/마지막 수단·export/delete·Apple 암호 credential/알림/철회 |
-| [#46 feat(web): 네 OAuth 로그인·최소 계정 관리 화면](https://github.com/crystal23733/search-mine/issues/46) | M3 | auth-rights | FR01/16, NFR01/02 / TS01/20/29/31~36 | 8언어 Atomic 로그인/계정·무계정 유지·secret 저장 금지·세션 revision·PC/mobile E2E |
+| [#43 feat(auth): 최소 계정·인증 거래·세션·PostgreSQL 기반](https://github.com/crystal23733/search-mine/issues/43) | M3 | [#14](https://github.com/crystal23733/search-mine/issues/14) | FR01/16, NFR01/02 / TS01/20/29/31~36 | 최소 도메인·HMAC/AEAD·5분 거래 원자 소비·세션 회전/철회·별도 migration·실DB 검증 |
+| [#44 feat(auth): 네 OAuth 어댑터와 인증 HTTP 경계](https://github.com/crystal23733/search-mine/issues/44) | M3 | [#43](https://github.com/crystal23733/search-mine/issues/43) | FR01/16, NFR01/02 / TS01/20/29/31~36 | 네 최소 제공자·JWT/JWKS·bootstrap/start/callback/session·Origin/CSRF·HTTP 계약 |
+| [#45 feat(auth): 명시적 연결·계정 권리·Apple 철회](https://github.com/crystal23733/search-mine/issues/45) | M3 | [#44](https://github.com/crystal23733/search-mine/issues/44) | FR01/16, NFR01/02 / TS01/20/29/31~36 | 최근 재인증·연결/충돌/마지막 수단·export/delete·Apple 암호 credential/알림/철회 |
+| [#46 feat(web): 네 OAuth 로그인·최소 계정 관리 화면](https://github.com/crystal23733/search-mine/issues/46) | M3 | [#45](https://github.com/crystal23733/search-mine/issues/45) | FR01/16, NFR01/02 / TS01/20/29/31~36 | 8언어 Atomic 로그인/계정·무계정 유지·secret 저장 금지·세션 revision·PC/mobile E2E |
 
 #15는 상위 출시 검수이며 #43→44→45→46을 순차 병합한다. #42 실제 검수 전 상위 이슈는 열어둔다. #16 구현 선행은 #46이다. [ADR0019](../adr/0019-auth-foundation-and-delivery.md).
 

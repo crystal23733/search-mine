@@ -312,7 +312,7 @@ async fn callback_consumes_cancel_and_success_once_and_logout_invalidates_sessio
     let csrf = value["csrf"].as_str().unwrap();
     let cancelled = start(&router, &browser, csrf).await;
     let cancel = format!(
-        "/api/v1/auth/google/callback?state={cancelled}&error=access_denied&error_description=private-value"
+        "/api/v1/auth/google/callback?state={cancelled}&error=access_denied&error_description=private-value&iss=https%3A%2F%2Faccounts.google.com"
     );
     let response = router
         .clone()
@@ -347,7 +347,9 @@ async fn callback_consumes_cancel_and_success_once_and_logout_invalidates_sessio
         StatusCode::BAD_REQUEST
     );
     let state = start(&router, &browser, csrf).await;
-    let path = format!("/api/v1/auth/google/callback?state={state}&code=valid-code");
+    let path = format!(
+        "/api/v1/auth/google/callback?state={state}&code=valid-code&iss=https%3A%2F%2Faccounts.google.com"
+    );
     let wrong = SecretToken::generate().unwrap();
     let wrong_browser = format!("__Host-liar_browser={}", wrong.expose().as_str());
     assert_eq!(
@@ -540,7 +542,7 @@ async fn overlapping_transactions_resolve_their_own_locale_even_when_callbacks_r
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/api/v1/auth/google/callback?state={state}&code=valid-code"
+                        "/api/v1/auth/google/callback?state={state}&code=valid-code&iss=https%3A%2F%2Faccounts.google.com"
                     ))
                     .header(header::COOKIE, &browser)
                     .body(Body::empty())
@@ -565,7 +567,7 @@ async fn nickname_response_uses_normalized_authority_and_failed_exchange_consume
         .oneshot(
             Request::builder()
                 .uri(format!(
-                    "/api/v1/auth/google/callback?state={state}&code=invalid-code"
+                    "/api/v1/auth/google/callback?state={state}&code=invalid-code&iss=https%3A%2F%2Faccounts.google.com"
                 ))
                 .header(header::COOKIE, &browser)
                 .body(Body::empty())
@@ -582,7 +584,7 @@ async fn nickname_response_uses_normalized_authority_and_failed_exchange_consume
         .oneshot(
             Request::builder()
                 .uri(format!(
-                    "/api/v1/auth/google/callback?state={state}&code=valid-code"
+                    "/api/v1/auth/google/callback?state={state}&code=valid-code&iss=https%3A%2F%2Faccounts.google.com"
                 ))
                 .header(header::COOKIE, &browser)
                 .body(Body::empty())
@@ -666,4 +668,51 @@ async fn duplicate_cookies_oversized_bodies_and_start_quota_fail_without_extra_t
         .unwrap();
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     assert_eq!(store.0.transactions.lock().unwrap().len(), 5);
+}
+#[tokio::test]
+async fn google_response_issuer_and_metadata_follow_the_registered_provider_contract() {
+    let store = Store::default();
+    let router = router(store.clone());
+    let (browser, value) = bootstrap(&router, None).await;
+    let csrf = value["csrf"].as_str().unwrap();
+    for (issuer, expected) in [
+        (Some("https://accounts.google.com"), StatusCode::SEE_OTHER),
+        (Some("https://attacker.example"), StatusCode::SEE_OTHER),
+        (None, StatusCode::SEE_OTHER),
+    ] {
+        let state = start(&router, &browser, csrf).await;
+        let mut query = url::form_urlencoded::Serializer::new(String::new());
+        query
+            .append_pair("state", &state)
+            .append_pair("code", "valid-code")
+            .append_pair("scope", "openid")
+            .append_pair("authuser", "0")
+            .append_pair("prompt", "consent");
+        if let Some(issuer) = issuer {
+            query.append_pair("iss", issuer);
+        }
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/v1/auth/google/callback?{}", query.finish()))
+                    .header(header::COOKIE, &browser)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), expected);
+        let success = issuer == Some("https://accounts.google.com");
+        assert_eq!(response.headers().contains_key(header::SET_COOKIE), success);
+        assert_eq!(
+            response.headers()[header::LOCATION],
+            if success {
+                "/ko/onboarding?return_path=daily"
+            } else {
+                "/ko/login?error=auth_failed"
+            }
+        );
+    }
+    assert_eq!(store.0.sessions.lock().unwrap().len(), 1);
 }

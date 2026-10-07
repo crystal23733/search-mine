@@ -20,6 +20,8 @@ Apple [authorization 최신 경로](https://developer.apple.com/documentation/si
 
 return enum과8locale를 거래에 함께 저장하여 callback 임의 URL/locale 변경을 막는다. nickname 없는 계정은 언어 onboarding으로 돌아간다(#46 UI). PATCH me는 nickname만 검증하며 약관/동의 운영 정책 #21을 완료했다고 가장하지 않는다.
 
+[Google 최신 응답 명세](https://developers.google.com/identity/openid-connect/reference)의 RFC9207 issuer를 Google callback에서 필수로 검사하고 canonical `https://accounts.google.com`만 허용한다. 다른 제공자가 iss를 보내면 해당 고정 issuer와 비교한다. callback의 scope/authuser/prompt/session_state는 bounded 호환 메타데이터로 받아 버리며 권한·신원·return URL로 사용하지 않는다. state/code/error/iss 중복과 임의 추가 필드를 거절한다. ID token의 Google legacy bare issuer 허용과 authorization response의 canonical issuer 검사를 구분한다.
+
 JWKS는128KiB/64키, token/profile은64KiB다. key cache5분, unknown kid 단1회 coalesced bounded refresh. 미설정/실패는 안정 오류·비활성, 성공mock 없음. secret config 오류에 값 미출력. 같은 브라우저 start quota와 callback/query/code 크기·rate를 제한하고 rate key는 장기 DB 저장하지 않는다.
 
 serving DATABASE_URL DML과 별도 migration CLI를 유지하고 만료 cleanup worker를 composition root에 연결한다. 키 없는 기본 실행은 로컬 연습/health를 유지하고 인증은 비활성이다. 테스트 fixture는 별도 composition이며 운영 설정에 인증 우회 API를 넣지 않는다.

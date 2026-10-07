@@ -271,8 +271,18 @@ async fn callback<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuth
             .ok_or(AuthError::Invalid)?;
         let mut pairs = std::collections::HashMap::new();
         for (k, v) in url::form_urlencoded::parse(query.as_bytes()) {
-            if !matches!(k.as_ref(), "state" | "code" | "error" | "error_description")
-                || pairs.insert(k.into_owned(), v.into_owned()).is_some()
+            if !matches!(
+                k.as_ref(),
+                "state"
+                    | "code"
+                    | "error"
+                    | "error_description"
+                    | "iss"
+                    | "scope"
+                    | "authuser"
+                    | "prompt"
+                    | "session_state"
+            ) || pairs.insert(k.into_owned(), v.into_owned()).is_some()
             {
                 return Err(AuthError::Invalid);
             }
@@ -287,6 +297,12 @@ async fn callback<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuth
         let locale = tx.locale.as_str();
         let destination = tx.return_path.as_str();
         let complete = async {
+            let issuer = pairs.get("iss").map(String::as_str);
+            if (provider == Provider::Google && issuer != Some(provider.issuer()))
+                || issuer.is_some_and(|iss| iss != provider.issuer())
+            {
+                return Err(AuthError::Invalid);
+            }
             if pairs.contains_key("error") {
                 return Err(AuthError::Invalid);
             }

@@ -6,6 +6,8 @@ FR01/16, NFR01/02 · TS01/20/31/32/33 · M3 · 선행 #43 PR47 병합/종료 · 
 
 Google/Kakao openid·S256, Apple scope 없는 code/query와5분 ES256 assertion, Naver code/state 서버 POST와 profile id만 매핑한다. 서명·RS256 allowlist·고정 issuer/audience와 검증 후 nonce/azp/exp/iat/nbf/at_hash를 검사한다. Google 공식 bare issuer는 canonical namespace로 digest한다. 공개 계정은 id/nullable nickname, session revision은 UUID뿐이며 subject/credential/token/hash/추가 profile은 DTO/DB/log에 넣지 않는다.
 
+추가 공식 명세 리뷰에서 최초 callback allowlist가 Google의 정상 iss/scope 응답을400으로 거절하는 호환성 결함을 발견했다. canonical issuer+scope/authuser/prompt fixture로 실제400/303 Red를 확인한 뒤 수정했다. Google response iss 필수/canonical, 다른 provider의 존재하는 iss도 exact 고정 issuer를 검사하고 metadata는 버린다. 올바른 Google 응답은303+cookie, 틀린/누락 iss는 소비 후303 auth_failed+cookie없음을 검사한다. 이 수정 후의 실제 검증/최신 head를 별도로 확인한다.
+
 bootstrap/start/callback/me/nickname/logout은 Secure·HttpOnly·SameSite=Lax·Path=/ cookie, no-store/no-referrer, exact Origin·5분 HMAC CSRF를 사용한다. 익명 bootstrap은 계정을 만들지 않는다. 제공자/브라우저/state/intent/time을 원자 소비한 뒤 서버에서 신원을 검증하고 세션을 회전한다. 취소/교환 실패도 소비하며 허용8locale/return enum만 이동한다. 별도 migration002로 locale를 묶고 기존 migration001은 보존했다.
 
 JWKS5분 cache/64keys/128KiB, unknown kid의 coalesced 1회 강제 갱신과30초 제한, 일반 응답64KiB,10초 upstream deadline, redirect 금지·고정 endpoint·bounded ephemeral rate를 적용한다. 키 없는 실행은4개 비활성/null account/null csrf이고 로컬 연습/health를 제공한다. 부분/잘못된 secret 설정은 값을 공개하지 않고 거절한다.

@@ -132,7 +132,9 @@ async fn http_auth_with_real_storage_binds_locale_consumes_once_and_rotates_revi
                 .await
                 .unwrap();
         assert_eq!(saved, "ko");
-        let callback = format!("/api/v1/auth/google/callback?state={state}&code=fixture-code");
+        let callback = format!(
+            "/api/v1/auth/google/callback?state={state}&code=fixture-code&iss=https%3A%2F%2Faccounts.google.com"
+        );
         let response = router
             .clone()
             .oneshot(

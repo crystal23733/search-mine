@@ -143,5 +143,22 @@
   "daily.shareError": "공유를 사용할 수 없거나 취소됐습니다. 결과 복사나 PNG 다운로드를 이용하세요.",
   "daily.memory": "로컬 저장소가 제한됩니다. 일부 기록은 이 탭에서만 유지될 수 있습니다.",
   "daily.unavailable": "퍼즐을 사용할 수 없습니다. 새 퍼즐로 다시 시도하세요.",
-  "daily.help": "클릭으로 열고 오른쪽 클릭으로 깃발을 표시합니다. 방향키로 이동, Enter·Space로 실행, O/F로 모드 변경, Shift+F10으로 칸 메뉴를 엽니다. 터치에서는 드래그로 이동, 두 손가락으로 확대, 길게 눌러 메뉴를 엽니다."
+  "daily.help": "클릭으로 열고 오른쪽 클릭으로 깃발을 표시합니다. 방향키로 이동, Enter·Space로 실행, O/F로 모드 변경, Shift+F10으로 칸 메뉴를 엽니다. 터치에서는 드래그로 이동, 두 손가락으로 확대, 길게 눌러 메뉴를 엽니다.",
+  "offline.title": "오프라인 플레이",
+  "offline.ready": "오프라인: 캐시된 로컬 플레이를 이용할 수 있습니다. 온라인 대전과 공식 기록은 연결이 필요합니다.",
+  "offline.missing": "오프라인: 준비된 캐시가 없습니다. 한 번 연결하여 로컬 플레이를 준비하세요.",
+  "offline.updateHint": "업데이트가 준비되었습니다. 열린 모든 탭에서 홈으로 이동한 뒤 적용하세요.",
+  "offline.update": "업데이트 적용",
+  "offline.error": "작업을 완료하지 못했습니다. 다른 탭에서 플레이 중이거나 저장소를 사용할 수 없습니다. 홈에서 다시 시도하세요.",
+  "offline.disabled": "이 기기에서 오프라인 캐시가 비활성화되었습니다.",
+  "offline.cached": "공개 로컬 플레이 파일이 이 기기에 캐시되었습니다.",
+  "offline.notCached": "오프라인 캐시가 아직 준비되지 않았습니다. 연결하여 준비하세요.",
+  "offline.pending": "대기 중인 로컬 기록: {{count}}개",
+  "offline.pendingHint": "미검증 후보는 이 기기에 보관됩니다. 온라인 서비스 연결 후 로그인과 공식 제출을 제공합니다.",
+  "offline.clearCache": "오프라인 캐시 삭제",
+  "offline.enableCache": "오프라인 캐시 준비",
+  "offline.clearRecords": "로컬 기록 삭제",
+  "offline.cleared": "로컬 기록과 제출 대기 목록을 삭제했습니다.",
+  "offline.clearConfirm": "이 기기의 개인 기록과 대기 리플레이를 삭제할까요? 되돌릴 수 없습니다.",
+  "offline.confirm": "기록 삭제"
 }

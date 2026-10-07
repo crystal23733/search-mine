@@ -143,5 +143,22 @@
   "daily.shareError": "Sharing is unavailable or cancelled. Try copying the result or downloading a PNG.",
   "daily.memory": "Local storage is limited. Some records may last only in this tab.",
   "daily.unavailable": "This puzzle is unavailable. Start a new puzzle to try again.",
-  "daily.help": "Click to open, right-click to flag. Arrow keys move, Enter or Space acts, O/F changes mode, and Shift+F10 opens the cell menu. Drag to pan, pinch to zoom, or hold a cell for its menu."
+  "daily.help": "Click to open, right-click to flag. Arrow keys move, Enter or Space acts, O/F changes mode, and Shift+F10 opens the cell menu. Drag to pan, pinch to zoom, or hold a cell for its menu.",
+  "offline.title": "Offline play",
+  "offline.ready": "Offline: cached local play is available. Online matches and official records require a connection.",
+  "offline.missing": "Offline: this device has no ready cache. Connect once to prepare local play.",
+  "offline.updateHint": "An update is ready. Return home in every open tab before applying it.",
+  "offline.update": "Apply update",
+  "offline.error": "The operation could not finish. Another tab may be playing, or storage may be unavailable. Try again from home.",
+  "offline.disabled": "Offline cache is disabled on this device.",
+  "offline.cached": "Public local play assets are cached on this device.",
+  "offline.notCached": "The offline cache is not ready. Connect to prepare it.",
+  "offline.pending": "Pending local results: {{count}}",
+  "offline.pendingHint": "These unverified candidates stay on this device. Sign-in and official submission will be available after the online service is connected.",
+  "offline.clearCache": "Delete offline cache",
+  "offline.enableCache": "Prepare offline cache",
+  "offline.clearRecords": "Delete local records",
+  "offline.cleared": "Local records and pending results deleted.",
+  "offline.clearConfirm": "Delete personal records and pending replays on this device? This cannot be undone.",
+  "offline.confirm": "Delete records"
 }

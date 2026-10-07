@@ -143,5 +143,22 @@
   "daily.shareError": "Compartilhamento indisponível ou cancelado. Tente copiar o resultado ou baixar um PNG.",
   "daily.memory": "O armazenamento local é limitado. Alguns registros podem durar apenas nesta aba.",
   "daily.unavailable": "Este desafio está indisponível. Inicie um novo para tentar novamente.",
-  "daily.help": "Clique para abrir e use o botão direito para marcar. Setas movem, Enter ou Espaço executam, O/F mudam o modo e Shift+F10 abre o menu. Arraste para mover, faça pinça para ampliar e segure para abrir o menu."
+  "daily.help": "Clique para abrir e use o botão direito para marcar. Setas movem, Enter ou Espaço executam, O/F mudam o modo e Shift+F10 abre o menu. Arraste para mover, faça pinça para ampliar e segure para abrir o menu.",
+  "offline.title": "Jogo offline",
+  "offline.ready": "Offline: o jogo local em cache está disponível. Partidas online e registros oficiais exigem conexão.",
+  "offline.missing": "Offline: este dispositivo não tem cache pronto. Conecte-se uma vez para prepará-lo.",
+  "offline.updateHint": "Há uma atualização. Volte ao início em todas as abas antes de aplicá-la.",
+  "offline.update": "Aplicar atualização",
+  "offline.error": "Não foi possível concluir. Outra aba pode estar jogando ou o armazenamento está indisponível. Tente novamente no início.",
+  "offline.disabled": "O cache offline está desativado neste dispositivo.",
+  "offline.cached": "Os arquivos públicos do jogo local estão em cache neste dispositivo.",
+  "offline.notCached": "O cache não está pronto. Conecte-se para prepará-lo.",
+  "offline.pending": "Resultados locais pendentes: {{count}}",
+  "offline.pendingHint": "Estes candidatos não verificados ficam neste dispositivo. Login e envio oficial serão oferecidos quando o serviço online estiver conectado.",
+  "offline.clearCache": "Excluir cache offline",
+  "offline.enableCache": "Preparar cache offline",
+  "offline.clearRecords": "Excluir registros locais",
+  "offline.cleared": "Registros locais e pendentes excluídos.",
+  "offline.clearConfirm": "Excluir os registros pessoais e replays pendentes deste dispositivo? Não é possível desfazer.",
+  "offline.confirm": "Excluir registros"
 }

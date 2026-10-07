@@ -143,5 +143,22 @@
   "daily.shareError": "Le partage est indisponible ou annulé. Essayez de copier le résultat ou de télécharger un PNG.",
   "daily.memory": "Le stockage local est limité. Certains résultats peuvent ne durer que dans cet onglet.",
   "daily.unavailable": "Cette énigme est indisponible. Lancez une nouvelle énigme pour réessayer.",
-  "daily.help": "Cliquez pour ouvrir, clic droit pour marquer. Les flèches déplacent, Entrée ou Espace agit, O/F change le mode et Maj+F10 ouvre le menu. Glissez pour déplacer, pincez pour zoomer et maintenez une case pour ouvrir son menu."
+  "daily.help": "Cliquez pour ouvrir, clic droit pour marquer. Les flèches déplacent, Entrée ou Espace agit, O/F change le mode et Maj+F10 ouvre le menu. Glissez pour déplacer, pincez pour zoomer et maintenez une case pour ouvrir son menu.",
+  "offline.title": "Jouer hors ligne",
+  "offline.ready": "Hors ligne : le jeu local en cache est disponible. Les parties en ligne et les résultats officiels nécessitent une connexion.",
+  "offline.missing": "Hors ligne : cet appareil ne dispose pas de cache prêt. Connectez-vous une fois pour le préparer.",
+  "offline.updateHint": "Une mise à jour est prête. Revenez à l’accueil dans tous les onglets avant de l’appliquer.",
+  "offline.update": "Appliquer la mise à jour",
+  "offline.error": "L’opération n’a pas abouti. Un autre onglet joue peut-être ou le stockage est indisponible. Réessayez depuis l’accueil.",
+  "offline.disabled": "Le cache hors ligne est désactivé sur cet appareil.",
+  "offline.cached": "Les fichiers publics du jeu local sont en cache sur cet appareil.",
+  "offline.notCached": "Le cache n’est pas prêt. Connectez-vous pour le préparer.",
+  "offline.pending": "Résultats locaux en attente : {{count}}",
+  "offline.pendingHint": "Ces candidats non vérifiés restent sur cet appareil. La connexion au compte et l’envoi officiel seront proposés après connexion du service en ligne.",
+  "offline.clearCache": "Supprimer le cache hors ligne",
+  "offline.enableCache": "Préparer le cache hors ligne",
+  "offline.clearRecords": "Supprimer les résultats locaux",
+  "offline.cleared": "Résultats locaux et en attente supprimés.",
+  "offline.clearConfirm": "Supprimer les résultats personnels et les replays en attente de cet appareil ? Cette action est irréversible.",
+  "offline.confirm": "Supprimer les résultats"
 }

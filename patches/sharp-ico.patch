@@ -1,0 +1,10 @@
+diff --git a/index.d.ts b/index.d.ts
+index 3726203b420ac9bc67caa6adda29677857823054..ee2824d0b1e2d52e85350f9f0b06ff9b855999cf 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -1,5 +1,4 @@
+ import { ResizeOptions, Sharp, SharpOptions } from "sharp";
+-import { ImageData as BmpData } from "sharp-bmp";
+ 
+ export declare type IcoBuffer = Buffer;
+ export declare type PngOrBmpBuffer = Buffer;

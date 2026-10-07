@@ -6,6 +6,7 @@ import {
   type SessionPort,
 } from "./local-session";
 import type { LocalInput } from "@liar/protocol";
+import { createActivity } from "./activity";
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((r) => {
@@ -207,4 +208,18 @@ test("init failures hide private details and disposal during initialization neve
 });
 test("uses a bounded local random seed without a server account", () => {
   expect(localSeed()).toMatch(/^\d{1,20}$/);
+});
+test("an update prepare lock blocks a new core before its async factory runs", async () => {
+  const s = setup(),
+    activity = createActivity();
+  const factory = vi.fn(async () => s.core);
+  const controller = new LocalController(factory, s.clock, () => false);
+  expect(activity.prepare("update")).toBe(true);
+  await controller.start(() => {
+    activity.hold();
+  });
+  expect(factory).not.toHaveBeenCalled();
+  expect(controller.read().status).toBe("error");
+  activity.release("update");
+  controller.dispose();
 });

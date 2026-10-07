@@ -6,6 +6,8 @@ import { createPreferences } from "./services/preferences";
 import { createLearning } from "./services/learning";
 import { createDailyRecords } from "./services/daily-records";
 import { createSharePort } from "./services/daily-share";
+import { createActivity } from "./services/activity";
+import { createOffline } from "./services/offline";
 import { chooseLocale, localizedPath } from "./services/locale";
 import "@liar/design-tokens/tokens.css";
 import "./styles.css";
@@ -37,9 +39,17 @@ if (!location.pathname.startsWith(`/${locale}/`))
   );
 const navigation = createNavigation(window);
 const i18n = await createI18n(locale);
+const activity = createActivity();
+const offline = createOffline(activity, {
+  window,
+  enabled: import.meta.env.PROD,
+  storage,
+});
 render(
   <App
     services={{
+      activity,
+      offline,
       i18n,
       navigation,
       preferences,

@@ -143,5 +143,22 @@
   "daily.shareError": "分享不可用或已取消。请尝试复制结果或下载 PNG。",
   "daily.memory": "本地存储受限。部分记录可能仅在当前标签页中保留。",
   "daily.unavailable": "谜题不可用。请开始新谜题重试。",
-  "daily.help": "点击打开，右键标旗。方向键移动，Enter 或 Space 执行，O/F 切换模式，Shift+F10 打开格子菜单。拖动平移，双指缩放，长按打开菜单。"
+  "daily.help": "点击打开，右键标旗。方向键移动，Enter 或 Space 执行，O/F 切换模式，Shift+F10 打开格子菜单。拖动平移，双指缩放，长按打开菜单。",
+  "offline.title": "离线游戏",
+  "offline.ready": "当前离线：可使用已缓存的本地游戏。在线对战和官方记录需要联网。",
+  "offline.missing": "当前离线：此设备没有可用缓存。请先联网一次。",
+  "offline.updateHint": "更新已就绪。请在所有打开的标签页中返回首页后再更新。",
+  "offline.update": "应用更新",
+  "offline.error": "操作未完成。其他标签页可能正在游戏，或存储不可用。请从首页重试。",
+  "offline.disabled": "此设备已停用离线缓存。",
+  "offline.cached": "公开的本地游戏文件已缓存在此设备上。",
+  "offline.notCached": "离线缓存尚未就绪。请联网准备。",
+  "offline.pending": "待提交本地记录：{{count}}",
+  "offline.pendingHint": "未验证的候选记录保留在此设备。在线服务连接后将提供登录和官方提交。",
+  "offline.clearCache": "删除离线缓存",
+  "offline.enableCache": "准备离线缓存",
+  "offline.clearRecords": "删除本地记录",
+  "offline.cleared": "本地记录和待提交记录已删除。",
+  "offline.clearConfirm": "删除此设备的个人记录和待提交回放吗？此操作无法撤销。",
+  "offline.confirm": "删除记录"
 }

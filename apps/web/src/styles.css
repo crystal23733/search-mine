@@ -928,3 +928,9 @@ input[type="checkbox"]:checked::before {
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--color-border);
 }
+.offline-notice {
+  margin: var(--space-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}

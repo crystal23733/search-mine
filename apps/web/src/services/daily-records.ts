@@ -21,6 +21,8 @@ export interface DailyRecordsPort {
     record: DailyRecord,
   ): Promise<RecordsResult<{ record: DailyRecord; inserted: boolean }>>;
   clear(): Promise<RecordsResult<null>>;
+  pending(): Promise<RecordsResult<DailyRecord[]>>;
+  removePending(id: string, attemptId: string): Promise<RecordsResult<null>>;
 }
 export function dailyId(metadata: DailyMetadata): string {
   return `${metadata.date}:v${metadata.seed_version}:${metadata.rules_hash}`;
@@ -144,18 +146,22 @@ export function createDailyRecords(
   name = "liar.daily.v1",
 ): DailyRecordsPort {
   const memory = new Map<string, DailyRecord>();
+  const queued = new Map<string, DailyRecord>();
   let fallback = !factory;
   let warning = fallback;
   const copy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-  const ordered = () =>
-    [...memory.values()].sort((a, b) => b.id.localeCompare(a.id));
+  const ordered = (source = memory) =>
+    [...source.values()].sort((a, b) => b.id.localeCompare(a.id));
   const remember = (record: DailyRecord) => {
     memory.set(record.id, record);
-    for (const stale of ordered().slice(30)) memory.delete(stale.id);
+    for (const stale of ordered().slice(30)) {
+      memory.delete(stale.id);
+      queued.delete(stale.id);
+    }
   };
   const open = () =>
     new Promise<IDBDatabase>((resolve, reject) => {
-      const request = factory!.open(name, 1);
+      const request = factory!.open(name, 2);
       let done = false;
       const fail = () => {
         if (!done) {
@@ -167,8 +173,24 @@ export function createDailyRecords(
       const timer = setTimeout(fail, 5000);
       request.onerror = fail;
       request.onblocked = fail;
-      request.onupgradeneeded = () =>
-        request.result.createObjectStore("records", { keyPath: "id" });
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains("records"))
+          db.createObjectStore("records", { keyPath: "id" });
+        const pending = db.createObjectStore("pending", { keyPath: "id" });
+        const cursor = request
+          .transaction!.objectStore("records")
+          .openCursor(null, "prev");
+        let visited = 0;
+        cursor.onsuccess = () => {
+          const row = cursor.result;
+          if (!row || visited++ >= 30) return;
+          const record = parseRecord(row.value);
+          if (record) pending.put(record);
+          else warning = true;
+          row.continue();
+        };
+      };
       request.onsuccess = () => {
         if (done) {
           request.result.close();
@@ -182,12 +204,16 @@ export function createDailyRecords(
     });
   const run = async <T>(
     mode: IDBTransactionMode,
-    operation: (store: IDBObjectStore, set: (value: T) => void) => void,
+    operation: (
+      store: IDBObjectStore,
+      set: (value: T) => void,
+      pending: IDBObjectStore,
+    ) => void,
   ): Promise<T> => {
     const db = await open();
     try {
       return await new Promise<T>((resolve, reject) => {
-        const tx = db.transaction("records", mode);
+        const tx = db.transaction(["records", "pending"], mode);
         let value: T;
         const timer = setTimeout(() => {
           tx.abort();
@@ -201,9 +227,13 @@ export function createDailyRecords(
           clearTimeout(timer);
           reject(Error("storage_unavailable"));
         };
-        operation(tx.objectStore("records"), (result) => {
-          value = result;
-        });
+        operation(
+          tx.objectStore("records"),
+          (result) => {
+            value = result;
+          },
+          tx.objectStore("pending"),
+        );
       });
     } finally {
       db.close();
@@ -213,13 +243,17 @@ export function createDailyRecords(
     fallback = true;
     warning = true;
   };
-  return {
-    async list() {
-      if (!fallback)
-        try {
-          const rows = await run<DailyRecord[]>("readonly", (store, set) => {
+  const read = async (
+    pending: boolean,
+  ): Promise<RecordsResult<DailyRecord[]>> => {
+    const target = pending ? queued : memory;
+    if (!fallback)
+      try {
+        const rows = await run<DailyRecord[]>(
+          "readonly",
+          (store, set, queue) => {
             const result: DailyRecord[] = [];
-            const cursor = store.openCursor(null, "prev");
+            const cursor = (pending ? queue : store).openCursor(null, "prev");
             let visited = 0;
             cursor.onsuccess = () => {
               const row = cursor.result;
@@ -232,13 +266,34 @@ export function createDailyRecords(
               else warning = true;
               row.continue();
             };
+          },
+        );
+        target.clear();
+        rows.forEach((row) => target.set(row.id, row));
+      } catch {
+        failed();
+      }
+    return { value: copy(ordered(target)), warning };
+  };
+  return {
+    list: () => read(false),
+    pending: () => read(true),
+    async removePending(id, attemptId) {
+      if (!fallback)
+        try {
+          await run<null>("readwrite", (_store, set, pending) => {
+            const request = pending.get(id);
+            request.onsuccess = () => {
+              if (parseRecord(request.result)?.attempt_id === attemptId)
+                pending.delete(id);
+              set(null);
+            };
           });
-          memory.clear();
-          rows.forEach(remember);
         } catch {
           failed();
         }
-      return { value: copy(ordered()), warning };
+      if (queued.get(id)?.attempt_id === attemptId) queued.delete(id);
+      return { value: null, warning };
     },
     async saveFirst(source) {
       const record = parseRecord(source);
@@ -247,7 +302,7 @@ export function createDailyRecords(
         try {
           const saved = await run<{ record: DailyRecord; inserted: boolean }>(
             "readwrite",
-            (store, set) => {
+            (store, set, pending) => {
               const request = store.get(record.id);
               request.onsuccess = () => {
                 const previous = parseRecord(request.result);
@@ -257,6 +312,7 @@ export function createDailyRecords(
                 }
                 if (request.result !== undefined) warning = true;
                 store.put(record);
+                pending.put(record);
                 set({ record, inserted: true });
                 const count = store.count();
                 count.onsuccess = () => {
@@ -267,6 +323,7 @@ export function createDailyRecords(
                     const row = cursor.result;
                     if (row && excess-- > 0) {
                       row.delete();
+                      pending.delete(row.primaryKey);
                       row.continue();
                     }
                   };
@@ -274,12 +331,14 @@ export function createDailyRecords(
               };
             },
           );
+          if (saved.inserted) queued.set(saved.record.id, saved.record);
           remember(saved.record);
           return { value: copy(saved), warning };
         } catch {
           failed();
         }
       const previous = memory.get(record.id);
+      if (!previous) queued.set(record.id, record);
       remember(previous ?? record);
       return {
         value: copy({ record: previous ?? record, inserted: !previous }),
@@ -289,14 +348,16 @@ export function createDailyRecords(
     async clear() {
       if (!fallback)
         try {
-          await run<null>("readwrite", (store, set) => {
+          await run<null>("readwrite", (store, set, pending) => {
             store.clear();
+            pending.clear();
             set(null);
           });
         } catch {
           failed();
         }
       memory.clear();
+      queued.clear();
       return { value: null, warning };
     },
   };

@@ -103,6 +103,8 @@ test("local practice displays authoritative rejection and result, replaces diffi
   };
   const mounted = render(<App services={ports} />);
   await screen.findByRole("grid");
+  expect(ports.activity.read().busy).toBe(true);
+  expect(ports.activity.prepare("update")).toBe(false);
   expect(cores[0].init.mock.calls[0][1]).toBe("easy");
   fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
   expect(
@@ -130,6 +132,7 @@ test("local practice displays authoritative rejection and result, replaces diffi
   expect(window.location.hash).toBe("#invite");
   mounted.unmount();
   await waitFor(() => expect(cores[2].dispose).toHaveBeenCalledTimes(1));
+  expect(ports.activity.read().busy).toBe(false);
 });
 test("training follows the public expected action, marks completion and replays without creating an account", async () => {
   const ports = await services(

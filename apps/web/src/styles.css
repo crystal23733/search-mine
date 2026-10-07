@@ -814,3 +814,100 @@ input[type="checkbox"]:checked::before {
     max-height: none;
   }
 }
+/* Local game layout keeps the native board scrollable at its accessible cell size. */
+.page-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-block: 1rem;
+}
+.page-title h1 {
+  margin-block: 0.3rem;
+}
+.match-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-block: 1rem;
+}
+.match-controls label {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.match-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+.match-board {
+  min-width: 0;
+}
+.match-board > .button {
+  margin-block: 1rem;
+  min-width: 12rem;
+}
+.match-summary {
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+}
+.match-summary .card {
+  padding: 1.25rem;
+}
+.match-summary progress,
+.match-summary meter {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+.match-summary p strong {
+  float: right;
+}
+.match-timer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.match-timer output {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+.lesson-card .button {
+  width: 100%;
+  margin-top: 0.7rem;
+}
+@media (max-width: 800px) {
+  .match-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.status-message {
+  display: block;
+  margin-block: 1rem;
+}
+.match-layout--guided {
+  grid-template-areas: "board guide" "board summary";
+}
+.match-layout--guided .match-board {
+  grid-area: board;
+}
+.match-layout--guided .match-guide {
+  grid-area: guide;
+}
+.match-layout--guided .match-summary {
+  grid-area: summary;
+}
+.match-guide .card {
+  padding: 1.25rem;
+}
+@media (max-width: 800px) {
+  .match-layout--guided {
+    grid-template-areas: "guide" "board" "summary";
+  }
+}

@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { WorkerPracticeCore, type WorkerPort } from "@liar/core-bridge";
+import {
+  WorkerPracticeCore,
+  WorkerTrainingCore,
+  type WorkerPort,
+} from "@liar/core-bridge";
 class FakeWorker extends EventTarget {
   sent: Array<{ id: number }> = [];
   terminate = vi.fn();
@@ -11,6 +15,40 @@ class FakeWorker extends EventTarget {
   }
 }
 describe("practice worker transport", () => {
+  it("starts training in its separate worker mode and correlates lesson replies", async () => {
+    const worker = new FakeWorker();
+    const core = new WorkerTrainingCore(worker as unknown as WorkerPort);
+    const initial = core.init();
+    const initialCheck = expect(initial).resolves.toEqual({ stage: "open" });
+    worker.reply({ id: worker.sent[0].id, ok: { stage: "open" } });
+    await initialCheck;
+    expect(worker.sent[0]).toEqual({ id: 1, kind: "training-init" });
+    const snapshot = core.snapshot();
+    worker.reply({ id: worker.sent[1].id, ok: { stage: "attack" } });
+    await expect(snapshot).resolves.toEqual({ stage: "attack" });
+    const input = {
+      v: 1,
+      command_id: 1,
+      client_seq: 1,
+      action: { type: "attack" },
+    } as const;
+    const step = core.step(input, 1);
+    worker.reply({
+      id: worker.sent[2].id,
+      ok: { ack: { duplicate: false }, view: { stage: "reveal" } },
+    });
+    await expect(step).resolves.toMatchObject({ view: { stage: "reveal" } });
+    expect(worker.sent[2]).toEqual({
+      id: 3,
+      kind: "training-step",
+      input,
+      time_ms: 1,
+    });
+    const tick = core.advance(5);
+    worker.reply({ id: worker.sent[3].id, ok: { stage: "accuse" } });
+    await expect(tick).resolves.toEqual({ stage: "accuse" });
+    core.dispose();
+  });
   it("correlates out-of-order replies and ignores unknown requests", async () => {
     const worker = new FakeWorker();
     const core = new WorkerPracticeCore(worker as unknown as WorkerPort);

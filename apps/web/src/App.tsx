@@ -5,6 +5,7 @@ import { HomePage } from "./pages/HomePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { RulesPage } from "./pages/RulesPage";
 import { StatusPage } from "./pages/StatusPage";
+import { GameRoute } from "./pages/GameRoute";
 import { chooseLocale } from "./services/locale";
 import type { AppServices } from "./services/ports";
 export function App({ services }: { services: AppServices }) {
@@ -54,8 +55,17 @@ export function App({ services }: { services: AppServices }) {
   const route =
     url.pathname.replace(/^\/(en|ko|ja|zh-CN|es|pt-BR|de|fr)(?=\/|$)/, "") ||
     "/";
+  useEffect(() => {
+    if (
+      services.learning.read() === "new" &&
+      ["/", "/practice", "/friends", "/daily", "/queue"].includes(route)
+    )
+      services.navigation.go("/tutorial", { return: route });
+  }, [services, route]);
   const page =
-    route === "/" ? (
+    route === "/practice" || route === "/tutorial" ? (
+      <GameRoute route={route === "/practice" ? "practice" : "tutorial"} />
+    ) : route === "/" ? (
       <HomePage />
     ) : route === "/settings" ? (
       <SettingsPage />

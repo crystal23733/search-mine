@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 const locales = ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"];
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("liar.tutorial.v1", '"skipped"'),
+  );
+});
 test("all locale URLs render without overflow at mobile and desktop sizes", async ({
   page,
 }, info) => {

@@ -1,3 +1,4 @@
+import { createLearning } from "../src/services/learning";
 import { h, render } from "preact";
 import type { GameView, PublicAction } from "@liar/protocol";
 import { Ui, type UiContext } from "../src/ui/context";
@@ -19,6 +20,10 @@ export async function mountBoard(initial: GameView) {
       preferences,
       navigation: createNavigation(window),
       boardRenderer: createPixiBoard,
+      learning: createLearning(),
+      trainingCore: async () => {
+        throw new Error("unavailable");
+      },
       practiceCore: async () => {
         throw new Error("unavailable");
       },

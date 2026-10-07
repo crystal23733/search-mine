@@ -9,3 +9,4 @@ pub mod policy;
 pub mod random;
 pub mod rules;
 pub mod solver;
+pub mod tutorial;

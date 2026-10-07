@@ -1,5 +1,6 @@
 //! Browser adapter for the shared local game domain.
 pub mod session;
+pub mod training;
 use liar_protocol::game::PublicError;
 use wasm_bindgen::prelude::*;
 fn js_error(error: PublicError) -> JsError {
@@ -19,6 +20,33 @@ impl LocalSession {
     pub fn new(seed: &str, difficulty: &str) -> Result<LocalSession, JsError> {
         Ok(Self {
             session: session::PracticeSession::new(seed, difficulty).map_err(js_error)?,
+        })
+    }
+    pub fn snapshot(&self) -> Result<String, JsError> {
+        serde_json::to_string(&self.session.view()).map_err(|_| js_error(PublicError::Unavailable))
+    }
+    pub fn step(&mut self, input: &str, time_ms: f64) -> Result<String, JsError> {
+        let time_ms = session::checked_time_ms(time_ms).map_err(js_error)?;
+        serde_json::to_string(&self.session.step(input, time_ms).map_err(js_error)?)
+            .map_err(|_| js_error(PublicError::Unavailable))
+    }
+    pub fn advance(&mut self, time_ms: f64) -> Result<String, JsError> {
+        let time_ms = session::checked_time_ms(time_ms).map_err(js_error)?;
+        serde_json::to_string(&self.session.advance(time_ms).map_err(js_error)?)
+            .map_err(|_| js_error(PublicError::Unavailable))
+    }
+}
+
+#[wasm_bindgen]
+pub struct TrainingSession {
+    session: training::TrainingSession,
+}
+#[wasm_bindgen]
+impl TrainingSession {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Result<TrainingSession, JsError> {
+        Ok(Self {
+            session: training::TrainingSession::new().map_err(js_error)?,
         })
     }
     pub fn snapshot(&self) -> Result<String, JsError> {

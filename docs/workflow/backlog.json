@@ -171,7 +171,7 @@
       "deps": [
         "board-ui"
       ],
-      "acceptance": "공격/지목 각1회; skip/replay와 초대 유지; E1 이해 관찰·3난이도 local 표시",
+      "acceptance": "공격/지목 각1회; skip/replay와 초대 유지; 3난이도 local·E1 관찰 준비(실측 #27/M2 출구 조건)",
       "issue": 12
     },
     {

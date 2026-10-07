@@ -5,12 +5,17 @@ import { createI18n } from "./services/i18n";
 import { createNavigation } from "./services/navigation";
 import { createPreferences } from "./services/preferences";
 import type { AppServices } from "./services/ports";
-async function setup(path = "/en/") {
+import { createLearning } from "./services/learning";
+async function setup(path = "/en/", firstVisit = false) {
   window.history.replaceState(null, "", path);
   const services: AppServices = {
     i18n: await createI18n("en"),
     navigation: createNavigation(window),
     preferences: createPreferences(),
+    learning: createLearning(),
+    trainingCore: async () => {
+      throw new Error("unavailable");
+    },
     practiceCore: async () => {
       throw new Error("unavailable");
     },
@@ -18,9 +23,25 @@ async function setup(path = "/en/") {
       throw new Error("unavailable");
     },
   };
+  if (!firstVisit) services.learning.mark("skipped");
   render(<App services={services} />);
   return services;
 }
+test("first visit starts training while skip preserves invitation and replay remains available", async () => {
+  const services = await setup("/en/?code=ABCD1234#invitation", true);
+  await waitFor(() => expect(window.location.pathname).toBe("/en/tutorial"));
+  expect(window.location.search).toContain("code=ABCD1234");
+  expect(window.location.hash).toBe("#invitation");
+  fireEvent.click(await screen.findByRole("button", { name: "Skip tutorial" }));
+  await waitFor(() => expect(window.location.pathname).toBe("/en/"));
+  expect(services.learning.read()).toBe("skipped");
+  services.navigation.go("/tutorial");
+  expect(
+    await screen.findByRole("heading", {
+      name: "Try an attack and accusation",
+    }),
+  ).toBeTruthy();
+});
 test("boots the localized product with a language control and no password collection", async () => {
   await setup();
   expect(screen.getByRole("combobox", { name: "Language" }).isConnected).toBe(

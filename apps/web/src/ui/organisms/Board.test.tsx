@@ -1,3 +1,4 @@
+import { createLearning } from "../../services/learning";
 import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { expect, test, vi } from "vitest";
 import { DEFAULT_RULES, type GameView } from "@liar/protocol";
@@ -47,6 +48,10 @@ async function setup(factory?: () => Promise<BoardRenderer>) {
       i18n: adapter,
       preferences: createPreferences(),
       navigation: createNavigation(window),
+      learning: createLearning(),
+      trainingCore: async () => {
+        throw new Error("unavailable");
+      },
       practiceCore: async () => {
         throw new Error("unavailable");
       },

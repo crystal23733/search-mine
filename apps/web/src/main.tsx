@@ -3,6 +3,7 @@ import { App } from "./App";
 import { createI18n } from "./services/i18n";
 import { createNavigation } from "./services/navigation";
 import { createPreferences } from "./services/preferences";
+import { createLearning } from "./services/learning";
 import { chooseLocale, localizedPath } from "./services/locale";
 import "@liar/design-tokens/tokens.css";
 import "./styles.css";
@@ -34,6 +35,9 @@ render(
       i18n,
       navigation,
       preferences,
+      learning: createLearning(storage),
+      trainingCore: async () =>
+        (await import("./services/core")).createTrainingCore(),
       practiceCore: async () =>
         (await import("./services/core")).createPracticeCore(),
       boardRenderer: async (host) =>

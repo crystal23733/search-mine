@@ -1,6 +1,7 @@
 import { DEFAULT_RULES } from "@liar/protocol";
 import { useUi } from "../ui/context";
 import { Card } from "../ui/atoms/Card";
+import { NavLink } from "../ui/molecules/NavLink";
 export function RulesPage() {
   const { t, locale } = useUi();
   const rules = DEFAULT_RULES.rules;
@@ -35,6 +36,9 @@ export function RulesPage() {
           <p key={key}>{t(key, data)}</p>
         ))}
       </Card>
+      <NavLink path="/tutorial" class="button button--primary">
+        {t("tutorial.replay")}
+      </NavLink>
     </div>
   );
 }

@@ -56,13 +56,21 @@ cargo run --locked -p liar-server
 
 ## 검증
 
+인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 아직 로그인 HTTP/제공자/화면은 #44~46 구현 대상입니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 아래는 격리된 테스트 DB 예시입니다.
+
 ```powershell
 pnpm exec playwright install chromium
 ./scripts/check.ps1
 # 실제 DB 통합 (개발용 loopback DB, 운영 DB는 host 포트 없음)
 docker compose -f tests/compose.postgres.yml up -d --wait
 $env:DATABASE_URL = 'postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
+$env:MIGRATION_DATABASE_URL = $env:DATABASE_URL
+cargo run --locked -p liar-server --bin migrate
+Remove-Item Env:MIGRATION_DATABASE_URL
 cargo test --locked -p liar-server --test postgres -- --ignored
+# 실제 DB가 실행된 환경에서 인증 coverage (entry point 포함)
+cargo llvm-cov --locked -p liar-server --tests --ignore-filename-regex '[/\\](tests|examples)[/\\]' --json --output-path .tmp/auth-coverage.json -- --include-ignored
+python scripts/check_auth_coverage.py .tmp/auth-coverage.json
 docker compose -f tests/compose.postgres.yml down
 ```
 

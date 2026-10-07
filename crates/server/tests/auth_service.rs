@@ -198,12 +198,13 @@ async fn verified_login_issues_new_session_and_rejects_mixup_link_or_expired_tra
         .unwrap();
     assert_eq!(session.account.nickname, None);
     assert_ne!(session.token.hash(), old.hash());
-    let writes = service.store.logins.lock().unwrap();
-    assert_eq!(writes.len(), 1);
-    assert_eq!(writes[0].previous_session, Some(old.hash()));
-    assert_eq!(writes[0].session_hash, session.token.hash());
-    assert_eq!(writes[0].digests.len(), 1);
-    drop(writes);
+    {
+        let writes = service.store.logins.lock().unwrap();
+        assert_eq!(writes.len(), 1);
+        assert_eq!(writes[0].previous_session, Some(old.hash()));
+        assert_eq!(writes[0].session_hash, session.token.hash());
+        assert_eq!(writes[0].digests.len(), 1);
+    }
     for (intent, provider, now, subject) in [
         (
             AuthIntent::Link(Uuid::new_v4()),

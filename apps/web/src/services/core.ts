@@ -1,8 +1,10 @@
 import {
   WorkerPracticeCore,
   WorkerTrainingCore,
+  WorkerDailyCore,
   type PracticeCore,
   type TrainingCore,
+  type DailyCore,
 } from "@liar/core-bridge";
 function worker(): Worker {
   return new Worker(
@@ -15,4 +17,7 @@ export function createPracticeCore(): PracticeCore {
 }
 export function createTrainingCore(): TrainingCore {
   return new WorkerTrainingCore(worker());
+}
+export function createDailyCore(): DailyCore {
+  return new WorkerDailyCore(worker());
 }

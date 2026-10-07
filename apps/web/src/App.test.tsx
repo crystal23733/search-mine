@@ -1,3 +1,4 @@
+import { dailyTestPorts } from "../test/daily-ports";
 import { render, screen, fireEvent, waitFor } from "@testing-library/preact";
 import { expect, test } from "vitest";
 import { App } from "./App";
@@ -9,6 +10,7 @@ import { createLearning } from "./services/learning";
 async function setup(path = "/en/", firstVisit = false) {
   window.history.replaceState(null, "", path);
   const services: AppServices = {
+    ...dailyTestPorts(),
     i18n: await createI18n("en"),
     navigation: createNavigation(window),
     preferences: createPreferences(),

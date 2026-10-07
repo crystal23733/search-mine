@@ -63,8 +63,16 @@ export function App({ services }: { services: AppServices }) {
       services.navigation.go("/tutorial", { return: route });
   }, [services, route]);
   const page =
-    route === "/practice" || route === "/tutorial" ? (
-      <GameRoute route={route === "/practice" ? "practice" : "tutorial"} />
+    route === "/practice" || route === "/tutorial" || route === "/daily" ? (
+      <GameRoute
+        route={
+          route === "/practice"
+            ? "practice"
+            : route === "/daily"
+              ? "daily"
+              : "tutorial"
+        }
+      />
     ) : route === "/" ? (
       <HomePage />
     ) : route === "/settings" ? (

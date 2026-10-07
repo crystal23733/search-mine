@@ -1,3 +1,4 @@
+import { dailyTestPorts } from "../../../test/daily-ports";
 import { createLearning } from "../../services/learning";
 import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { expect, test, vi } from "vitest";
@@ -38,13 +39,17 @@ function fixture(): GameView {
     result: null,
   };
 }
-async function setup(factory?: () => Promise<BoardRenderer>) {
+async function setup(
+  factory?: () => Promise<BoardRenderer>,
+  allowedModes?: ("open" | "flag")[],
+) {
   const adapter = await createI18n("en");
   const ui: UiContext = {
     locale: "en",
     t: (key, values) => adapter.t("en", key, values),
     preferences: DEFAULT_PREFERENCES,
     services: {
+      ...dailyTestPorts(),
       i18n: adapter,
       preferences: createPreferences(),
       navigation: createNavigation(window),
@@ -68,12 +73,29 @@ async function setup(factory?: () => Promise<BoardRenderer>) {
   const view = fixture();
   const tree = (next: GameView = view) => (
     <Ui.Provider value={ui}>
-      <Board view={next} onAction={onAction} createRenderer={createRenderer} />
+      <Board
+        view={next}
+        onAction={onAction}
+        createRenderer={createRenderer}
+        allowedModes={allowedModes}
+      />
     </Ui.Provider>
   );
   const mounted = render(tree());
   return { ...mounted, tree, view, draw, dispose, onAction, ui };
 }
+test("solo board restricts mode buttons, keyboard and cell menu to the Rust action allowlist", async () => {
+  const { onAction } = await setup(undefined, ["open", "flag"]);
+  expect(
+    screen.queryByRole("button", { name: "Accuse", exact: true }),
+  ).toBeNull();
+  const cell = screen.getAllByRole("gridcell")[2];
+  fireEvent.keyDown(cell, { key: "a" });
+  fireEvent.keyDown(cell, { key: "Enter" });
+  expect(onAction).toHaveBeenCalledExactlyOnceWith({ type: "open", cell: 2 });
+  fireEvent.keyDown(cell, { key: "F10", shiftKey: true });
+  expect(screen.getByRole("dialog").textContent).not.toContain("Accuse");
+});
 test("DOM exposes only public coordinates/numbers/flags with one roving tab stop", async () => {
   const { draw } = await setup();
   const cells = screen.getAllByRole("gridcell");

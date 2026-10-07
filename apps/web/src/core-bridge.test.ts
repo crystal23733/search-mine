@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   WorkerPracticeCore,
   WorkerTrainingCore,
+  WorkerDailyCore,
   type WorkerPort,
 } from "@liar/core-bridge";
 class FakeWorker extends EventTarget {
@@ -15,6 +16,30 @@ class FakeWorker extends EventTarget {
   }
 }
 describe("practice worker transport", () => {
+  it("binds daily initialization to the UTC date and retrieves its native replay", async () => {
+    const worker = new FakeWorker();
+    const core = new WorkerDailyCore(worker as unknown as WorkerPort);
+    const initial = core.init("2026-10-07", 1);
+    const check = expect(initial).resolves.toEqual({
+      metadata: { date: "2026-10-07" },
+    });
+    worker.reply({ id: 1, ok: { metadata: { date: "2026-10-07" } } });
+    await check;
+    expect(worker.sent[0]).toEqual({
+      id: 1,
+      kind: "daily-init",
+      date: "2026-10-07",
+      seed_version: 1,
+    });
+    const replay = core.replay();
+    worker.reply({ id: 2, ok: { v: 1, inputs: [], final_time_ms: 0 } });
+    await expect(replay).resolves.toMatchObject({
+      inputs: [],
+      final_time_ms: 0,
+    });
+    expect(worker.sent[1]).toEqual({ id: 2, kind: "daily-replay" });
+    core.dispose();
+  });
   it("starts training in its separate worker mode and correlates lesson replies", async () => {
     const worker = new FakeWorker();
     const core = new WorkerTrainingCore(worker as unknown as WorkerPort);

@@ -144,6 +144,7 @@ struct Player {
 }
 // Never Serialize/Debug: Board and hidden overlays stay inside the domain.
 pub struct RuleEngine {
+    solo: bool,
     board: Board,
     rules: RulesSnapshot,
     players: [Player; 2],
@@ -212,6 +213,7 @@ impl RuleEngine {
             stats: GameStats::default(),
         };
         Ok(Self {
+            solo: false,
             board,
             rules,
             players: [player(), player()],
@@ -245,6 +247,11 @@ impl RuleEngine {
             remaining_ms: self.deadline.saturating_sub(now.max(self.start)) as u32,
             end: self.end,
         }
+    }
+    pub fn new_solo(board: Board, rules: RulesSnapshot, now: u64) -> Result<Self, Rejection> {
+        let mut engine = Self::new(board, rules, now)?;
+        engine.solo = true;
+        Ok(engine)
     }
     pub fn apply(&mut self, command: Command) -> Ack {
         let index = command.seat.index();
@@ -327,6 +334,11 @@ impl RuleEngine {
         }
         if self.now < self.players[index].stun_until {
             return Err(Rejection::Stunned);
+        }
+        if self.solo
+            && (seat != Seat::One || !matches!(action, Action::Open(_) | Action::ToggleFlag(_)))
+        {
+            return Err(Rejection::AttackUnavailable);
         }
         match action {
             Action::Open(cell) => {
@@ -496,7 +508,7 @@ impl RuleEngine {
                 .iter()
                 .all(|p| p.view.opened_safe() == self.board.safe_total())
         {
-            self.finish(EndReason::Clear, None, self.start);
+            self.finish(EndReason::Clear, self.solo.then_some(Seat::One), self.start);
             return Ok(());
         }
         let mut terminal = (self.deadline, EndReason::Timeout, self.progress_winner());

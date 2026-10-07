@@ -66,6 +66,8 @@ Pixi도 CellDisplay→BoardDisplay, FlagDisplay, StunEffect, GaugeDisplay로 나
 
 #11의 pool/dirty 렌더·DOM fallback·조작 경계는 [ADR0015](../adr/0015-public-board-rendering-and-input.md)를 따른다. 게임 명령 처리와 실제 로컬 대전 연결은 #12 controller가 맡는다.
 
+#12 FIFO/Clock/core port·세션 lifecycle과 학습용 실제 규칙 판은 [ADR0016](../adr/0016-local-match-controller-and-training-fixture.md)를 따른다. 첫 방문/skip/재학습과 초대 보존을 분리하고 실제 이해도 E1/E2는 #27에서 참여자와 검증한다.
+
 ## 토큰과 상태
 
 design-tokens 원천에 semantic color(background/surface/text/danger/flag/lieFeedback), spacing(4/8/12/16/24), typography(scale·locale fonts), radius, elevation, duration, motion policy를 둔다. CSS custom property와 Pixi 숫자값을 생성한다. 색만으로 mine/flag/stun을 구분하지 않는다. 예산과 토큰값은 실제 저사양 기기 테스트로 조정한다.

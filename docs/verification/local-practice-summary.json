@@ -1,0 +1,283 @@
+{
+  "source_commit": "1f7bc94500c9ed07010444b804de52e21f0f6393",
+  "environment": "Windows 11 / Ryzen 9 3900X / headless Chromium; desktop and Pixel 7 viewport emulation",
+  "checks": {
+    "web_tests": 41,
+    "browser_tests": 36,
+    "postgres_local": "ignored; verify required CI database job"
+  },
+  "web_coverage": {
+    "lines": {
+      "total": 677,
+      "covered": 623,
+      "skipped": 0,
+      "pct": 92.02
+    },
+    "statements": {
+      "total": 737,
+      "covered": 673,
+      "skipped": 0,
+      "pct": 91.31
+    },
+    "functions": {
+      "total": 218,
+      "covered": 196,
+      "skipped": 0,
+      "pct": 89.9
+    },
+    "branches": {
+      "total": 472,
+      "covered": 389,
+      "skipped": 0,
+      "pct": 82.41
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "core_coverage": {
+    "branches": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "functions": {
+      "count": 192,
+      "covered": 188,
+      "percent": 97.91666666666666
+    },
+    "instantiations": {
+      "count": 386,
+      "covered": 190,
+      "percent": 49.22279792746114
+    },
+    "lines": {
+      "count": 2281,
+      "covered": 2232,
+      "percent": 97.85181937746601
+    },
+    "mcdc": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "regions": {
+      "count": 3520,
+      "covered": 3387,
+      "notcovered": 133,
+      "percent": 96.2215909090909
+    }
+  },
+  "bundle": {
+    "method": "Vite manifest static import closure, Python gzip level 9 mtime 0. Dynamic game/Pixi/WASM loading is separate. All assets includes all backends and all locales, not a measured single-game request trace.",
+    "initial_js_gzip_bytes": 28471,
+    "selected_locale_js_gzip_bytes": {
+      "de": 2840,
+      "es": 2750,
+      "fr": 2748,
+      "ja": 2988,
+      "ko": 2943,
+      "pt-BR": 2715,
+      "zh-CN": 2762
+    },
+    "initial_with_largest_locale_js_gzip_bytes": 31459,
+    "game_static_additional_js_gzip_bytes": {
+      "src/board/pixi.ts": 108859,
+      "src/pages/MatchPage.tsx": 6145,
+      "src/pages/TutorialPage.tsx": 6131,
+      "src/services/core.ts": 728
+    },
+    "all_assets_js_gzip_bytes": 219587,
+    "assets": [
+      {
+        "file": "assets/browserAll-eT7xa_kT.js",
+        "bytes": 43505,
+        "gzip_bytes": 11183
+      },
+      {
+        "file": "assets/CanvasPool-BjAQcbe-.js",
+        "bytes": 112944,
+        "gzip_bytes": 33977
+      },
+      {
+        "file": "assets/CanvasRenderer-7A3IJvBl.js",
+        "bytes": 88527,
+        "gzip_bytes": 27514
+      },
+      {
+        "file": "assets/CanvasRenderer-DtDJ5qto.js",
+        "bytes": 77,
+        "gzip_bytes": 80
+      },
+      {
+        "file": "assets/canvasUtils-DNuCpFHp.js",
+        "bytes": 6056,
+        "gzip_bytes": 2045
+      },
+      {
+        "file": "assets/common-6dufL7Ta.js",
+        "bytes": 6512,
+        "gzip_bytes": 2715
+      },
+      {
+        "file": "assets/common-B6th90Dl.js",
+        "bytes": 7164,
+        "gzip_bytes": 2988
+      },
+      {
+        "file": "assets/common-CDWIS_-H.js",
+        "bytes": 6771,
+        "gzip_bytes": 2840
+      },
+      {
+        "file": "assets/common-CUa4VXCP.js",
+        "bytes": 6015,
+        "gzip_bytes": 2762
+      },
+      {
+        "file": "assets/common-CvxcapV5.js",
+        "bytes": 6783,
+        "gzip_bytes": 2748
+      },
+      {
+        "file": "assets/common-DyXzWE6l.js",
+        "bytes": 7184,
+        "gzip_bytes": 2943
+      },
+      {
+        "file": "assets/common-zQjLvzaI.js",
+        "bytes": 6607,
+        "gzip_bytes": 2750
+      },
+      {
+        "file": "assets/core-BBIevHG7.js",
+        "bytes": 1862,
+        "gzip_bytes": 728
+      },
+      {
+        "file": "assets/Dialog-BHI-oQRP.js",
+        "bytes": 15017,
+        "gzip_bytes": 6253
+      },
+      {
+        "file": "assets/getPo2TextureFromSource-sFFr9OKU.js",
+        "bytes": 25112,
+        "gzip_bytes": 8557
+      },
+      {
+        "file": "assets/getTexelRangeRects-okJWNZf7.js",
+        "bytes": 11314,
+        "gzip_bytes": 2969
+      },
+      {
+        "file": "assets/getTextureBatchBindGroup-Dqfjll6Y.js",
+        "bytes": 344,
+        "gzip_bytes": 268
+      },
+      {
+        "file": "assets/index-DGmtNCY8.js",
+        "bytes": 63403,
+        "gzip_bytes": 21216
+      },
+      {
+        "file": "assets/init-DJzaxfFm.js",
+        "bytes": 14880,
+        "gzip_bytes": 4622
+      },
+      {
+        "file": "assets/MatchLayout-B6dDk1rj.js",
+        "bytes": 12732,
+        "gzip_bytes": 4875
+      },
+      {
+        "file": "assets/MatchPage-DxSL_s89.js",
+        "bytes": 1906,
+        "gzip_bytes": 940
+      },
+      {
+        "file": "assets/NavLink-C15KcFtd.js",
+        "bytes": 321,
+        "gzip_bytes": 251
+      },
+      {
+        "file": "assets/pixi-Bk0dGLme.js",
+        "bytes": 42363,
+        "gzip_bytes": 14293
+      },
+      {
+        "file": "assets/preload-helper-DjzSQ1t3.js",
+        "bytes": 1383,
+        "gzip_bytes": 751
+      },
+      {
+        "file": "assets/presentation-iM9wsoaL.js",
+        "bytes": 521,
+        "gzip_bytes": 330
+      },
+      {
+        "file": "assets/RenderTargetSystem-DWa1l6-f.js",
+        "bytes": 78145,
+        "gzip_bytes": 21875
+      },
+      {
+        "file": "assets/TutorialPage-DxVKqqLe.js",
+        "bytes": 2115,
+        "gzip_bytes": 926
+      },
+      {
+        "file": "assets/WebGLRenderer-CRGY3zzm.js",
+        "bytes": 75,
+        "gzip_bytes": 79
+      },
+      {
+        "file": "assets/WebGLRenderer-DNuFXWZ2.js",
+        "bytes": 72824,
+        "gzip_bytes": 19697
+      },
+      {
+        "file": "assets/WebGPURenderer-B6I8kLTz.js",
+        "bytes": 77,
+        "gzip_bytes": 80
+      },
+      {
+        "file": "assets/WebGPURenderer-jzvOvokY.js",
+        "bytes": 55170,
+        "gzip_bytes": 15605
+      },
+      {
+        "file": "assets/webworkerAll-BFNG1ELw.js",
+        "bytes": 73,
+        "gzip_bytes": 84
+      },
+      {
+        "file": "assets/worker-y4_SNJLU.js",
+        "bytes": 1123,
+        "gzip_bytes": 643
+      }
+    ],
+    "public_core": [
+      {
+        "file": "core/liar_wasm.js",
+        "bytes": 16529,
+        "gzip_bytes": 2872
+      },
+      {
+        "file": "core/liar_wasm_bg.wasm",
+        "bytes": 436234,
+        "gzip_bytes": 163295
+      }
+    ]
+  },
+  "not_verified": [
+    "human 30-second comprehension and fun E1/E2 (#27)",
+    "M2 manual exit gate",
+    "physical mobile or mini-PC performance (#26)",
+    "60fps or GPU completion",
+    "production OAuth keys (#15)"
+  ]
+}

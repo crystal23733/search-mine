@@ -61,6 +61,7 @@ fn provider_and_return_boundaries_reject_arbitrary_identity_or_redirect_targets(
 fn session_reauthentication_is_bounded_and_pkce_matches_the_rfc_vector() {
     use liar_server::auth::{Account, Session};
     let session = Session {
+        id: Uuid::new_v4(),
         account: Account {
             id: Uuid::new_v4(),
             nickname: None,

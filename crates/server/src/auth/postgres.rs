@@ -18,10 +18,10 @@ impl AuthStore for PgAuthStore {
     async fn insert_transaction(&self, value: AuthTransaction) -> Result<(), AuthError> {
         let now = timestamp(value.created_at)?;
         let expiry = timestamp(value.expires_at)?;
-        sqlx::query("INSERT INTO auth_transactions(id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,created_at,expires_at,encrypted_verifier) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9),to_timestamp($10),$11)")
+        sqlx::query("INSERT INTO auth_transactions(id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,created_at,expires_at,encrypted_verifier,locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9),to_timestamp($10),$11,$12)")
             .bind(value.id).bind(value.state_hash.as_slice()).bind(value.browser_hash.as_slice()).bind(value.nonce_hash.as_slice())
             .bind(value.provider.as_str()).bind(value.intent.kind()).bind(value.intent.account()).bind(value.return_path.as_str())
-            .bind(now).bind(expiry).bind(value.encrypted_verifier).execute(&self.pool).await.map_err(database_error)?;
+            .bind(now).bind(expiry).bind(value.encrypted_verifier).bind(value.locale.as_str()).execute(&self.pool).await.map_err(database_error)?;
         Ok(())
     }
     async fn consume_transaction(
@@ -31,7 +31,7 @@ impl AuthStore for PgAuthStore {
         provider: Provider,
         now: i64,
     ) -> Result<Option<AuthTransaction>, AuthError> {
-        let row=sqlx::query("DELETE FROM auth_transactions WHERE state_hash=$1 AND browser_hash=$2 AND provider=$3 AND created_at<=to_timestamp($4) AND expires_at>to_timestamp($4) RETURNING id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM expires_at)::bigint AS expires_at,encrypted_verifier")
+        let row=sqlx::query("DELETE FROM auth_transactions WHERE state_hash=$1 AND browser_hash=$2 AND provider=$3 AND created_at<=to_timestamp($4) AND expires_at>to_timestamp($4) RETURNING id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM expires_at)::bigint AS expires_at,encrypted_verifier,locale")
             .bind(state.as_slice()).bind(browser.as_slice()).bind(provider.as_str()).bind(timestamp(now)?).fetch_optional(&self.pool).await.map_err(database_error)?;
         row.map(transaction_row).transpose()
     }
@@ -124,10 +124,11 @@ impl AuthStore for PgAuthStore {
         })
     }
     async fn session(&self, hash: [u8; 32], now: i64) -> Result<Option<Session>, AuthError> {
-        let row=sqlx::query("SELECT a.id,a.nickname,EXTRACT(EPOCH FROM s.created_at)::bigint AS created_at,EXTRACT(EPOCH FROM s.expires_at)::bigint AS expires_at,EXTRACT(EPOCH FROM s.authenticated_at)::bigint AS authenticated_at FROM auth_sessions s JOIN auth_accounts a ON a.id=s.account_id WHERE s.token_hash=$1 AND s.created_at<=to_timestamp($2) AND s.expires_at>to_timestamp($2)")
+        let row=sqlx::query("SELECT s.id AS session_id,a.id,a.nickname,EXTRACT(EPOCH FROM s.created_at)::bigint AS created_at,EXTRACT(EPOCH FROM s.expires_at)::bigint AS expires_at,EXTRACT(EPOCH FROM s.authenticated_at)::bigint AS authenticated_at FROM auth_sessions s JOIN auth_accounts a ON a.id=s.account_id WHERE s.token_hash=$1 AND s.created_at<=to_timestamp($2) AND s.expires_at>to_timestamp($2)")
             .bind(hash.as_slice()).bind(timestamp(now)?).fetch_optional(&self.pool).await.map_err(database_error)?;
         row.map(|row| {
             Ok(Session {
+                id: row.try_get("session_id").map_err(database_error)?,
                 account: account_row(&row)?,
                 created_at: row.try_get("created_at").map_err(database_error)?,
                 expires_at: row.try_get("expires_at").map_err(database_error)?,
@@ -229,6 +230,7 @@ fn transaction_row(row: PgRow) -> Result<AuthTransaction, AuthError> {
         provider: Provider::parse(&provider)?,
         intent: AuthIntent::restore(&intent, row.try_get("account_id").map_err(database_error)?)?,
         return_path: ReturnPath::parse(&path)?,
+        locale: AuthLocale::parse(&row.try_get::<String, _>("locale").map_err(database_error)?)?,
         created_at: row.try_get("created_at").map_err(database_error)?,
         expires_at: row.try_get("expires_at").map_err(database_error)?,
         encrypted_verifier: row.try_get("encrypted_verifier").map_err(database_error)?,

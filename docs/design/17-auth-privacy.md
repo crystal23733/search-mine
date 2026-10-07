@@ -71,6 +71,8 @@ OIDC는 공식 JWKS 서명과 알고리즘 allowlist, issuer, audience/azp, exp/
 
 ## 개인정보와 credential 인벤토리
 
+#44 [ADR0020](../adr/0020-oauth-providers-and-http.md)은 JWT 서명과 Google bare issuer, 수동 azp/nonce/time 검증, 고정 endpoint/제한 JWKS cache, 메모리 CSRF·공개 세션 revision을 구체화한다. 8locale는 auth transaction에만5분 보존하며 계정의 추가 개인정보 필드로 저장하지 않는다. 익명 browser cookie·rate hash는 장기 계정/이벤트를 만들지 않는다. rate 메모리는 최대4096개/5분이며 일반 start5회/callback20회 제한, unknown kid 강제 refresh는 coalesce·30초 제한한다. 분산 공격 방어와 실제 제공자 검수의 완료를 의미하지 않는다.
+
 | 항목 | 목적 / 처리 | 보존 |
 |---|---|---|
 | 내부 account UUID, 게임용 nickname | 계정 소유권·대전 표시 | 계정 삭제까지, 목적별 기록은 [07 DB](07-database.md) |

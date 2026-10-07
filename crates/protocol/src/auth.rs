@@ -1,0 +1,37 @@
+use serde::Serialize;
+use ts_rs::TS;
+
+#[derive(Debug, Serialize, TS)]
+pub struct AuthAccount {
+    pub id: String,
+    pub nickname: Option<String>,
+}
+#[derive(Debug, Serialize, TS)]
+pub struct AuthProviderStatus {
+    pub provider: String,
+    pub available: bool,
+}
+#[derive(Debug, Serialize, TS)]
+pub struct AuthBootstrap {
+    pub providers: Vec<AuthProviderStatus>,
+    pub account: Option<AuthAccount>,
+    pub session_revision: Option<String>,
+    pub csrf: Option<String>,
+}
+#[derive(Debug, Serialize, TS)]
+pub struct AuthStart {
+    pub authorize_url: String,
+}
+#[derive(Debug, Serialize, TS)]
+pub struct AuthFailure {
+    pub code: String,
+}
+pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
+    vec![
+        AuthAccount::decl(config),
+        AuthProviderStatus::decl(config),
+        AuthBootstrap::decl(config),
+        AuthStart::decl(config),
+        AuthFailure::decl(config),
+    ]
+}

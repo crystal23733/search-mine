@@ -1,5 +1,7 @@
 # 07. PostgreSQL 모델
 
+#44는 별도 migration `202610080002_auth_locale.sql`로 기존 인증 거래에 8locale allowlist를 추가한다. 기존 migration checksum을 바꾸지 않고 en을 기본값으로 보존한다. public session_revision은 기존 auth_sessions.id를 조회하며 새 secret/개인정보 컬럼이 아니다. [ADR0020](../adr/0020-oauth-providers-and-http.md).
+
 > 대응: FR01/09/14/16 · DB 구현·migration은 M3에서 작성한다.
 
 ```mermaid

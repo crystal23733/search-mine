@@ -6,6 +6,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AuthError {
+    Unauthenticated,
     Invalid,
     Unavailable,
     Conflict,
@@ -144,6 +145,26 @@ impl ReturnPath {
         }
     }
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AuthLocale(&'static str);
+impl AuthLocale {
+    pub fn parse(value: &str) -> Result<Self, AuthError> {
+        match value {
+            "en" => Ok(Self("en")),
+            "ko" => Ok(Self("ko")),
+            "ja" => Ok(Self("ja")),
+            "zh-CN" => Ok(Self("zh-CN")),
+            "es" => Ok(Self("es")),
+            "pt-BR" => Ok(Self("pt-BR")),
+            "de" => Ok(Self("de")),
+            "fr" => Ok(Self("fr")),
+            _ => Err(AuthError::Invalid),
+        }
+    }
+    pub fn as_str(self) -> &'static str {
+        self.0
+    }
+}
 pub struct AuthTransaction {
     pub id: Uuid,
     pub state_hash: [u8; 32],
@@ -152,6 +173,7 @@ pub struct AuthTransaction {
     pub provider: Provider,
     pub intent: AuthIntent,
     pub return_path: ReturnPath,
+    pub locale: AuthLocale,
     pub created_at: i64,
     pub expires_at: i64,
     pub encrypted_verifier: Option<Vec<u8>>,
@@ -178,6 +200,7 @@ pub struct Account {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Session {
+    pub id: Uuid,
     pub account: Account,
     pub created_at: i64,
     pub expires_at: i64,

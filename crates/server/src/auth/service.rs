@@ -33,6 +33,25 @@ impl<S: AuthStore, V: CredentialVault, D: SubjectDigester> AuthService<S, V, D> 
         return_path: ReturnPath,
         now: i64,
     ) -> Result<Authorization, AuthError> {
+        self.start_localized(
+            browser,
+            provider,
+            intent,
+            return_path,
+            AuthLocale::parse("en")?,
+            now,
+        )
+        .await
+    }
+    pub async fn start_localized(
+        &self,
+        browser: &SecretToken,
+        provider: Provider,
+        intent: AuthIntent,
+        return_path: ReturnPath,
+        locale: AuthLocale,
+        now: i64,
+    ) -> Result<Authorization, AuthError> {
         let expires_at = now
             .checked_add(TRANSACTION_SECONDS)
             .filter(|_| now >= 0)
@@ -70,6 +89,7 @@ impl<S: AuthStore, V: CredentialVault, D: SubjectDigester> AuthService<S, V, D> 
                 provider,
                 intent,
                 return_path,
+                locale,
                 created_at: now,
                 expires_at,
                 encrypted_verifier,

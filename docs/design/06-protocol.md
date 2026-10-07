@@ -6,11 +6,12 @@
 
 | 경로 | 계약 |
 |---|---|
-| GET /api/v1/auth/providers | 서버에서 설정/검수된 제공자 목록만, client secret/endpoint 없음 |
+| GET /api/v1/auth/providers | 필수4개 provider 가용 상태, secret/endpoint 없음; 실제 검수 #42 |
+| GET /api/v1/auth/bootstrap | 최소 계정·메모리 CSRF·5분 browser cookie·provider 상태, no-store; 계정 생성 없음 |
 | POST /api/v1/auth/{provider}/start | CSRF/Origin, login intent, one-use state·nonce·browser binding; authorize URL |
 | GET /api/v1/auth/{provider}/callback | provider별 code/state 거래 검증·서버 token 교환; 세션 회전/닉네임 진입; no-store |
 | GET /api/v1/me | 인증 필요, 내부 account ID와 게임용 nickname만, no-store |
-| PATCH /api/v1/me | 닉네임/약관 버전 검증, CSRF·Origin; 새 인증 후 onboarding 완료 |
+| PATCH /api/v1/me | 닉네임만 검증, CSRF·Origin; 약관/선택 동의는 #21의 별도 정책 계약 |
 | POST /api/v1/auth/logout | 서비스 세션 철회, 제공자 전체 로그아웃과 구분 |
 | POST /api/v1/me/identities/{provider}/start | 최근 재인증 필요, account에 바인딩한 link 거래 |
 | DELETE /api/v1/me/identities/{provider} | 최근 재인증·CSRF, 마지막 로그인 수단은 해제 불가 |
@@ -142,6 +143,8 @@ sequenceDiagram
 서버가 start ticket·heartbeat로 측정한 online attempt만 verified_time 순위에 들어간다. 오프라인 replay는 verified_completion으로 **완료/오류 순위**에 별도 표기하며 클라이언트 시간은 개인 참고값이다. 입력 replay는 규칙 일관성을 검증하지만 수동 풀이·실제 오프라인 경과시간을 증명하지 못한다. 첫 유효 완료 한 건만 공식 기록, 이후 재시도는 연습. 구버전 replay verifier는 최소7일 보존 제안, 만료 기록은 개인 로컬 기록으로 유지한다.
 
 ## OAuth 경계
+
+#44의 구체적인 계약은 [ADR0020](../adr/0020-oauth-providers-and-http.md)을 따른다. start JSON은 `{locale,return_path}`, nickname JSON은 `{nickname}`, logout JSON은 `{}`이며 미정의 필드와4096byte 초과를 거절한다. bootstrap은 `{providers,account,session_revision,csrf}`다. account의 nickname은 onboarding 전 null, session_revision은 공개 UUID이고 cookie token/hash를 대신 노출하지 않는다. 키 없는 실행은4개 비활성/계정 null/CSRF null이고 무계정 연습을 유지한다. 미인증 me는401/auth_required, 잘못된 입력·바인딩은400/auth_invalid, 제공자/저장 장애는503/auth_unavailable다. callback 실패는 검증된 거래의 locale에만 auth_failed로 이동한다.
 
 [17 인증](17-auth-privacy.md)을 따른다. Apple은 name/email scope 없는 code/query callback을 사용하고 form_post 추가는 별도 cookie 계약을 요구한다. callback은 일반 CSRF 헤더 대신 거래 검증을 수행한다. nickname 미설정 세션은 onboarding/me/logout/delete만 허용하고 대전·공식 기록에는 사용할 수 없다. 공식 attempt와 account 소유권을 검증하며 무계정 로컬 기록은 로그인 뒤 명시적 제출만 허용한다.
 

@@ -1,5 +1,115 @@
 use super::*;
+use std::future::Future;
 use zeroize::Zeroizing;
+
+pub enum AppleCredentialStatus {
+    Valid {
+        subject: Zeroizing<String>,
+        replacement: Option<Zeroizing<String>>,
+    },
+    Revoked,
+}
+pub trait AppleProvider: OAuthProvider {
+    fn notification(
+        &self,
+        token: &str,
+        now: i64,
+    ) -> impl Future<Output = Result<AppleNotification, AuthError>> + Send;
+    fn revoke_apple(
+        &self,
+        refresh: &str,
+        now: i64,
+    ) -> impl Future<Output = Result<(), AuthError>> + Send;
+    fn check_apple(
+        &self,
+        refresh: &str,
+        now: i64,
+    ) -> impl Future<Output = Result<AppleCredentialStatus, AuthError>> + Send;
+}
+pub struct RevokeJob {
+    pub id: uuid::Uuid,
+    pub identity: uuid::Uuid,
+    pub lease: uuid::Uuid,
+    pub encrypted: Vec<u8>,
+}
+pub struct CredentialJob {
+    pub identity: uuid::Uuid,
+    pub encrypted: Vec<u8>,
+}
+pub enum CredentialCheck {
+    Valid {
+        digests: Vec<(u32, [u8; 32])>,
+        replacement: Option<Zeroizing<String>>,
+    },
+    Revoked,
+    Unavailable,
+}
+pub trait AppleMaintenanceStore: AccountStore {
+    fn apply_notification(
+        &self,
+        jti: [u8; 32],
+        digests: Option<Vec<(u32, [u8; 32])>>,
+        now: i64,
+    ) -> impl Future<Output = Result<Option<uuid::Uuid>, AuthError>> + Send;
+    fn claim_revoke(
+        &self,
+        now: i64,
+    ) -> impl Future<Output = Result<Option<RevokeJob>, AuthError>> + Send;
+    fn finish_revoke(
+        &self,
+        job: &RevokeJob,
+        success: bool,
+        now: i64,
+    ) -> impl Future<Output = Result<(), AuthError>> + Send;
+    fn claim_credential(
+        &self,
+        now: i64,
+    ) -> impl Future<Output = Result<Option<CredentialJob>, AuthError>> + Send;
+    fn finish_credential(
+        &self,
+        job: &CredentialJob,
+        status: CredentialCheck,
+        now: i64,
+    ) -> impl Future<Output = Result<Option<uuid::Uuid>, AuthError>> + Send;
+}
+#[derive(serde::Deserialize)]
+struct RefreshClaims {
+    sub: String,
+    aud: super::provider::Audience,
+    exp: i64,
+    iat: i64,
+    nbf: Option<i64>,
+    azp: Option<String>,
+}
+pub fn verify_apple_refresh_identity(
+    keys: &[u8],
+    token: &str,
+    client: &str,
+    now: i64,
+) -> Result<Zeroizing<String>, AuthError> {
+    let c: RefreshClaims = super::provider::decode_signed(
+        keys,
+        token,
+        client,
+        &[Provider::Apple.issuer()],
+        &["exp", "iss", "aud", "sub"],
+    )?;
+    if now < 0
+        || !c.aud.matches(client)
+        || c.azp.is_some_and(|a| a != client)
+        || c.exp <= now
+        || c.iat < now.saturating_sub(30)
+        || c.iat > now.saturating_add(30)
+        || c.exp <= c.iat
+        || c.nbf.is_some_and(|n| n > now)
+        || c.sub.is_empty()
+        || c.sub.len() > 512
+        || c.sub.chars().any(char::is_control)
+    {
+        return Err(AuthError::Invalid);
+    }
+    Ok(Zeroizing::new(c.sub))
+}
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum AppleChange {

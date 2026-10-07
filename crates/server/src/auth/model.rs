@@ -11,6 +11,7 @@ pub enum AuthError {
     Unavailable,
     Conflict,
     ReauthenticationRequired,
+    CredentialRevoked,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

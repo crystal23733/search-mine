@@ -51,6 +51,7 @@ impl OAuthTransport for HttpsOAuthTransport {
                 | "https://www.googleapis.com/oauth2/v3/certs"
                 | "https://appleid.apple.com/auth/token"
                 | "https://appleid.apple.com/auth/keys"
+                | "https://appleid.apple.com/auth/revoke"
                 | "https://kauth.kakao.com/oauth/token"
                 | "https://kauth.kakao.com/.well-known/jwks.json"
                 | "https://nid.naver.com/oauth2.0/token"
@@ -69,15 +70,29 @@ impl OAuthTransport for HttpsOAuthTransport {
         if let Some(bearer) = &request.bearer {
             builder = builder.bearer_auth(bearer.as_str());
         }
+        let refresh = request.endpoint == "https://appleid.apple.com/auth/token"
+            && request
+                .form
+                .iter()
+                .any(|(k, v)| *k == "grant_type" && v.as_str() == "refresh_token");
         let response = builder.send().await.map_err(|_| AuthError::Unavailable)?;
-        bounded_response(response, request.limit).await
+        bounded_grant_response(response, request.limit, refresh).await
     }
 }
+#[cfg(test)]
 async fn bounded_response(
-    mut response: reqwest::Response,
+    response: reqwest::Response,
     limit: usize,
 ) -> Result<Zeroizing<Vec<u8>>, AuthError> {
-    if response.status() != reqwest::StatusCode::OK
+    bounded_grant_response(response, limit, false).await
+}
+async fn bounded_grant_response(
+    mut response: reqwest::Response,
+    limit: usize,
+    refresh: bool,
+) -> Result<Zeroizing<Vec<u8>>, AuthError> {
+    let rejected = refresh && response.status() == reqwest::StatusCode::BAD_REQUEST;
+    if (response.status() != reqwest::StatusCode::OK && !rejected)
         || response
             .content_length()
             .is_some_and(|len| len > limit as u64)
@@ -91,6 +106,20 @@ async fn bounded_response(
         }
         bytes.extend_from_slice(&chunk);
     }
+    if rejected {
+        #[derive(serde::Deserialize)]
+        struct ErrorBody {
+            error: String,
+        }
+        return Err(
+            if serde_json::from_slice::<ErrorBody>(&bytes).is_ok_and(|e| e.error == "invalid_grant")
+            {
+                AuthError::CredentialRevoked
+            } else {
+                AuthError::Unavailable
+            },
+        );
+    }
     Ok(bytes)
 }
 #[derive(Default)]
@@ -102,12 +131,16 @@ struct JwksCache {
 }
 pub struct ProviderRegistry<H> {
     transport: H,
-    clock: Arc<dyn AuthClock>,
-    configs: Vec<ProviderConfig>,
+    pub(super) clock: Arc<dyn AuthClock>,
+    pub(super) configs: Vec<ProviderConfig>,
     caches: Vec<tokio::sync::Mutex<JwksCache>>,
+    pub(super) notification_audience: Option<String>,
 }
 impl<H: OAuthTransport> ProviderRegistry<H> {
-    async fn upstream(&self, request: UpstreamRequest) -> Result<Zeroizing<Vec<u8>>, AuthError> {
+    pub(super) async fn upstream(
+        &self,
+        request: UpstreamRequest,
+    ) -> Result<Zeroizing<Vec<u8>>, AuthError> {
         tokio::time::timeout(
             std::time::Duration::from_secs(10),
             self.transport.request(request),
@@ -135,9 +168,24 @@ impl<H: OAuthTransport> ProviderRegistry<H> {
             clock,
             configs,
             caches,
+            notification_audience: None,
         })
     }
-    async fn keys(&self, index: usize, kid: &str) -> Result<Vec<u8>, AuthError> {
+    pub fn with_notification_audience(
+        mut self,
+        audience: Option<String>,
+    ) -> Result<Self, AuthError> {
+        if audience
+            .as_ref()
+            .is_some_and(|a| !super::provider::bounded_text(a, 512))
+            || (audience.is_some() && !self.configs.iter().any(|c| c.provider == Provider::Apple))
+        {
+            return Err(AuthError::Invalid);
+        }
+        self.notification_audience = audience;
+        Ok(self)
+    }
+    pub(super) async fn keys(&self, index: usize, kid: &str) -> Result<Vec<u8>, AuthError> {
         let mut cache = self.caches[index].lock().await;
         let fresh = cache.fetched.is_some_and(|t| t.elapsed().as_secs() < 300);
         if fresh
@@ -328,7 +376,7 @@ impl<H: OAuthTransport> OAuthProvider for ProviderRegistry<H> {
         )?;
         let apple_refresh = if transaction.provider == Provider::Apple {
             let refresh = tokens.refresh_token.take().ok_or(AuthError::Invalid)?;
-            if !super::provider::bounded_text(&refresh, 8192) {
+            if !super::provider::bounded_text(&refresh, 4096) {
                 return Err(AuthError::Invalid);
             }
             Some(Zeroizing::new(refresh))

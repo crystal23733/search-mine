@@ -23,3 +23,6 @@ pub use accounts::*;
 mod apple;
 mod postgres_accounts;
 pub use apple::*;
+mod apple_registry;
+mod postgres_apple;
+mod postgres_rights;

@@ -2,26 +2,6 @@ use super::postgres::{account_row, database_error, timestamp};
 use super::*;
 use sqlx::{Postgres, Row, Transaction, postgres::PgRow};
 use uuid::Uuid;
-impl AccountErasure for PgAuthStore {
-    async fn erase_authorized(&self, _auth: SessionAuthority) -> Result<ErasureResult, AuthError> {
-        Err(AuthError::Unavailable)
-    }
-}
-impl AccountStore for PgAuthStore {
-    async fn identities(&self, _auth: SessionAuthority) -> Result<Vec<LinkedIdentity>, AuthError> {
-        Err(AuthError::Unavailable)
-    }
-    async fn export(&self, _auth: SessionAuthority) -> Result<AccountExport, AuthError> {
-        Err(AuthError::Unavailable)
-    }
-    async fn unlink(
-        &self,
-        _auth: SessionAuthority,
-        _provider: Provider,
-    ) -> Result<ErasureResult, AuthError> {
-        Err(AuthError::Unavailable)
-    }
-}
 impl PgAuthStore {
     pub(super) async fn authenticate(&self, value: LoginWrite) -> Result<LoginRecord, AuthError> {
         let now = timestamp(value.now)?;
@@ -177,7 +157,7 @@ pub(super) async fn lock_account(
 ) -> Result<PgRow, AuthError> {
     sqlx::query("SELECT id,nickname,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM last_seen_at)::bigint AS last_seen_at FROM auth_accounts WHERE id=$1 FOR UPDATE").bind(id).fetch_optional(&mut **tx).await.map_err(database_error)?.ok_or(AuthError::Unauthenticated)
 }
-async fn authorize(
+pub(super) async fn authorize(
     tx: &mut Transaction<'_, Postgres>,
     auth: SessionAuthority,
     fresh: bool,

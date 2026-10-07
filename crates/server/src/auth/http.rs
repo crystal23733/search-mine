@@ -135,7 +135,9 @@ fn failure(error: AuthError) -> Response {
     let (status, code) = match error {
         AuthError::Unauthenticated => (StatusCode::UNAUTHORIZED, "auth_required"),
         AuthError::Invalid => (StatusCode::BAD_REQUEST, "auth_invalid"),
-        AuthError::Unavailable => (StatusCode::SERVICE_UNAVAILABLE, "auth_unavailable"),
+        AuthError::Unavailable | AuthError::CredentialRevoked => {
+            (StatusCode::SERVICE_UNAVAILABLE, "auth_unavailable")
+        }
         AuthError::ReauthenticationRequired => (StatusCode::CONFLICT, "reauth_required"),
         AuthError::Conflict => (StatusCode::CONFLICT, "auth_conflict"),
     };

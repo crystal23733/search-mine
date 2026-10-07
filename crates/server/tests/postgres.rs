@@ -87,6 +87,39 @@ async fn apple_credentials_and_authorized_erasure_are_atomic() {
         .unwrap(),
         1
     );
+    let job = store
+        .claim_revoke(4001)
+        .await
+        .expect("encrypted queue must be claimable after local deletion")
+        .unwrap();
+    assert_eq!(job.identity, result.identity_id);
+    assert_eq!(
+        vault
+            .open(
+                job.identity,
+                Provider::Apple,
+                CredentialPurpose::AppleRevoke,
+                &job.encrypted
+            )
+            .unwrap()
+            .as_slice(),
+        b"fixture-refresh-secret"
+    );
+    assert!(store.claim_revoke(4001).await.unwrap().is_none());
+    store.finish_revoke(&job, false, 4002).await.unwrap();
+    assert!(store.claim_revoke(4003).await.unwrap().is_none());
+    let retry = store.claim_revoke(7602).await.unwrap().unwrap();
+    store.finish_revoke(&job, true, 7602).await.unwrap();
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM auth_apple_revoke_queue WHERE id=$1")
+            .bind(retry.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        1,
+        "stale lease cannot acknowledge a newer claim"
+    );
+    store.finish_revoke(&retry, true, 7603).await.unwrap();
     pool.close().await;
 }
 impl AuthClock for HttpClock {

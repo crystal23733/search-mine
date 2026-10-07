@@ -107,6 +107,17 @@ impl AuthStore for PgAuthStore {
             .execute(&mut *tx)
             .await
             .map_err(database_error)?;
+        for query in [
+            "DELETE FROM auth_deletion_tombstones WHERE expires_at<=to_timestamp($1)",
+            "DELETE FROM auth_apple_notification_receipts WHERE expires_at<=to_timestamp($1)",
+            "DELETE FROM auth_apple_revoke_queue WHERE expires_at<=to_timestamp($1)",
+        ] {
+            sqlx::query(query)
+                .bind(now)
+                .execute(&mut *tx)
+                .await
+                .map_err(database_error)?;
+        }
         tx.commit().await.map_err(database_error)?;
         Ok(())
     }

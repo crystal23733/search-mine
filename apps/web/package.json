@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@liar/core-bridge": "workspace:*",
+    "@liar/design-tokens": "workspace:*",
     "@liar/protocol": "workspace:*",
+    "i18next": "^26.4.2",
     "preact": "^11.0.0"
   },
   "devDependencies": {
@@ -19,6 +21,7 @@
     "@testing-library/preact": "^3.2.4",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^5.0.3",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
   }

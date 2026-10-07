@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0와 #4~8 병합 완료. #9 공개 WASM 세션·Worker·native/browser 재현 일치를 구현·검증했습니다. 화면·OAuth 연동을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~9 병합 완료. #10 디자인 기반 홈·규칙·설정, Atomic UI와8언어 shell을 구현·검증했습니다. 게임 보드·로컬 대전·OAuth 연동을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell 검증과 화면](docs/verification/10-atomic-shell.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -27,7 +27,7 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~8은 병합·종료됐고 #9 WASM을 검증했습니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~9는 병합·종료됐고 #10 웹 shell을 검증했습니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 
@@ -48,7 +48,7 @@ pnpm dev
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 브랜드 진입점이며 게임·로그인 완료 화면을 가장하지 않습니다. 제공된 화면은 #10부터 적용합니다. 아직 로그인 제공자 키를 요구하지 않으며 #15에서 실제 연동 준비 항목을 별도 기록합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정을 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 게임·계정·정책 연결은 후속 이슈에서 진행합니다. 아직 로그인 제공자 키를 요구하지 않으며 #15에서 실제 연동 준비 항목을 별도 기록합니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
 
 ## 검증
 

@@ -136,6 +136,7 @@ fn failure(error: AuthError) -> Response {
         AuthError::Unauthenticated => (StatusCode::UNAUTHORIZED, "auth_required"),
         AuthError::Invalid => (StatusCode::BAD_REQUEST, "auth_invalid"),
         AuthError::Unavailable => (StatusCode::SERVICE_UNAVAILABLE, "auth_unavailable"),
+        AuthError::ReauthenticationRequired => (StatusCode::CONFLICT, "reauth_required"),
         AuthError::Conflict => (StatusCode::CONFLICT, "auth_conflict"),
     };
     (status, Json(AuthFailure { code: code.into() })).into_response()
@@ -320,13 +321,7 @@ async fn callback<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuth
                 .await?;
             let issued = ctx
                 .service
-                .finish_login(
-                    tx,
-                    provider,
-                    &identity.subject,
-                    cookies.session.as_ref(),
-                    ctx.clock.now(),
-                )
+                .finish_verified(tx, identity, cookies.session.as_ref(), ctx.clock.now())
                 .await?;
             let path = if issued.account.nickname.is_none() {
                 format!("/{locale}/onboarding?return_path={destination}")

@@ -4,11 +4,18 @@ use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct PgAuthStore {
-    pool: PgPool,
+    pub(super) pool: PgPool,
+    pub(super) vault: Option<std::sync::Arc<dyn CredentialVault>>,
 }
 impl PgAuthStore {
     pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+        Self { pool, vault: None }
+    }
+    pub fn with_vault(pool: PgPool, vault: std::sync::Arc<dyn CredentialVault>) -> Self {
+        Self {
+            pool,
+            vault: Some(vault),
+        }
     }
     pub fn pool(&self) -> &PgPool {
         &self.pool
@@ -18,10 +25,10 @@ impl AuthStore for PgAuthStore {
     async fn insert_transaction(&self, value: AuthTransaction) -> Result<(), AuthError> {
         let now = timestamp(value.created_at)?;
         let expiry = timestamp(value.expires_at)?;
-        sqlx::query("INSERT INTO auth_transactions(id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,created_at,expires_at,encrypted_verifier,locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9),to_timestamp($10),$11,$12)")
+        sqlx::query("INSERT INTO auth_transactions(id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,created_at,expires_at,encrypted_verifier,locale,bound_session_hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9),to_timestamp($10),$11,$12,$13)")
             .bind(value.id).bind(value.state_hash.as_slice()).bind(value.browser_hash.as_slice()).bind(value.nonce_hash.as_slice())
             .bind(value.provider.as_str()).bind(value.intent.kind()).bind(value.intent.account()).bind(value.return_path.as_str())
-            .bind(now).bind(expiry).bind(value.encrypted_verifier).bind(value.locale.as_str()).execute(&self.pool).await.map_err(database_error)?;
+            .bind(now).bind(expiry).bind(value.encrypted_verifier).bind(value.locale.as_str()).bind(value.bound_session_hash.map(|h|h.to_vec())).execute(&self.pool).await.map_err(database_error)?;
         Ok(())
     }
     async fn consume_transaction(
@@ -31,97 +38,12 @@ impl AuthStore for PgAuthStore {
         provider: Provider,
         now: i64,
     ) -> Result<Option<AuthTransaction>, AuthError> {
-        let row=sqlx::query("DELETE FROM auth_transactions WHERE state_hash=$1 AND browser_hash=$2 AND provider=$3 AND created_at<=to_timestamp($4) AND expires_at>to_timestamp($4) RETURNING id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM expires_at)::bigint AS expires_at,encrypted_verifier,locale")
+        let row=sqlx::query("DELETE FROM auth_transactions WHERE state_hash=$1 AND browser_hash=$2 AND provider=$3 AND created_at<=to_timestamp($4) AND expires_at>to_timestamp($4) RETURNING id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM expires_at)::bigint AS expires_at,encrypted_verifier,locale,bound_session_hash")
             .bind(state.as_slice()).bind(browser.as_slice()).bind(provider.as_str()).bind(timestamp(now)?).fetch_optional(&self.pool).await.map_err(database_error)?;
         row.map(transaction_row).transpose()
     }
     async fn login(&self, value: LoginWrite) -> Result<LoginRecord, AuthError> {
-        let now = timestamp(value.now)?;
-        let expiry = timestamp(
-            value
-                .now
-                .checked_add(SESSION_SECONDS)
-                .ok_or(AuthError::Invalid)?,
-        )?;
-        if value.digests.is_empty()
-            || value.digests.len() > 4
-            || value
-                .digests
-                .iter()
-                .any(|(v, _)| *v == 0 || *v > i32::MAX as u32)
-        {
-            return Err(AuthError::Invalid);
-        }
-        let (current_version, current_digest) = value.digests[0];
-        let lock = i64::from_be_bytes(
-            current_digest[..8]
-                .try_into()
-                .map_err(|_| AuthError::Invalid)?,
-        );
-        let mut tx = self.pool.begin().await.map_err(database_error)?;
-        sqlx::query("SELECT pg_advisory_xact_lock($1)")
-            .bind(lock)
-            .execute(&mut *tx)
-            .await
-            .map_err(database_error)?;
-        let mut existing: Option<(Uuid, Uuid)> = None;
-        for (version, digest) in &value.digests {
-            let row=sqlx::query("SELECT id,account_id FROM auth_identities WHERE provider=$1 AND issuer=$2 AND digest_key_version=$3 AND subject_digest=$4 FOR UPDATE")
-                .bind(value.provider.as_str()).bind(value.provider.issuer()).bind(*version as i32).bind(digest.as_slice()).fetch_optional(&mut *tx).await.map_err(database_error)?;
-            if let Some(row) = row {
-                let pair = (
-                    row.try_get("id").map_err(database_error)?,
-                    row.try_get("account_id").map_err(database_error)?,
-                );
-                if existing.is_some_and(|saved| saved != pair) {
-                    return Err(AuthError::Conflict);
-                }
-                existing = Some(pair);
-            }
-        }
-        let (identity_id, account_id) = if let Some(pair) = existing {
-            sqlx::query(
-                "UPDATE auth_identities SET subject_digest=$2,digest_key_version=$3 WHERE id=$1",
-            )
-            .bind(pair.0)
-            .bind(current_digest.as_slice())
-            .bind(current_version as i32)
-            .execute(&mut *tx)
-            .await
-            .map_err(database_error)?;
-            let changed=sqlx::query("UPDATE auth_accounts SET last_seen_at=GREATEST(last_seen_at,to_timestamp($2)) WHERE id=$1 AND created_at<=to_timestamp($2)").bind(pair.1).bind(now).execute(&mut *tx).await.map_err(database_error)?;
-            if changed.rows_affected() != 1 {
-                return Err(AuthError::Invalid);
-            }
-            pair
-        } else {
-            let account = Uuid::new_v4();
-            let identity = Uuid::new_v4();
-            sqlx::query("INSERT INTO auth_accounts(id,created_at,last_seen_at) VALUES($1,to_timestamp($2),to_timestamp($2))").bind(account).bind(now).execute(&mut *tx).await.map_err(database_error)?;
-            sqlx::query("INSERT INTO auth_identities(id,account_id,provider,issuer,subject_digest,digest_key_version,linked_at) VALUES($1,$2,$3,$4,$5,$6,to_timestamp($7))")
-                .bind(identity).bind(account).bind(value.provider.as_str()).bind(value.provider.issuer()).bind(current_digest.as_slice()).bind(current_version as i32).bind(now).execute(&mut *tx).await.map_err(database_error)?;
-            (identity, account)
-        };
-        if let Some(previous) = value.previous_session {
-            sqlx::query("DELETE FROM auth_sessions WHERE token_hash=$1")
-                .bind(previous.as_slice())
-                .execute(&mut *tx)
-                .await
-                .map_err(database_error)?;
-        }
-        sqlx::query("INSERT INTO auth_sessions(id,account_id,token_hash,created_at,authenticated_at,expires_at) VALUES($1,$2,$3,to_timestamp($4),to_timestamp($4),to_timestamp($5))")
-            .bind(Uuid::new_v4()).bind(account_id).bind(value.session_hash.as_slice()).bind(now).bind(expiry).execute(&mut *tx).await.map_err(database_error)?;
-        let row = sqlx::query("SELECT id,nickname FROM auth_accounts WHERE id=$1")
-            .bind(account_id)
-            .fetch_one(&mut *tx)
-            .await
-            .map_err(database_error)?;
-        let account = account_row(&row)?;
-        tx.commit().await.map_err(database_error)?;
-        Ok(LoginRecord {
-            account,
-            identity_id,
-        })
+        self.authenticate(value).await
     }
     async fn session(&self, hash: [u8; 32], now: i64) -> Result<Option<Session>, AuthError> {
         let row=sqlx::query("SELECT s.id AS session_id,a.id,a.nickname,EXTRACT(EPOCH FROM s.created_at)::bigint AS created_at,EXTRACT(EPOCH FROM s.expires_at)::bigint AS expires_at,EXTRACT(EPOCH FROM s.authenticated_at)::bigint AS authenticated_at FROM auth_sessions s JOIN auth_accounts a ON a.id=s.account_id WHERE s.token_hash=$1 AND s.created_at<=to_timestamp($2) AND s.expires_at>to_timestamp($2)")
@@ -190,7 +112,7 @@ impl AuthStore for PgAuthStore {
     }
 }
 
-fn database_error(error: sqlx::Error) -> AuthError {
+pub(super) fn database_error(error: sqlx::Error) -> AuthError {
     if error
         .as_database_error()
         .is_some_and(|e| e.is_unique_violation())
@@ -200,14 +122,14 @@ fn database_error(error: sqlx::Error) -> AuthError {
         AuthError::Unavailable
     }
 }
-fn timestamp(now: i64) -> Result<f64, AuthError> {
+pub(super) fn timestamp(now: i64) -> Result<f64, AuthError> {
     if (0..=253_402_300_799).contains(&now) {
         Ok(now as f64)
     } else {
         Err(AuthError::Invalid)
     }
 }
-fn account_row(row: &PgRow) -> Result<Account, AuthError> {
+pub(super) fn account_row(row: &PgRow) -> Result<Account, AuthError> {
     let nickname: Option<String> = row.try_get("nickname").map_err(database_error)?;
     Ok(Account {
         id: row.try_get("id").map_err(database_error)?,
@@ -234,5 +156,10 @@ fn transaction_row(row: PgRow) -> Result<AuthTransaction, AuthError> {
         created_at: row.try_get("created_at").map_err(database_error)?,
         expires_at: row.try_get("expires_at").map_err(database_error)?,
         encrypted_verifier: row.try_get("encrypted_verifier").map_err(database_error)?,
+        bound_session_hash: row
+            .try_get::<Option<Vec<u8>>, _>("bound_session_hash")
+            .map_err(database_error)?
+            .map(|v| v.try_into().map_err(|_| AuthError::Unavailable))
+            .transpose()?,
     })
 }

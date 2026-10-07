@@ -14,6 +14,56 @@ use uuid::Uuid;
 use zeroize::Zeroizing;
 
 struct HttpClock;
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn apple_credentials_and_authorized_erasure_are_atomic() {
+    let pool = auth_pool().await;
+    let vault = Arc::new(AeadVault::new(1, vec![(1, [11; 32])]).unwrap());
+    let store = PgAuthStore::with_vault(pool.clone(), vault.clone());
+    let token = SecretToken::generate().unwrap();
+    let result = store
+        .login(LoginWrite {
+            intent: AuthIntent::Login,
+            bound_session: None,
+            provider: Provider::Apple,
+            digests: DigestKeys::new(1, vec![(1, [12; 32])])
+                .unwrap()
+                .digest(Provider::Apple, &Uuid::new_v4().to_string())
+                .unwrap(),
+            session_hash: token.hash(),
+            previous_session: None,
+            now: 4000,
+            apple_refresh: Some(Zeroizing::new("fixture-refresh-secret".into())),
+        })
+        .await
+        .expect("Apple login must atomically persist its encrypted revoke credential");
+    let bytes: Vec<u8> = sqlx::query_scalar(
+        "SELECT encrypted_refresh_token FROM auth_credentials WHERE identity_id=$1",
+    )
+    .bind(result.identity_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert!(!bytes.windows(22).any(|w| w == b"fixture-refresh-secret"));
+    assert_eq!(
+        vault
+            .open(
+                result.identity_id,
+                Provider::Apple,
+                CredentialPurpose::AppleRevoke,
+                &bytes
+            )
+            .unwrap()
+            .as_slice(),
+        b"fixture-refresh-secret"
+    );
+    sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
+        .bind(result.account.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    pool.close().await;
+}
 impl AuthClock for HttpClock {
     fn now(&self) -> i64 {
         1100
@@ -228,6 +278,9 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
     let first_token = SecretToken::generate().unwrap();
     let second_token = SecretToken::generate().unwrap();
     let request = |token: &SecretToken| LoginWrite {
+        intent: AuthIntent::Login,
+        bound_session: None,
+        apple_refresh: None,
         provider: Provider::Google,
         digests: keys.digest(Provider::Google, &subject).unwrap(),
         session_hash: token.hash(),
@@ -251,6 +304,9 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
         1
     );
     let conflict = LoginWrite {
+        intent: AuthIntent::Login,
+        bound_session: None,
+        apple_refresh: None,
         provider: Provider::Google,
         digests: keys.digest(Provider::Google, &subject).unwrap(),
         session_hash: second_token.hash(),
@@ -277,6 +333,9 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
     );
     let fresh = SecretToken::generate().unwrap();
     let failed = LoginWrite {
+        intent: AuthIntent::Login,
+        bound_session: None,
+        apple_refresh: None,
         provider: Provider::Apple,
         digests: keys.digest(Provider::Apple, &subject).unwrap(),
         session_hash: second_token.hash(),
@@ -289,6 +348,9 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
     ));
     let apple = store
         .login(LoginWrite {
+            intent: AuthIntent::Login,
+            bound_session: None,
+            apple_refresh: None,
             provider: Provider::Apple,
             digests: keys.digest(Provider::Apple, &subject).unwrap(),
             session_hash: fresh.hash(),
@@ -364,6 +426,9 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
     let token = SecretToken::generate().unwrap();
     let result = store
         .login(LoginWrite {
+            intent: AuthIntent::Login,
+            bound_session: None,
+            apple_refresh: None,
             provider: Provider::Naver,
             digests: DigestKeys::new(1, vec![(1, [1; 32])])
                 .unwrap()

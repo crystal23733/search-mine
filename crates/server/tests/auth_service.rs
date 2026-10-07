@@ -100,6 +100,30 @@ fn service() -> AuthService<FakeStore, AeadVault> {
 }
 
 #[tokio::test]
+async fn account_intents_cannot_start_without_an_authoritative_session() {
+    let service = service();
+    let browser = SecretToken::generate().unwrap();
+    for intent in [
+        AuthIntent::Link(Uuid::new_v4()),
+        AuthIntent::Reauth(Uuid::new_v4()),
+    ] {
+        assert!(matches!(
+            service
+                .start(
+                    &browser,
+                    Provider::Google,
+                    intent,
+                    ReturnPath::Settings,
+                    1000
+                )
+                .await,
+            Err(AuthError::Invalid)
+        ));
+    }
+    assert!(service.store.transactions.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
 async fn service_rejects_a_repository_returning_misbound_or_expired_transactions() {
     let service = AuthService::new(
         FakeStore {
@@ -223,7 +247,7 @@ async fn start_stores_only_bound_digests_and_encrypted_pkce_then_consumes_once()
         .start(
             &browser,
             Provider::Google,
-            AuthIntent::Link(Uuid::new_v4()),
+            AuthIntent::Login,
             ReturnPath::Settings,
             1000,
         )
@@ -301,13 +325,20 @@ async fn verified_login_issues_new_session_and_rejects_mixup_link_or_expired_tra
         (AuthIntent::Login, Provider::Google, 1001, ""),
     ] {
         let auth = service
-            .start(&browser, Provider::Google, intent, ReturnPath::Home, 1000)
+            .start(
+                &browser,
+                Provider::Google,
+                AuthIntent::Login,
+                ReturnPath::Home,
+                1000,
+            )
             .await
             .unwrap();
-        let tx = service
+        let mut tx = service
             .consume(&auth.state, &browser, Provider::Google, 1001)
             .await
             .unwrap();
+        tx.intent = intent;
         assert!(
             service
                 .finish_login(tx, provider, subject, None, now)

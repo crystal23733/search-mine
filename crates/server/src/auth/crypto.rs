@@ -100,6 +100,26 @@ pub trait CredentialVault: Send + Sync {
         value: &[u8],
     ) -> Result<Zeroizing<Vec<u8>>, AuthError>;
 }
+impl<T: CredentialVault + ?Sized> CredentialVault for std::sync::Arc<T> {
+    fn seal(
+        &self,
+        id: Uuid,
+        provider: Provider,
+        purpose: CredentialPurpose,
+        value: &[u8],
+    ) -> Result<Vec<u8>, AuthError> {
+        (**self).seal(id, provider, purpose, value)
+    }
+    fn open(
+        &self,
+        id: Uuid,
+        provider: Provider,
+        purpose: CredentialPurpose,
+        value: &[u8],
+    ) -> Result<Zeroizing<Vec<u8>>, AuthError> {
+        (**self).open(id, provider, purpose, value)
+    }
+}
 pub struct AeadVault(Keyring);
 impl AeadVault {
     pub fn new(current: u32, keys: Vec<(u32, [u8; 32])>) -> Result<Self, AuthError> {

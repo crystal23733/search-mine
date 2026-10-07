@@ -8,6 +8,9 @@ pub struct LoginWrite {
     pub session_hash: [u8; 32],
     pub previous_session: Option<[u8; 32]>,
     pub now: i64,
+    pub intent: super::AuthIntent,
+    pub bound_session: Option<[u8; 32]>,
+    pub apple_refresh: Option<zeroize::Zeroizing<String>>,
 }
 pub struct LoginRecord {
     pub account: Account,

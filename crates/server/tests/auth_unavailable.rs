@@ -36,6 +36,9 @@ async fn closed_database_fails_without_granting_authentication_or_leaking_detail
     assert!(matches!(
         store
             .login(LoginWrite {
+                intent: AuthIntent::Login,
+                bound_session: None,
+                apple_refresh: None,
                 provider: Provider::Google,
                 digests: vec![(1, [1; 32])],
                 session_hash: browser.hash(),
@@ -68,6 +71,9 @@ async fn closed_database_fails_without_granting_authentication_or_leaking_detail
     assert!(matches!(
         store
             .login(LoginWrite {
+                intent: AuthIntent::Login,
+                bound_session: None,
+                apple_refresh: None,
                 provider: Provider::Google,
                 digests: vec![],
                 session_hash: browser.hash(),
@@ -80,6 +86,9 @@ async fn closed_database_fails_without_granting_authentication_or_leaking_detail
     assert!(matches!(
         store
             .login(LoginWrite {
+                intent: AuthIntent::Login,
+                bound_session: None,
+                apple_refresh: None,
                 provider: Provider::Google,
                 digests: vec![(0, [1; 32])],
                 session_hash: browser.hash(),
@@ -92,6 +101,9 @@ async fn closed_database_fails_without_granting_authentication_or_leaking_detail
     assert!(matches!(
         store
             .login(LoginWrite {
+                intent: AuthIntent::Login,
+                bound_session: None,
+                apple_refresh: None,
                 provider: Provider::Google,
                 digests: vec![(1, [1; 32])],
                 session_hash: browser.hash(),

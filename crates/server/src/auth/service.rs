@@ -12,6 +12,12 @@ pub struct IssuedSession {
     pub identity_id: Uuid,
     pub token: SecretToken,
 }
+pub struct AccountAuthorization {
+    pub provider: Provider,
+    pub intent: AuthIntent,
+    pub return_path: ReturnPath,
+    pub locale: AuthLocale,
+}
 pub struct AuthService<S, V, D = DigestKeys> {
     pub store: S,
     vault: V,
@@ -52,6 +58,56 @@ impl<S: AuthStore, V: CredentialVault, D: SubjectDigester> AuthService<S, V, D> 
         locale: AuthLocale,
         now: i64,
     ) -> Result<Authorization, AuthError> {
+        if intent != AuthIntent::Login {
+            return Err(AuthError::Invalid);
+        }
+        self.start_request(
+            browser,
+            AccountAuthorization {
+                provider,
+                intent,
+                return_path,
+                locale,
+            },
+            None,
+            now,
+        )
+        .await
+    }
+    pub async fn start_account(
+        &self,
+        browser: &SecretToken,
+        token: &SecretToken,
+        request: AccountAuthorization,
+        now: i64,
+    ) -> Result<Authorization, AuthError> {
+        let session = self
+            .session(token, now)
+            .await?
+            .ok_or(AuthError::Unauthenticated)?;
+        if request.intent.account() != Some(session.account.id) {
+            return Err(AuthError::Invalid);
+        }
+        if matches!(request.intent, AuthIntent::Link(_)) && !session.fresh(now, RECENT_AUTH_SECONDS)
+        {
+            return Err(AuthError::ReauthenticationRequired);
+        }
+        self.start_request(browser, request, Some(token.hash()), now)
+            .await
+    }
+    async fn start_request(
+        &self,
+        browser: &SecretToken,
+        request: AccountAuthorization,
+        bound_session_hash: Option<[u8; 32]>,
+        now: i64,
+    ) -> Result<Authorization, AuthError> {
+        let AccountAuthorization {
+            provider,
+            intent,
+            return_path,
+            locale,
+        } = request;
         let expires_at = now
             .checked_add(TRANSACTION_SECONDS)
             .filter(|_| now >= 0)
@@ -93,6 +149,7 @@ impl<S: AuthStore, V: CredentialVault, D: SubjectDigester> AuthService<S, V, D> 
                 created_at: now,
                 expires_at,
                 encrypted_verifier,
+                bound_session_hash,
             })
             .await?;
         Ok(auth)
@@ -139,23 +196,63 @@ impl<S: AuthStore, V: CredentialVault, D: SubjectDigester> AuthService<S, V, D> 
         previous: Option<&SecretToken>,
         now: i64,
     ) -> Result<IssuedSession, AuthError> {
-        if transaction.intent != AuthIntent::Login
-            || transaction.provider != provider
-            || now < transaction.created_at
+        if transaction.intent != AuthIntent::Login || transaction.provider != provider {
+            return Err(AuthError::Invalid);
+        }
+        self.finish_verified(
+            transaction,
+            VerifiedIdentity {
+                subject: zeroize::Zeroizing::new(subject.to_string()),
+                apple_refresh: None,
+            },
+            previous,
+            now,
+        )
+        .await
+    }
+    pub async fn finish_verified(
+        &self,
+        transaction: AuthTransaction,
+        identity: VerifiedIdentity,
+        previous: Option<&SecretToken>,
+        now: i64,
+    ) -> Result<IssuedSession, AuthError> {
+        let provider = transaction.provider;
+        if now < transaction.created_at
             || now >= transaction.expires_at
             || now.checked_add(SESSION_SECONDS).is_none()
         {
             return Err(AuthError::Invalid);
+        }
+        match transaction.intent {
+            AuthIntent::Login if transaction.bound_session_hash.is_some() => {
+                return Err(AuthError::Invalid);
+            }
+            AuthIntent::Link(_) | AuthIntent::Reauth(_)
+                if previous.map(SecretToken::hash) != transaction.bound_session_hash
+                    || transaction.bound_session_hash.is_none() =>
+            {
+                return Err(AuthError::Invalid);
+            }
+            _ => {}
+        }
+        match (provider, identity.apple_refresh.as_ref()) {
+            (Provider::Apple, Some(refresh)) if super::provider::bounded_text(refresh, 4096) => {}
+            (Provider::Apple, _) | (_, Some(_)) => return Err(AuthError::Invalid),
+            _ => {}
         }
         let token = SecretToken::generate()?;
         let result = self
             .store
             .login(LoginWrite {
                 provider,
-                digests: self.digests.digest(provider, subject)?,
+                digests: self.digests.digest(provider, &identity.subject)?,
                 session_hash: token.hash(),
                 previous_session: previous.map(SecretToken::hash),
                 now,
+                intent: transaction.intent,
+                bound_session: transaction.bound_session_hash,
+                apple_refresh: identity.apple_refresh,
             })
             .await?;
         Ok(IssuedSession {

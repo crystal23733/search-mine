@@ -21,7 +21,7 @@
     "fixtures:check": "cargo run --locked --release -p liar-wasm --bin native-fixture -- --check",
     "tokens:generate": "node scripts/generate-tokens.mjs",
     "tokens:check": "node scripts/generate-tokens.mjs --check",
-    "format:check": "prettier --check apps/web/src apps/web/vitest.config.ts apps/web/tsconfig.json tests/e2e/shell.spec.ts tests/e2e/bootstrap.spec.ts packages/design-tokens/tokens.json"
+    "format:check": "prettier --check apps/web/src apps/web/test apps/web/vitest.config.ts apps/web/tsconfig.json tests/e2e/shell.spec.ts tests/e2e/bootstrap.spec.ts tests/e2e/board.spec.ts packages/design-tokens/tokens.json"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

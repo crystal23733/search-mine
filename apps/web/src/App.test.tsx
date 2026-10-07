@@ -14,6 +14,9 @@ async function setup(path = "/en/") {
     practiceCore: async () => {
       throw new Error("unavailable");
     },
+    boardRenderer: async () => {
+      throw new Error("unavailable");
+    },
   };
   render(<App services={services} />);
   return services;

@@ -20,3 +20,24 @@ export const COLORS = {
   "number8": 10924989,
   "closed": 2634819
 } as const;
+export const HIGH_CONTRAST_COLORS = {
+  "background": 0,
+  "surface": 725013,
+  "raised": 1383716,
+  "border": 10924989,
+  "text": 16777215,
+  "muted": 14411247,
+  "accent": 16038726,
+  "on-accent": 1512202,
+  "success": 4772784,
+  "danger": 16022138,
+  "number1": 7387391,
+  "number2": 9297795,
+  "number3": 16747397,
+  "number4": 13018360,
+  "number5": 16038726,
+  "number6": 4772784,
+  "number7": 16052454,
+  "number8": 10924989,
+  "closed": 2634819
+} as const;

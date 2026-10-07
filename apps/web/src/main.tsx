@@ -36,6 +36,8 @@ render(
       preferences,
       practiceCore: async () =>
         (await import("./services/core")).createPracticeCore(),
+      boardRenderer: async (host) =>
+        (await import("./board/pixi")).createPixiBoard(host),
     }}
   />,
   root,

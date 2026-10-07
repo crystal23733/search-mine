@@ -217,7 +217,7 @@
       "requirements": "FR02~05/15",
       "scenarios": "TS14/20/21/22",
       "deps": [
-        "oauth-db"
+        "auth-ui"
       ],
       "acceptance": "직렬입력·deadline·공개DTO; frame/rate/capacity; 결과 transaction 1회",
       "issue": 16
@@ -365,6 +365,64 @@
       ],
       "acceptance": "전력·도메인·정산실측; 동의/광고코호트 편향; E5·확장여부 사용자 결정",
       "issue": 28
+    },
+    {
+      "key": "oauth-input",
+      "issue": 42,
+      "title": "chore(auth): 실제 OAuth 등록·키·최소 권한 실계정 검수",
+      "milestone": "M3",
+      "requirements": "FR01/16, NFR01/02",
+      "scenarios": "TS01/20/29/31~36",
+      "deps": [],
+      "acceptance": "등록 도메인·네 제공자 키·최소 권한·실계정 로그인/연결/삭제 검수; 비밀값 공개 금지"
+    },
+    {
+      "key": "auth-foundation",
+      "issue": 43,
+      "title": "feat(auth): 최소 계정·인증 거래·세션·PostgreSQL 기반",
+      "milestone": "M3",
+      "requirements": "FR01/16, NFR01/02",
+      "scenarios": "TS01/20/29/31~36",
+      "deps": [
+        "offline"
+      ],
+      "acceptance": "최소 도메인·HMAC/AEAD·5분 거래 원자 소비·세션 회전/철회·별도 migration·실DB 검증"
+    },
+    {
+      "key": "auth-providers",
+      "issue": 44,
+      "title": "feat(auth): 네 OAuth 어댑터와 인증 HTTP 경계",
+      "milestone": "M3",
+      "requirements": "FR01/16, NFR01/02",
+      "scenarios": "TS01/20/29/31~36",
+      "deps": [
+        "auth-foundation"
+      ],
+      "acceptance": "네 최소 제공자·JWT/JWKS·bootstrap/start/callback/session·Origin/CSRF·HTTP 계약"
+    },
+    {
+      "key": "auth-rights",
+      "issue": 45,
+      "title": "feat(auth): 명시적 연결·계정 권리·Apple 철회",
+      "milestone": "M3",
+      "requirements": "FR01/16, NFR01/02",
+      "scenarios": "TS01/20/29/31~36",
+      "deps": [
+        "auth-providers"
+      ],
+      "acceptance": "최근 재인증·연결/충돌/마지막 수단·export/delete·Apple 암호 credential/알림/철회"
+    },
+    {
+      "key": "auth-ui",
+      "issue": 46,
+      "title": "feat(web): 네 OAuth 로그인·최소 계정 관리 화면",
+      "milestone": "M3",
+      "requirements": "FR01/16, NFR01/02",
+      "scenarios": "TS01/20/29/31~36",
+      "deps": [
+        "auth-rights"
+      ],
+      "acceptance": "8언어 Atomic 로그인/계정·무계정 유지·secret 저장 금지·세션 revision·PC/mobile E2E"
     }
   ]
 }

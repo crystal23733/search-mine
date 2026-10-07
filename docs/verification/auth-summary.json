@@ -1,0 +1,82 @@
+{
+  "source_commit": "f51069f3163235ace1834e27cc1b8e7aa0be6f71",
+  "verified_on": "2026-10-08",
+  "database": "PostgreSQL18",
+  "ci_run": 37654454229,
+  "database_job": 112905903676,
+  "auth_unit_tests": 10,
+  "health_unit_tests": 2,
+  "real_database_tests": 4,
+  "local_database_tests_run": false,
+  "coverage": [
+    {
+      "source": "crates/server/src/auth/crypto.rs",
+      "lines": {
+        "count": 141,
+        "covered": 140,
+        "percent": 99.29078014184397
+      }
+    },
+    {
+      "source": "crates/server/src/auth/model.rs",
+      "lines": {
+        "count": 107,
+        "covered": 107,
+        "percent": 100.0
+      }
+    },
+    {
+      "source": "crates/server/src/auth/postgres.rs",
+      "lines": {
+        "count": 216,
+        "covered": 208,
+        "percent": 96.29629629629629
+      }
+    },
+    {
+      "source": "crates/server/src/auth/service.rs",
+      "lines": {
+        "count": 136,
+        "covered": 135,
+        "percent": 99.26470588235294
+      }
+    },
+    {
+      "source": "crates/server/src/bin/migrate.rs",
+      "lines": {
+        "count": 22,
+        "covered": 0,
+        "percent": 0.0
+      }
+    },
+    {
+      "source": "crates/server/src/lib.rs",
+      "lines": {
+        "count": 42,
+        "covered": 42,
+        "percent": 100.0
+      }
+    },
+    {
+      "source": "crates/server/src/main.rs",
+      "lines": {
+        "count": 28,
+        "covered": 0,
+        "percent": 0.0
+      }
+    }
+  ],
+  "domain": {
+    "covered": 242,
+    "count": 243,
+    "percent": 99.58847736625515
+  },
+  "server": {
+    "covered": 632,
+    "count": 692,
+    "percent": 91.32947976878613
+  },
+  "local_browser_tests": 50,
+  "local_web_unit_tests": 64,
+  "real_oauth_providers_verified": false
+}

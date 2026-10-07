@@ -29,3 +29,5 @@
 출처 패키지는 `C:/Users/cryst/.codex/plugins/cache/pm-skills/` 아래 pm-product-strategy/pm-market-research/pm-marketing-growth/pm-product-discovery/pm-go-to-market/pm-execution의 `2.1.0/skills/<name>/SKILL.md`다. 이름이 다른 대체 스킬을 쓴 경우는 없다. 사람이 확인할 인터뷰 자료가 없어 persona·시장 크기·수익은 가설/추정으로 명시했다.
 
 프로젝트 스킬은 system `skill-creator` 지침에 따라 `.agents/skills/`에 만들고 Claude용 entry point에서 공유 지침을 참조한다. 불필요한 전역 설정과 외부 계정 변경은 만들지 않는다. 스킬 frontmatter는 bundled quick_validate로 검사한다.
+
+2026-10-08 #43 인증 기반 리뷰에는 pm-ai-shipping/code-review(SKILL.md와 correctness-taxonomy/security-review references)를 읽고 정확성·보안 경계, authority/identity/atomicity 반례와 반증을 순차 검토했다. 결과와 실제 근거는 [#43 검증](../verification/43-auth-foundation.md), 상세 일별 기록은 ignored review/2026-10-08.md다. 성능/실제 제공자 검수를 코드 리뷰로 대체하지 않는다.

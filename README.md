@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~13 병합 완료. #14 공개 오프라인 캐시·다중 탭 안전 업데이트·미검증 제출 후보를 구현·검증했습니다. 이후 OAuth와 온라인을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14 병합 완료. OAuth 인증 기반 #43 구현을 진행합니다. 이후 OAuth와 온라인을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -27,7 +27,7 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~13은 병합·종료됐고 #14 오프라인/대기를 검증했습니다. 일별 코드 리뷰는 Git에서 제외한 로컬 `review/YYYY-MM-DD.md`에 기록합니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~14는 병합·종료됐습니다. OAuth는 #43→44→45→46으로 순차 구현하고 #42 실제 계정 검수는 별도 출시 조건입니다. 일별 코드 리뷰는 Git에서 제외한 로컬 `review/YYYY-MM-DD.md`에 기록합니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 
@@ -56,13 +56,21 @@ cargo run --locked -p liar-server
 
 ## 검증
 
+인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 아직 로그인 HTTP/제공자/화면은 #44~46 구현 대상입니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 아래는 격리된 테스트 DB 예시입니다.
+
 ```powershell
 pnpm exec playwright install chromium
 ./scripts/check.ps1
 # 실제 DB 통합 (개발용 loopback DB, 운영 DB는 host 포트 없음)
 docker compose -f tests/compose.postgres.yml up -d --wait
 $env:DATABASE_URL = 'postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
+$env:MIGRATION_DATABASE_URL = $env:DATABASE_URL
+cargo run --locked -p liar-server --bin migrate
+Remove-Item Env:MIGRATION_DATABASE_URL
 cargo test --locked -p liar-server --test postgres -- --ignored
+# 실제 DB가 실행된 환경에서 인증 coverage (entry point 포함)
+cargo llvm-cov --locked -p liar-server --tests --ignore-filename-regex '[/\\](tests|examples)[/\\]' --json --output-path .tmp/auth-coverage.json -- --include-ignored
+python scripts/check_auth_coverage.py .tmp/auth-coverage.json
 docker compose -f tests/compose.postgres.yml down
 ```
 

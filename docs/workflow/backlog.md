@@ -32,7 +32,7 @@
 | [#13 feat(web): UTC 데일리·개인 기록·공유 카드](https://github.com/crystal23733/search-mine/issues/13) | M2 | [#12](https://github.com/crystal23733/search-mine/issues/12) | FR09 / TS17/18 | UTC/버전 재현; 정답·닉네임 없는 공유; 개인/unverified 결과 구분 |
 | [#14 feat(web): 오프라인 캐시와 대기 제출 저장](https://github.com/crystal23733/search-mine/issues/14) | M2 | [#13](https://github.com/crystal23733/search-mine/issues/13) | FR10 / TS18 | shell/core/locale/daily cache; 저장소 실패 fallback; 온라인 권위 이관 금지·업데이트 경계 |
 | [#15 feat(server): 4개 OAuth 인증과 최소 계정·PostgreSQL 저장 경계](https://github.com/crystal23733/search-mine/issues/15) | M3 | [#14](https://github.com/crystal23733/search-mine/issues/14) | FR01/16, NFR02 / TS01/20/29/31~36 | Google·Apple·카카오·네이버 실제 연동; provider port/adapter; 최소 scope·claim whitelist·비밀번호 없음; 거래 바인딩/JWKS·HttpOnly·CSRF; 명시적 연결/export/delete·Apple 암호화 credential/철회; sqlx migration·실DB·E2E |
-| [#16 feat(server): 권위 매치 actor와 WebSocket 계약](https://github.com/crystal23733/search-mine/issues/16) | M3 | [#15](https://github.com/crystal23733/search-mine/issues/15) | FR02~05/15 / TS14/20/21/22 | 직렬입력·deadline·공개DTO; frame/rate/capacity; 결과 transaction 1회 |
+| [#16 feat(server): 권위 매치 actor와 WebSocket 계약](https://github.com/crystal23733/search-mine/issues/16) | M3 | [#46](https://github.com/crystal23733/search-mine/issues/46) | FR02~05/15 / TS14/20/21/22 | 직렬입력·deadline·공개DTO; frame/rate/capacity; 결과 transaction 1회 |
 | [#17 feat(server): 빠른 대전 백필과 친구 방](https://github.com/crystal23733/search-mine/issues/17) | M3 | [#16](https://github.com/crystal23733/search-mine/issues/16) | FR06/07 / TS10/12 | 10초 원자 백필·봇표시; 만료8문자 코드·2seat; cancel/ready/열거제한 |
 | [#18 feat(server): 재접속·중복 명령·장애 판정](https://github.com/crystal23733/search-mine/issues/18) | M3 | [#17](https://github.com/crystal23733/search-mine/issues/17) | FR14 / TS15/16 | 30초유예·epoch·snapshot; duplicate ack; forfeit/abandon/abort 구분 |
 | [#19 feat(server): 데일리 replay 검증과 순위표](https://github.com/crystal23733/search-mine/issues/19) | M3 | [#18](https://github.com/crystal23733/search-mine/issues/18) | FR09/10 / TS17/18 | 유효입력·버전 replay; 첫 완료 unique; online시간/offline완료 순위와 신뢰 표기 |
@@ -45,6 +45,13 @@
 | [#26 test(perf): 미니 PC 부하·번들·글로벌 지연 측정](https://github.com/crystal23733/search-mine/issues/26) | M5 | [#25](https://github.com/crystal23733/search-mine/issues/25) | NFR03/04/07 / TS21/27 | 실사양·k6 실제매치/공격; admission측정안정치70%; 초기/게임/WASM·RTT별도 |
 | [#27 chore(product): 플레이테스트·공정성·튜닝 평가](https://github.com/crystal23733/search-mine/issues/27) | M6 | [#26](https://github.com/crystal23733/search-mine/issues/26) | FR15/16 / TS07/13/27 | E1/E2 모집·원자료/표본; 수치수정은설계먼저; NSM·재대결·공정성 출구평가 |
 | [#28 chore(product): 28일 광고 현금 손익과 성장 평가](https://github.com/crystal23733/search-mine/issues/28) | M6 | [#27](https://github.com/crystal23733/search-mine/issues/27) | FR12/16 / TS23/29 | 전력·도메인·정산실측; 동의/광고코호트 편향; E5·확장여부 사용자 결정 |
+| [#42 chore(auth): 실제 OAuth 등록·키·최소 권한 실계정 검수](https://github.com/crystal23733/search-mine/issues/42) | M3 | 외부 입력 | FR01/16, NFR01/02 / TS01/20/29/31~36 | 등록 도메인·네 제공자 키·최소 권한·실계정 로그인/연결/삭제 검수; 비밀값 공개 금지 |
+| [#43 feat(auth): 최소 계정·인증 거래·세션·PostgreSQL 기반](https://github.com/crystal23733/search-mine/issues/43) | M3 | [#14](https://github.com/crystal23733/search-mine/issues/14) | FR01/16, NFR01/02 / TS01/20/29/31~36 | 최소 도메인·HMAC/AEAD·5분 거래 원자 소비·세션 회전/철회·별도 migration·실DB 검증 |
+| [#44 feat(auth): 네 OAuth 어댑터와 인증 HTTP 경계](https://github.com/crystal23733/search-mine/issues/44) | M3 | [#43](https://github.com/crystal23733/search-mine/issues/43) | FR01/16, NFR01/02 / TS01/20/29/31~36 | 네 최소 제공자·JWT/JWKS·bootstrap/start/callback/session·Origin/CSRF·HTTP 계약 |
+| [#45 feat(auth): 명시적 연결·계정 권리·Apple 철회](https://github.com/crystal23733/search-mine/issues/45) | M3 | [#44](https://github.com/crystal23733/search-mine/issues/44) | FR01/16, NFR01/02 / TS01/20/29/31~36 | 최근 재인증·연결/충돌/마지막 수단·export/delete·Apple 암호 credential/알림/철회 |
+| [#46 feat(web): 네 OAuth 로그인·최소 계정 관리 화면](https://github.com/crystal23733/search-mine/issues/46) | M3 | [#45](https://github.com/crystal23733/search-mine/issues/45) | FR01/16, NFR01/02 / TS01/20/29/31~36 | 8언어 Atomic 로그인/계정·무계정 유지·secret 저장 금지·세션 revision·PC/mobile E2E |
+
+#15는 상위 출시 검수이며 #43→44→45→46을 순차 병합한다. #42 실제 검수 전 상위 이슈는 열어둔다. #16 구현 선행은 #46이다. [ADR0019](../adr/0019-auth-foundation-and-delivery.md).
 
 사용자가 전체 작업의 리뷰·검사·병합·순차 진행을 위임했다. M0 #29→#30 병합 후 #4부터 TDD 구현한다. 외부 키가 없는 #15 실계정 검수는 후속 사용자 입력 이슈에 남기고 계약 테스트를 포함한 구현과 이후 작업을 계속한다. 실제 인증/검수 완료를 가장하지 않는다.
 

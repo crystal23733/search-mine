@@ -52,6 +52,13 @@ impl PgAuthStore {
             sqlx::query("INSERT INTO auth_accounts(id,created_at,last_seen_at) VALUES($1,to_timestamp($2),to_timestamp($2))").bind(account).bind(now).execute(&mut *tx).await.map_err(database_error)?;
             account
         };
+        // Unlink can remove an identity while this login waits for the account lock.
+        // Reconcile the earlier subject lookup with the now-locked account before issuing a session.
+        if let Some(expected) = existing
+            && find_identity(&mut tx, value.provider, &value.digests).await? != Some(expected)
+        {
+            return Err(AuthError::Unauthenticated);
+        }
         let (version, digest) = value.digests[0];
         let identity_id = if let Some((id, _)) = existing {
             sqlx::query(

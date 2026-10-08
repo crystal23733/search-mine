@@ -31,3 +31,5 @@
 프로젝트 스킬은 system `skill-creator` 지침에 따라 `.agents/skills/`에 만들고 Claude용 entry point에서 공유 지침을 참조한다. 불필요한 전역 설정과 외부 계정 변경은 만들지 않는다. 스킬 frontmatter는 bundled quick_validate로 검사한다.
 
 2026-10-08 #43 인증 기반 리뷰에는 pm-ai-shipping/code-review(SKILL.md와 correctness-taxonomy/security-review references)를 읽고 정확성·보안 경계, authority/identity/atomicity 반례와 반증을 순차 검토했다. 결과와 실제 근거는 [#43 검증](../verification/43-auth-foundation.md), 상세 일별 기록은 ignored review/2026-10-08.md다. 성능/실제 제공자 검수를 코드 리뷰로 대체하지 않는다.
+
+2026-10-08 #46은 pm-ai-shipping/code-review2.1.0의 정확성·보안 지침을 적용했다. scope#46, baseline develop de55e16에서 UI→AuthPort→bootstrap/세대→strict HTTP→제품 권리 API의 권위를 추적하고 stale account/cookie·observer 재진입·늦은 완료·2탭 전환·대기 결과 보존을 강제 검사했다. [실제 검증과 수정](../verification/46-oauth-account-ui.md)에 근거를 기록하며 실제 OAuth 제공자 proof는 #42다.

@@ -1,7 +1,31 @@
 import { describe, expect, it } from "vitest";
 import { chooseLocale, normalizeLocale, localizedPath } from "./locale";
 import { createPreferences } from "./preferences";
+import en from "../locales/en/common.json";
+import ko from "../locales/ko/common.json";
+import ja from "../locales/ja/common.json";
+import zh from "../locales/zh-CN/common.json";
+import es from "../locales/es/common.json";
+import pt from "../locales/pt-BR/common.json";
+import de from "../locales/de/common.json";
+import fr from "../locales/fr/common.json";
 describe("locale and preference policy", () => {
+  it("keeps shipped translations readable after UTF-8 serialization", () => {
+    for (const [locale, messages] of Object.entries({
+      en,
+      ko,
+      ja,
+      zh,
+      es,
+      pt,
+      de,
+      fr,
+    })) {
+      for (const [key, message] of Object.entries(messages)) {
+        expect(message, `${locale}:${key}`).not.toMatch(/\?{3,}|\uFFFD/);
+      }
+    }
+  });
   it("prioritizes a supported URL, then saved choice, then browser only at root", () => {
     expect(chooseLocale("/ko/settings", "fr", ["ja-JP"])).toBe("ko");
     expect(chooseLocale("/", "de", ["ko-KR"])).toBe("de");

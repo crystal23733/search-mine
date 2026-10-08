@@ -1,0 +1,88 @@
+{
+  "product_source_commit": "7c0eb143e227c39ff864afc27ccce7c79c3964d8",
+  "browser_fixture_source_commit": "68df1b2d6fb523ff6891821fac69e06ed14b4b32",
+  "measured_at_kst": "2026-10-08T21:54:17.721087+09:00",
+  "local_environment": "Windows11/Ryzen9 3900X/headless Chromium desktop and Pixel7 viewport emulation",
+  "local_checks": {
+    "full_check_script": "passed at product source; Postgres tests ignored and HTTPS auth project not enabled without DATABASE_URL",
+    "vitest_tests": 89,
+    "browser_tests": 50,
+    "docs_markdown": 100,
+    "mermaid_diagrams": 34
+  },
+  "web_coverage": {
+    "lines": {
+      "total": 1661,
+      "covered": 1444,
+      "skipped": 0,
+      "pct": 86.93
+    },
+    "statements": {
+      "total": 1818,
+      "covered": 1549,
+      "skipped": 0,
+      "pct": 85.2
+    },
+    "functions": {
+      "total": 523,
+      "covered": 443,
+      "skipped": 0,
+      "pct": 84.7
+    },
+    "branches": {
+      "total": 1244,
+      "covered": 977,
+      "skipped": 0,
+      "pct": 78.53
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "bundle": {
+    "initial_js_gzip_bytes": 41147,
+    "maximum_selected_locale_extra_gzip_bytes": 5231,
+    "initial_with_locale_gzip_bytes": 46378,
+    "service_worker_bytes": 20589,
+    "service_worker_gzip_bytes": 6944,
+    "precache_entries": 41,
+    "precache_bytes": 1319386
+  },
+  "limitations": [
+    "real OAuth proof/console scopes/keys and branding launch verification issue42",
+    "official daily submission unavailable issue19; pending candidates retained",
+    "no real device, miniPC workload, people study or legal release compliance conclusion",
+    "TLS/browser fixture trusts only public test certificate; production config never uses fixture proofs/clock/private key",
+    "OAuth invitation code roundtrip integrated with room transactions in issue17; local onboarding URL test does not prove roundtrip retention"
+  ],
+  "ci": {
+    "run": 37779475034,
+    "source_commit": "68df1b2d6fb523ff6891821fac69e06ed14b4b32",
+    "browser_job": 113319048432,
+    "browser_passed": 57,
+    "browser_flaky": 0,
+    "browser_skipped": 0,
+    "browser_duration": "3.7m",
+    "postgres_job": 113319048497,
+    "postgres_passed": 16,
+    "postgres_ignored": 0,
+    "auth_domain_lines": {
+      "covered": 369,
+      "total": 371,
+      "pct": 99.46
+    },
+    "server_lines": {
+      "covered": 2750,
+      "total": 3057,
+      "pct": 89.96
+    },
+    "core_lines": {
+      "covered": 2314,
+      "total": 2366,
+      "pct": 97.8
+    }
+  }
+}

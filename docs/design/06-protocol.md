@@ -13,7 +13,9 @@
 | GET /api/v1/me | 인증 필요, 내부 account ID와 게임용 nickname만, no-store |
 | PATCH /api/v1/me | 닉네임만 검증, CSRF·Origin; 약관/선택 동의는 #21의 별도 정책 계약 |
 | POST /api/v1/auth/logout | 서비스 세션 철회, 제공자 전체 로그아웃과 구분 |
-| POST /api/v1/me/identities/{provider}/start | 최근 재인증 필요, account에 바인딩한 link 거래 |
+| GET /api/v1/me/identities | 본인 제공자와 연결 시각만, no-store |
+| POST /api/v1/me/identities/{provider}/link | 최근 재인증 필요, account에 바인딩한 link 거래 |
+| POST /api/v1/auth/{provider}/reauth | 현재 계정에 이미 연결된 제공자로 명시적 재인증 |
 | DELETE /api/v1/me/identities/{provider} | 최근 재인증·CSRF, 마지막 로그인 수단은 해제 불가 |
 | POST /api/v1/me/export | 최근 재인증·CSRF, 본인 최소 데이터, token/subject 제외 |
 | DELETE /api/v1/me | 최근 재인증·CSRF, 전 세션 철회·개인정보 삭제·제공자 token 철회 |

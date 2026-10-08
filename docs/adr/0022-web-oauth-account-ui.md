@@ -22,7 +22,7 @@ design_layout의02 로그인·02-1 nickname·13설정 card/큰버튼/고지와 �
 
 연결 목록/해제·nickname 변경·export·logout·delete는 설정에서 분리한 AccountSettings organism으로 구현한다. 서버 reauth_required에는 연결된 제공자의 명시 재인증 UI를 표시하며 사용자는 돌아온 뒤 민감 작업을 다시 선택한다. 자동 삭제 재실행을 하지 않는다. 마지막 제공자 해제는 UI와 서버에서 보호한다. 해제/탈퇴 확인 dialog, 완료 후 전체 세션 종료/Apple 직접 철회 안내를 제공한다. 외부 철회가 확정됐다고 표현하지 않는다. 내보내기는 요청 후 메모리 JSON download로만 만든다.
 
-onboarding/callback은 허용 return_path enum만 사용하고 외부 return URL을 따르지 않는다. callback 오류 query는 번역한 실패 안내만 표시한다. locale/초대 code는 기존 navigation 계약과 함께 보존하고 OAuth state/code를 client 저장소에 기록하지 않는다. nickname 미설정 계정도 설정에서 개인정보 권리를 행사할 수 있다. 온라인대전/공식 기록은 nickname 이후다. 정책/운영자 준비 #21을 완료했다고 주장하거나 현재 로그인 버튼에 가짜 약관 동의를 붙이지 않는다.
+onboarding/callback은 허용 return_path enum만 사용하고 외부 return URL을 따르지 않는다. callback 오류 query는 번역한 실패 안내만 표시한다. locale와 이미 onboarding URL에 있는 초대 code는 기존 navigation 계약으로 보존하고 OAuth state/code를 client 저장소에 기록하지 않는다. 현재 OAuth 거래는 locale/목적지 enum만 보관하므로 친구 초대 코드의 전체 OAuth 왕복 보존은 친구 방 #17의 서버 거래 확장에서 구현·검증한다. 이를 #46의 로컬 navigation 시험으로 검증했다고 표현하지 않는다. nickname 미설정 계정도 설정에서 개인정보 권리를 행사할 수 있다. 온라인대전/공식 기록은 nickname 이후다. 정책/운영자 준비 #21을 완료했다고 주장하거나 현재 로그인 버튼에 가짜 약관 동의를 붙이지 않는다.
 
 ## 데일리와 검증
 

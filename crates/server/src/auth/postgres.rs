@@ -6,19 +6,32 @@ use uuid::Uuid;
 pub struct PgAuthStore {
     pub(super) pool: PgPool,
     pub(super) vault: Option<std::sync::Arc<dyn CredentialVault>>,
+    pub(super) invalidations: std::sync::Arc<dyn SessionInvalidator>,
 }
 impl PgAuthStore {
     pub fn new(pool: PgPool) -> Self {
-        Self { pool, vault: None }
+        Self {
+            pool,
+            vault: None,
+            invalidations: std::sync::Arc::new(NoSessionInvalidator),
+        }
     }
     pub fn with_vault(pool: PgPool, vault: std::sync::Arc<dyn CredentialVault>) -> Self {
         Self {
             pool,
             vault: Some(vault),
+            invalidations: std::sync::Arc::new(NoSessionInvalidator),
         }
     }
     pub fn pool(&self) -> &PgPool {
         &self.pool
+    }
+    pub fn with_invalidations(
+        mut self,
+        invalidations: std::sync::Arc<dyn SessionInvalidator>,
+    ) -> Self {
+        self.invalidations = invalidations;
+        self
     }
 }
 impl AuthStore for PgAuthStore {
@@ -72,6 +85,7 @@ impl AuthStore for PgAuthStore {
         )
     }
     async fn logout(&self, hash: [u8; 32]) -> Result<(), AuthError> {
+        let _authority_barrier = self.invalidations.session(hash);
         sqlx::query("DELETE FROM auth_sessions WHERE token_hash=$1")
             .bind(hash.as_slice())
             .execute(&self.pool)
@@ -81,6 +95,7 @@ impl AuthStore for PgAuthStore {
     }
     async fn revoke_account(&self, account: Uuid) -> Result<(), AuthError> {
         let mut tx = self.pool.begin().await.map_err(database_error)?;
+        let _authority_barrier = self.invalidations.account(account);
         sqlx::query("DELETE FROM auth_sessions WHERE account_id=$1")
             .bind(account)
             .execute(&mut *tx)

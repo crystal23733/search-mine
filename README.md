@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~45 병합 완료. #46 OAuth 계정 화면 구현·검증을 마쳤고 온라인 작업을 순차 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~46 병합 완료. #16 권위 actor·인증 WS·원자 결과 저장을 구현하고 검증·리뷰합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -104,3 +104,9 @@ pnpm exec playwright test --project auth
 ```
 
 DB 환경변수가 없는 기본 로컬 실행은 기존 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정 시험7개를 포함한57개를 검사한다.
+
+## 권위 서버와 WebSocket
+
+[#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. 현재는 내부 매치에 배정된 계정만 입장하며, 공개 매칭/친구 방은 #17에서 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다.
+
+개발 제한의 기본값은 매치16/mailbox64/송신16/proof2/물리 연결32이며 `LIAR_ONLINE_MATCHES`, `LIAR_ONLINE_MAILBOX`, `LIAR_ONLINE_OUTGOING`, `LIAR_ONLINE_PROOF_WORKERS`, `LIAR_ONLINE_CONNECTIONS`로 설정한다. 잘못된 값은 시작을 거절한다. 이 값은 미니 PC 출시 성능의 실측 결과가 아니며 #26에서 admission을 결정한다. 최종 결과는 새 migration으로 저장하고 닉네임·세션을 복사하지 않는다. 계정 삭제는 참여 기록을 제거하며 retry로 복원하지 않는다.

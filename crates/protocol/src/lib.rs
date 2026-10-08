@@ -2,6 +2,7 @@
 pub mod auth;
 pub mod daily;
 pub mod game;
+pub mod online;
 pub mod tutorial;
 pub use liar_core::rules::{BotProfiles, BotSettings, GameRules, RulesSnapshot};
 use serde::Serialize;
@@ -37,6 +38,7 @@ pub fn public_types() -> String {
         BotProfiles::decl(&config),
     ];
     declarations.extend(game::declarations(&config));
+    declarations.extend(online::declarations(&config));
     declarations.extend(tutorial::declarations(&config));
     declarations.extend(daily::declarations(&config));
     declarations.extend(auth::declarations(&config));

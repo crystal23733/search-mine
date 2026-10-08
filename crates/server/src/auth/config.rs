@@ -166,7 +166,11 @@ pub fn read_private_key(path: &str) -> Result<Zeroizing<Vec<u8>>, AuthError> {
     Ok(bytes)
 }
 impl RuntimeAuthConfig {
-    pub fn initialize(self, pool: PgPool) -> Result<AuthRuntime, AuthError> {
+    pub fn initialize_with_invalidations(
+        self,
+        pool: PgPool,
+        invalidations: Arc<dyn SessionInvalidator>,
+    ) -> Result<AuthRuntime, AuthError> {
         let clock: Arc<dyn AuthClock> = Arc::new(SystemAuthClock);
         let registry = Arc::new(
             ProviderRegistry::new(HttpsOAuthTransport::new()?, clock.clone(), self.providers)?
@@ -174,7 +178,7 @@ impl RuntimeAuthConfig {
         );
         let vault = Arc::new(self.vault);
         let digests = Arc::new(self.digests);
-        let store = PgAuthStore::with_vault(pool, vault.clone());
+        let store = PgAuthStore::with_vault(pool, vault.clone()).with_invalidations(invalidations);
         let worker = AppleMaintenance::new(
             store.clone(),
             vault.clone(),
@@ -182,6 +186,7 @@ impl RuntimeAuthConfig {
             registry.clone(),
             clock.clone(),
         );
+        let session_store = store.clone();
         let router = account_auth_router(
             AuthService::new(store, vault, digests),
             registry,
@@ -199,10 +204,15 @@ impl RuntimeAuthConfig {
         Ok(AuthRuntime {
             router,
             maintenance,
+            store: session_store,
         })
+    }
+    pub fn initialize(self, pool: PgPool) -> Result<AuthRuntime, AuthError> {
+        self.initialize_with_invalidations(pool, Arc::new(NoSessionInvalidator))
     }
 }
 pub struct AuthRuntime {
+    pub store: PgAuthStore,
     pub router: axum::Router,
     pub maintenance: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>,
 }

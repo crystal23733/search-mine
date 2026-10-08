@@ -423,6 +423,18 @@
         "auth-rights"
       ],
       "acceptance": "8언어 Atomic 로그인/계정·무계정 유지·secret 저장 금지·세션 revision·PC/mobile E2E"
+    },
+    {
+      "key": "lobby-policy",
+      "milestone": "M3",
+      "title": "feat(server): 빠른 대전·친구방의 원자 예약 정책",
+      "requirements": "FR06/07",
+      "scenarios": "TS10/12",
+      "deps": [
+        "ws-actor"
+      ],
+      "acceptance": "10초 FIFO/봇 원자 예약·8문자/10분 방·2seat/ready·취소/늦은 완료·bounded capacity·pure domain95%",
+      "issue": 52
     }
   ]
 }

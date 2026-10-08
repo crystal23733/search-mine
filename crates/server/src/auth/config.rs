@@ -169,11 +169,8 @@ impl RuntimeAuthConfig {
     pub fn initialize_with_invalidations(
         self,
         pool: PgPool,
-        _invalidations: Arc<dyn SessionInvalidator>,
+        invalidations: Arc<dyn SessionInvalidator>,
     ) -> Result<AuthRuntime, AuthError> {
-        self.initialize(pool)
-    }
-    pub fn initialize(self, pool: PgPool) -> Result<AuthRuntime, AuthError> {
         let clock: Arc<dyn AuthClock> = Arc::new(SystemAuthClock);
         let registry = Arc::new(
             ProviderRegistry::new(HttpsOAuthTransport::new()?, clock.clone(), self.providers)?
@@ -181,7 +178,7 @@ impl RuntimeAuthConfig {
         );
         let vault = Arc::new(self.vault);
         let digests = Arc::new(self.digests);
-        let store = PgAuthStore::with_vault(pool, vault.clone());
+        let store = PgAuthStore::with_vault(pool, vault.clone()).with_invalidations(invalidations);
         let worker = AppleMaintenance::new(
             store.clone(),
             vault.clone(),
@@ -209,6 +206,9 @@ impl RuntimeAuthConfig {
             maintenance,
             store: session_store,
         })
+    }
+    pub fn initialize(self, pool: PgPool) -> Result<AuthRuntime, AuthError> {
+        self.initialize_with_invalidations(pool, Arc::new(NoSessionInvalidator))
     }
 }
 pub struct AuthRuntime {

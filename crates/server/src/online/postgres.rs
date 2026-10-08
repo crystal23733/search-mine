@@ -103,8 +103,13 @@ impl SessionReader for PgSessionReader {
         &self,
         hash: [u8; 32],
     ) -> PortFuture<'_, Result<Option<crate::auth::Session>, OnlineError>> {
-        let _ = (&self.store, &self.clock, hash);
-        Box::pin(async { Ok(None) })
+        use crate::auth::AuthStore;
+        Box::pin(async move {
+            self.store
+                .session(hash, self.clock.now())
+                .await
+                .map_err(|_| OnlineError::Unavailable)
+        })
     }
 }
 fn reason(value: PublicEndReason) -> &'static str {

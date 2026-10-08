@@ -73,6 +73,7 @@ pub struct MatchState {
     visible: [Visible; 2],
     changed: [bool; 2],
     now: u64,
+    created_at: u64,
     acknowledgements: [HashMap<Uuid, u32>; 2],
 }
 impl MatchState {
@@ -81,6 +82,7 @@ impl MatchState {
         engine: RuleEngine,
         players: [Option<Uuid>; 2],
         seed: [u8; 8],
+        created_at: u64,
     ) -> Result<Self, OnlineError> {
         if id.is_nil()
             || players.iter().all(Option::is_none)
@@ -90,7 +92,7 @@ impl MatchState {
             return Err(OnlineError::Malformed);
         }
         let visible = [Seat::One, Seat::Two]
-            .map(|seat| Visible::new(from_projection(&engine.projection(seat), seat), 0));
+            .map(|seat| Visible::new(from_projection(&engine.projection(seat), seat), created_at));
         Ok(Self {
             id,
             engine,
@@ -100,7 +102,8 @@ impl MatchState {
             revisions: [0; 2],
             visible,
             changed: [false; 2],
-            now: 0,
+            now: created_at,
+            created_at,
             acknowledgements: [HashMap::new(), HashMap::new()],
         })
     }
@@ -256,7 +259,7 @@ impl MatchState {
             id: self.id,
             rules_hash: views[0].rules.hash.clone(),
             seed: self.seed,
-            ended_ms: end.at,
+            ended_ms: end.at.saturating_sub(self.created_at),
             reason: views[0].result.as_ref()?.reason,
             players: [0, 1].map(|i| PlayerResult {
                 account: self.players[i],

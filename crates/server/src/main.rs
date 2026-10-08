@@ -1,5 +1,7 @@
 use liar_server::auth::*;
+use liar_server::online::*;
 use sqlx::postgres::PgPoolOptions;
+use std::sync::Arc;
 use std::{env, time::Duration};
 
 #[tokio::main]
@@ -17,6 +19,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = load_auth_config(|name| env::var(name).ok(), read_private_key)
         .map_err(|_| "Authentication configuration is invalid")?;
     let auth = if let Some(config) = config {
+        let online = load_online_config(|name| env::var(name).ok())
+            .map_err(|_| "Online limits are invalid")?;
+        let authorities =
+            AuthorityRegistry::new(online.connections).map_err(|_| "Online capacity is invalid")?;
+        let origin = config.security.origin().to_string();
         let auth_pool = pool.clone().ok_or("Authentication requires a database")?;
         let store = PgAuthStore::new(auth_pool.clone());
         tokio::spawn(async move {
@@ -27,11 +34,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let _ = store.cleanup(clock.now()).await;
             }
         });
+        let registry = MatchRegistry::new(
+            online.limits,
+            Arc::new(SystemMatchClock::default()),
+            Arc::new(SystemAuthClock),
+            authorities.clone(),
+            Arc::new(PgResultRepository::new(
+                auth_pool.clone(),
+                Arc::new(SystemAuthClock),
+            )),
+        )
+        .map_err(|_| "Online initialization failed")?;
         let runtime = config
-            .initialize(auth_pool)
+            .initialize_with_invalidations(auth_pool, authorities)
             .map_err(|_| "Authentication initialization failed")?;
         tokio::spawn(runtime.maintenance);
-        runtime.router
+        let ws = websocket_router(
+            &origin,
+            Arc::new(PgSessionReader::new(
+                runtime.store,
+                Arc::new(SystemAuthClock),
+            )),
+            registry,
+            online.connections,
+        )
+        .map_err(|_| "WebSocket initialization failed")?;
+        runtime.router.merge(ws)
     } else {
         disabled_auth_router()
     };

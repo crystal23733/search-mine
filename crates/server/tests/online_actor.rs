@@ -49,6 +49,7 @@ fn state(id: Uuid, accounts: [Option<Uuid>; 2]) -> MatchState {
         RuleEngine::new(board, rules, 0).unwrap(),
         accounts,
         [46; 8],
+        0,
     )
     .unwrap()
 }

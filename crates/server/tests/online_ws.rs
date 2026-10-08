@@ -77,6 +77,9 @@ impl Drop for Fixture {
     }
 }
 async fn fixture() -> Fixture {
+    fixture_with_capacity(2).await
+}
+async fn fixture_with_capacity(capacity: usize) -> Fixture {
     let account = Uuid::new_v4();
     let token = SecretToken::generate().unwrap();
     let source = Arc::new(Sessions {
@@ -112,11 +115,12 @@ async fn fixture() -> Fixture {
                 RuleEngine::new(board, rules, 0).unwrap(),
                 [Some(account), Some(Uuid::new_v4())],
                 [46; 8],
+                0,
             )
             .unwrap(),
         )
         .unwrap();
-    let app = websocket_router("https://liar.example", source.clone(), registry, 2).unwrap();
+    let app = websocket_router("https://liar.example", source.clone(), registry, capacity).unwrap();
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let uri = format!("ws://{}/api/v1/ws", listener.local_addr().unwrap());
     let task = tokio::spawn(async move {
@@ -131,6 +135,96 @@ async fn fixture() -> Fixture {
         clock,
         task,
     }
+}
+#[tokio::test]
+async fn oversized_frame_closes_with_a_stable_protocol_code() {
+    let f = fixture().await;
+    let (mut socket, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    socket.next().await.unwrap().unwrap();
+    socket
+        .send(Message::Text("x".repeat(8193).into()))
+        .await
+        .unwrap();
+    let message = tokio::time::timeout(Duration::from_secs(2), socket.next())
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    let Message::Close(Some(frame)) = message else {
+        panic!("Explicit protocol close required")
+    };
+    assert_eq!(u16::from(frame.code), 1002);
+}
+#[tokio::test]
+async fn forty_one_inputs_exceed_the_burst_without_applying_the_last_command() {
+    let f = fixture().await;
+    let (mut socket, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    let initial = socket.next().await.unwrap().unwrap();
+    let initial: serde_json::Value = serde_json::from_str(initial.to_text().unwrap()).unwrap();
+    for seq in 1..=41 {
+        let input = serde_json::json!({"v":1,"match_id":initial["match_id"],"command_id":Uuid::new_v4().to_string(),"client_seq":seq,"session_epoch":2,"known_revision":0,"action":{"type":"flag","cell":8}});
+        socket
+            .send(Message::Text(input.to_string().into()))
+            .await
+            .unwrap();
+        let event = tokio::time::timeout(Duration::from_secs(2), socket.next())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        let event: serde_json::Value = serde_json::from_str(event.to_text().unwrap()).unwrap();
+        if seq <= 40 {
+            assert_eq!(event["payload"]["type"], "ack");
+        } else {
+            assert_eq!(event["payload"]["code"], "rate_limited");
+        }
+    }
+}
+#[tokio::test]
+async fn physical_capacity_rejects_before_replacing_an_existing_socket() {
+    let f = fixture_with_capacity(1).await;
+    let (mut first, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    first.next().await.unwrap().unwrap();
+    let error = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap_err();
+    let tokio_tungstenite::tungstenite::Error::Http(response) = error else {
+        panic!("capacity HTTP rejection")
+    };
+    assert_eq!(response.status().as_u16(), 503);
+    first.send(Message::Text("{}".into())).await.unwrap();
+    assert!(first.next().await.unwrap().unwrap().is_text());
+}
+#[tokio::test]
+async fn new_socket_replaces_old_epoch_without_old_close_revoking_the_new_owner() {
+    let f = fixture().await;
+    let (mut first, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    first.next().await.unwrap().unwrap();
+    let (mut second, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    let snapshot = second.next().await.unwrap().unwrap();
+    let value: serde_json::Value = serde_json::from_str(snapshot.to_text().unwrap()).unwrap();
+    assert_eq!(value["payload"]["session_epoch"], 3);
+    let old = tokio::time::timeout(Duration::from_secs(2), first.next())
+        .await
+        .unwrap();
+    assert!(matches!(old, None | Some(Ok(Message::Close(_)))));
+    drop(first);
+    second.send(Message::Text("{}".into())).await.unwrap();
+    let error = second.next().await.unwrap().unwrap();
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(error.to_text().unwrap()).unwrap()["payload"]["code"],
+        "malformed"
+    );
 }
 fn request(
     f: &Fixture,

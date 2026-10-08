@@ -4,7 +4,7 @@ use axum::{
     Json, Router,
     extract::{
         State, WebSocketUpgrade,
-        ws::{Message, WebSocket},
+        ws::{CloseFrame, Message, WebSocket},
     },
     http::{HeaderMap, StatusCode, Uri, header},
     middleware,
@@ -144,10 +144,11 @@ async fn run(
     heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
     heartbeat.tick().await;
     let mut last_seen = Instant::now();
+    let mut close_code = 1000;
     loop {
         tokio::select! {
             biased;
-            changed = revoked.changed() => { if changed.is_err() || *revoked.borrow() { break; } }
+            changed = revoked.changed() => { if changed.is_err() || *revoked.borrow() { close_code = 1008; break; } }
             outgoing = connection.next() => {
                 let Some(event) = outgoing else { break; };
                 if context.registry.authorities.with_authority(connection.authority(), context.registry.auth_clock.now(), || ()).is_err() { break; }
@@ -155,9 +156,10 @@ async fn run(
                 if text.len() > 131072 || !send(&mut socket, Message::Text(text.into())).await { break; }
             }
             incoming = socket.recv() => {
-                let Some(Ok(message)) = incoming else { break; };
+                let message = match incoming { Some(Ok(message)) => message, Some(Err(_)) => { close_code = 1002; break; }, None => break };
                 if !rate.permit(context.registry.clock.now_ms()) {
-                    let _ = send_error(&mut socket, &mut connection, OnlineError::RateLimited).await;
+                    close_code = 1008;
+                    let _ = send_error(&mut socket, &mut connection, &context, OnlineError::RateLimited).await;
                     break;
                 }
                 last_seen = Instant::now();
@@ -167,16 +169,17 @@ async fn run(
                             Ok(input) => input,
                             Err(error) => {
                                 let code = match error { PublicError::UnsupportedVersion => OnlineError::UnsupportedVersion, PublicError::InvalidCell => OnlineError::InvalidCell, _ => OnlineError::Malformed };
-                                let _ = send_error(&mut socket, &mut connection, code).await;
+                                close_code = 1008;
+                                let _ = send_error(&mut socket, &mut connection, &context, code).await;
                                 break;
                             }
                         };
-                        if let Err(code) = connection.send(input) { let _ = send_error(&mut socket, &mut connection, code).await; break; }
+                        if let Err(code) = connection.send(input) { close_code = 1008; let _ = send_error(&mut socket, &mut connection, &context, code).await; break; }
                     }
                     Message::Ping(payload) => { if !send(&mut socket, Message::Pong(payload)).await { break; } }
                     Message::Pong(_) => {}
                     Message::Close(_) => break,
-                    Message::Binary(_) => { let _ = send_error(&mut socket, &mut connection, OnlineError::Malformed).await; break; }
+                    Message::Binary(_) => { close_code = 1008; let _ = send_error(&mut socket, &mut connection, &context, OnlineError::Malformed).await; break; }
                 }
             }
             _ = heartbeat.tick() => {
@@ -184,11 +187,19 @@ async fn run(
             }
         }
     }
-    let _ = send(&mut socket, Message::Close(None)).await;
+    let _ = send(
+        &mut socket,
+        Message::Close(Some(CloseFrame {
+            code: close_code,
+            reason: "".into(),
+        })),
+    )
+    .await;
 }
 async fn send_error(
     socket: &mut WebSocket,
     connection: &mut MatchConnection,
+    context: &Context,
     code: OnlineError,
 ) -> bool {
     if connection.reject(code).is_err() {
@@ -196,6 +207,18 @@ async fn send_error(
     }
     tokio::time::timeout(Duration::from_secs(2), async {
         while let Some(event) = connection.next().await {
+            if context
+                .registry
+                .authorities
+                .with_authority(
+                    connection.authority(),
+                    context.registry.auth_clock.now(),
+                    || (),
+                )
+                .is_err()
+            {
+                return false;
+            }
             let is_error = matches!(event.payload, OnlinePayload::Error { .. });
             let Ok(text) = serde_json::to_string(&event) else {
                 return false;

@@ -74,9 +74,6 @@ pub(super) enum Event {
         token: Uuid,
         result: Result<AnalysisResult, Rejection>,
     },
-    Stored {
-        result: Result<SaveResult, OnlineError>,
-    },
 }
 impl MatchRegistry {
     pub fn new(

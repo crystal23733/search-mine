@@ -12,7 +12,7 @@ use std::{
     sync::{Arc, Weak},
     time::Duration,
 };
-use tokio::sync::{OwnedSemaphorePermit, Semaphore, mpsc};
+use tokio::sync::{OwnedSemaphorePermit, Semaphore, mpsc, oneshot};
 use uuid::Uuid;
 
 struct Sink {
@@ -39,6 +39,7 @@ struct Actor {
     dirty: [bool; 2],
     recording: Option<RecordingStatus>,
     finished_at: Option<u64>,
+    stored: Option<oneshot::Receiver<Result<SaveResult, OnlineError>>>,
 }
 pub(super) fn spawn(
     state: MatchState,
@@ -77,6 +78,7 @@ pub(super) fn spawn(
         dirty: [false; 2],
         recording: None,
         finished_at: None,
+        stored: None,
     };
     tokio::spawn(async move {
         let _permit = permit;
@@ -208,6 +210,19 @@ impl Actor {
                 }
             }
             Event::Tick => {
+                if let Some(stored) = self.stored.as_mut() {
+                    let completed = match stored.try_recv() {
+                        Ok(result) => Some(result),
+                        Err(oneshot::error::TryRecvError::Empty) => None,
+                        Err(oneshot::error::TryRecvError::Closed) => {
+                            Some(Err(OnlineError::Unavailable))
+                        }
+                    };
+                    if let Some(result) = completed {
+                        self.stored = None;
+                        self.recorded(result, at);
+                    }
+                }
                 for seat in [Seat::One, Seat::Two] {
                     let i = seat.index();
                     if self.sinks[i].as_ref().is_some_and(|s| {
@@ -249,23 +264,23 @@ impl Actor {
                     };
                 }
             }
-            Event::Stored { result } => {
-                self.recording = Some(if result.is_ok() {
-                    RecordingStatus::Saved
-                } else {
-                    RecordingStatus::Failed
-                });
-                for seat in [Seat::One, Seat::Two] {
-                    self.emit(
-                        seat,
-                        OnlinePayload::MatchEnd {
-                            view: self.state.view(seat),
-                            recording: self.recording.expect("Set above"),
-                        },
-                        at,
-                    );
-                }
-            }
+        }
+    }
+    fn recorded(&mut self, result: Result<SaveResult, OnlineError>, at: u64) {
+        self.recording = Some(if result.is_ok() {
+            RecordingStatus::Saved
+        } else {
+            RecordingStatus::Failed
+        });
+        for seat in [Seat::One, Seat::Two] {
+            self.emit(
+                seat,
+                OnlinePayload::MatchEnd {
+                    view: self.state.view(seat),
+                    recording: self.recording.expect("Set above"),
+                },
+                at,
+            );
         }
     }
     fn retire(&mut self, seat: Seat, at: u64) {
@@ -308,7 +323,11 @@ impl Actor {
         }
     }
     fn publish(&mut self, at: u64) {
-        let finished = self.state.finished();
+        let finished = if self.recording.is_none() {
+            self.state.finished()
+        } else {
+            None
+        };
         if let Some(result) = finished
             && self.recording.is_none()
         {
@@ -318,7 +337,8 @@ impl Actor {
                 owner.finish(self.state.id(), false);
             }
             let repository = self.results.clone();
-            let handle = self.handle.clone();
+            let (completed, stored) = oneshot::channel();
+            self.stored = Some(stored);
             tokio::spawn(async move {
                 let mut saved = Err(OnlineError::Unavailable);
                 for retry in 0..3 {
@@ -335,7 +355,7 @@ impl Actor {
                         tokio::time::sleep(Duration::from_millis(100)).await;
                     }
                 }
-                enqueue_weak(&handle, Event::Stored { result: saved });
+                let _ = completed.send(saved);
             });
         }
         for (seat, view) in self.state.take_changes() {
@@ -381,5 +401,70 @@ impl Actor {
                 );
             });
         }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use liar_core::{
+        board::{Board, CellId},
+        game::RuleEngine,
+        rules::RulesSnapshot,
+    };
+    struct Clock;
+    impl AuthClock for Clock {
+        fn now(&self) -> i64 {
+            18000
+        }
+    }
+    struct Results;
+    impl ResultRepository for Results {
+        fn save(&self, _: FinishedMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>> {
+            Box::pin(async { Ok(SaveResult::Saved) })
+        }
+    }
+    #[tokio::test]
+    async fn storage_completion_does_not_depend_on_input_mailbox_admission() {
+        let mut rules = RulesSnapshot::bundled().rules;
+        rules.width = 3;
+        rules.height = 3;
+        rules.mines = 2;
+        let rules = RulesSnapshot::from_rules(rules).unwrap();
+        let board = Board::from_mines(rules.rules.board_spec(), &[CellId(5), CellId(7)]).unwrap();
+        let mut state = MatchState::new(
+            Uuid::new_v4(),
+            RuleEngine::new(board, rules, 0).unwrap(),
+            [Some(Uuid::new_v4()), None],
+            [46; 8],
+            0,
+        )
+        .unwrap();
+        state.advance(243000);
+        let mut actor = Actor {
+            state,
+            handle: Weak::new(),
+            owner: Weak::new(),
+            authorities: AuthorityRegistry::new(2).unwrap(),
+            auth_clock: Arc::new(Clock),
+            proofs: Arc::new(Semaphore::new(1)),
+            results: Arc::new(Results),
+            sinks: [None, None],
+            delayed_disconnect: [None, None],
+            sequences: [0; 2],
+            work: [None, None],
+            dirty: [false; 2],
+            recording: None,
+            finished_at: None,
+            stored: None,
+        };
+        actor.publish(243000);
+        assert_eq!(actor.recording, Some(RecordingStatus::Pending));
+        tokio::task::yield_now().await;
+        actor.process(Ingress {
+            at: 243001,
+            event: Event::Tick,
+        });
+        actor.publish(243001);
+        assert_eq!(actor.recording, Some(RecordingStatus::Saved));
     }
 }

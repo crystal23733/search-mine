@@ -92,6 +92,86 @@ async fn runtime_session_reader_and_logout_share_connection_invalidation() {
     assert!(registry.with_authority(&lease, now, || ()).is_err());
     close_auth_pool(pool).await;
 }
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn result_waiting_on_account_lock_skips_a_concurrently_deleted_participant() {
+    let pool = auth_pool().await;
+    let store = PgAuthStore::new(pool.clone());
+    let account = participant(&store).await;
+    let other = participant(&store).await;
+    let result = finished([Some(account), Some(other)]);
+    let id = result.id;
+    let schema: String = sqlx::query_scalar("SELECT current_schema()")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    let save_pool = PgPoolOptions::new()
+        .max_connections(1)
+        .after_connect(move |conn, _| {
+            let schema = schema.clone();
+            Box::pin(async move {
+                sqlx::query("SELECT set_config('search_path',$1,false)")
+                    .bind(schema)
+                    .execute(conn)
+                    .await?;
+                Ok(())
+            })
+        })
+        .connect(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+    let pid: i32 = sqlx::query_scalar("SELECT pg_backend_pid()")
+        .fetch_one(&save_pool)
+        .await
+        .unwrap();
+    let mut deletion = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM auth_accounts WHERE id=$1 FOR UPDATE")
+        .bind(account)
+        .fetch_one(&mut *deletion)
+        .await
+        .unwrap();
+    let repository = PgResultRepository::new(save_pool.clone(), Arc::new(ResultClock));
+    let saving = tokio::spawn(async move { repository.save(result).await });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let blocked: bool = sqlx::query_scalar("SELECT cardinality(pg_blocking_pids($1)) > 0")
+                .bind(pid)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+            if blocked {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("Result write must wait for the held account lock");
+    // Exercise the account-row deletion effect while owning the production deletion lock.
+    sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
+        .bind(account)
+        .execute(&mut *deletion)
+        .await
+        .unwrap();
+    deletion.commit().await.unwrap();
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(5), saving)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap(),
+        SaveResult::Saved
+    );
+    let remaining: Vec<Uuid> =
+        sqlx::query_scalar("SELECT account_id FROM online_match_players WHERE match_id=$1")
+            .bind(id)
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+    assert_eq!(remaining, vec![other]);
+    save_pool.close().await;
+    close_auth_pool(pool).await;
+}
 
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]

@@ -34,7 +34,7 @@
 {"v":1,"match_id":"UUID","command_id":"UUID","client_seq":12,"session_epoch":2,"known_revision":44,"action":{"type":"open","cell":18}}
 ```
 
-서버 응답: v, type, server_seq, revision, command_id(응답 연결), server_time_ms, payload. 클라이언트 시간은 승패에 사용하지 않는다. 단일 프레임 최대8KiB 제안. 숫자 cell은 0..255, UUID/enum/길이/version을 경계에서 검증한다.
+서버 게임 응답은 `{v,match_id,server_seq,server_time_ms,payload}`이며 payload의 type은 snapshot/delta/ack/error/match_end다. revision은 view 또는 ack 안에, command_id는 ack 안에 있다. 클라이언트 시간은 승패에 사용하지 않는다. 단일 프레임 최대8KiB. 숫자 cell은 0..255, UUID/enum/길이/version을 경계에서 검증한다.
 
 #16의 actor/WS 구현은 [ADR0023](../adr/0023-authoritative-match-actor.md)을 따른다. 게임 action은 기존 PublicAction을 재사용하고 handshake/연결 epoch와 인증 철회 observer를 검증한다. 큐/방 envelope는 #17, 클라이언트 resume는 #18에서 같은 경계에 추가한다.
 

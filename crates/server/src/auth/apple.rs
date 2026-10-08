@@ -35,6 +35,13 @@ pub struct RevokeJob {
 pub struct CredentialJob {
     pub identity: uuid::Uuid,
     pub encrypted: Vec<u8>,
+    pub revision: uuid::Uuid,
+}
+pub struct AppleNoticeWrite {
+    pub jti_hash: [u8; 32],
+    pub digests: Option<Vec<(u32, [u8; 32])>>,
+    pub occurred_at: i64,
+    pub now: i64,
 }
 pub enum CredentialCheck {
     Valid {
@@ -47,9 +54,7 @@ pub enum CredentialCheck {
 pub trait AppleMaintenanceStore: AccountStore {
     fn apply_notification(
         &self,
-        jti: [u8; 32],
-        digests: Option<Vec<(u32, [u8; 32])>>,
-        now: i64,
+        event: AppleNoticeWrite,
     ) -> impl Future<Output = Result<Option<uuid::Uuid>, AuthError>> + Send;
     fn claim_revoke(
         &self,
@@ -121,6 +126,7 @@ pub struct AppleNotification {
     pub jti_hash: [u8; 32],
     pub change: AppleChange,
     pub subject: Zeroizing<String>,
+    pub occurred_at: i64,
 }
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
@@ -196,5 +202,6 @@ pub fn verify_apple_notification(
         jti_hash: Sha256::digest(c.jti.as_bytes()).into(),
         change,
         subject: Zeroizing::new(event.sub),
+        occurred_at: event.event_time,
     })
 }

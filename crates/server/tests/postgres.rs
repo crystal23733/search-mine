@@ -51,7 +51,12 @@ async fn apple_notifications_are_atomic_deduplicated_and_keep_other_login_method
     let receipt = SecretToken::generate().unwrap().hash();
     assert_eq!(
         store
-            .apply_notification(receipt, Some(digests.clone()), 5001)
+            .apply_notification(AppleNoticeWrite {
+                jti_hash: receipt,
+                digests: Some(digests.clone()),
+                occurred_at: 5001,
+                now: 5001
+            })
             .await
             .expect("verified notification must erase the last Apple identity atomically"),
         Some(record.account.id)
@@ -59,7 +64,12 @@ async fn apple_notifications_are_atomic_deduplicated_and_keep_other_login_method
     assert!(store.session(token.hash(), 5001).await.unwrap().is_none());
     assert!(
         store
-            .apply_notification(receipt, Some(digests.clone()), 5002)
+            .apply_notification(AppleNoticeWrite {
+                jti_hash: receipt,
+                digests: Some(digests.clone()),
+                occurred_at: 5002,
+                now: 5002
+            })
             .await
             .unwrap()
             .is_none()
@@ -72,7 +82,12 @@ async fn apple_notifications_are_atomic_deduplicated_and_keep_other_login_method
     assert_ne!(second.account.id, record.account.id);
     assert!(
         store
-            .apply_notification(receipt, Some(digests.clone()), 5004)
+            .apply_notification(AppleNoticeWrite {
+                jti_hash: receipt,
+                digests: Some(digests.clone()),
+                occurred_at: 5004,
+                now: 5004
+            })
             .await
             .unwrap()
             .is_none()
@@ -92,7 +107,12 @@ async fn apple_notifications_are_atomic_deduplicated_and_keep_other_login_method
     let new_receipt = SecretToken::generate().unwrap().hash();
     assert_eq!(
         store
-            .apply_notification(new_receipt, Some(digests), 5006)
+            .apply_notification(AppleNoticeWrite {
+                jti_hash: new_receipt,
+                digests: Some(digests),
+                occurred_at: 5006,
+                now: 5006
+            })
             .await
             .unwrap(),
         Some(second.account.id)

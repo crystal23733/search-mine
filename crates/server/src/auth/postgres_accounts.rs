@@ -80,7 +80,7 @@ impl PgAuthStore {
                 CredentialPurpose::AppleRevoke,
                 refresh.as_bytes(),
             )?;
-            sqlx::query("INSERT INTO auth_credentials(identity_id,encrypted_refresh_token,updated_at,next_check_at) VALUES($1,$2,to_timestamp($3),to_timestamp($3)+interval '1 day') ON CONFLICT(identity_id) DO UPDATE SET encrypted_refresh_token=EXCLUDED.encrypted_refresh_token,updated_at=EXCLUDED.updated_at,next_check_at=EXCLUDED.next_check_at").bind(identity_id).bind(sealed).bind(now).execute(&mut *tx).await.map_err(database_error)?;
+            sqlx::query("INSERT INTO auth_credentials(identity_id,encrypted_refresh_token,updated_at,next_check_at) VALUES($1,$2,to_timestamp($3),to_timestamp($3)+interval '1 day') ON CONFLICT(identity_id) DO UPDATE SET encrypted_refresh_token=EXCLUDED.encrypted_refresh_token,updated_at=EXCLUDED.updated_at,next_check_at=EXCLUDED.next_check_at,check_revision=gen_random_uuid()").bind(identity_id).bind(sealed).bind(now).execute(&mut *tx).await.map_err(database_error)?;
         }
         if let Some(previous) = value.previous_session {
             sqlx::query("DELETE FROM auth_sessions WHERE token_hash=$1")

@@ -7,6 +7,7 @@ struct FakeStore {
     malicious: bool,
     transactions: Mutex<Vec<AuthTransaction>>,
     logins: Mutex<Vec<LoginWrite>>,
+    session: Mutex<Option<([u8; 32], Session)>>,
 }
 #[tokio::test]
 async fn localized_transaction_keeps_only_an_allowed_server_bound_locale() {
@@ -66,17 +67,24 @@ impl AuthStore for FakeStore {
         Ok(index.map(|i| values.remove(i)))
     }
     async fn login(&self, value: LoginWrite) -> Result<LoginRecord, AuthError> {
+        let account_id = value.intent.account().unwrap_or_else(Uuid::new_v4);
         self.logins.lock().unwrap().push(value);
         Ok(LoginRecord {
             account: Account {
-                id: Uuid::new_v4(),
+                id: account_id,
                 nickname: None,
             },
             identity_id: Uuid::new_v4(),
         })
     }
-    async fn session(&self, _hash: [u8; 32], _now: i64) -> Result<Option<Session>, AuthError> {
-        Ok(None)
+    async fn session(&self, hash: [u8; 32], now: i64) -> Result<Option<Session>, AuthError> {
+        Ok(self
+            .session
+            .lock()
+            .unwrap()
+            .as_ref()
+            .filter(|(h, s)| *h == hash && now >= s.created_at && now < s.expires_at)
+            .map(|(_, s)| s.clone()))
     }
     async fn nickname(&self, _account: Uuid, _value: Nickname) -> Result<bool, AuthError> {
         Ok(false)
@@ -121,6 +129,151 @@ async fn account_intents_cannot_start_without_an_authoritative_session() {
         ));
     }
     assert!(service.store.transactions.lock().unwrap().is_empty());
+}
+#[tokio::test]
+async fn bound_account_intents_require_current_cookie_and_recent_link_authority() {
+    let service = service();
+    let browser = SecretToken::generate().unwrap();
+    let token = SecretToken::generate().unwrap();
+    let account = Uuid::new_v4();
+    *service.store.session.lock().unwrap() = Some((
+        token.hash(),
+        Session {
+            id: Uuid::new_v4(),
+            account: Account {
+                id: account,
+                nickname: None,
+            },
+            created_at: 1000,
+            expires_at: 100000,
+            authenticated_at: 1000,
+        },
+    ));
+    let request = |intent| AccountAuthorization {
+        provider: Provider::Google,
+        intent,
+        return_path: ReturnPath::Settings,
+        locale: AuthLocale::parse("fr").unwrap(),
+    };
+    assert!(matches!(
+        service
+            .start_account(&browser, &token, request(AuthIntent::Login), 1001)
+            .await,
+        Err(AuthError::Invalid)
+    ));
+    assert!(matches!(
+        service
+            .start_account(
+                &browser,
+                &token,
+                request(AuthIntent::Link(Uuid::new_v4())),
+                1001
+            )
+            .await,
+        Err(AuthError::Invalid)
+    ));
+    assert!(matches!(
+        service
+            .start_account(&browser, &token, request(AuthIntent::Link(account)), 1300)
+            .await,
+        Err(AuthError::ReauthenticationRequired)
+    ));
+    let auth = service
+        .start_account(&browser, &token, request(AuthIntent::Link(account)), 1299)
+        .await
+        .unwrap();
+    let tx = service
+        .consume(&auth.state, &browser, Provider::Google, 1299)
+        .await
+        .unwrap();
+    assert_eq!(tx.bound_session_hash, Some(token.hash()));
+    assert_eq!(tx.locale.as_str(), "fr");
+    let foreign = SecretToken::generate().unwrap();
+    assert!(matches!(
+        service
+            .finish_verified(
+                tx,
+                VerifiedIdentity {
+                    subject: zeroize::Zeroizing::new("bound-sub".into()),
+                    apple_refresh: None
+                },
+                Some(&foreign),
+                1299
+            )
+            .await,
+        Err(AuthError::Invalid)
+    ));
+    let auth = service
+        .start_account(&browser, &token, request(AuthIntent::Reauth(account)), 1300)
+        .await
+        .unwrap();
+    let tx = service
+        .consume(&auth.state, &browser, Provider::Google, 1300)
+        .await
+        .unwrap();
+    let issued = service
+        .finish_verified(
+            tx,
+            VerifiedIdentity {
+                subject: zeroize::Zeroizing::new("bound-sub".into()),
+                apple_refresh: None,
+            },
+            Some(&token),
+            1300,
+        )
+        .await
+        .unwrap();
+    assert_eq!(issued.account.id, account);
+    assert_ne!(issued.token.hash(), token.hash());
+    assert_eq!(
+        service.store.logins.lock().unwrap()[0].bound_session,
+        Some(token.hash())
+    );
+}
+#[tokio::test]
+async fn verified_apple_credential_is_required_bounded_and_sent_only_to_atomic_write() {
+    let service = service();
+    let browser = SecretToken::generate().unwrap();
+    for (provider, refresh, accepted) in [
+        (Provider::Apple, None, false),
+        (Provider::Apple, Some("fixture-refresh".to_string()), true),
+        (Provider::Apple, Some("x".repeat(4097)), false),
+        (Provider::Apple, Some("bad\ncredential".into()), false),
+        (Provider::Google, Some("fixture-refresh".into()), false),
+    ] {
+        let a = service
+            .start(
+                &browser,
+                provider,
+                AuthIntent::Login,
+                ReturnPath::Home,
+                1000,
+            )
+            .await
+            .unwrap();
+        let tx = service
+            .consume(&a.state, &browser, provider, 1001)
+            .await
+            .unwrap();
+        let result = service
+            .finish_verified(
+                tx,
+                VerifiedIdentity {
+                    subject: zeroize::Zeroizing::new("fixture-sub".into()),
+                    apple_refresh: refresh.map(zeroize::Zeroizing::new),
+                },
+                None,
+                1001,
+            )
+            .await;
+        assert_eq!(result.is_ok(), accepted);
+    }
+    let writes = service.store.logins.lock().unwrap();
+    assert_eq!(writes.len(), 1);
+    assert_eq!(
+        writes[0].apple_refresh.as_deref().map(|v| v.as_str()),
+        Some("fixture-refresh")
+    );
 }
 
 #[tokio::test]

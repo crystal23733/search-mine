@@ -24,6 +24,8 @@ AuthStore는 신원 인증 write, AccountStore는 연결 목록·최소 내보�
 
 ## HTTP와 검증
 
+알림 event_time보다 나중에 연결되거나 새 credential을 받은 신원에는 오래된 철회 효과를 적용하지 않는다. receipt는 그대로 소비하여 동일 알림이 재등록 계정을 지우지 못하게 한다. 이는 서명된 시각·저장된 연결/credential 시각으로 판단하고 request 도착 시각을 철회 시각으로 대체하지 않는다.
+
 `GET /api/v1/me/identities`, `POST /api/v1/me/identities/{provider}/link`, `POST /api/v1/auth/{provider}/reauth`, `DELETE /api/v1/me/identities/{provider}`, `POST /api/v1/me/export`, `DELETE /api/v1/me`, `POST /api/v1/auth/apple/notifications`. 권리 응답도 no-store이며 body allowlist/크기 제한을 적용한다. 익명 401, 재인증 필요 409, 충돌/마지막 수단 409, upstream/DB 실패 503으로 안정된 코드만 반환한다.
 
 TDD로 세션 변경·재인증 경계·subject 충돌·마지막 수단·원자 삭제/credential 저장·서명 변조·알림 중복·lease/expiry·장애 시 로컬 삭제를 검증한다. 실제 PostgreSQL CI에서 동시 요청/롤백/FK cascade를 검사한다. 실제 Apple 알림 audience 등록·실계정 철회·Google 최소 scope 호환성은 #42 외부 검수이며 fixture 통과로 대체하지 않는다.

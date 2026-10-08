@@ -269,7 +269,12 @@ async fn notification<
         };
         ctx.service
             .store
-            .apply_notification(event.jti_hash, digests, now)
+            .apply_notification(AppleNoticeWrite {
+                jti_hash: event.jti_hash,
+                digests,
+                occurred_at: event.occurred_at,
+                now,
+            })
             .await?;
         Ok::<_, AuthError>(StatusCode::OK.into_response())
     }

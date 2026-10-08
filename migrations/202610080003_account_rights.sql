@@ -7,6 +7,7 @@ ALTER TABLE auth_transactions ADD CONSTRAINT auth_transaction_session_binding
            (intent <> 'login' AND bound_session_hash IS NOT NULL));
 ALTER TABLE auth_identities ADD CONSTRAINT auth_identity_one_provider UNIQUE(account_id, provider);
 ALTER TABLE auth_credentials ADD COLUMN next_check_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE auth_credentials ADD COLUMN check_revision uuid NOT NULL DEFAULT gen_random_uuid();
 CREATE TABLE auth_deletion_tombstones (
     account_id uuid PRIMARY KEY,
     deleted_at timestamptz NOT NULL,

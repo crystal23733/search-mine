@@ -1,5 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
+import { X509Certificate, createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 const authFixture = Boolean(process.env.DATABASE_URL);
+// Trust only the public loopback fixture certificate, including service-worker script fetches.
+const fixturePin = authFixture
+  ? createHash("sha256")
+      .update(
+        new X509Certificate(
+          readFileSync("tests/fixtures/https/localhost-test-only.pem"),
+        ).publicKey.export({ type: "spki", format: "der" }),
+      )
+      .digest("base64")
+  : "";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -86,6 +98,9 @@ export default defineConfig({
               ...devices["Desktop Chrome"],
               baseURL: "https://localhost:8443",
               ignoreHTTPSErrors: true,
+              launchOptions: {
+                args: [`--ignore-certificate-errors-spki-list=${fixturePin}`],
+              },
             },
           },
         ]

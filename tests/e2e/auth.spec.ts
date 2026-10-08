@@ -33,11 +33,23 @@ async function approve(context: BrowserContext, cancel = false) {
     },
   );
 }
-async function login(page: Page, provider = "Google") {
+async function login(page: Page, provider = "Google", capture?: number) {
   await page.goto("/en/login");
+  if (capture) {
+    await mkdir(".tmp/auth-layout", { recursive: true });
+    await page.screenshot({
+      path: `.tmp/auth-layout/login-${capture}.png`,
+      fullPage: true,
+    });
+  }
   await page.getByRole("button", { name: `Continue with ${provider}` }).click();
   await expect(page).toHaveURL(/\/en\/onboarding\?/);
   await page.getByRole("textbox", { name: "Nickname" }).fill("e\u0301探偵");
+  if (capture)
+    await page.screenshot({
+      path: `.tmp/auth-layout/onboarding-${capture}.png`,
+      fullPage: true,
+    });
   await page.getByRole("button", { name: "Save and skip tutorial" }).click();
   await expect(page).toHaveURL(`${origin}/en/`);
   await page.goto("/en/settings");
@@ -61,7 +73,11 @@ test("four providers work through real SQL, HTTPS cookies and authoritative Unic
       try {
         await approve(context);
         const page = await context.newPage();
-        await login(page, provider);
+        await login(
+          page,
+          provider,
+          provider === "Google" ? viewport.width : undefined,
+        );
         await expect(page.getByText("é探偵", { exact: true })).toBeVisible();
         const cookies = await context.cookies();
         const session = cookies.find((c) => c.name === "__Host-liar_session")!;
@@ -89,6 +105,56 @@ test("four providers work through real SQL, HTTPS cookies and authoritative Unic
           ),
         ).toBe(true);
         if (provider === "Google") {
+          await expect
+            .poll(() =>
+              page.evaluate(
+                async () =>
+                  (await navigator.serviceWorker.getRegistration("/"))?.active
+                    ?.state,
+              ),
+            )
+            .toBe("activated");
+          const cachesUsed = await page.evaluate(async () => {
+            const urls: string[] = [];
+            for (const name of await caches.keys())
+              for (const req of await (await caches.open(name)).keys())
+                urls.push(req.url);
+            return urls;
+          });
+          expect(
+            cachesUsed.some((url) => new URL(url).pathname.startsWith("/api/")),
+          ).toBe(false);
+          const stored = await page.evaluate(async () => {
+            const values: unknown[] = [];
+            for (const info of await indexedDB.databases()) {
+              if (!info.name) continue;
+              const db = await new Promise<IDBDatabase>((resolve, reject) => {
+                const open = indexedDB.open(info.name!);
+                open.onsuccess = () => resolve(open.result);
+                open.onerror = () => reject(open.error);
+              });
+              try {
+                for (const store of db.objectStoreNames)
+                  values.push(
+                    await new Promise((resolve, reject) => {
+                      const get = db
+                        .transaction(store)
+                        .objectStore(store)
+                        .getAll();
+                      get.onsuccess = () => resolve(get.result);
+                      get.onerror = () => reject(get.error);
+                    }),
+                  );
+              } finally {
+                db.close();
+              }
+            }
+            return JSON.stringify(values);
+          });
+          expect(stored).not.toMatch(
+            /credential|csrf|subject|fixture-|__Host-liar/,
+          );
+          expect(stored).not.toContain(account.id);
           await mkdir(".tmp/auth-layout", { recursive: true });
           await page.screenshot({
             path: `.tmp/auth-layout/settings-${viewport.width}.png`,
@@ -101,7 +167,7 @@ test("four providers work through real SQL, HTTPS cookies and authoritative Unic
     }
   }
 });
-test("export, linking, last-provider guard, unlink session revocation and logout use production routes", async ({
+test("export, linking, last-provider guard and unlink session revocation use production routes", async ({
   page,
   context,
 }) => {
@@ -138,6 +204,111 @@ test("export, linking, last-provider guard, unlink session revocation and logout
   expect(
     (await context.cookies()).some((c) => c.name === "__Host-liar_session"),
   ).toBe(false);
+});
+
+test("signing out invalidates a second tab without persisting account credentials", async ({
+  page,
+  context,
+}) => {
+  await approve(context);
+  await login(page);
+  const peer = await context.newPage();
+  await peer.goto("/en/settings");
+  await expect(peer.getByText("é探偵", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(peer.locator("a.account-card")).toBeVisible();
+  await expect(page.locator("a.account-card")).toBeVisible();
+  expect(
+    (await context.cookies()).some((c) => c.name === "__Host-liar_session"),
+  ).toBe(false);
+});
+
+test("a cookie account switch cannot delete the account named in a stale confirmation or the new account", async ({
+  page,
+  context,
+  browser,
+}) => {
+  await approve(context);
+  await login(page);
+  await page.getByRole("button", { name: "Delete account" }).click();
+  const other = await browser.newContext({
+    baseURL: origin,
+    ignoreHTTPSErrors: true,
+  });
+  try {
+    await approve(other);
+    const otherPage = await other.newPage();
+    await login(otherPage);
+    const accountB = (
+      await (await otherPage.request.get("/api/v1/auth/bootstrap")).json()
+    ).account;
+    await context.addCookies([
+      (await other.cookies()).find((c) => c.name === "__Host-liar_session")!,
+    ]);
+    let deletions = 0;
+    page.on("request", (req) => {
+      if (
+        req.method() === "DELETE" &&
+        new URL(req.url()).pathname === "/api/v1/me"
+      )
+        deletions++;
+    });
+    await page
+      .getByRole("button", { name: "Delete account permanently" })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Delete account permanently" }),
+    ).toBeDisabled();
+    expect(deletions).toBe(0);
+    expect(
+      (await (await otherPage.request.get("/api/v1/auth/bootstrap")).json())
+        .account.id,
+    ).toBe(accountB.id);
+  } finally {
+    await other.close();
+  }
+});
+
+test("the four configured login methods and private-information notice fit every locale on desktop and mobile", async ({
+  browser,
+}) => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    const context = await browser.newContext({
+      baseURL: origin,
+      viewport,
+      ignoreHTTPSErrors: true,
+    });
+    try {
+      const page = await context.newPage();
+      for (const locale of [
+        "en",
+        "ko",
+        "ja",
+        "zh-CN",
+        "es",
+        "pt-BR",
+        "de",
+        "fr",
+      ]) {
+        await page.goto(`/${locale}/login`);
+        await expect(page.locator("html")).toHaveAttribute("lang", locale);
+        await expect(page.locator(".provider-button")).toHaveCount(4);
+        for (const button of await page.locator(".provider-button").all())
+          await expect(button).toBeEnabled();
+        await expect(page.locator(".privacy-card")).toBeVisible();
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+      }
+    } finally {
+      await context.close();
+    }
+  }
 });
 test("expired authentication requires a fresh provider proof and a new explicit deletion confirmation", async ({
   page,

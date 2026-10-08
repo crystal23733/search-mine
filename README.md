@@ -110,3 +110,5 @@ DB 환경변수가 없는 기본 로컬 실행은 기존 browser50개만 검사�
 [#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. 현재는 내부 매치에 배정된 계정만 입장하며, 공개 매칭/친구 방은 #17에서 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다.
 
 개발 제한의 기본값은 매치16/mailbox64/송신16/proof2/물리 연결32이며 `LIAR_ONLINE_MATCHES`, `LIAR_ONLINE_MAILBOX`, `LIAR_ONLINE_OUTGOING`, `LIAR_ONLINE_PROOF_WORKERS`, `LIAR_ONLINE_CONNECTIONS`로 설정한다. 잘못된 값은 시작을 거절한다. 이 값은 미니 PC 출시 성능의 실측 결과가 아니며 #26에서 admission을 결정한다. 최종 결과는 새 migration으로 저장하고 닉네임·세션을 복사하지 않는다. 계정 삭제는 참여 기록을 제거하며 retry로 복원하지 않는다.
+
+매칭의 [원자 큐·친구방 정책](docs/verification/52-atomic-lobby-policy.md)과 [비공개 인증 보드 공급 포트](docs/verification/54-private-certified-board-pool.md)를 순차 준비한다. 보드 풀은 생성/저장 수와 대기를 제한하며 게임 countdown은 보드 소비 뒤 시작한다. 실제 매치 조립·온라인 봇·인증 lobby와 초대 화면은 #17의 후속 하위 작업이다.

@@ -94,3 +94,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #56의 FR06·TS10/11/21은 [ADR0026](../adr/0026-public-observation-online-bot-driver.md)와 `crates/server/tests/online_bot.rs`의 실제 core 봇·통제된 blocking 입력·늦은 완료/실패·public projection 검사로 추적한다.
 
 #58의 FR02/06/07·TS02/10/11/12/21은 [ADR0027](../adr/0027-atomic-lobby-match-composition.md)와 `crates/core/tests/prepared_engine.rs`·`crates/server/tests/lobby_service.rs`의 준비/시각 시작·actual blocking 수명·취소/generation·실제 registry/core bot snapshot으로 추적한다.
+
+#60의 FR01/02/06/07/14/16·NFR02·TS10/12/20/21/31~36은 [ADR0028](../adr/0028-session-bound-lobby-admission.md)과 authority/로비 행동·실제 PostgreSQL 철회 검사로 추적한다. 공개 HTTP/main·배정 후 최초 WS 수명·OAuth 초대/화면은 별도 후속 출구다.

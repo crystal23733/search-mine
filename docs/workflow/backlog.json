@@ -471,6 +471,18 @@
         "online-bot-driver"
       ],
       "acceptance": "core opaque prepare/start·same clock/lock registry commit·bounded actual work·generation/cancel identity·현재 상태 우선·제한된 오류 기록·actual board/bot/snapshot TDD"
+    },
+    {
+      "key": "lobby-session-admission",
+      "issue": 60,
+      "milestone": "M3",
+      "title": "feat(server): 로비 세션 입장과 철회·만료의 원자 권한",
+      "requirements": "FR01/02/06/07/14/16, NFR02",
+      "scenarios": "TS10/12/20/21/31~36",
+      "deps": [
+        "lobby-composition"
+      ],
+      "acceptance": "분리된 shared lease·합성 철회 barrier·권한/expiry/cancel·두 사람 원자 registry guard·actual CPU late discard·실DB/TDD"
     }
   ]
 }

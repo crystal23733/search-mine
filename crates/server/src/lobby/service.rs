@@ -1,5 +1,8 @@
 use super::*;
-use crate::online::{BotExecutor, MatchRegistry, MatchState};
+use crate::{
+    auth::AuthClock,
+    online::{AuthorityRegistry, BotExecutor, ConnectionAuthority, MatchRegistry, MatchState},
+};
 use liar_core::{
     bot::Difficulty,
     game::{PreparedEngine, RuleEngine},
@@ -47,6 +50,11 @@ impl RoomCodeSource for OsRoomCodeSource {
 pub struct LobbyLimits {
     pub capacity: usize,
     pub workers: usize,
+}
+#[derive(Clone)]
+pub struct LobbyAuthentication {
+    pub authorities: Arc<AuthorityRegistry>,
+    pub clock: Arc<dyn AuthClock>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LobbyServiceError {
@@ -107,6 +115,7 @@ struct Failure {
 }
 struct ServiceState {
     policy: LobbyState,
+    leases: HashMap<Uuid, ConnectionAuthority>,
     jobs: HashMap<ReservationKey, Job>,
     failures: HashMap<Uuid, Failure>,
     failure_order: VecDeque<Uuid>,
@@ -120,6 +129,7 @@ pub struct LobbyService {
     codes: Arc<dyn RoomCodeSource>,
     registry: Arc<MatchRegistry>,
     bots: Arc<BotExecutor>,
+    authentication: LobbyAuthentication,
 }
 impl LobbyService {
     pub fn new(
@@ -129,6 +139,7 @@ impl LobbyService {
         codes: Arc<dyn RoomCodeSource>,
         registry: Arc<MatchRegistry>,
         bots: Arc<BotExecutor>,
+        authentication: LobbyAuthentication,
     ) -> Result<Arc<Self>, LobbyServiceError> {
         if !(1..=4096).contains(&limits.capacity)
             || !(1..=64).contains(&limits.workers)
@@ -136,11 +147,15 @@ impl LobbyService {
         {
             return Err(OnlineError::Capacity.into());
         }
+        if registry.uses_authorities(&authentication.authorities) {
+            return Err(OnlineError::Malformed.into());
+        }
         let runtime =
             tokio::runtime::Handle::try_current().map_err(|_| OnlineError::Unavailable)?;
         let service = Arc::new(Self {
             inner: Mutex::new(ServiceState {
                 policy: LobbyState::new(limits.capacity)?,
+                leases: HashMap::new(),
                 jobs: HashMap::new(),
                 failures: HashMap::new(),
                 failure_order: VecDeque::new(),
@@ -152,6 +167,7 @@ impl LobbyService {
             codes,
             registry,
             bots,
+            authentication,
         });
         let weak = Arc::downgrade(&service);
         runtime.spawn(async move {
@@ -167,21 +183,32 @@ impl LobbyService {
         });
         Ok(service)
     }
-    pub fn status(&self, account: Uuid) -> Result<LobbyView, LobbyServiceError> {
+    pub fn status(&self, authority: &ConnectionAuthority) -> Result<LobbyView, LobbyServiceError> {
+        let account = authority.account();
         if account.is_nil() {
             return Err(OnlineError::Malformed.into());
         }
         let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        self.authentication.authorities.with_authority(
+            authority,
+            self.authentication.clock.now(),
+            || (),
+        )?;
         self.advance(&mut inner, self.registry.now_ms())?;
         self.dispatch(&mut inner);
-        self.view(&inner, account)
+        self.authentication.authorities.with_authority(
+            authority,
+            self.authentication.clock.now(),
+            || self.view(&inner, account),
+        )?
     }
     pub fn join(
         &self,
-        account: Uuid,
+        authority: &ConnectionAuthority,
         difficulty: Difficulty,
     ) -> Result<LobbyView, LobbyServiceError> {
-        self.change(account, |policy, now| {
+        let account = authority.account();
+        self.change(authority, |policy, now| {
             let id = match policy.status(account) {
                 Some(LobbyStatus::Queued { id, .. }) => id,
                 _ => Uuid::new_v4(),
@@ -190,8 +217,12 @@ impl LobbyService {
             Ok(())
         })
     }
-    pub fn create_room(&self, account: Uuid) -> Result<LobbyView, LobbyServiceError> {
-        self.change(account, |policy, now| {
+    pub fn create_room(
+        &self,
+        authority: &ConnectionAuthority,
+    ) -> Result<LobbyView, LobbyServiceError> {
+        let account = authority.account();
+        self.change(authority, |policy, now| {
             if matches!(
                 policy.status(account),
                 Some(LobbyStatus::Room { own_seat: 0, .. })
@@ -209,29 +240,36 @@ impl LobbyService {
             Err(LobbyError::Collision.into())
         })
     }
-    pub fn join_room(&self, account: Uuid, code: RoomCode) -> Result<LobbyView, LobbyServiceError> {
-        self.change(account, |policy, now| {
+    pub fn join_room(
+        &self,
+        authority: &ConnectionAuthority,
+        code: RoomCode,
+    ) -> Result<LobbyView, LobbyServiceError> {
+        let account = authority.account();
+        self.change(authority, |policy, now| {
             policy.join_room(account, code, now)?;
             Ok(())
         })
     }
     pub fn ready(
         &self,
-        account: Uuid,
+        authority: &ConnectionAuthority,
         room: Uuid,
         ready: bool,
     ) -> Result<LobbyView, LobbyServiceError> {
-        self.change(account, |policy, now| {
+        let account = authority.account();
+        self.change(authority, |policy, now| {
             policy.ready(account, room, ready, now)?;
             Ok(())
         })
     }
     pub fn cancel(
         &self,
-        account: Uuid,
+        authority: &ConnectionAuthority,
         identity: LobbyIdentity,
     ) -> Result<LobbyView, LobbyServiceError> {
-        self.change(account, |policy, now| {
+        let account = authority.account();
+        self.change(authority, |policy, now| {
             if let Some(status) = policy.status(account) {
                 let current = LobbyView::Waiting(status).identity();
                 if current != Some(identity) {
@@ -244,25 +282,42 @@ impl LobbyService {
     }
     fn change(
         &self,
-        account: Uuid,
+        authority: &ConnectionAuthority,
         apply: impl FnOnce(&mut LobbyState, u64) -> Result<(), LobbyServiceError>,
     ) -> Result<LobbyView, LobbyServiceError> {
+        let account = authority.account();
         if account.is_nil() {
             return Err(OnlineError::Malformed.into());
         }
         let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
         let now = self.registry.now_ms();
+        self.authentication.authorities.with_authority(
+            authority,
+            self.authentication.clock.now(),
+            || (),
+        )?;
         self.advance(&mut inner, now)?;
-        match self.registry.for_account(account) {
-            Ok(_) => return Err(LobbyError::Busy.into()),
-            Err(OnlineError::NotMatched) => {}
-            Err(error) => return Err(error.into()),
-        }
-        apply(&mut inner.policy, now)?;
-        inner.failures.remove(&account);
-        inner.failure_order.retain(|id| *id != account);
+        let result = self.authentication.authorities.with_authority(
+            authority,
+            self.authentication.clock.now(),
+            || {
+                match self.registry.for_account(account) {
+                    Ok(_) => return Err(LobbyError::Busy.into()),
+                    Err(OnlineError::NotMatched) => {}
+                    Err(error) => return Err(error.into()),
+                }
+                apply(&mut inner.policy, now)?;
+                if inner.policy.status(account).is_some() {
+                    inner.leases.insert(account, authority.clone());
+                }
+                inner.failures.remove(&account);
+                inner.failure_order.retain(|id| *id != account);
+                self.view(&inner, account)
+            },
+        )?;
+        Self::release_inactive(&mut inner);
         self.dispatch(&mut inner);
-        self.view(&inner, account)
+        result
     }
     fn view(&self, inner: &ServiceState, account: Uuid) -> Result<LobbyView, LobbyServiceError> {
         match self.registry.for_account(account) {
@@ -297,6 +352,7 @@ impl LobbyService {
         Ok(())
     }
     fn advance(&self, inner: &mut ServiceState, now: u64) -> Result<(), LobbyServiceError> {
+        self.discard_revoked(inner, now)?;
         inner.policy.tick(now)?;
         inner.failures.retain(|_, failure| now < failure.expires);
         inner
@@ -329,27 +385,48 @@ impl LobbyService {
             else {
                 continue;
             };
-            let started = result.and_then(|prepared| {
-                let engine = prepared
-                    .engine
-                    .start(now)
-                    .map_err(|_| OnlineError::Unavailable)?;
-                let state = MatchState::new(
-                    Uuid::new_v4(),
-                    engine,
-                    reservation.players,
-                    prepared.seed,
-                    now,
-                )?;
-                match reservation.opponent {
-                    OpponentKind::Human => self.registry.create(state),
-                    OpponentKind::Bot => self.registry.create_with_bot(
-                        state,
-                        reservation.difficulty,
-                        self.bots.clone(),
-                    ),
-                }
-            });
+            let leases: Vec<_> = reservation
+                .players
+                .iter()
+                .flatten()
+                .filter_map(|account| inner.leases.get(account).cloned())
+                .collect();
+            if leases.len() != reservation.players.iter().flatten().count() {
+                return Err(OnlineError::Unauthorized.into());
+            }
+            let participants: Vec<_> = leases.iter().collect();
+            let started = self.authentication.authorities.with_authorities(
+                &participants,
+                self.authentication.clock.now(),
+                || {
+                    result.and_then(|prepared| {
+                        let engine = prepared
+                            .engine
+                            .start(now)
+                            .map_err(|_| OnlineError::Unavailable)?;
+                        let state = MatchState::new(
+                            Uuid::new_v4(),
+                            engine,
+                            reservation.players,
+                            prepared.seed,
+                            now,
+                        )?;
+                        match reservation.opponent {
+                            OpponentKind::Human => self.registry.create(state),
+                            OpponentKind::Bot => self.registry.create_with_bot(
+                                state,
+                                reservation.difficulty,
+                                self.bots.clone(),
+                            ),
+                        }
+                    })
+                },
+            );
+            let started = match started {
+                Ok(started) => started,
+                Err(OnlineError::Unauthorized) => continue,
+                Err(error) => Err(error),
+            };
             // The reservation remains live under this lock at the same captured timestamp.
             inner.policy.commit(key, now)?;
             if let Err(error) = started {
@@ -358,7 +435,34 @@ impl LobbyService {
                 }
             }
         }
+        self.discard_revoked(inner, now)?;
+        Self::release_inactive(inner);
         Ok(())
+    }
+    fn discard_revoked(&self, inner: &mut ServiceState, now: u64) -> Result<(), LobbyServiceError> {
+        let auth_now = self.authentication.clock.now();
+        let mut revoked = Vec::new();
+        for (account, lease) in &inner.leases {
+            match self
+                .authentication
+                .authorities
+                .with_authority(lease, auth_now, || ())
+            {
+                Ok(()) => {}
+                Err(OnlineError::Unauthorized) => revoked.push(*account),
+                Err(error) => return Err(error.into()),
+            }
+        }
+        for account in revoked {
+            inner.policy.cancel(account, now)?;
+            inner.leases.remove(&account);
+        }
+        Ok(())
+    }
+    fn release_inactive(inner: &mut ServiceState) {
+        inner
+            .leases
+            .retain(|account, _| inner.policy.status(*account).is_some());
     }
     fn record_failure(
         &self,

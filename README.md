@@ -116,3 +116,5 @@ DB 환경변수가 없는 기본 로컬 실행은 기존 browser50개만 검사�
 [온라인 봇 driver](docs/verification/56-public-observation-online-bot.md)는 공개 Projection과 독립 행동 RNG만으로 core의3난이도를 실행하고 기존 actor에서 입력·결과를 직렬 적용한다. 생성 CPU와 달리 봇 계산도 별도 worker 상한을 가지며 늦은 결과/내부 실패를 처리한다. 공개 lobby의 인증 전송·화면/main 구성은 후속 작업이다.
 
 [실제 매치 조립](docs/verification/58-atomic-lobby-match-composition.md)의 내부 LobbyService는 큐/친구방 예약→제한된 준비→registry/core bot을 연결한다. core의 준비와 시작을 나누어 준비 완료 시각부터 전체 countdown을 받고, 취소/만료된 generation의 결과를 버린다. 공개 lobby의 인증 전송·초대 OAuth·화면/main은 다음 #17 하위 작업이다.
+
+[로비 세션 권한](docs/verification/60-session-bound-lobby-admission.md)은 별도 공유 lease와 합성 철회 barrier로 대기/준비 중 logout·삭제·expiry를 적용한다. 두 참여자의 검증과 실제 registry 생성은 같은 authority lock에서 수행하고 유효 상대의 순서/방을 복구한다. 최초 WS 연결 수명·공개 HTTP/main·초대/화면 연결은 후속 통합 출구다.

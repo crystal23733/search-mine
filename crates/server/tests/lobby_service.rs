@@ -8,17 +8,21 @@ use liar_protocol::{
     game::PublicEndReason,
     online::{OnlineError, OnlinePayload},
 };
-use liar_server::{auth::AuthClock, lobby::*, online::*};
+use liar_server::{
+    auth::{AuthClock, SessionInvalidator},
+    lobby::*,
+    online::*,
+};
 use std::{
     sync::{
         Arc, Condvar, Mutex,
-        atomic::{AtomicU64, AtomicUsize, Ordering},
+        atomic::{AtomicI64, AtomicU64, AtomicUsize, Ordering},
     },
     time::Duration,
 };
 use uuid::Uuid;
 
-struct Clock(AtomicU64);
+struct Clock(AtomicU64, AtomicI64);
 impl MatchClock for Clock {
     fn now_ms(&self) -> u64 {
         self.0.load(Ordering::SeqCst)
@@ -26,7 +30,7 @@ impl MatchClock for Clock {
 }
 impl AuthClock for Clock {
     fn now(&self) -> i64 {
-        18000
+        self.1.load(Ordering::SeqCst)
     }
 }
 #[derive(Default)]
@@ -117,16 +121,59 @@ impl Drop for Gate {
         self.release();
     }
 }
+struct LobbyHarness {
+    inner: Arc<LobbyService>,
+    authentication: LobbyAuthentication,
+}
+impl LobbyHarness {
+    fn lease(&self, account: Uuid) -> Result<ConnectionAuthority, LobbyServiceError> {
+        if account.is_nil() {
+            return Err(OnlineError::Malformed.into());
+        }
+        let mut hash = [1; 32];
+        hash[..16].copy_from_slice(account.as_bytes());
+        let registry = &self.authentication.authorities;
+        Ok(registry.bind_shared(
+            registry.generation()?,
+            account,
+            hash,
+            20000,
+            self.authentication.clock.now(),
+        )?)
+    }
+    fn status(&self, account: Uuid) -> Result<LobbyView, LobbyServiceError> {
+        self.inner.status(&self.lease(account)?)
+    }
+    fn join(&self, account: Uuid, difficulty: Difficulty) -> Result<LobbyView, LobbyServiceError> {
+        self.inner.join(&self.lease(account)?, difficulty)
+    }
+    fn create_room(&self, account: Uuid) -> Result<LobbyView, LobbyServiceError> {
+        self.inner.create_room(&self.lease(account)?)
+    }
+    fn join_room(&self, account: Uuid, code: RoomCode) -> Result<LobbyView, LobbyServiceError> {
+        self.inner.join_room(&self.lease(account)?, code)
+    }
+    fn ready(&self, account: Uuid, id: Uuid, ready: bool) -> Result<LobbyView, LobbyServiceError> {
+        self.inner.ready(&self.lease(account)?, id, ready)
+    }
+    fn cancel(
+        &self,
+        account: Uuid,
+        identity: LobbyIdentity,
+    ) -> Result<LobbyView, LobbyServiceError> {
+        self.inner.cancel(&self.lease(account)?, identity)
+    }
+}
 struct Fixture {
     clock: Arc<Clock>,
     results: Arc<Results>,
     authorities: Arc<AuthorityRegistry>,
     registry: Arc<MatchRegistry>,
-    service: Arc<LobbyService>,
+    service: Arc<LobbyHarness>,
 }
 impl Fixture {
     fn new(gate: &Gate, capacity: usize, matches: usize, workers: usize) -> Self {
-        let clock = Arc::new(Clock(AtomicU64::new(0)));
+        let clock = Arc::new(Clock(AtomicU64::new(0), AtomicI64::new(18000)));
         let results = Arc::new(Results::default());
         let authorities = AuthorityRegistry::new(16).unwrap();
         let registry = MatchRegistry::new(
@@ -142,15 +189,24 @@ impl Fixture {
             results.clone(),
         )
         .unwrap();
-        let service = LobbyService::new(
+        let authentication = LobbyAuthentication {
+            authorities: AuthorityRegistry::new(16).unwrap(),
+            clock: clock.clone(),
+        };
+        let inner = LobbyService::new(
             LobbyLimits { capacity, workers },
             boards(),
             Arc::new(Preparer(gate.0.clone())),
             Arc::new(Codes),
             registry.clone(),
             BotExecutor::new(2, Arc::new(CoreBotFactory)).unwrap(),
+            authentication.clone(),
         )
         .unwrap();
+        let service = Arc::new(LobbyHarness {
+            inner,
+            authentication,
+        });
         Self {
             clock,
             results,
@@ -183,7 +239,7 @@ async fn eventually(mut condition: impl FnMut() -> bool) {
     .await
     .expect("bounded service progress");
 }
-async fn matched(service: &LobbyService, account: Uuid) -> LobbyView {
+async fn matched(service: &LobbyHarness, account: Uuid) -> LobbyView {
     eventually(|| matches!(service.status(account), Ok(LobbyView::Matched { .. }))).await;
     service.status(account).unwrap()
 }
@@ -546,7 +602,7 @@ impl BrokenBoards {
     }
 }
 fn replace_ports(f: &mut Fixture, boards: Arc<dyn BoardSource>, codes: Arc<dyn RoomCodeSource>) {
-    f.service = LobbyService::new(
+    let inner = LobbyService::new(
         LobbyLimits {
             capacity: 2,
             workers: 1,
@@ -556,8 +612,13 @@ fn replace_ports(f: &mut Fixture, boards: Arc<dyn BoardSource>, codes: Arc<dyn R
         codes,
         f.registry.clone(),
         BotExecutor::new(2, Arc::new(CoreBotFactory)).unwrap(),
+        f.service.authentication.clone(),
     )
     .unwrap();
+    f.service = Arc::new(LobbyHarness {
+        inner,
+        authentication: f.service.authentication.clone(),
+    });
 }
 
 #[tokio::test]
@@ -671,7 +732,8 @@ async fn invalid_limits_identity_and_clock_fail_closed() {
                 Arc::new(CoreMatchPreparer),
                 Arc::new(Codes),
                 f.registry.clone(),
-                BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap()
+                BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+                f.service.authentication.clone(),
             ),
             Err(LobbyServiceError::Online(OnlineError::Capacity))
         ));
@@ -692,4 +754,231 @@ async fn invalid_limits_identity_and_clock_fail_closed() {
         f.service.status(account),
         Err(LobbyServiceError::Policy(LobbyError::InvalidTime))
     );
+}
+
+#[tokio::test]
+async fn every_lobby_entry_rejects_foreign_revoked_and_exactly_expired_authority() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 4, 2, 1);
+    let account = Uuid::new_v4();
+    let own = f.service.lease(account).unwrap();
+    let foreign_registry = AuthorityRegistry::new(1).unwrap();
+    let foreign = foreign_registry
+        .bind_shared(0, account, [3; 32], 20000, 18000)
+        .unwrap();
+    let _barrier = f.service.authentication.authorities.account(account);
+    for lease in [&foreign, &own] {
+        let service = &f.service.inner;
+        let expected = Err(LobbyServiceError::Online(OnlineError::Unauthorized));
+        assert_eq!(service.status(lease), expected);
+        assert_eq!(service.join(lease, Difficulty::Hard), expected);
+        assert_eq!(service.create_room(lease), expected);
+        assert_eq!(service.join_room(lease, Codes.code().unwrap()), expected);
+        assert_eq!(service.ready(lease, Uuid::new_v4(), true), expected);
+        assert_eq!(
+            service.cancel(lease, LobbyIdentity::Queue(Uuid::new_v4())),
+            expected
+        );
+    }
+    drop(_barrier);
+    let fresh = f.service.lease(account).unwrap();
+    f.clock.1.store(20000, Ordering::SeqCst);
+    assert_eq!(
+        f.service.inner.join(&fresh, Difficulty::Easy),
+        Err(OnlineError::Unauthorized.into())
+    );
+    assert_eq!(gate.0.calls.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn revocation_during_actual_cpu_restores_peer_and_old_completion_cannot_admit() {
+    let gate = Gate::new(false, false);
+    let f = Fixture::new(&gate, 4, 2, 1);
+    let a = f.service.lease(Uuid::new_v4()).unwrap();
+    let b = f.service.lease(Uuid::new_v4()).unwrap();
+    f.service.inner.join(&a, Difficulty::Normal).unwrap();
+    f.service.inner.join(&b, Difficulty::Hard).unwrap();
+    eventually(|| gate.0.active.load(Ordering::SeqCst) == 1).await;
+    drop(f.service.authentication.authorities.account(a.account()));
+    eventually(|| {
+        matches!(
+            f.service.inner.status(&b),
+            Ok(LobbyView::Waiting(LobbyStatus::Queued {
+                deadline: 10000,
+                ..
+            }))
+        )
+    })
+    .await;
+    assert_eq!(
+        f.service.inner.status(&a),
+        Err(OnlineError::Unauthorized.into())
+    );
+    f.clock.0.store(9999, Ordering::SeqCst);
+    let c = f.service.lease(Uuid::new_v4()).unwrap();
+    f.service.inner.join(&c, Difficulty::Easy).unwrap();
+    assert_eq!(gate.0.calls.load(Ordering::SeqCst), 1);
+    gate.release();
+    eventually(|| f.registry.for_account(b.account()).is_ok()).await;
+    assert_eq!(
+        f.registry.for_account(b.account()).unwrap().id(),
+        f.registry.for_account(c.account()).unwrap().id()
+    );
+    assert!(matches!(
+        f.registry.for_account(a.account()),
+        Err(OnlineError::NotMatched)
+    ));
+    assert_eq!(gate.0.calls.load(Ordering::SeqCst), 2);
+}
+
+#[tokio::test]
+async fn expired_queue_is_removed_before_ten_second_bot_reservation() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 2, 1, 1);
+    let registry = &f.service.authentication.authorities;
+    let lease = registry
+        .bind_shared(0, Uuid::new_v4(), [8; 32], 18001, 18000)
+        .unwrap();
+    f.service.inner.join(&lease, Difficulty::Hard).unwrap();
+    f.clock.1.store(18001, Ordering::SeqCst);
+    f.clock.0.store(10000, Ordering::SeqCst);
+    let observer = f.service.lease(Uuid::new_v4()).unwrap();
+    assert_eq!(f.service.inner.status(&observer).unwrap(), LobbyView::Idle);
+    tokio::time::sleep(Duration::from_millis(30)).await;
+    assert_eq!(gate.0.calls.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        f.service.inner.status(&lease),
+        Err(OnlineError::Unauthorized.into())
+    );
+    assert!(matches!(
+        f.registry.for_account(lease.account()),
+        Err(OnlineError::NotMatched)
+    ));
+}
+
+#[tokio::test]
+async fn expired_ready_host_promotes_guest_and_replacement_cannot_use_old_lease() {
+    let gate = Gate::new(false, false);
+    let f = Fixture::new(&gate, 4, 2, 1);
+    let registry = &f.service.authentication.authorities;
+    let host = registry
+        .bind_shared(0, Uuid::new_v4(), [8; 32], 18001, 18000)
+        .unwrap();
+    let guest = f.service.lease(Uuid::new_v4()).unwrap();
+    let LobbyView::Waiting(LobbyStatus::Room { id, code, .. }) =
+        f.service.inner.create_room(&host).unwrap()
+    else {
+        panic!("room");
+    };
+    f.service.inner.join_room(&guest, code).unwrap();
+    f.service.inner.ready(&host, id, true).unwrap();
+    f.service.inner.ready(&guest, id, true).unwrap();
+    eventually(|| gate.0.active.load(Ordering::SeqCst) == 1).await;
+    f.clock.1.store(18001, Ordering::SeqCst);
+    eventually(|| {
+        matches!(
+            f.service.inner.status(&guest),
+            Ok(LobbyView::Waiting(LobbyStatus::Room {
+                own_seat: 0,
+                occupied: [true, false],
+                ready: [false, false],
+                ..
+            }))
+        )
+    })
+    .await;
+    let new = registry
+        .bind_shared(
+            registry.generation().unwrap(),
+            host.account(),
+            [9; 32],
+            20000,
+            18001,
+        )
+        .unwrap();
+    f.service.inner.join_room(&new, code).unwrap();
+    assert_eq!(
+        f.service.inner.cancel(&host, LobbyIdentity::Room(id)),
+        Err(OnlineError::Unauthorized.into())
+    );
+    f.service.inner.ready(&guest, id, true).unwrap();
+    f.service.inner.ready(&new, id, true).unwrap();
+    drop(host);
+    gate.release();
+    eventually(|| f.registry.for_account(guest.account()).is_ok()).await;
+    assert_eq!(
+        f.registry.for_account(new.account()).unwrap().id(),
+        f.registry.for_account(guest.account()).unwrap().id()
+    );
+    assert_eq!(gate.0.calls.load(Ordering::SeqCst), 2);
+}
+
+#[tokio::test]
+async fn membership_owns_shared_lease_after_requests_drop_and_releases_it_on_cancel() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 2, 1, 1);
+    let account = Uuid::new_v4();
+    let lease = f.service.lease(account).unwrap();
+    let token = lease.token();
+    let revoked = lease.revoked();
+    let queued = f.service.inner.join(&lease, Difficulty::Normal).unwrap();
+    drop(lease);
+    assert!(
+        !*revoked.borrow(),
+        "membership must retain the authority between HTTP requests"
+    );
+    for _ in 0..3 {
+        let poll = f.service.lease(account).unwrap();
+        assert_eq!(poll.token(), token);
+        assert_eq!(
+            f.service.inner.join(&poll, Difficulty::Normal).unwrap(),
+            queued
+        );
+    }
+    let socket = f
+        .authorities
+        .bind(0, account, [1; 32], 20000, 18000)
+        .unwrap();
+    socket.close();
+    assert!(
+        !*revoked.borrow(),
+        "socket closure must not cancel the lobby namespace"
+    );
+    let cancel = f.service.lease(account).unwrap();
+    assert_eq!(
+        f.service
+            .inner
+            .cancel(&cancel, queued.identity().unwrap())
+            .unwrap(),
+        LobbyView::Idle
+    );
+    drop(cancel);
+    assert!(
+        *revoked.borrow(),
+        "inactive membership must release its final lease owner"
+    );
+}
+
+#[tokio::test]
+async fn composition_rejects_reusing_socket_authority_for_http_lobby_requests() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 2, 1, 1);
+    assert!(matches!(
+        LobbyService::new(
+            LobbyLimits {
+                capacity: 2,
+                workers: 1
+            },
+            boards(),
+            Arc::new(CoreMatchPreparer),
+            Arc::new(Codes),
+            f.registry.clone(),
+            BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+            LobbyAuthentication {
+                authorities: f.authorities.clone(),
+                clock: f.clock.clone()
+            },
+        ),
+        Err(LobbyServiceError::Online(OnlineError::Malformed))
+    ));
 }

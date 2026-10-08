@@ -154,13 +154,11 @@ test("oversized responses are cancelled before the full body is consumed", async
     },
   });
   const http = createAuthHttp(
-    vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        new Response(stream, {
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+    vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(stream, {
+        headers: { "content-type": "application/json" },
+      }),
+    ),
   );
   await expect(http.bootstrap()).rejects.toEqual(
     new AuthError("auth_unavailable"),

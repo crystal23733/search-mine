@@ -10,6 +10,8 @@ Link/Reauth 거래에는 계정 ID와 시작 세션 token hash를 저장한다. 
 
 ## 저장소와 권리
 
+로그인도 계정 잠금을 얻은 뒤 subject 조회 결과의 identity UUID/소유 계정이 여전히 같은지 확인한다. 해제/삭제와 겹쳐 잠금 대기 중 사라진 identity의 오래된 조회 결과로 기존 계정 세션을 발급하지 않는다. 새 로그인 요청이 삭제 이후 시작되어 새 계정을 만드는 경우와 구분한다.
+
 AuthStore는 신원 인증 write, AccountStore는 연결 목록·최소 내보내기·삭제·제공자 해제·철회 작업을 맡는다. 로그인 write는 intent/시작 세션과 선택적 Apple credential을 함께 받는다. Pg 어댑터가 결정한 identity UUID를 AAD로 credential을 seal하여 신원·credential·session을 한 transaction으로 commit한다. credential 없는 Apple 로그인을 성공 처리하지 않는다. refresh token은 4096bytes 이하의 요청 메모리와 암호문으로만 취급한다.
 
 내보내기와 삭제/해제는 최근 재인증과 CSRF/Origin을 요구한다. 내보내기는 본인의 내부 ID·nickname·계정 시각·제공자와 연결 시각만 제공한다. digest/subject/credential/session hash/온라인 정답을 반환하지 않는다. 삭제는 계정과 FK cascade 기록·세션·진행 중 거래를 원자 제거하고 복구용 account UUID/삭제 시각 tombstone을 28일 보관한다. 향후 계정 기록 저장소는 동일 account FK cascade/삭제 transaction 계약을 구현해야 한다. 온라인 actor 철회 observer는 #16에서 실제 연결한다. 존재하지 않는 순위/이벤트 삭제 성공을 가장하지 않는다.

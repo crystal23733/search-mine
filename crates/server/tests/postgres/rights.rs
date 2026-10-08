@@ -2,6 +2,106 @@ use super::*;
 
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn login_waiting_on_account_lock_cannot_reuse_a_concurrently_unlinked_identity() {
+    let pool = auth_pool().await;
+    let store = PgAuthStore::new(pool.clone());
+    let subject = Uuid::new_v4().to_string();
+    let old_token = SecretToken::generate().unwrap();
+    let account = store
+        .login(account_write(Provider::Google, &subject, &old_token, 14000))
+        .await
+        .unwrap();
+    let naver_token = SecretToken::generate().unwrap();
+    let mut link = account_write(
+        Provider::Naver,
+        &Uuid::new_v4().to_string(),
+        &naver_token,
+        14001,
+    );
+    link.intent = AuthIntent::Link(account.account.id);
+    link.bound_session = Some(old_token.hash());
+    link.previous_session = Some(old_token.hash());
+    store.login(link).await.unwrap();
+
+    let schema: String = sqlx::query_scalar("SELECT current_schema()")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    let login_pool = PgPoolOptions::new()
+        .max_connections(1)
+        .after_connect(move |conn, _| {
+            let schema = schema.clone();
+            Box::pin(async move {
+                sqlx::query("SELECT set_config('search_path',$1,false)")
+                    .bind(schema)
+                    .execute(conn)
+                    .await?;
+                Ok(())
+            })
+        })
+        .connect(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+    let login_pid: i32 = sqlx::query_scalar("SELECT pg_backend_pid()")
+        .fetch_one(&login_pool)
+        .await
+        .unwrap();
+    let mut unlink = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM auth_accounts WHERE id=$1 FOR UPDATE")
+        .bind(account.account.id)
+        .fetch_one(&mut *unlink)
+        .await
+        .unwrap();
+    let new_token = SecretToken::generate().unwrap();
+    let write = account_write(Provider::Google, &subject, &new_token, 14002);
+    let login_store = PgAuthStore::new(login_pool.clone());
+    let login = tokio::spawn(async move { login_store.login(write).await });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let blocked: bool = sqlx::query_scalar("SELECT cardinality(pg_blocking_pids($1)) > 0")
+                .bind(login_pid)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+            if blocked {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("login must have read the identity and be waiting for the held account lock");
+    // This is the atomic provider-removal effect while owning the same account lock as unlink.
+    sqlx::query("DELETE FROM auth_identities WHERE id=$1")
+        .bind(account.identity_id)
+        .execute(&mut *unlink)
+        .await
+        .unwrap();
+    sqlx::query("DELETE FROM auth_sessions WHERE account_id=$1")
+        .bind(account.account.id)
+        .execute(&mut *unlink)
+        .await
+        .unwrap();
+    unlink.commit().await.unwrap();
+    let result = tokio::time::timeout(Duration::from_secs(5), login)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(
+        store
+            .session(new_token.hash(), 14002)
+            .await
+            .unwrap()
+            .is_none(),
+        "a concurrently removed identity must not issue a session to its old account"
+    );
+    assert!(matches!(result, Err(AuthError::Unauthenticated)));
+    login_pool.close().await;
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn apple_notification_http_requires_signed_whitelisted_payload_and_deduplicates() {
     let pool = auth_pool().await;
     let vault = Arc::new(AeadVault::new(1, vec![(1, [15; 32])]).unwrap());

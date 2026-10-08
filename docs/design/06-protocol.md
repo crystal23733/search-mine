@@ -144,9 +144,9 @@ sequenceDiagram
 
 ## OAuth 경계
 
-#45 계정 권리 계약은 [ADR0021](../adr/0021-account-rights-and-apple-revocation.md)을 따른다. `GET /api/v1/auth/identities`는 제공자와 연결 시각만 공개한다. `POST /api/v1/auth/{provider}/link`와 `reauth`는 `{locale,return_path}`를 받고 현재 세션에 거래를 묶는다. 연결은 최근300초 인증이 필요하고 재인증은 이미 연결된 제공자만 허용한다. 민감 작업의 인증 기한 만료는409/reauth_required, 다른 계정의 subject나 마지막 제공자 해제는409/auth_conflict다.
+#45 계정 권리 계약은 [ADR0021](../adr/0021-account-rights-and-apple-revocation.md)을 따른다. `GET /api/v1/me/identities`는 제공자와 연결 시각만 공개한다. `POST /api/v1/me/identities/{provider}/link`와 `POST /api/v1/auth/{provider}/reauth`는 `{locale,return_path}`를 받고 현재 세션에 거래를 묶는다. 연결은 최근300초 인증이 필요하고 재인증은 이미 연결된 제공자만 허용한다. 민감 작업의 인증 기한 만료는409/reauth_required, 다른 계정의 subject나 마지막 제공자 해제는409/auth_conflict다.
 
-`POST /api/v1/auth/export`와 `DELETE /api/v1/auth/me`, `DELETE /api/v1/auth/identities/{provider}`는 strict `{}`와 같은 Origin·메모리 CSRF를 요구한다. 내보내기는 account UUID/nickname·생성/최근 접속 시각·provider/연결 시각만 포함한다. 해제·삭제는 모든 해당 계정 세션을 철회하고 cookie를 지운다. 응답 `AuthErasure.manual_apple_disconnect`는 Apple credential 부재/제공자 비활성으로 직접 철회가 필요한지를 알린다. 공개 DTO는 Rust에서 생성한다. 계정 권리 API의 본문 한도는4096byte다.
+`POST /api/v1/me/export`와 `DELETE /api/v1/me`, `DELETE /api/v1/me/identities/{provider}`는 strict `{}`와 같은 Origin·메모리 CSRF를 요구한다. 내보내기는 account UUID/nickname·생성/최근 접속 시각·provider/연결 시각만 포함한다. 해제·삭제는 모든 해당 계정 세션을 철회하고 cookie를 지운다. 응답 `AuthErasure.manual_apple_disconnect`는 Apple credential 부재/제공자 비활성으로 직접 철회가 필요한지를 알린다. 공개 DTO는 Rust에서 생성한다. 계정 권리 API의 본문 한도는4096byte다.
 
 Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대신 검증한 서명·issuer·명시 audience·시간·jti를 사용한다. strict `{payload}`만32768byte 이내로 받으며 이메일 변경 알림은 저장하지 않는다. 원문 subject와 credential은 공개 응답·캐시에 포함하지 않는다.
 

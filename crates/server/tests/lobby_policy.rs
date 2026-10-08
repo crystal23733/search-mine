@@ -232,3 +232,62 @@ fn second_ticket_id_remains_reserved_during_asynchronous_preparation() {
         Err(LobbyError::Collision)
     ));
 }
+#[test]
+fn room_preparation_cannot_extend_the_original_room_expiry_or_reuse_old_completion() {
+    let mut lobby = LobbyState::new(4).unwrap();
+    lobby.create_room(id(1), id(21), code(), 0).unwrap();
+    lobby.join_room(id(2), code(), 599999).unwrap();
+    lobby.ready(id(1), id(21), true, 599999).unwrap();
+    lobby.ready(id(2), id(21), true, 599999).unwrap();
+    let old = only(&lobby);
+    assert_eq!(old.expires_at, 600000);
+    assert!(lobby.commit(old.key, 600000).is_err());
+    assert!(lobby.status(id(1)).is_none());
+    lobby.create_room(id(1), id(21), code(), 600000).unwrap();
+    lobby.join_room(id(2), code(), 600001).unwrap();
+    lobby.ready(id(1), id(21), true, 600001).unwrap();
+    lobby.ready(id(2), id(21), true, 600002).unwrap();
+    assert_ne!(only(&lobby).key, old.key);
+    assert!(lobby.commit(old.key, 600002).is_err());
+}
+#[test]
+fn guest_leaving_preparation_preserves_host_and_invalidates_the_old_reservation() {
+    let mut lobby = LobbyState::new(4).unwrap();
+    lobby.create_room(id(1), id(21), code(), 0).unwrap();
+    lobby.join_room(id(2), code(), 0).unwrap();
+    lobby.ready(id(1), id(21), true, 0).unwrap();
+    lobby.ready(id(2), id(21), true, 0).unwrap();
+    let old = only(&lobby);
+    lobby.cancel(id(2), 1).unwrap();
+    assert!(lobby.commit(old.key, 1).is_err());
+    assert!(matches!(
+        lobby.status(id(1)),
+        Some(LobbyStatus::Room {
+            own_seat: 0,
+            occupied: [true, false],
+            ready: [false, false],
+            ..
+        })
+    ));
+    lobby.join_room(id(3), code(), 2).unwrap();
+}
+#[test]
+fn capacity_counts_waiting_room_and_preparing_members_without_double_counting() {
+    let mut lobby = LobbyState::new(2).unwrap();
+    lobby.create_room(id(1), id(21), code(), 0).unwrap();
+    lobby.join(id(2), id(12), Difficulty::Easy, 0).unwrap();
+    assert!(matches!(
+        lobby.join_room(id(3), code(), 0),
+        Err(LobbyError::Capacity)
+    ));
+    lobby.cancel(id(2), 0).unwrap();
+    lobby.join_room(id(2), code(), 0).unwrap();
+    lobby.ready(id(1), id(21), true, 0).unwrap();
+    lobby.ready(id(2), id(21), true, 0).unwrap();
+    assert!(matches!(
+        lobby.join(id(3), id(13), Difficulty::Easy, 0),
+        Err(LobbyError::Capacity)
+    ));
+    lobby.commit(only(&lobby).key, 0).unwrap();
+    assert!(lobby.create_room(id(3), id(22), code(), 0).is_ok());
+}

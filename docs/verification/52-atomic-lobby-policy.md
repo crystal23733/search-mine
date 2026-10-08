@@ -10,4 +10,6 @@
 
 검토 범위는 develop951dff11 대비 정책/수명/미완료 비동기 correlation과 승인된 계약이다. 외부 입력 UUID/nil/code/clock/overflow/capacity, queue/room 교차 점유, 만료 equality와2회 commit, ready false→true의 같은 entity·다른 generation을 강제 검사한다. 서버 UUID/코드 생성·전송·인증·보드 공급은 port의 후속 책임으로 유지한다.
 
+추가 검수는 원래 방 만료1ms 전 준비·같은 code/entity 재생성 뒤 old completion, 준비 중 guest leave의 host 보존, waiting/room/preparing의 capacity와 중복 계산을 검사한다. 실제14개 결과와 최종 coverage는 PR에서 확인한다.
+
 이 구현만으로 실제 온라인 매칭/공개 관측 봇/HTTP·WS/친구 화면/OAuth 초대 왕복을 완료했다고 보고하지 않는다. 후속 하위 이슈와 통합 출구가 모두 완료된 뒤 상위 #17을 닫는다. 실제 OAuth42·홈서버 성능26·사람 관찰27은 해당 실제 입력/환경에서 검증한다.

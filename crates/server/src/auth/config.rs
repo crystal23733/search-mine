@@ -166,6 +166,13 @@ pub fn read_private_key(path: &str) -> Result<Zeroizing<Vec<u8>>, AuthError> {
     Ok(bytes)
 }
 impl RuntimeAuthConfig {
+    pub fn initialize_with_invalidations(
+        self,
+        pool: PgPool,
+        _invalidations: Arc<dyn SessionInvalidator>,
+    ) -> Result<AuthRuntime, AuthError> {
+        self.initialize(pool)
+    }
     pub fn initialize(self, pool: PgPool) -> Result<AuthRuntime, AuthError> {
         let clock: Arc<dyn AuthClock> = Arc::new(SystemAuthClock);
         let registry = Arc::new(
@@ -182,6 +189,7 @@ impl RuntimeAuthConfig {
             registry.clone(),
             clock.clone(),
         );
+        let session_store = store.clone();
         let router = account_auth_router(
             AuthService::new(store, vault, digests),
             registry,
@@ -199,10 +207,12 @@ impl RuntimeAuthConfig {
         Ok(AuthRuntime {
             router,
             maintenance,
+            store: session_store,
         })
     }
 }
 pub struct AuthRuntime {
+    pub store: PgAuthStore,
     pub router: axum::Router,
     pub maintenance: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>,
 }

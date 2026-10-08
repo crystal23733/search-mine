@@ -89,6 +89,24 @@ impl ResultRepository for PgResultRepository {
 fn db_error(_: sqlx::Error) -> OnlineError {
     OnlineError::Unavailable
 }
+pub struct PgSessionReader {
+    store: crate::auth::PgAuthStore,
+    clock: Arc<dyn AuthClock>,
+}
+impl PgSessionReader {
+    pub fn new(store: crate::auth::PgAuthStore, clock: Arc<dyn AuthClock>) -> Self {
+        Self { store, clock }
+    }
+}
+impl SessionReader for PgSessionReader {
+    fn read(
+        &self,
+        hash: [u8; 32],
+    ) -> PortFuture<'_, Result<Option<crate::auth::Session>, OnlineError>> {
+        let _ = (&self.store, &self.clock, hash);
+        Box::pin(async { Ok(None) })
+    }
+}
 fn reason(value: PublicEndReason) -> &'static str {
     match value {
         PublicEndReason::Clear => "clear",

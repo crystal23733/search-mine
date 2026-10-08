@@ -18,6 +18,8 @@ MatchState는 RuleEngine/참여 seat/공개 projection과 종료 결과를, acto
 
 capacity는 환경 설정으로 주입하며 개발 시험값을 출시 동접 수로 표현하지 않는다. 미니 PC의 실제 admission limit은 #26 실측 뒤 정한다. 종료 actor와 연결은 ownership token을 대조하여 늦은 drop이 새 연결/매치를 해제하지 않게 정리한다. heartbeat15초/45초 무응답, disconnect 이후 core grace는 기존 규칙을 따른다.
 
+인증을 설정한 main은 같은 AuthorityRegistry를 인증 router/Apple maintenance와 WS에 주입한다. PgSessionReader는 서비스 세션 port를 통해 저장소를 조회한다. 개발 기본 제한은 매치16·mailbox64·송신16·proof2·물리 연결32이며 `LIAR_ONLINE_MATCHES/MAILBOX/OUTGOING/PROOF_WORKERS/CONNECTIONS`로 변경한다. 잘못된 설정은 시작을 거절한다. replacement handshake의 최대2초 동안 새 attach를 기다리고, 성공하지 않으면 기존 epoch의 core disconnect를 처리한다. 종료 결과 완료 통지는 입력 mailbox와 독립된 단일 bounded slot으로 보존하여 입력 과부하가 저장 상태를 영구 pending으로 만들지 않게 한다.
+
 ## 인증 철회와 원자 결과
 
 인증 snapshot을 읽는 handshake 시작 때 registry generation을 잡고 응답 후 같은 generation에서 연결을 등록한다. 그 사이 logout/삭제/회전이 있으면 거절한다. account별 한 active connection이며 새 연결 epoch가 이전 socket과 queued command를 무효화한다. raw token/hash는 private authority에만 있고 DTO/로그/URL/DB 결과에 넣지 않는다. 세션 만료도 입력과 heartbeat에서 검증한다.

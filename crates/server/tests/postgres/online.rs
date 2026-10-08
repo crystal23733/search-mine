@@ -43,6 +43,55 @@ async fn participant(store: &PgAuthStore) -> Uuid {
         .account
         .id
 }
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn runtime_session_reader_and_logout_share_connection_invalidation() {
+    use liar_server::online::{PgSessionReader, SessionReader};
+    let pool = auth_pool().await;
+    let registry = AuthorityRegistry::new(2).unwrap();
+    let runtime = RuntimeAuthConfig {
+        security: BrowserSecurity::new("https://game.example", [5; 32]).unwrap(),
+        vault: AeadVault::new(1, vec![(1, [6; 32])]).unwrap(),
+        digests: DigestKeys::new(1, vec![(1, [7; 32])]).unwrap(),
+        providers: vec![],
+        notification_audience: None,
+    }
+    .initialize_with_invalidations(pool.clone(), registry.clone())
+    .unwrap();
+    let now = SystemAuthClock.now();
+    let token = SecretToken::generate().unwrap();
+    let account = runtime
+        .store
+        .login(account_write(
+            Provider::Google,
+            &Uuid::new_v4().to_string(),
+            &token,
+            now,
+        ))
+        .await
+        .unwrap()
+        .account
+        .id;
+    let reader = PgSessionReader::new(runtime.store.clone(), Arc::new(SystemAuthClock));
+    let session = reader
+        .read(token.hash())
+        .await
+        .unwrap()
+        .expect("Stored service session must be available");
+    let lease = registry
+        .bind(
+            registry.generation().unwrap(),
+            account,
+            token.hash(),
+            session.expires_at,
+            now,
+        )
+        .unwrap();
+    runtime.store.logout(token.hash()).await.unwrap();
+    assert!(reader.read(token.hash()).await.unwrap().is_none());
+    assert!(registry.with_authority(&lease, now, || ()).is_err());
+    close_auth_pool(pool).await;
+}
 
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]

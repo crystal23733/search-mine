@@ -13,3 +13,5 @@ mod ws;
 pub use ws::*;
 mod postgres;
 pub use postgres::*;
+mod config;
+pub use config::*;

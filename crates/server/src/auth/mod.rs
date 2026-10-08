@@ -27,4 +27,6 @@ mod account_http;
 mod apple_registry;
 mod postgres_apple;
 pub use account_http::*;
+mod maintenance;
+pub use maintenance::*;
 mod postgres_rights;

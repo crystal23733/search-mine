@@ -14,6 +14,112 @@ use uuid::Uuid;
 use zeroize::Zeroizing;
 
 struct HttpClock;
+struct MaintenanceClock;
+impl AuthClock for MaintenanceClock {
+    fn now(&self) -> i64 {
+        7001
+    }
+}
+struct MaintenanceProvider {
+    failure: std::sync::atomic::AtomicBool,
+}
+impl OAuthProvider for MaintenanceProvider {
+    fn available(&self, p: Provider) -> bool {
+        p == Provider::Apple
+    }
+    fn authorize(&self, _: Provider, _: &Authorization) -> Result<String, AuthError> {
+        Err(AuthError::Unavailable)
+    }
+    async fn exchange(
+        &self,
+        _: &AuthTransaction,
+        _: &SecretToken,
+        _: &str,
+        _: Option<&[u8]>,
+        _: i64,
+    ) -> Result<VerifiedIdentity, AuthError> {
+        Err(AuthError::Unavailable)
+    }
+}
+impl AppleProvider for MaintenanceProvider {
+    async fn notification(&self, _: &str, _: i64) -> Result<AppleNotification, AuthError> {
+        Err(AuthError::Invalid)
+    }
+    async fn revoke_apple(&self, refresh: &str, _: i64) -> Result<(), AuthError> {
+        assert_eq!(refresh, "fixture-maintenance-refresh");
+        if self.failure.load(std::sync::atomic::Ordering::SeqCst) {
+            Err(AuthError::Unavailable)
+        } else {
+            Ok(())
+        }
+    }
+    async fn check_apple(&self, _: &str, _: i64) -> Result<AppleCredentialStatus, AuthError> {
+        Err(AuthError::Unavailable)
+    }
+}
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn maintenance_worker_runs_real_queue_without_blocking_local_deletion() {
+    let pool = auth_pool().await;
+    let vault = Arc::new(AeadVault::new(1, vec![(1, [15; 32])]).unwrap());
+    let store = PgAuthStore::with_vault(pool.clone(), vault.clone());
+    let token = SecretToken::generate().unwrap();
+    let record = store
+        .login(account_write(
+            Provider::Apple,
+            &Uuid::new_v4().to_string(),
+            &token,
+            7000,
+        ))
+        .await
+        .unwrap();
+    store
+        .erase_authorized(SessionAuthority {
+            account: record.account.id,
+            hash: token.hash(),
+            now: 7001,
+        })
+        .await
+        .unwrap();
+    let providers = Arc::new(MaintenanceProvider {
+        failure: std::sync::atomic::AtomicBool::new(true),
+    });
+    let worker = AppleMaintenance::new(
+        store.clone(),
+        vault,
+        DigestKeys::new(1, vec![(1, [16; 32])]).unwrap(),
+        providers.clone(),
+        Arc::new(MaintenanceClock),
+    );
+    worker
+        .run_once()
+        .await
+        .expect("worker must back off a provider outage after local deletion");
+    assert!(store.session(token.hash(), 7001).await.unwrap().is_none());
+    let attempts: i32 =
+        sqlx::query_scalar("SELECT attempts FROM auth_apple_revoke_queue WHERE identity_id=$1")
+            .bind(record.identity_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(attempts, 1);
+    providers
+        .failure
+        .store(false, std::sync::atomic::Ordering::SeqCst);
+    sqlx::query("UPDATE auth_apple_revoke_queue SET next_attempt_at=to_timestamp(7001) WHERE identity_id=$1").bind(record.identity_id).execute(&pool).await.unwrap();
+    worker.run_once().await.unwrap();
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM auth_apple_revoke_queue WHERE identity_id=$1"
+        )
+        .bind(record.identity_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        0
+    );
+    close_auth_pool(pool).await;
+}
 fn account_write(provider: Provider, subject: &str, token: &SecretToken, now: i64) -> LoginWrite {
     LoginWrite {
         provider,

@@ -33,5 +33,24 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         AuthBootstrap::decl(config),
         AuthStart::decl(config),
         AuthFailure::decl(config),
+        AuthIdentity::decl(config),
+        AuthExport::decl(config),
+        AuthErasure::decl(config),
     ]
+}
+#[derive(Debug, Serialize, TS)]
+pub struct AuthIdentity {
+    pub provider: String,
+    pub linked_at: i64,
+}
+#[derive(Debug, Serialize, TS)]
+pub struct AuthExport {
+    pub account: AuthAccount,
+    pub created_at: i64,
+    pub last_seen_at: i64,
+    pub identities: Vec<AuthIdentity>,
+}
+#[derive(Debug, Serialize, TS)]
+pub struct AuthErasure {
+    pub manual_apple_disconnect: bool,
 }

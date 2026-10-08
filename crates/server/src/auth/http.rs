@@ -17,15 +17,20 @@ const PROVIDERS: [Provider; 4] = [
     Provider::Naver,
 ];
 type RateBuckets = std::collections::HashMap<([u8; 32], bool), (i64, u8)>;
-struct Context<S, V, D, P> {
-    service: AuthService<S, V, D>,
-    providers: P,
-    security: BrowserSecurity,
-    clock: Arc<dyn AuthClock>,
-    rate: std::sync::Mutex<RateBuckets>,
+pub(super) struct Context<S, V, D, P> {
+    pub(super) service: AuthService<S, V, D>,
+    pub(super) providers: P,
+    pub(super) security: BrowserSecurity,
+    pub(super) clock: Arc<dyn AuthClock>,
+    pub(super) rate: std::sync::Mutex<RateBuckets>,
 }
 impl<S, V, D, P> Context<S, V, D, P> {
-    fn permit(&self, browser: &SecretToken, callback: bool, now: i64) -> Result<(), AuthError> {
+    pub(super) fn permit(
+        &self,
+        browser: &SecretToken,
+        callback: bool,
+        now: i64,
+    ) -> Result<(), AuthError> {
         if now < 0 {
             return Err(AuthError::Invalid);
         }
@@ -62,6 +67,17 @@ pub fn auth_router<
         clock,
         rate: Default::default(),
     });
+    base_routes()
+        .layer(DefaultBodyLimit::max(4096))
+        .layer(middleware::map_response(no_store))
+        .with_state(context)
+}
+pub(super) fn base_routes<
+    S: AuthStore + 'static,
+    V: CredentialVault + 'static,
+    D: SubjectDigester + 'static,
+    P: OAuthProvider + 'static,
+>() -> Router<Arc<Context<S, V, D, P>>> {
     Router::new()
         .route("/api/v1/auth/bootstrap", get(bootstrap::<S, V, D, P>))
         .route("/api/v1/auth/providers", get(provider_status::<S, V, D, P>))
@@ -75,11 +91,9 @@ pub fn auth_router<
             get(me::<S, V, D, P>).patch(nickname::<S, V, D, P>),
         )
         .route("/api/v1/auth/logout", post(logout::<S, V, D, P>))
-        .layer(DefaultBodyLimit::max(4096))
-        .layer(middleware::map_response(no_store))
-        .with_state(context)
 }
-async fn no_store(mut response: Response) -> Response {
+
+pub(super) async fn no_store(mut response: Response) -> Response {
     response
         .headers_mut()
         .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
@@ -131,7 +145,7 @@ pub fn disabled_auth_router() -> Router {
         .route("/api/v1/auth/logout", post(unavailable))
         .layer(middleware::map_response(no_store))
 }
-fn failure(error: AuthError) -> Response {
+pub(super) fn failure(error: AuthError) -> Response {
     let (status, code) = match error {
         AuthError::Unauthenticated => (StatusCode::UNAUTHORIZED, "auth_required"),
         AuthError::Invalid => (StatusCode::BAD_REQUEST, "auth_invalid"),
@@ -143,7 +157,7 @@ fn failure(error: AuthError) -> Response {
     };
     (status, Json(AuthFailure { code: code.into() })).into_response()
 }
-fn account(value: &Account) -> AuthAccount {
+pub(super) fn account(value: &Account) -> AuthAccount {
     AuthAccount {
         id: value.id.to_string(),
         nickname: value.nickname.as_ref().map(|n| n.as_str().into()),
@@ -158,7 +172,7 @@ fn statuses<P: OAuthProvider>(providers: &P) -> Vec<AuthProviderStatus> {
         })
         .collect()
 }
-fn set_cookie(response: &mut Response, value: String) -> Result<(), AuthError> {
+pub(super) fn set_cookie(response: &mut Response, value: String) -> Result<(), AuthError> {
     response.headers_mut().append(
         header::SET_COOKIE,
         HeaderValue::from_str(&value).map_err(|_| AuthError::Unavailable)?,

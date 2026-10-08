@@ -268,4 +268,11 @@ impl<S: AuthStore, V: CredentialVault, D: SubjectDigester> AuthService<S, V, D> 
     ) -> Result<Option<Session>, AuthError> {
         self.store.session(token.hash(), now).await
     }
+    pub fn subject_digests(
+        &self,
+        provider: Provider,
+        subject: &str,
+    ) -> Result<Vec<(u32, [u8; 32])>, AuthError> {
+        self.digests.digest(provider, subject)
+    }
 }

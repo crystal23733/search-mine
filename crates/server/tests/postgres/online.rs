@@ -1,6 +1,200 @@
 use super::rights::account_write;
 use super::*;
-use liar_server::online::AuthorityRegistry;
+use liar_server::online::{
+    AuthorityRegistry, FinishedMatch, PgResultRepository, PlayerResult, ResultRepository,
+    SaveResult,
+};
+
+struct ResultClock;
+impl AuthClock for ResultClock {
+    fn now(&self) -> i64 {
+        19000
+    }
+}
+fn finished(accounts: [Option<Uuid>; 2]) -> FinishedMatch {
+    use liar_protocol::game::{Outcome, PublicEndReason};
+    FinishedMatch {
+        id: Uuid::new_v4(),
+        rules_hash: liar_core::rules::RulesSnapshot::bundled().hash.clone(),
+        seed: [46; 8],
+        ended_ms: 243000,
+        reason: PublicEndReason::Timeout,
+        players: accounts.map(|account| PlayerResult {
+            account,
+            outcome: Outcome::Draw,
+            opened_safe: 4,
+            mistakes: 0,
+            accusations: 0,
+            correct_accusations: 0,
+        }),
+    }
+}
+async fn participant(store: &PgAuthStore) -> Uuid {
+    let token = SecretToken::generate().unwrap();
+    store
+        .login(account_write(
+            Provider::Google,
+            &Uuid::new_v4().to_string(),
+            &token,
+            18000,
+        ))
+        .await
+        .unwrap()
+        .account
+        .id
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn final_result_saves_one_parent_and_both_players_atomically_under_concurrent_retry() {
+    let pool = auth_pool().await;
+    let store = PgAuthStore::new(pool.clone());
+    let accounts = [
+        Some(participant(&store).await),
+        Some(participant(&store).await),
+    ];
+    let result = finished(accounts);
+    let repository = PgResultRepository::new(pool.clone(), Arc::new(ResultClock));
+    let (a, b) = tokio::join!(
+        repository.save(result.clone()),
+        repository.save(result.clone())
+    );
+    let a = a.unwrap();
+    let b = b.unwrap();
+    assert!(matches!(
+        (a, b),
+        (SaveResult::Saved, SaveResult::Duplicate) | (SaveResult::Duplicate, SaveResult::Saved)
+    ));
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM online_match_results WHERE id=$1")
+            .bind(result.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM online_match_players WHERE match_id=$1")
+            .bind(result.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        2
+    );
+    let mut conflict = result.clone();
+    conflict.ended_ms += 1;
+    assert!(repository.save(conflict).await.is_err());
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn deleting_a_participant_and_retrying_cannot_recreate_their_record_or_nickname() {
+    let pool = auth_pool().await;
+    let store = PgAuthStore::new(pool.clone());
+    let token = SecretToken::generate().unwrap();
+    let account = store
+        .login(account_write(
+            Provider::Google,
+            &Uuid::new_v4().to_string(),
+            &token,
+            18000,
+        ))
+        .await
+        .unwrap()
+        .account
+        .id;
+    let other = participant(&store).await;
+    let result = finished([Some(account), Some(other)]);
+    let repository = PgResultRepository::new(pool.clone(), Arc::new(ResultClock));
+    assert_eq!(
+        repository.save(result.clone()).await.unwrap(),
+        SaveResult::Saved
+    );
+    store
+        .erase_authorized(SessionAuthority {
+            account,
+            hash: token.hash(),
+            now: 18001,
+        })
+        .await
+        .unwrap();
+    assert_eq!(
+        repository.save(result.clone()).await.unwrap(),
+        SaveResult::Duplicate
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM online_match_players WHERE match_id=$1 AND account_id=$2"
+        )
+        .bind(result.id)
+        .bind(account)
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        0
+    );
+    let fresh_result = finished([Some(account), Some(other)]);
+    assert_eq!(
+        repository.save(fresh_result.clone()).await.unwrap(),
+        SaveResult::Saved
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM online_match_players WHERE match_id=$1")
+            .bind(fresh_result.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        1
+    );
+    let columns: Vec<String> = sqlx::query_scalar("SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name IN ('online_match_players','online_match_results')").fetch_all(&pool).await.unwrap();
+    for forbidden in [
+        "nickname",
+        "token_hash",
+        "subject_digest",
+        "email",
+        "password",
+    ] {
+        assert!(!columns.iter().any(|column| column == forbidden));
+    }
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn second_participant_sql_failure_rolls_back_the_parent_and_first_participant() {
+    let pool = auth_pool().await;
+    let store = PgAuthStore::new(pool.clone());
+    let accounts = [
+        Some(participant(&store).await),
+        Some(participant(&store).await),
+    ];
+    let repository = PgResultRepository::new(pool.clone(), Arc::new(ResultClock));
+    assert_eq!(
+        repository.save(finished(accounts)).await.unwrap(),
+        SaveResult::Saved
+    );
+    sqlx::query("ALTER TABLE online_match_players ADD CONSTRAINT fixture_fail_second CHECK (seat=0) NOT VALID").execute(&pool).await.unwrap();
+    let failed = finished(accounts);
+    assert!(repository.save(failed.clone()).await.is_err());
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM online_match_results WHERE id=$1")
+            .bind(failed.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        0
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM online_match_players WHERE match_id=$1")
+            .bind(failed.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        0
+    );
+    close_auth_pool(pool).await;
+}
 
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]

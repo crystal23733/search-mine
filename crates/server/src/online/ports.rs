@@ -24,6 +24,12 @@ pub enum SaveResult {
 pub trait ResultRepository: Send + Sync {
     fn save(&self, result: FinishedMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>>;
 }
+pub trait SessionReader: Send + Sync {
+    fn read(
+        &self,
+        hash: [u8; 32],
+    ) -> PortFuture<'_, Result<Option<crate::auth::Session>, OnlineError>>;
+}
 #[derive(Clone, Copy)]
 pub struct MatchLimits {
     pub matches: usize,

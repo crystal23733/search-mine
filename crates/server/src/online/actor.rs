@@ -142,6 +142,18 @@ impl Actor {
                     }
                 }
             }
+            Event::Reject {
+                authority,
+                seat,
+                code,
+            } => {
+                if self.sinks[seat.index()]
+                    .as_ref()
+                    .is_some_and(|s| s.authority.token() == authority.token())
+                {
+                    self.emit(seat, OnlinePayload::Error { code }, at);
+                }
+            }
             Event::Input {
                 authority,
                 seat,

@@ -57,6 +57,11 @@ pub(super) enum Event {
         seat: Seat,
         input: OnlineInput,
     },
+    Reject {
+        authority: ConnectionAuthority,
+        seat: Seat,
+        code: OnlineError,
+    },
     Disconnect {
         account: Uuid,
         token: Uuid,
@@ -228,6 +233,13 @@ impl MatchHandle {
     }
 }
 impl MatchConnection {
+    pub fn reject(&self, code: OnlineError) -> Result<(), OnlineError> {
+        self.handle.0.enqueue(Event::Reject {
+            authority: self.authority.clone(),
+            seat: self.seat,
+            code,
+        })
+    }
     pub fn epoch(&self) -> u32 {
         self.epoch
     }

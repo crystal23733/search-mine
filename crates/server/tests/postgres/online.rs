@@ -94,6 +94,160 @@ async fn runtime_session_reader_and_logout_share_connection_invalidation() {
 }
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn persistent_logout_revocation_and_erasure_barrier_cover_lobby_and_socket_before_commit() {
+    let pool = auth_pool().await;
+    for kind in 0..3 {
+        let sockets = AuthorityRegistry::new(2).unwrap();
+        let lobby = AuthorityRegistry::new(2).unwrap();
+        let store = PgAuthStore::new(pool.clone()).with_invalidations(Arc::new(
+            CombinedSessionInvalidator::new(sockets.clone(), lobby.clone()),
+        ));
+        let subject = Uuid::new_v4().to_string();
+        let token = SecretToken::generate().unwrap();
+        let account = store
+            .login(account_write(Provider::Google, &subject, &token, 18000))
+            .await
+            .unwrap()
+            .account
+            .id;
+        let other_token = SecretToken::generate().unwrap();
+        assert_eq!(
+            store
+                .login(account_write(
+                    Provider::Google,
+                    &subject,
+                    &other_token,
+                    18000
+                ))
+                .await
+                .unwrap()
+                .account
+                .id,
+            account
+        );
+        let session = store.session(token.hash(), 18001).await.unwrap().unwrap();
+        let socket = sockets
+            .bind(
+                sockets.generation().unwrap(),
+                account,
+                token.hash(),
+                session.expires_at,
+                18001,
+            )
+            .unwrap();
+        let lease = lobby
+            .bind_shared(
+                lobby.generation().unwrap(),
+                account,
+                token.hash(),
+                session.expires_at,
+                18001,
+            )
+            .unwrap();
+        let unaffected = lobby
+            .bind_shared(
+                lobby.generation().unwrap(),
+                Uuid::new_v4(),
+                [7; 32],
+                session.expires_at,
+                18001,
+            )
+            .unwrap();
+        let before = [sockets.generation().unwrap(), lobby.generation().unwrap()];
+        let mut socket_revoked = socket.revoked();
+        let mut lobby_revoked = lease.revoked();
+        let mut held = pool.begin().await.unwrap();
+        if kind == 2 {
+            // Erasure can authorize normally, then blocks on this cascading identity delete.
+            sqlx::query("SELECT id FROM auth_identities WHERE account_id=$1 FOR UPDATE")
+                .bind(account)
+                .fetch_one(&mut *held)
+                .await
+                .unwrap();
+        } else {
+            sqlx::query("SELECT id FROM auth_sessions WHERE token_hash=$1 FOR UPDATE")
+                .bind(token.hash().as_slice())
+                .fetch_one(&mut *held)
+                .await
+                .unwrap();
+        }
+        let mutating = store.clone();
+        let hash = token.hash();
+        let mutation = tokio::spawn(async move {
+            match kind {
+                0 => mutating.logout(hash).await,
+                1 => mutating.revoke_account(account).await,
+                _ => mutating
+                    .erase_authorized(SessionAuthority {
+                        account,
+                        hash,
+                        now: 18001,
+                    })
+                    .await
+                    .map(|_| ()),
+            }
+        });
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while !*socket_revoked.borrow() {
+                socket_revoked.changed().await.unwrap();
+            }
+            while !*lobby_revoked.borrow() {
+                lobby_revoked.changed().await.unwrap();
+            }
+        })
+        .await
+        .expect("both in-memory authorities must be retired before the blocked database commit");
+        assert!(!mutation.is_finished());
+        assert!(
+            store.session(token.hash(), 18001).await.unwrap().is_some(),
+            "the database has not committed deletion yet"
+        );
+        assert!(lobby.with_authorities(&[&lease], 18001, || ()).is_err());
+        assert_eq!(lobby.with_authority(&unaffected, 18001, || 7), Ok(7));
+        let during = [sockets.generation().unwrap(), lobby.generation().unwrap()];
+        for (index, registry) in [&sockets, &lobby].into_iter().enumerate() {
+            for generation in [before[index], during[index]] {
+                assert!(
+                    registry
+                        .bind_shared(generation, account, hash, session.expires_at, 18001)
+                        .is_err()
+                );
+            }
+        }
+        held.rollback().await.unwrap();
+        tokio::time::timeout(Duration::from_secs(5), mutation)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert!(store.session(hash, 18001).await.unwrap().is_none());
+        assert_eq!(
+            store
+                .session(other_token.hash(), 18001)
+                .await
+                .unwrap()
+                .is_some(),
+            kind == 0
+        );
+        for (index, registry) in [&sockets, &lobby].into_iter().enumerate() {
+            assert!(
+                registry
+                    .bind_shared(during[index], account, hash, session.expires_at, 18001)
+                    .is_err()
+            );
+        }
+        let account_exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM auth_accounts WHERE id=$1)")
+                .bind(account)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(account_exists, kind != 2);
+    }
+    close_auth_pool(pool).await;
+}
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn result_waiting_on_account_lock_skips_a_concurrently_deleted_participant() {
     let pool = auth_pool().await;
     let store = PgAuthStore::new(pool.clone());

@@ -76,6 +76,9 @@ pub(super) enum Event {
     },
 }
 impl MatchRegistry {
+    pub(crate) fn uses_authorities(&self, authorities: &Arc<AuthorityRegistry>) -> bool {
+        Arc::ptr_eq(&self.authorities, authorities)
+    }
     pub fn now_ms(&self) -> u64 {
         self.clock.now_ms()
     }

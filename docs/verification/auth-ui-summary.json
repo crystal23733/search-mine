@@ -1,14 +1,15 @@
 {
-  "product_source_commit": "7c0eb143e227c39ff864afc27ccce7c79c3964d8",
+  "product_source_commit": "22c4c6762df594775b2e8393cc8ac767f9a4e4b2",
   "browser_fixture_source_commit": "68df1b2d6fb523ff6891821fac69e06ed14b4b32",
-  "measured_at_kst": "2026-10-08T21:54:17.721087+09:00",
+  "measured_at_kst": "2026-10-08T22:18:17.514946+09:00",
   "local_environment": "Windows11/Ryzen9 3900X/headless Chromium desktop and Pixel7 viewport emulation",
   "local_checks": {
-    "full_check_script": "passed at product source; Postgres tests ignored and HTTPS auth project not enabled without DATABASE_URL",
-    "vitest_tests": 89,
+    "full_check_script": "passed at 7c0eb143e227c39ff864afc27ccce7c79c3964d8; Postgres ignored and HTTPS auth project unavailable locally",
+    "vitest_tests": 90,
     "browser_tests": 50,
-    "docs_markdown": 100,
-    "mermaid_diagrams": 34
+    "docs_markdown": 101,
+    "mermaid_diagrams": 34,
+    "post_utf8_fix": "22c4c67: readable translation test Red then Green, format/lint/typecheck/Vitest90/build/docs101/Mermaid34 passed"
   },
   "web_coverage": {
     "lines": {
@@ -43,13 +44,13 @@
     }
   },
   "bundle": {
-    "initial_js_gzip_bytes": 41147,
-    "maximum_selected_locale_extra_gzip_bytes": 5231,
-    "initial_with_locale_gzip_bytes": 46378,
+    "initial_js_gzip_bytes": 41143,
+    "maximum_selected_locale_extra_gzip_bytes": 5286,
+    "initial_with_locale_gzip_bytes": 46429,
     "service_worker_bytes": 20589,
-    "service_worker_gzip_bytes": 6944,
+    "service_worker_gzip_bytes": 6942,
     "precache_entries": 41,
-    "precache_bytes": 1319386
+    "precache_bytes": 1320190
   },
   "limitations": [
     "real OAuth proof/console scopes/keys and branding launch verification issue42",

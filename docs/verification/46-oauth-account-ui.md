@@ -15,10 +15,11 @@ AuthPort는 CSRF/account/session UUID를 메모리에만 둔다. HTTP는 same-or
 ## 실제 실행과 리뷰
 
 - 제품 source7c0eb143e227c39ff864afc27ccce7c79c3964d8의 scripts/check.ps1 전체 exit0: Rust/native/WASM·타입/fixture/tokens·format/lint/type·Vitest89·build·Chromium PC/mobile/offline50(57.9s)·docs100/Mermaid34. 로컬 DB16개 ignored, DATABASE_URL 없는 HTTPS auth project는 실행하지 않았다.
+- 후속 source22c4c6762df594775b2e8393cc8ac767f9a4e4b2에서 텍스트 저장 중 손상된 번역3키와 문서/리뷰를 UTF-8로 복구했다. 번역 무결성 시험의 실제 Red→Green과 format/lint/type/Vitest90/build/docs101/Mermaid34를 다시 실행했다. 앞선 전체 check와 후속 검사를 구분한다.
 - 실제 [PostgreSQL18·HTTPS browser CI](https://github.com/crystal23733/search-mine/actions/runs/37779475034/job/113319048432) source68df1b2d6fb523ff6891821fac69e06ed14b4b32는 전체57 passed(3.7m), flaky/skip 없음. 제품 router/service/PgAuthStore와 실DB를 사용하고 외부 제공자 proof만 시험 port로 대체한다.
 - 네 제공자×PC/mobile8 로그인·보안/HttpOnly/Lax cookie·Unicode nickname·export/link/unlink/최근 인증/명시 삭제·2탭 로그아웃·cookie 계정 전환의 삭제 금지·8언어 화면/장애·SW/API 비캐시·IndexedDB 인증값 비저장을 실행했다. Chrome viewport emulation이며 실제 휴대폰 시험은 아니다.
 - 같은 CI의 [실DB16](https://github.com/crystal23733/search-mine/actions/runs/37779475034/job/113319048497)과 원본 coverage 재계산: auth domain369/371=99.46%, whole server2750/3057=89.96%. [core](https://github.com/crystal23733/search-mine/actions/runs/37779475034/job/113319047974)2314/2366=97.80%. 실행 진입점 main/migrate도 서버 분모에 포함한다.
-- Web V8 lines1444/1661=86.93%, branches977/1244=78.53%. main 포함이며 branch80% 달성을 주장하지 않는다. 초기 JS+최대 선택 locale gzip46378bytes, SW6944bytes, precache41개/1319386bytes. 초기 JS 예산과 전체 precache 용량은 구분한다.
+- Web V8 lines1444/1661=86.93%, branches977/1244=78.53%. main 포함이며 branch80% 달성을 주장하지 않는다. UTF-8 복구 source22c4c67의 초기 JS+최대 선택 locale gzip46429bytes, SW6942bytes, precache41개/1320190bytes. 초기 JS 예산과 전체 precache 용량은 구분한다.
 
 pm-ai-shipping code-review2.1.0의 정확성/보안, scope#46·baseline develop de55e16019549ef0b523f2854b6ac4ad522b066a로 순차 검토했다. UI→AuthPort→현재 bootstrap/세대→strict HTTP→실제 권리 API→공개 DTO/화면, raw input→Rust canonical nickname, 계정 변경→확인/내보내기/대기 보존 경계를 양쪽에서 읽었다. 서버 권위와 stale cookie/다른 account를 다르게 만드는 시험, observer/역순 응답/삭제 뒤 bootstrap 교체와2탭 전환을 강제 실행했다.
 

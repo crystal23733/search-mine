@@ -14,6 +14,8 @@ use uuid::Uuid;
 use zeroize::Zeroizing;
 
 struct HttpClock;
+#[path = "postgres/online.rs"]
+mod online;
 #[path = "postgres/rights.rs"]
 mod rights;
 impl AuthClock for HttpClock {

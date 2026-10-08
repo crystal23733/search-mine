@@ -1042,7 +1042,12 @@ async fn maintenance_worker_runs_real_queue_without_blocking_local_deletion() {
     );
     close_auth_pool(pool).await;
 }
-fn account_write(provider: Provider, subject: &str, token: &SecretToken, now: i64) -> LoginWrite {
+pub(super) fn account_write(
+    provider: Provider,
+    subject: &str,
+    token: &SecretToken,
+    now: i64,
+) -> LoginWrite {
     LoginWrite {
         provider,
         digests: DigestKeys::new(1, vec![(1, [16; 32])])

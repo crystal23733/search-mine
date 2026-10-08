@@ -6,19 +6,32 @@ use uuid::Uuid;
 pub struct PgAuthStore {
     pub(super) pool: PgPool,
     pub(super) vault: Option<std::sync::Arc<dyn CredentialVault>>,
+    pub(super) invalidations: std::sync::Arc<dyn SessionInvalidator>,
 }
 impl PgAuthStore {
     pub fn new(pool: PgPool) -> Self {
-        Self { pool, vault: None }
+        Self {
+            pool,
+            vault: None,
+            invalidations: std::sync::Arc::new(NoSessionInvalidator),
+        }
     }
     pub fn with_vault(pool: PgPool, vault: std::sync::Arc<dyn CredentialVault>) -> Self {
         Self {
             pool,
             vault: Some(vault),
+            invalidations: std::sync::Arc::new(NoSessionInvalidator),
         }
     }
     pub fn pool(&self) -> &PgPool {
         &self.pool
+    }
+    pub fn with_invalidations(
+        mut self,
+        invalidations: std::sync::Arc<dyn SessionInvalidator>,
+    ) -> Self {
+        self.invalidations = invalidations;
+        self
     }
 }
 impl AuthStore for PgAuthStore {

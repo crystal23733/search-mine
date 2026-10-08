@@ -17,6 +17,8 @@
 
 ## 요구사항 → 설계 → 시나리오 추적
 
+#16의 FR02~05/15·TS14/20/21/22는 [ADR0023](../adr/0023-authoritative-match-actor.md), `crates/protocol/tests/online.rs`, `crates/server/tests/online_state.rs`, `online_authority.rs`와 실제 PostgreSQL/WS 시험으로 추적한다. 승인된 계정 철회 observer를 actor에 연결하며 구현 중 결과를 완료 증거와 구분한다.
+
 | 요구 | 이야기 | 상세 설계 | 테스트 시나리오 / 경계 |
 |---|---|---|---|
 | FR01 OAuth·최소 정보 | US01 | [07 DB](07-database.md), [17 인증](17-auth-privacy.md), [18 화면](18-design-layout.md) | TS01/20/31/32/33/34/35/36 AuthService·OAuthProvider·AccountRepository |

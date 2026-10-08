@@ -10,6 +10,7 @@ liar-core = { version = "0.1.0", path = "../core", features = ["ts-rs"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 ts-rs = "12.0.1"
+uuid = "1.27.0"
 
 [lints]
 workspace = true

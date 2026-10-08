@@ -73,3 +73,17 @@ fn configuration_disables_absent_auth_and_rejects_partial_or_invalid_secrets() {
             .is_empty()
     );
 }
+#[test]
+fn apple_notification_audience_is_explicit_and_invalid_configuration_fails_closed() {
+    let values = configured();
+    let read_key = |_: &str| {
+        Ok(Zeroizing::new(
+            include_bytes!("fixtures/auth/apple-test-only.pem").to_vec(),
+        ))
+    };
+    for audience in ["", "bad\naudience"] {
+        let mut v = values.clone();
+        v.insert("LIAR_APPLE_NOTIFICATION_AUDIENCE".into(), audience.into());
+        assert!(load_auth_config(|k| v.get(k).cloned(), read_key).is_err());
+    }
+}

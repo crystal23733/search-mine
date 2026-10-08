@@ -27,9 +27,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let _ = store.cleanup(clock.now()).await;
             }
         });
-        config
-            .router(auth_pool)
-            .map_err(|_| "Authentication initialization failed")?
+        let runtime = config
+            .initialize(auth_pool)
+            .map_err(|_| "Authentication initialization failed")?;
+        tokio::spawn(runtime.maintenance);
+        runtime.router
     } else {
         disabled_auth_router()
     };

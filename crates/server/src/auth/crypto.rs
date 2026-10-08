@@ -35,6 +35,11 @@ pub struct DigestKeys(Keyring);
 pub trait SubjectDigester: Send + Sync {
     fn digest(&self, provider: Provider, subject: &str) -> Result<Vec<(u32, [u8; 32])>, AuthError>;
 }
+impl<T: SubjectDigester + ?Sized> SubjectDigester for std::sync::Arc<T> {
+    fn digest(&self, provider: Provider, subject: &str) -> Result<Vec<(u32, [u8; 32])>, AuthError> {
+        (**self).digest(provider, subject)
+    }
+}
 impl SubjectDigester for DigestKeys {
     fn digest(&self, provider: Provider, subject: &str) -> Result<Vec<(u32, [u8; 32])>, AuthError> {
         DigestKeys::digest(self, provider, subject)

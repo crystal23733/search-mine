@@ -9,6 +9,7 @@ pub struct RuntimeAuthConfig {
     pub vault: AeadVault,
     pub digests: DigestKeys,
     pub providers: Vec<ProviderConfig>,
+    pub notification_audience: Option<String>,
 }
 fn secret<F: Fn(&str) -> Option<String>>(
     read: &F,
@@ -71,6 +72,7 @@ pub fn load_auth_config<
         "LIAR_APPLE_TEAM_ID",
         "LIAR_APPLE_KEY_ID",
         "LIAR_APPLE_PRIVATE_KEY_FILE",
+        "LIAR_APPLE_NOTIFICATION_AUDIENCE",
     ];
     if !names.iter().any(|name| read(name).is_some()) {
         return Ok(None);
@@ -134,11 +136,21 @@ pub fn load_auth_config<
         config.validate()?;
         providers.push(config);
     }
+    let notification_audience = read("LIAR_APPLE_NOTIFICATION_AUDIENCE");
+    if notification_audience
+        .as_ref()
+        .is_some_and(|a| !super::provider::bounded_text(a, 512))
+        || (notification_audience.is_some()
+            && !providers.iter().any(|p| p.provider == Provider::Apple))
+    {
+        return Err(AuthError::Invalid);
+    }
     Ok(Some(RuntimeAuthConfig {
         security,
         vault,
         digests,
         providers,
+        notification_audience,
     }))
 }
 pub fn read_private_key(path: &str) -> Result<Zeroizing<Vec<u8>>, AuthError> {
@@ -154,15 +166,43 @@ pub fn read_private_key(path: &str) -> Result<Zeroizing<Vec<u8>>, AuthError> {
     Ok(bytes)
 }
 impl RuntimeAuthConfig {
-    pub fn router(self, pool: PgPool) -> Result<axum::Router, AuthError> {
+    pub fn initialize(self, pool: PgPool) -> Result<AuthRuntime, AuthError> {
         let clock: Arc<dyn AuthClock> = Arc::new(SystemAuthClock);
-        let registry =
-            ProviderRegistry::new(HttpsOAuthTransport::new()?, clock.clone(), self.providers)?;
-        Ok(auth_router(
-            AuthService::new(PgAuthStore::new(pool), self.vault, self.digests),
+        let registry = Arc::new(
+            ProviderRegistry::new(HttpsOAuthTransport::new()?, clock.clone(), self.providers)?
+                .with_notification_audience(self.notification_audience)?,
+        );
+        let vault = Arc::new(self.vault);
+        let digests = Arc::new(self.digests);
+        let store = PgAuthStore::with_vault(pool, vault.clone());
+        let worker = AppleMaintenance::new(
+            store.clone(),
+            vault.clone(),
+            digests.clone(),
+            registry.clone(),
+            clock.clone(),
+        );
+        let router = account_auth_router(
+            AuthService::new(store, vault, digests),
             registry,
             self.security,
             clock,
-        ))
+        );
+        let maintenance = Box::pin(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+            loop {
+                interval.tick().await;
+                let _ = worker.run_once().await;
+            }
+        });
+        Ok(AuthRuntime {
+            router,
+            maintenance,
+        })
     }
+}
+pub struct AuthRuntime {
+    pub router: axum::Router,
+    pub maintenance: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>,
 }

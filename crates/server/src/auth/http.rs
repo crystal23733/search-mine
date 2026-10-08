@@ -141,7 +141,19 @@ pub fn disabled_auth_router() -> Router {
         .route("/api/v1/auth/providers", get(providers))
         .route("/api/v1/auth/{provider}/start", post(unavailable))
         .route("/api/v1/auth/{provider}/callback", get(unavailable))
-        .route("/api/v1/me", get(unavailable).patch(unavailable))
+        .route(
+            "/api/v1/me",
+            get(unavailable).patch(unavailable).delete(unavailable),
+        )
+        .route("/api/v1/me/identities", get(unavailable))
+        .route("/api/v1/me/identities/{provider}/link", post(unavailable))
+        .route("/api/v1/auth/{provider}/reauth", post(unavailable))
+        .route(
+            "/api/v1/me/identities/{provider}",
+            axum::routing::delete(unavailable),
+        )
+        .route("/api/v1/me/export", post(unavailable))
+        .route("/api/v1/auth/apple/notifications", post(unavailable))
         .route("/api/v1/auth/logout", post(unavailable))
         .layer(middleware::map_response(no_store))
 }

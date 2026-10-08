@@ -164,6 +164,33 @@ pub struct AnalysisResult {
     revision: u64,
     knowledge: PolicyKnowledge,
 }
+// Validated private state has no running clock until admission consumes it.
+pub struct PreparedEngine {
+    board: Board,
+    rules: RulesSnapshot,
+    players: [Player; 2],
+}
+impl PreparedEngine {
+    pub fn start(self, now: u64) -> Result<RuleEngine, Rejection> {
+        let start = now
+            .checked_add(u64::from(self.rules.rules.countdown_ms))
+            .ok_or(Rejection::InvalidTime)?;
+        let deadline = start
+            .checked_add(u64::from(self.rules.rules.duration_ms))
+            .ok_or(Rejection::InvalidTime)?;
+        Ok(RuleEngine {
+            solo: false,
+            board: self.board,
+            rules: self.rules,
+            players: self.players,
+            start,
+            deadline,
+            now,
+            public_revision: [0; 2],
+            end: None,
+        })
+    }
+}
 impl AnalysisJob {
     pub fn run(mut self) -> Result<AnalysisResult, Rejection> {
         self.knowledge
@@ -178,17 +205,14 @@ impl AnalysisJob {
 }
 impl RuleEngine {
     pub fn new(board: Board, rules: RulesSnapshot, now: u64) -> Result<Self, Rejection> {
+        Self::prepare(board, rules)?.start(now)
+    }
+    pub fn prepare(board: Board, rules: RulesSnapshot) -> Result<PreparedEngine, Rejection> {
         rules.verify().map_err(|_| Rejection::InvalidRules)?;
         let spec = rules.rules.board_spec();
         if board.spec() != spec || board.cell(spec.opening) != Some(Cell::Number(0)) {
             return Err(Rejection::InvalidBoard);
         }
-        let start = now
-            .checked_add(u64::from(rules.rules.countdown_ms))
-            .ok_or(Rejection::InvalidTime)?;
-        let deadline = start
-            .checked_add(u64::from(rules.rules.duration_ms))
-            .ok_or(Rejection::InvalidTime)?;
         crate::generator::certify(&board, SolverBudget::default())
             .map_err(|_| Rejection::InvalidBoard)?;
         let mut view = Observation::closed(spec).map_err(|_| Rejection::InvalidBoard)?;
@@ -212,16 +236,10 @@ impl RuleEngine {
             commands: BTreeMap::new(),
             stats: GameStats::default(),
         };
-        Ok(Self {
-            solo: false,
+        Ok(PreparedEngine {
             board,
             rules,
             players: [player(), player()],
-            start,
-            deadline,
-            now,
-            public_revision: [0; 2],
-            end: None,
         })
     }
     pub fn projection(&self, seat: Seat) -> Projection {

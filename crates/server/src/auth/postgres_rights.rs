@@ -7,6 +7,7 @@ impl AccountErasure for PgAuthStore {
     async fn erase_authorized(&self, auth: SessionAuthority) -> Result<ErasureResult, AuthError> {
         let mut tx = self.pool.begin().await.map_err(database_error)?;
         authorize(&mut tx, auth, true).await?;
+        let _authority_barrier = self.invalidations.account(auth.account);
         let result = erase_locked(&mut tx, auth.account, auth.now).await?;
         tx.commit().await.map_err(database_error)?;
         Ok(result)
@@ -58,6 +59,7 @@ impl AccountStore for PgAuthStore {
             .await
             .map_err(database_error)?;
         revoke_locked(&mut tx, auth.account).await?;
+        let _authority_barrier = self.invalidations.account(auth.account);
         tx.commit().await.map_err(database_error)?;
         Ok(ErasureResult {
             manual_apple_disconnect: manual,

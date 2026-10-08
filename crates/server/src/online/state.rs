@@ -201,7 +201,7 @@ impl MatchState {
         self.engine.commit_proof(proof).is_ok()
     }
     pub fn take_changes(&mut self) -> Vec<(Seat, GameView)> {
-        let changed = std::mem::replace(&mut self.changed, [false; 2]);
+        let changed = std::mem::take(&mut self.changed);
         [Seat::One, Seat::Two]
             .into_iter()
             .filter(|seat| changed[seat.index()])

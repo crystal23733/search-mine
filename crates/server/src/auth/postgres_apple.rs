@@ -35,6 +35,7 @@ impl AppleMaintenanceStore for PgAuthStore {
                 affected = Some(account);
             }
         }
+        let _authority_barrier = affected.map(|account| self.invalidations.account(account));
         tx.commit().await.map_err(database_error)?;
         Ok(affected)
     }
@@ -153,6 +154,7 @@ impl AppleMaintenanceStore for PgAuthStore {
             }
             CredentialCheck::Unavailable => {}
         }
+        let _authority_barrier = affected.map(|account| self.invalidations.account(account));
         tx.commit().await.map_err(database_error)?;
         Ok(affected)
     }

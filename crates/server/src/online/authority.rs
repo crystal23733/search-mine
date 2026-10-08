@@ -89,6 +89,14 @@ impl AuthorityRegistry {
             .map_err(|_| OnlineError::Unavailable)?
             .generation)
     }
+    pub fn is_replacement(&self, lease: &ConnectionAuthority) -> bool {
+        self.inner.lock().is_ok_and(|inner| {
+            inner
+                .active
+                .get(&lease.account())
+                .is_some_and(|entry| entry.token != lease.token())
+        })
+    }
     pub fn bind(
         self: &Arc<Self>,
         generation: u64,

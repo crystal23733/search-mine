@@ -103,6 +103,9 @@ impl PgAuthStore {
             .await
             .map_err(database_error)?;
         let account = account_row(&row)?;
+        let _authority_barrier = value
+            .previous_session
+            .map(|hash| self.invalidations.session(hash));
         tx.commit().await.map_err(database_error)?;
         Ok(LoginRecord {
             account,

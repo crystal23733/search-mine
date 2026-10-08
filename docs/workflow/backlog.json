@@ -231,7 +231,7 @@
       "deps": [
         "ws-actor"
       ],
-      "acceptance": "10초 원자 백필·봇표시; 만료8문자 코드·2seat; cancel/ready/열거제한",
+      "acceptance": "10초 원자 백필·봇표시; 만료8문자 코드·2seat; cancel/ready/열거제한; OAuth 왕복 초대 코드의 서버 거래 보존·nickname/tutorial 뒤 방 복귀",
       "issue": 17
     },
     {

@@ -1,0 +1,168 @@
+import { expect, test, vi } from "vitest";
+import { createAuthHttp } from "./http";
+import { PROVIDERS, AuthError } from "./types";
+import { createAuth } from "./session";
+const account = {
+  id: "a0000000-0000-4000-8000-000000000001",
+  nickname: "player",
+};
+const bootstrap = {
+  providers: PROVIDERS.map((p) => ({ provider: p.id, available: true })),
+  account,
+  session_revision: "b0000000-0000-4000-8000-000000000001",
+  csrf: "fixture-memory-csrf",
+};
+const json = (value: unknown, status = 200) =>
+  new Response(JSON.stringify(value), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+test("same-origin no-store requests send only minimal data and memory CSRF", async () => {
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(json(bootstrap))
+    .mockResolvedValueOnce(
+      json({
+        authorize_url:
+          "https://accounts.google.com/o/oauth2/v2/auth?state=fixture",
+      }),
+    )
+    .mockResolvedValueOnce(json({ ...account, nickname: "é探偵" }));
+  const http = createAuthHttp(fetcher);
+  expect(await http.bootstrap()).toEqual(bootstrap);
+  expect(
+    await http.start(
+      "google",
+      "login",
+      { locale: "ko", return_path: "friends" },
+      bootstrap.csrf,
+    ),
+  ).toEqual({
+    authorize_url: "https://accounts.google.com/o/oauth2/v2/auth?state=fixture",
+  });
+  expect(await http.nickname("e\u0301探偵", bootstrap.csrf)).toEqual({
+    ...account,
+    nickname: "é探偵",
+  });
+  expect(fetcher.mock.calls.map((c) => c[0])).toEqual([
+    "/api/v1/auth/bootstrap",
+    "/api/v1/auth/google/start",
+    "/api/v1/me",
+  ]);
+  for (const [, init] of fetcher.mock.calls) {
+    expect(init).toMatchObject({
+      credentials: "same-origin",
+      cache: "no-store",
+      redirect: "error",
+    });
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+  }
+  expect(JSON.parse(String(fetcher.mock.calls[1][1]?.body))).toEqual({
+    locale: "ko",
+    return_path: "friends",
+  });
+  expect(fetcher.mock.calls[2][1]?.method).toBe("PATCH");
+  expect(
+    new Headers(fetcher.mock.calls[1][1]?.headers).get("x-liar-csrf"),
+  ).toBe(bootstrap.csrf);
+});
+test("unknown profile data, mismatched session authority and unsafe redirects never reach state", async () => {
+  for (const body of [
+    { ...bootstrap, email: "private@example.com" },
+    { ...bootstrap, account: { ...account, subject: "raw" } },
+    { ...bootstrap, session_revision: null },
+  ]) {
+    const http = createAuthHttp(
+      vi.fn<typeof fetch>().mockResolvedValue(json(body)),
+    );
+    await expect(http.bootstrap()).rejects.toEqual(
+      new AuthError("auth_unavailable"),
+    );
+  }
+  for (const authorize_url of [
+    "https://evil.example/",
+    "javascript:alert(1)",
+    "https://accounts.google.com@evil.example/o/oauth2/v2/auth",
+    "https://accounts.google.com/o/oauth2/v2/auth#token",
+  ]) {
+    const http = createAuthHttp(
+      vi.fn<typeof fetch>().mockResolvedValue(json({ authorize_url })),
+    );
+    await expect(
+      http.start(
+        "google",
+        "login",
+        { locale: "en", return_path: "home" },
+        "csrf",
+      ),
+    ).rejects.toEqual(new AuthError("auth_unavailable"));
+  }
+});
+test("stable errors and stalled fetch have bounded completion without echoing provider bodies", async () => {
+  const unauthorized = createAuthHttp(
+    vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(json({ code: "auth_required" }, 401)),
+  );
+  await expect(unauthorized.export("csrf")).rejects.toEqual(
+    new AuthError("auth_required"),
+  );
+  vi.useFakeTimers();
+  try {
+    const stalled = createAuthHttp(
+      vi.fn<typeof fetch>(() => new Promise(() => {})),
+    );
+    const failure = expect(stalled.bootstrap()).rejects.toEqual(
+      new AuthError("auth_unavailable"),
+    );
+    await vi.advanceTimersByTimeAsync(10000);
+    await failure;
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("a malformed reconciliation response revokes authority", async () => {
+  let malformed = false;
+  const fetcher = vi.fn<typeof fetch>(async (path) =>
+    json(
+      path === "/api/v1/me/identities"
+        ? [{ provider: "google", linked_at: 1 }]
+        : malformed
+          ? { ...bootstrap, csrf: null }
+          : bootstrap,
+    ),
+  );
+  const auth = createAuth(createAuthHttp(fetcher));
+  await auth.refresh();
+  malformed = true;
+  expect((await auth.export(account.id)).ok).toBe(false);
+  expect(auth.connected()).toBe(false);
+});
+
+test("oversized responses are cancelled before the full body is consumed", async () => {
+  let cancelled = false,
+    pulls = 0;
+  const stream = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      pulls++;
+      controller.enqueue(new Uint8Array(20000));
+      if (pulls === 10) controller.close();
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  const http = createAuthHttp(
+    vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(stream, {
+        headers: { "content-type": "application/json" },
+      }),
+    ),
+  );
+  await expect(http.bootstrap()).rejects.toEqual(
+    new AuthError("auth_unavailable"),
+  );
+  expect(cancelled).toBe(true);
+  expect(pulls).toBeLessThanOrEqual(5);
+});

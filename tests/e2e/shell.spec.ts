@@ -97,6 +97,10 @@ test("system reduced-motion is respected and no ad or credential requests start 
     );
   expect(parseFloat(duration)).toBeLessThanOrEqual(0.001);
   expect(
-    requests.some((url) => /doubleclick|googlesyndication|\/auth\//i.test(url)),
+    requests.some((url) =>
+      /doubleclick|googlesyndication|\/auth\/[^/]+\/(start|callback|reauth)|accounts\.google\.com|appleid\.apple\.com|kauth\.kakao\.com|nid\.naver\.com/i.test(
+        url,
+      ),
+    ),
   ).toBe(false);
 });

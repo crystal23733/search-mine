@@ -5,10 +5,15 @@ import { HomePage } from "./pages/HomePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { RulesPage } from "./pages/RulesPage";
 import { StatusPage } from "./pages/StatusPage";
+import { LoginPage } from "./pages/LoginPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
 import { GameRoute } from "./pages/GameRoute";
 import { chooseLocale } from "./services/locale";
 import type { AppServices } from "./services/ports";
 export function App({ services }: { services: AppServices }) {
+  useEffect(() => {
+    void services.auth.refresh();
+  }, [services]);
   const [url, setUrl] = useState(services.navigation.current());
   const [preferences, setPreferences] = useState(services.preferences.read());
   const requestedLocale = chooseLocale(url.pathname, preferences.locale, []);
@@ -77,6 +82,10 @@ export function App({ services }: { services: AppServices }) {
       <HomePage />
     ) : route === "/settings" ? (
       <SettingsPage />
+    ) : route === "/login" ? (
+      <LoginPage />
+    ) : route === "/onboarding" ? (
+      <OnboardingPage />
     ) : route === "/rules" ? (
       <RulesPage />
     ) : (

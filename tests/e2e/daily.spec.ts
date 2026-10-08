@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync, mkdirSync } from "node:fs";
+import { unrequestedServiceCall } from "./network";
 import type {
   DailyView,
   DailyReplay,
@@ -160,7 +161,7 @@ test("UTC daily preserves a running board across midnight and locale, completes 
   await expect(page.locator(".daily-records li")).toHaveCount(1);
   await expect(page.locator(".page-title time")).toHaveText("2026-10-08");
   expect(
-    requests.filter((uri) => /\/api\/|doubleclick|googlesyndication/.test(uri)),
+    requests.filter((uri) => unrequestedServiceCall(uri, page.url())),
   ).toEqual([]);
   expect(page.url()).toContain("code=ABCD1234#invite");
 });

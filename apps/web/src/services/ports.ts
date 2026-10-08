@@ -8,7 +8,13 @@ import type { I18nPort } from "./i18n";
 import type { NavigationPort } from "./navigation";
 import type { PreferencesPort } from "./preferences";
 import type { BoardRendererFactory } from "../board/renderer";
+import type { AuthPort } from "./auth/types";
+import type { AuthEffects } from "./auth/browser";
+import type { PendingSubmissionsPort } from "./pending-submissions";
 export interface AppServices {
+  auth: AuthPort;
+  authEffects: AuthEffects;
+  pendingSubmissions: PendingSubmissionsPort;
   activity: ActivityPort;
   offline: OfflinePort;
   i18n: I18nPort;

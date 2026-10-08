@@ -76,6 +76,8 @@ design-tokens 원천에 semantic color(background/surface/text/danger/flag/lieFe
 
 ## 오프라인 경계
 
+#46 AuthPort/HTTP 어댑터·메모리 CSRF와 generation·현재 account/session revision, 연결/재인증/권리 화면과 실제 HTTP·PostgreSQL E2E는 [ADR0022](../adr/0022-web-oauth-account-ui.md)을 따른다. bootstrap만 초기 first-party 인증 상태를 확인하며 홈/연습에서 OAuth 로그인 거래나 외부 제공자 요청을 자동 시작하지 않는다. unknown/장애 상태를 온라인 인증으로 간주하지 않는다. 일반 저장소에는 인증값을 쓰지 않고 PendingSubmissions에는 현재 메모리 세션의 단조 revision만 제공한다.
+
 #14 공개 precache·다중 탭 idle/시작 lock·IndexedDB pending/명시적 제출·설정 삭제 경계는 [ADR0018](../adr/0018-public-offline-cache-and-safe-update.md)를 따른다. 결과에서 홈으로 이동해 모든 탭이 안전할 때 업데이트하며 #15/#19 전에는 공식 API 전달 성공을 만들지 않는다.
 
 #13의 UTC 솔로 데일리·개인 미검증 기록·공유 allowlist와 IndexedDB 경계는 [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md)를 따른다. #14 캐시/제출 대기와 #19 공식 검증을 구분한다.

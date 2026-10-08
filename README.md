@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43·#44 병합 완료. #45 계정 권리·Apple 철회 검증 완료. 이후 계정 화면·온라인을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~45 병합 완료. #46 OAuth 계정 화면 구현·검증을 마쳤고 온라인 작업을 순차 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -48,17 +48,17 @@ pnpm dev
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 온라인 계정·대전·정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정 화면을 제공하며 온라인 대전·정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
 
 ## 오프라인 확인
 
-`pnpm build` 뒤 `pnpm --filter @liar/web preview --port 4173`으로 production을 연다. 설정의 캐시 준비를 확인한 뒤 연결을 끊으면 저장된8언어·WASM·로컬 봇/데일리를 이용할 수 있다. 개발 서버5173에서는 SW를 켜지 않는다. 최초 미캐시 offline 방문은 지원하지 않으며 브라우저가 캐시를 지울 수 있다. 업데이트는 열린 모든 탭이 홈으로 돌아온 뒤 버튼으로 적용한다. 설정에서 공개 cache와 개인 기록/제출 대기를 각각 삭제할 수 있다. 제출 후보는 미검증이며 실제 로그인/공식 전송은 #15/#19에서 연결한다.
+`pnpm build` 뒤 `pnpm --filter @liar/web preview --port 4173`으로 production을 연다. 설정의 캐시 준비를 확인한 뒤 연결을 끊으면 저장된8언어·WASM·로컬 봇/데일리를 이용할 수 있다. 개발 서버5173에서는 SW를 켜지 않는다. 최초 미캐시 offline 방문은 지원하지 않으며 브라우저가 캐시를 지울 수 있다. 업데이트는 열린 모든 탭이 홈으로 돌아온 뒤 버튼으로 적용한다. 설정에서 공개 cache와 개인 기록/제출 대기를 각각 삭제할 수 있다. 제출 후보는 미검증이며 실제 로그인은 #46에서 연결했으며 공식 전송은 #19에서 연결한다.
 
 ## 검증
 
 [OAuth 운영 설정](docs/workflow/oauth-configuration.md)은 키 없는 비활성 실행·secret 변수·최소 callback/권한과 실제 계정 검수의 한계를 기록합니다. 실계정 검수 #42를 테스트 fixture 성공으로 대체하지 않습니다.
 
-인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 네 제공자와 로그인 HTTP는 [#44 검증](docs/verification/44-oauth-providers-http.md)에 기록합니다. 계정 권리는 [#45 검증](docs/verification/45-account-rights-apple-revocation.md)에 기록하며 화면은 #46에서 구현합니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 아래는 격리된 테스트 DB 예시입니다.
+인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 네 제공자와 로그인 HTTP는 [#44 검증](docs/verification/44-oauth-providers-http.md)에 기록합니다. 계정 권리는 [#45 검증](docs/verification/45-account-rights-apple-revocation.md)에 기록하며 계정 화면은 [#46 검증](docs/verification/46-oauth-account-ui.md)을 확인합니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 아래는 격리된 테스트 DB 예시입니다.
 
 ```powershell
 pnpm exec playwright install chromium
@@ -88,3 +88,19 @@ rustup component add llvm-tools-preview
 cargo install cargo-llvm-cov --locked
 cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](tests|examples)[/\\]' --fail-under-lines 95
 ```
+
+## 계정 화면 검증
+
+`/{locale}/login`, `/onboarding`, `/settings`에서 네 제공자·닉네임·연결/해제·내보내기·로그아웃·삭제를 제공한다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 #19, 친구 초대의 OAuth 왕복 연결은 #17이다.
+
+위의 격리된 PostgreSQL 테스트 DB가 실행되고 `DATABASE_URL`이 설정된 환경에서 아래를 실행한다. 실제 제품 router와 DB를 사용하고 외부 제공자 proof만 시험 port로 대체한다. 저장소의 HTTPS 키는 공개된 loopback 시험 전용이며 운영 키로 사용하지 않는다.
+
+```powershell
+$env:MIGRATION_DATABASE_URL = $env:DATABASE_URL
+cargo run --locked -p liar-server --bin migrate
+Remove-Item Env:MIGRATION_DATABASE_URL
+pnpm build
+pnpm exec playwright test --project auth
+```
+
+DB 환경변수가 없는 기본 로컬 실행은 기존 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정 시험7개를 포함한57개를 검사한다.

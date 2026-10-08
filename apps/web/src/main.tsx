@@ -8,6 +8,9 @@ import { createDailyRecords } from "./services/daily-records";
 import { createSharePort } from "./services/daily-share";
 import { createActivity } from "./services/activity";
 import { createOffline } from "./services/offline";
+import { createBrowserAuth } from "./services/auth/browser";
+import { createAuthHttp } from "./services/auth/http";
+import { createPendingSubmissions } from "./services/pending-submissions";
 import { chooseLocale, localizedPath } from "./services/locale";
 import "@liar/design-tokens/tokens.css";
 import "./styles.css";
@@ -40,6 +43,16 @@ if (!location.pathname.startsWith(`/${locale}/`))
 const navigation = createNavigation(window);
 const i18n = await createI18n(locale);
 const activity = createActivity();
+const account = createBrowserAuth(
+  window,
+  createAuthHttp(window.fetch.bind(window)),
+);
+const records = createDailyRecords(database);
+const pendingSubmissions = createPendingSubmissions(records, account.auth, {
+  submit: async () => {
+    throw Error("official_submission_unavailable");
+  },
+});
 const offline = createOffline(activity, {
   window,
   enabled: import.meta.env.PROD,
@@ -48,13 +61,16 @@ const offline = createOffline(activity, {
 render(
   <App
     services={{
+      auth: account.auth,
+      authEffects: account.effects,
+      pendingSubmissions,
       activity,
       offline,
       i18n,
       navigation,
       preferences,
       learning: createLearning(storage),
-      dailyRecords: createDailyRecords(database),
+      dailyRecords: records,
       share: createSharePort(),
       wallClock: () => Date.now(),
       dailyCore: async () =>

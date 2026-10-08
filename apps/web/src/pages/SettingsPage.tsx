@@ -4,7 +4,7 @@ import { Card } from "../ui/atoms/Card";
 import { Button } from "../ui/atoms/Button";
 import { Dialog } from "../ui/atoms/Dialog";
 import { LanguageSelect } from "../ui/molecules/LanguageSelect";
-import { AccountCard } from "../ui/organisms/AccountCard";
+import { AccountSettings } from "../ui/organisms/AccountSettings";
 import type { Preferences } from "../services/preferences";
 import { useSnapshot } from "../ui/useSnapshot";
 export function SettingsPage() {
@@ -32,7 +32,7 @@ export function SettingsPage() {
   return (
     <div class="reading-page">
       <h1>{t("settings")}</h1>
-      <AccountCard />
+      <AccountSettings />
       <h2>{t("offline.title")}</h2>
       <Card>
         <p>

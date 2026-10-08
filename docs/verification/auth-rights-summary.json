@@ -1,0 +1,57 @@
+{
+  "source_commit": "b9dd852100de91437d4499896e57a6e2fdf63ef8",
+  "ci_run": 37769639633,
+  "database_job": 113285844944,
+  "database_tests": {
+    "passed": 16,
+    "ignored": 0
+  },
+  "coverage": {
+    "auth_domain_lines": {
+      "covered": 369,
+      "count": 371
+    },
+    "whole_server_lines": {
+      "covered": 2750,
+      "count": 3057
+    },
+    "includes_main_and_migrate": true,
+    "test_code_excluded": true
+  },
+  "local_server_tests": 42,
+  "local_database_ignored": 16,
+  "local_full_check": {
+    "source_commit": "dc6a74153492b87128b545187deb6e35d63f46e7",
+    "exit_code": 0,
+    "web_unit_tests": 64,
+    "web_line_percent": 88.4,
+    "chromium_tests": 50,
+    "docs": 98,
+    "mermaid": 34
+  },
+  "review": {
+    "dimensions": [
+      "correctness",
+      "security"
+    ],
+    "baseline": "bf375a5e6560dc99c8dfd4260bb87d7d58bc1bc6",
+    "fixed_findings": [
+      "Login can reuse an identity removed while waiting for the account lock"
+    ],
+    "race_red": {
+      "source_commit": "57df4cb5088e2d32e970b3721b7eefce9a9c150b",
+      "ci_run": 37769310228,
+      "database_job": 113284804933,
+      "passed": 15,
+      "failed": 1
+    },
+    "supported_unresolved_findings": 0
+  },
+  "limits": [
+    "Actual provider keys/accounts and Apple notification audience #42",
+    "Login/account UI #46",
+    "Online actor revocation #16",
+    "Actual backup recovery/tombstone application #25",
+    "Distributed load, device/mini-PC performance and legal launch review not verified"
+  ]
+}

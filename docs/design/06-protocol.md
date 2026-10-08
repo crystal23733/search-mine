@@ -152,6 +152,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 #44의 구체적인 계약은 [ADR0020](../adr/0020-oauth-providers-and-http.md)을 따른다. start JSON은 `{locale,return_path}`, nickname JSON은 `{nickname}`, logout JSON은 `{}`이며 미정의 필드와4096byte 초과를 거절한다. bootstrap은 `{providers,account,session_revision,csrf}`다. account의 nickname은 onboarding 전 null, session_revision은 공개 UUID이고 cookie token/hash를 대신 노출하지 않는다. 키 없는 실행은4개 비활성/계정 null/CSRF null이고 무계정 연습을 유지한다. 미인증 me는401/auth_required, 잘못된 입력·바인딩은400/auth_invalid, 제공자/저장 장애는503/auth_unavailable다. callback 실패는 검증된 거래의 locale에만 auth_failed로 이동한다.
 
-[17 인증](17-auth-privacy.md)을 따른다. Apple은 name/email scope 없는 code/query callback을 사용하고 form_post 추가는 별도 cookie 계약을 요구한다. callback은 일반 CSRF 헤더 대신 거래 검증을 수행한다. nickname 미설정 세션은 onboarding/me/logout/delete만 허용하고 대전·공식 기록에는 사용할 수 없다. 공식 attempt와 account 소유권을 검증하며 무계정 로컬 기록은 로그인 뒤 명시적 제출만 허용한다.
+[17 인증](17-auth-privacy.md)을 따른다. Apple은 name/email scope 없는 code/query callback을 사용하고 form_post 추가는 별도 cookie 계약을 요구한다. callback은 일반 CSRF 헤더 대신 거래 검증을 수행한다. nickname 미설정 세션도 onboarding/me/logout과 연결·내보내기·삭제 권리를 행사할 수 있으며 대전·공식 기록에는 사용할 수 없다. 공식 attempt와 account 소유권을 검증하며 무계정 로컬 기록은 로그인 뒤 명시적 제출만 허용한다.
 
 #13 public DailyMetadata/View/Step/Replay와 strict 입력·로그 경계는 [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md)를 따른다. 공개 UTC seed와 online 비밀 seed를 구분하며 로컬 replay는 서버 검증 전 unverified다. [실제 native/WASM 재현](../verification/13-utc-daily-records-share.md).

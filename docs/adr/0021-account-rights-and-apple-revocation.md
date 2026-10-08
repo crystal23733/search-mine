@@ -10,6 +10,8 @@ Link/Reauth 거래에는 계정 ID와 시작 세션 token hash를 저장한다. 
 
 ## 저장소와 권리
 
+닉네임 미설정 계정도 자기 연결 목록·내보내기·해제·삭제 권리를 행사할 수 있다. 닉네임 onboarding은 온라인 대전/공식 기록 참여의 선행 조건이며 개인정보 권리의 선행 조건으로 쓰지 않는다.
+
 로그인도 계정 잠금을 얻은 뒤 subject 조회 결과의 identity UUID/소유 계정이 여전히 같은지 확인한다. 해제/삭제와 겹쳐 잠금 대기 중 사라진 identity의 오래된 조회 결과로 기존 계정 세션을 발급하지 않는다. 새 로그인 요청이 삭제 이후 시작되어 새 계정을 만드는 경우와 구분한다.
 
 AuthStore는 신원 인증 write, AccountStore는 연결 목록·최소 내보내기·삭제·제공자 해제·철회 작업을 맡는다. 로그인 write는 intent/시작 세션과 선택적 Apple credential을 함께 받는다. Pg 어댑터가 결정한 identity UUID를 AAD로 credential을 seal하여 신원·credential·session을 한 transaction으로 commit한다. credential 없는 Apple 로그인을 성공 처리하지 않는다. refresh token은 4096bytes 이하의 요청 메모리와 암호문으로만 취급한다.

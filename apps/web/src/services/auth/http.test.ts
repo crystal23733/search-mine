@@ -46,7 +46,7 @@ test("same-origin no-store requests send only minimal data and memory CSRF", asy
   expect(fetcher.mock.calls.map((c) => c[0])).toEqual([
     "/api/v1/auth/bootstrap",
     "/api/v1/auth/google/start",
-    "/api/v1/me/nickname",
+    "/api/v1/me",
   ]);
   for (const [, init] of fetcher.mock.calls) {
     expect(init).toMatchObject({
@@ -60,6 +60,7 @@ test("same-origin no-store requests send only minimal data and memory CSRF", asy
     locale: "ko",
     return_path: "friends",
   });
+  expect(fetcher.mock.calls[2][1]?.method).toBe("PATCH");
   expect(
     new Headers(fetcher.mock.calls[1][1]?.headers).get("x-liar-csrf"),
   ).toBe(bootstrap.csrf);

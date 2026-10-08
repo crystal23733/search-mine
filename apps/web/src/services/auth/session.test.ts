@@ -77,20 +77,16 @@ function transport(): AuthTransport {
     identities: vi
       .fn()
       .mockResolvedValue([{ provider: "google", linked_at: 1 }]),
-    start: vi
-      .fn()
-      .mockResolvedValue({
-        authorize_url: "https://accounts.google.com/o/oauth2/v2/auth",
-      }),
+    start: vi.fn().mockResolvedValue({
+      authorize_url: "https://accounts.google.com/o/oauth2/v2/auth",
+    }),
     nickname: vi.fn().mockResolvedValue({ ...a, nickname: "é探偵" }),
-    export: vi
-      .fn()
-      .mockResolvedValue({
-        account: a,
-        created_at: 1,
-        last_seen_at: 2,
-        identities: [{ provider: "google", linked_at: 1 }],
-      }),
+    export: vi.fn().mockResolvedValue({
+      account: a,
+      created_at: 1,
+      last_seen_at: 2,
+      identities: [{ provider: "google", linked_at: 1 }],
+    }),
     erase: vi.fn().mockResolvedValue({ manual_apple_disconnect: true }),
     unlink: vi.fn().mockResolvedValue({ manual_apple_disconnect: false }),
     logout: vi.fn().mockResolvedValue(undefined),

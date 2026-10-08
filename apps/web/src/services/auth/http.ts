@@ -127,7 +127,7 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
       return request(path, (v) => decodeStart(v, p), csrf, body, signal);
     },
     nickname: (nickname, csrf, signal) =>
-      request("/api/v1/me/nickname", decodeAccount, csrf, { nickname }, signal),
+      request("/api/v1/me", decodeAccount, csrf, { nickname }, signal, "PATCH"),
     export: (csrf, signal) =>
       request("/api/v1/me/export", decodeExport, csrf, {}, signal),
     erase: (csrf, signal) =>

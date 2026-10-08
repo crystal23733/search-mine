@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+const authFixture = Boolean(process.env.DATABASE_URL);
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -19,16 +20,40 @@ export default defineConfig({
       url: "http://127.0.0.1:4173",
       reuseExistingServer: !process.env.CI,
     },
+    ...(authFixture
+      ? [
+          {
+            command: "cargo run --locked -p liar-server --example auth_fixture",
+            url: "http://127.0.0.1:3001/__fixture/ready",
+            reuseExistingServer: false,
+            timeout: 120000,
+          },
+          {
+            command: "node scripts/test-auth-proxy.mjs",
+            url: "https://localhost:8443/",
+            ignoreHTTPSErrors: true,
+            reuseExistingServer: false,
+          },
+        ]
+      : []),
   ],
   projects: [
     {
       name: "chromium",
-      testIgnore: ["**/board-metrics.spec.ts", "**/offline.spec.ts"],
+      testIgnore: [
+        "**/board-metrics.spec.ts",
+        "**/offline.spec.ts",
+        "**/auth.spec.ts",
+      ],
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "mobile",
-      testIgnore: ["**/board-metrics.spec.ts", "**/offline.spec.ts"],
+      testIgnore: [
+        "**/board-metrics.spec.ts",
+        "**/offline.spec.ts",
+        "**/auth.spec.ts",
+      ],
       use: { ...devices["Pixel 7"] },
     },
     {
@@ -52,5 +77,18 @@ export default defineConfig({
       ],
       use: { ...devices["Desktop Chrome"] },
     },
+    ...(authFixture
+      ? [
+          {
+            name: "auth",
+            testMatch: "**/auth.spec.ts",
+            use: {
+              ...devices["Desktop Chrome"],
+              baseURL: "https://localhost:8443",
+              ignoreHTTPSErrors: true,
+            },
+          },
+        ]
+      : []),
   ],
 });

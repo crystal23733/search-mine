@@ -42,7 +42,9 @@ export function decodeAccount(value: unknown): AuthAccount {
     v.nickname !== null &&
     (typeof v.nickname !== "string" ||
       v.nickname.length > 1024 ||
-      /[\u0000-\u001f\u007f]/.test(v.nickname))
+      [...v.nickname].some(
+        (c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127,
+      ))
   )
     return invalid();
   return { id: uuid(v.id), nickname: v.nickname as string | null };

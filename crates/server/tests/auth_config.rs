@@ -86,4 +86,19 @@ fn apple_notification_audience_is_explicit_and_invalid_configuration_fails_close
         v.insert("LIAR_APPLE_NOTIFICATION_AUDIENCE".into(), audience.into());
         assert!(load_auth_config(|k| v.get(k).cloned(), read_key).is_err());
     }
+    let mut explicit = values.clone();
+    explicit.insert(
+        "LIAR_APPLE_NOTIFICATION_AUDIENCE".into(),
+        "fixture.notification".into(),
+    );
+    let config = load_auth_config(|k| explicit.get(k).cloned(), read_key)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        config.notification_audience.as_deref(),
+        Some("fixture.notification")
+    );
+    explicit
+        .retain(|k, _| !k.starts_with("LIAR_APPLE_") || k == "LIAR_APPLE_NOTIFICATION_AUDIENCE");
+    assert!(load_auth_config(|k| explicit.get(k).cloned(), read_key).is_err());
 }

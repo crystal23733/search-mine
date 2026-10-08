@@ -390,48 +390,5 @@ impl<H: OAuthTransport> OAuthProvider for ProviderRegistry<H> {
     }
 }
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[tokio::test]
-    async fn upstream_response_limits_and_http_failures_never_return_identity_bytes() {
-        let response = |status: u16, body: Vec<u8>| {
-            reqwest::Response::from(
-                axum::http::Response::builder()
-                    .status(status)
-                    .body(body)
-                    .unwrap(),
-            )
-        };
-        assert_eq!(
-            bounded_response(response(200, b"public-jwks".to_vec()), 32)
-                .await
-                .unwrap()
-                .as_slice(),
-            b"public-jwks"
-        );
-        for status in [302, 400, 401, 500] {
-            assert!(
-                bounded_response(response(status, b"provider-private-error".to_vec()), 64)
-                    .await
-                    .is_err()
-            );
-        }
-        assert!(
-            bounded_response(response(200, vec![0; 65537]), 65536)
-                .await
-                .is_err()
-        );
-        let transport = HttpsOAuthTransport::new().unwrap();
-        assert!(
-            transport
-                .request(UpstreamRequest {
-                    endpoint: "https://attacker.example",
-                    form: vec![],
-                    bearer: None,
-                    limit: 64
-                })
-                .await
-                .is_err()
-        );
-    }
-}
+#[path = "../../tests/unit/oauth_transport.rs"]
+mod tests;

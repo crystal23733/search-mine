@@ -144,6 +144,12 @@ sequenceDiagram
 
 ## OAuth 경계
 
+#45 계정 권리 계약은 [ADR0021](../adr/0021-account-rights-and-apple-revocation.md)을 따른다. `GET /api/v1/auth/identities`는 제공자와 연결 시각만 공개한다. `POST /api/v1/auth/{provider}/link`와 `reauth`는 `{locale,return_path}`를 받고 현재 세션에 거래를 묶는다. 연결은 최근300초 인증이 필요하고 재인증은 이미 연결된 제공자만 허용한다. 민감 작업의 인증 기한 만료는409/reauth_required, 다른 계정의 subject나 마지막 제공자 해제는409/auth_conflict다.
+
+`POST /api/v1/auth/export`와 `DELETE /api/v1/auth/me`, `DELETE /api/v1/auth/identities/{provider}`는 strict `{}`와 같은 Origin·메모리 CSRF를 요구한다. 내보내기는 account UUID/nickname·생성/최근 접속 시각·provider/연결 시각만 포함한다. 해제·삭제는 모든 해당 계정 세션을 철회하고 cookie를 지운다. 응답 `AuthErasure.manual_apple_disconnect`는 Apple credential 부재/제공자 비활성으로 직접 철회가 필요한지를 알린다. 공개 DTO는 Rust에서 생성한다. 계정 권리 API의 본문 한도는4096byte다.
+
+Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대신 검증한 서명·issuer·명시 audience·시간·jti를 사용한다. strict `{payload}`만32768byte 이내로 받으며 이메일 변경 알림은 저장하지 않는다. 원문 subject와 credential은 공개 응답·캐시에 포함하지 않는다.
+
 #44의 구체적인 계약은 [ADR0020](../adr/0020-oauth-providers-and-http.md)을 따른다. start JSON은 `{locale,return_path}`, nickname JSON은 `{nickname}`, logout JSON은 `{}`이며 미정의 필드와4096byte 초과를 거절한다. bootstrap은 `{providers,account,session_revision,csrf}`다. account의 nickname은 onboarding 전 null, session_revision은 공개 UUID이고 cookie token/hash를 대신 노출하지 않는다. 키 없는 실행은4개 비활성/계정 null/CSRF null이고 무계정 연습을 유지한다. 미인증 me는401/auth_required, 잘못된 입력·바인딩은400/auth_invalid, 제공자/저장 장애는503/auth_unavailable다. callback 실패는 검증된 거래의 locale에만 auth_failed로 이동한다.
 
 [17 인증](17-auth-privacy.md)을 따른다. Apple은 name/email scope 없는 code/query callback을 사용하고 form_post 추가는 별도 cookie 계약을 요구한다. callback은 일반 CSRF 헤더 대신 거래 검증을 수행한다. nickname 미설정 세션은 onboarding/me/logout/delete만 허용하고 대전·공식 기록에는 사용할 수 없다. 공식 attempt와 account 소유권을 검증하며 무계정 로컬 기록은 로그인 뒤 명시적 제출만 허용한다.

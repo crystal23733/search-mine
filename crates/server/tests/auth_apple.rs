@@ -133,3 +133,163 @@ fn refreshed_identity_uses_its_own_signed_context_without_login_nonce() {
         );
     }
 }
+struct Clock;
+impl AuthClock for Clock {
+    fn now(&self) -> i64 {
+        1001
+    }
+}
+#[derive(Clone)]
+struct Transport {
+    calls: std::sync::Arc<std::sync::Mutex<Vec<UpstreamRequest>>>,
+    mode: std::sync::Arc<std::sync::atomic::AtomicU8>,
+}
+impl OAuthTransport for Transport {
+    async fn request(&self, r: UpstreamRequest) -> Result<zeroize::Zeroizing<Vec<u8>>, AuthError> {
+        let endpoint = r.endpoint;
+        self.calls.lock().unwrap().push(r);
+        if endpoint.ends_with("/keys") {
+            return Ok(zeroize::Zeroizing::new(
+                include_bytes!("fixtures/auth/jwks.json").to_vec(),
+            ));
+        }
+        if endpoint.ends_with("/revoke") {
+            return Ok(zeroize::Zeroizing::new(vec![]));
+        }
+        match self.mode.load(std::sync::atomic::Ordering::SeqCst) {
+            1 => return Err(AuthError::CredentialRevoked),
+            2 => return Err(AuthError::Unavailable),
+            3 => {
+                return Ok(zeroize::Zeroizing::new(
+                    br#"{"error":"invalid_client","error_description":"discard private details"}"#
+                        .to_vec(),
+                ));
+            }
+            _ => {}
+        }
+        let token = signed(
+            &json!({"iss":"https://appleid.apple.com","aud":"web.services.id","sub":"fixture-credential-sub","iat":1000,"exp":1300}),
+        );
+        Ok(zeroize::Zeroizing::new(serde_json::to_vec(&json!({"id_token":token,"refresh_token":"fixture-replacement-refresh","access_token":"discard-access"})).unwrap()))
+    }
+}
+#[tokio::test]
+async fn apple_maintenance_registry_uses_fixed_endpoints_assertions_and_explicit_audience() {
+    use std::sync::{Arc, atomic::Ordering};
+    use zeroize::Zeroizing;
+    let transport = Transport {
+        calls: Default::default(),
+        mode: Default::default(),
+    };
+    let config = || ProviderConfig {
+        provider: Provider::Apple,
+        client_id: "web.services.id".into(),
+        client_secret: Zeroizing::new(String::new()),
+        callback: url::Url::parse("https://game.example/api/v1/auth/apple/callback").unwrap(),
+        apple: Some(AppleSigning {
+            team_id: "TEAMTEST01".into(),
+            key_id: "KEYTEST001".into(),
+            private_key: Zeroizing::new(
+                include_bytes!("fixtures/auth/apple-test-only.pem").to_vec(),
+            ),
+        }),
+    };
+    let disabled =
+        ProviderRegistry::new(transport.clone(), Arc::new(Clock), vec![config()]).unwrap();
+    assert!(matches!(
+        disabled.notification(&signed(&claims()), 1001).await,
+        Err(AuthError::Unavailable)
+    ));
+    assert!(transport.calls.lock().unwrap().is_empty());
+    assert!(
+        ProviderRegistry::new(transport.clone(), Arc::new(Clock), vec![])
+            .unwrap()
+            .with_notification_audience(Some("explicit.notification.audience".into()))
+            .is_err()
+    );
+    let registry = ProviderRegistry::new(transport.clone(), Arc::new(Clock), vec![config()])
+        .unwrap()
+        .with_notification_audience(Some("explicit.notification.audience".into()))
+        .unwrap();
+    assert!(
+        registry
+            .notification(&signed(&claims()), 1001)
+            .await
+            .unwrap()
+            .change
+            == AppleChange::Revoke
+    );
+    match registry.check_apple("fixture-refresh", 1001).await.unwrap() {
+        AppleCredentialStatus::Valid {
+            subject,
+            replacement,
+        } => {
+            assert_eq!(subject.as_str(), "fixture-credential-sub");
+            assert_eq!(
+                replacement.as_deref().map(|s| s.as_str()),
+                Some("fixture-replacement-refresh")
+            );
+        }
+        AppleCredentialStatus::Revoked => panic!("valid proof cannot revoke an account"),
+    }
+    registry
+        .revoke_apple("fixture-refresh", 1001)
+        .await
+        .unwrap();
+    {
+        let calls = transport.calls.lock().unwrap();
+        assert_eq!(
+            calls
+                .iter()
+                .filter(|r| r.endpoint.ends_with("/keys"))
+                .count(),
+            1
+        );
+        let token = calls
+            .iter()
+            .find(|r| r.endpoint.ends_with("/token"))
+            .unwrap();
+        assert!(
+            token
+                .form
+                .iter()
+                .any(|(k, v)| *k == "grant_type" && v.as_str() == "refresh_token")
+        );
+        assert!(
+            token
+                .form
+                .iter()
+                .any(|(k, v)| *k == "client_secret" && v.split('.').count() == 3)
+        );
+        let revoke = calls
+            .iter()
+            .find(|r| r.endpoint.ends_with("/revoke"))
+            .unwrap();
+        assert_eq!(revoke.endpoint, "https://appleid.apple.com/auth/revoke");
+        assert!(
+            revoke
+                .form
+                .iter()
+                .any(|(k, v)| *k == "token_type_hint" && v.as_str() == "refresh_token")
+        );
+        assert!(
+            calls
+                .iter()
+                .all(|r| !r.endpoint.contains('?') && r.bearer.is_none())
+        );
+    }
+    transport.mode.store(1, Ordering::SeqCst);
+    assert!(matches!(
+        registry.check_apple("fixture-refresh", 1001).await.unwrap(),
+        AppleCredentialStatus::Revoked
+    ));
+    for mode in [2, 3] {
+        transport.mode.store(mode, Ordering::SeqCst);
+        assert!(matches!(
+            registry.check_apple("fixture-refresh", 1001).await,
+            Err(AuthError::Unavailable)
+        ));
+    }
+    assert!(registry.revoke_apple("bad\nrefresh", 1001).await.is_err());
+    assert!(registry.check_apple(&"x".repeat(4097), 1001).await.is_err());
+}

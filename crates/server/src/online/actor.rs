@@ -40,6 +40,7 @@ struct Actor {
     recording: Option<RecordingStatus>,
     finished_at: Option<u64>,
     stored: Option<oneshot::Receiver<Result<SaveResult, OnlineError>>>,
+    bot: Option<super::bot::BotDriver>,
 }
 pub(super) fn spawn(
     state: MatchState,
@@ -47,6 +48,7 @@ pub(super) fn spawn(
     handle: Weak<HandleInner>,
     registry: &Arc<MatchRegistry>,
     permit: OwnedSemaphorePermit,
+    bot: Option<super::bot::BotDriver>,
 ) {
     let ticker = handle.clone();
     tokio::spawn(async move {
@@ -79,12 +81,14 @@ pub(super) fn spawn(
         recording: None,
         finished_at: None,
         stored: None,
+        bot,
     };
     tokio::spawn(async move {
         let _permit = permit;
         while let Some(ingress) = receiver.recv().await {
             let at = ingress.at;
             actor.process(ingress);
+            actor.poll_bot(at);
             actor.publish(at);
             actor.schedule(at);
             if actor
@@ -103,6 +107,35 @@ pub(super) fn spawn(
     });
 }
 impl Actor {
+    fn poll_bot(&mut self, at: u64) {
+        let Some(bot) = self.bot.as_mut() else {
+            return;
+        };
+        self.state.advance(at);
+        let seat = bot.seat;
+        if self.state.bot_projection(seat).end.is_some() {
+            self.bot = None;
+            return;
+        }
+        match bot.poll(self.state.view(seat).revision, at) {
+            Ok(Some(intent)) => {
+                let analysis = matches!(
+                    intent.action,
+                    liar_core::game::Action::Open(_) | liar_core::game::Action::Accuse(_)
+                );
+                match self.state.apply_bot(seat, intent, at) {
+                    Ok(true) if analysis => self.dirty[seat.index()] = true,
+                    Ok(_) => {}
+                    Err(_) => self.state.abort(at),
+                }
+            }
+            Ok(None) => {}
+            Err(_) => {
+                self.state.abort(at);
+                self.bot = None;
+            }
+        }
+    }
     fn process(&mut self, ingress: Ingress) {
         let at = ingress.at;
         match ingress.event {
@@ -401,6 +434,14 @@ impl Actor {
                 );
             });
         }
+        if let Some(bot) = self.bot.as_mut() {
+            let seat = bot.seat;
+            bot.schedule(
+                self.state.bot_projection(seat),
+                self.state.view(seat).revision,
+                at,
+            );
+        }
     }
 }
 #[cfg(test)]
@@ -456,6 +497,7 @@ mod tests {
             recording: None,
             finished_at: None,
             stored: None,
+            bot: None,
         };
         actor.publish(243000);
         assert_eq!(actor.recording, Some(RecordingStatus::Pending));

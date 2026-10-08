@@ -1,7 +1,9 @@
 //! Pure application state. Secret engine and result metadata never implement Serialize or Debug.
 use liar_core::{
     board::CellId,
-    game::{Action, ActionStatus, AnalysisJob, AnalysisResult, Command, RuleEngine, Seat},
+    game::{
+        Action, ActionStatus, AnalysisJob, AnalysisResult, Command, Rejection, RuleEngine, Seat,
+    },
 };
 use liar_protocol::{
     game::{
@@ -10,6 +12,7 @@ use liar_protocol::{
     },
     online::{OnlineError, OnlineInput, OnlinePayload},
 };
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Clone, PartialEq, Eq)]
@@ -70,6 +73,7 @@ pub struct MatchState {
     visible: [Visible; 2],
     changed: [bool; 2],
     now: u64,
+    acknowledgements: [HashMap<Uuid, u32>; 2],
 }
 impl MatchState {
     pub fn new(
@@ -97,6 +101,7 @@ impl MatchState {
             visible,
             changed: [false; 2],
             now: 0,
+            acknowledgements: [HashMap::new(), HashMap::new()],
         })
     }
     pub fn id(&self) -> Uuid {
@@ -113,6 +118,7 @@ impl MatchState {
         }
     }
     pub fn attach(&mut self, seat: Seat, at: u64) -> Result<u32, OnlineError> {
+        self.advance(at);
         let epoch = self.epochs[seat.index()]
             .checked_add(1)
             .ok_or(OnlineError::Unavailable)?;
@@ -170,13 +176,34 @@ impl MatchState {
             action,
         });
         self.synchronize();
+        let revision = if ack.duplicate {
+            self.acknowledgements[seat.index()]
+                .get(&id)
+                .copied()
+                .unwrap_or(self.revisions[seat.index()])
+        } else {
+            let revision = self.revisions[seat.index()];
+            if !matches!(
+                ack.status,
+                ActionStatus::Rejected(
+                    Rejection::InvalidTime
+                        | Rejection::InvalidEpoch
+                        | Rejection::InvalidSequence
+                        | Rejection::CommandConflict
+                        | Rejection::CommandLimit
+                )
+            ) {
+                self.acknowledgements[seat.index()].insert(id, revision);
+            }
+            revision
+        };
         let (status, error) = match ack.status {
             ActionStatus::Applied => (AckStatus::Applied, None),
             ActionStatus::Rejected(error) => (AckStatus::Rejected, Some(error.into())),
         };
         OnlinePayload::Ack {
             command_id: input.command_id,
-            revision: self.revisions[seat.index()],
+            revision,
             status,
             error,
             duplicate: ack.duplicate,

@@ -80,6 +80,32 @@ fn private_flag_does_not_change_opponent_stream_revision_or_send_empty_delta() {
     assert_eq!(changes[0].0, Seat::One);
 }
 #[test]
+fn retried_ack_keeps_its_original_revision_after_later_private_changes() {
+    let mut state = state();
+    let first = input(&state, 1, 1, PublicAction::Open { cell: 8 });
+    let ack = state.apply(Seat::One, first.clone(), 3000);
+    let second = input(&state, 2, 1, PublicAction::Flag { cell: 5 });
+    state.apply(Seat::One, second, 3001);
+    let repeated = state.apply(Seat::One, first, 3002);
+    let OnlinePayload::Ack {
+        revision: original, ..
+    } = ack
+    else {
+        panic!("Expected ack")
+    };
+    let OnlinePayload::Ack {
+        revision,
+        duplicate,
+        ..
+    } = repeated
+    else {
+        panic!("Expected duplicate ack")
+    };
+    assert!(duplicate);
+    assert!(state.view(Seat::One).revision > u64::from(original));
+    assert_eq!(revision, original);
+}
+#[test]
 fn exact_deadline_finishes_once_and_rejects_later_action() {
     let mut state = state();
     state.advance(243000);

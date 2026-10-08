@@ -106,7 +106,16 @@ async fn serialized_actor_applies_once_then_commits_one_deadline_result() {
         action: PublicAction::Open { cell: 8 },
     };
     connection.send(command.clone()).unwrap();
-    let ack = connection.next().await.unwrap();
+    let ack = tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        loop {
+            let event = connection.next().await.unwrap();
+            if matches!(event.payload, OnlinePayload::Ack { .. }) {
+                break event;
+            }
+        }
+    })
+    .await
+    .unwrap();
     assert!(matches!(
         ack.payload,
         OnlinePayload::Ack {
@@ -171,4 +180,162 @@ async fn refuses_capacity_and_duplicate_account_ownership() {
             .create(state(Uuid::new_v4(), [Some(Uuid::new_v4()), None]))
             .is_err()
     );
+}
+struct FailingResults(AtomicUsize);
+impl ResultRepository for FailingResults {
+    fn save(
+        &self,
+        _: FinishedMatch,
+    ) -> PortFuture<'_, Result<SaveResult, liar_protocol::online::OnlineError>> {
+        Box::pin(async {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Err(liar_protocol::online::OnlineError::Unavailable)
+        })
+    }
+}
+#[tokio::test]
+async fn failed_storage_is_reported_after_bounded_retries_and_capacity_is_released() {
+    let clock = Arc::new(Clock(AtomicU64::new(0)));
+    let results = Arc::new(FailingResults(AtomicUsize::new(0)));
+    let authority = AuthorityRegistry::new(2).unwrap();
+    let registry = MatchRegistry::new(
+        MatchLimits {
+            matches: 1,
+            mailbox: 4,
+            outgoing: 16,
+            proof_workers: 1,
+        },
+        clock.clone(),
+        clock.clone(),
+        authority.clone(),
+        results.clone(),
+    )
+    .unwrap();
+    let account = Uuid::new_v4();
+    let id = Uuid::new_v4();
+    let handle = registry.create(state(id, [Some(account), None])).unwrap();
+    let lease = authority
+        .bind(
+            authority.generation().unwrap(),
+            account,
+            [1; 32],
+            20000,
+            18000,
+        )
+        .unwrap();
+    let mut connection = handle.connect(lease).await.unwrap();
+    connection.next().await.unwrap();
+    clock.0.store(243000, Ordering::SeqCst);
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        loop {
+            if matches!(
+                connection.next().await.unwrap().payload,
+                OnlinePayload::MatchEnd {
+                    recording: liar_protocol::online::RecordingStatus::Failed,
+                    ..
+                }
+            ) {
+                break;
+            }
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(results.0.load(Ordering::SeqCst), 3);
+    assert!(registry.for_account(account).is_err());
+    clock.0.store(273000, Ordering::SeqCst);
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while registry.by_id(id).is_ok() {
+            tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(*connection.authority().revoked().borrow());
+    let next = state(Uuid::new_v4(), [Some(account), None]);
+    assert!(registry.create(next).is_ok());
+    assert!(
+        connection
+            .reject(liar_protocol::online::OnlineError::Malformed)
+            .is_err()
+    );
+}
+#[tokio::test]
+async fn slow_consumer_is_retired_without_blocking_the_other_seat() {
+    let clock = Arc::new(Clock(AtomicU64::new(0)));
+    let authority = AuthorityRegistry::new(2).unwrap();
+    let registry = MatchRegistry::new(
+        MatchLimits {
+            matches: 1,
+            mailbox: 16,
+            outgoing: 4,
+            proof_workers: 1,
+        },
+        clock.clone(),
+        clock.clone(),
+        authority.clone(),
+        Arc::new(Results(AtomicUsize::new(0))),
+    )
+    .unwrap();
+    let accounts = [Uuid::new_v4(), Uuid::new_v4()];
+    let handle = registry
+        .create(state(Uuid::new_v4(), accounts.map(Some)))
+        .unwrap();
+    let first = authority
+        .bind(
+            authority.generation().unwrap(),
+            accounts[0],
+            [1; 32],
+            20000,
+            18000,
+        )
+        .unwrap();
+    let second = authority
+        .bind(
+            authority.generation().unwrap(),
+            accounts[1],
+            [2; 32],
+            20000,
+            18000,
+        )
+        .unwrap();
+    let first = handle.connect(first).await.unwrap();
+    let mut second = handle.connect(second).await.unwrap();
+    second.next().await.unwrap();
+    clock.0.store(3000, Ordering::SeqCst);
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        loop {
+            if matches!(
+                second.next().await.unwrap().payload,
+                OnlinePayload::Delta { .. }
+            ) {
+                break;
+            }
+        }
+    })
+    .await
+    .unwrap();
+    let mut revoked = first.authority().revoked();
+    for _ in 0..4 {
+        first
+            .reject(liar_protocol::online::OnlineError::Malformed)
+            .unwrap();
+    }
+    tokio::time::timeout(std::time::Duration::from_secs(2), revoked.changed())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(*revoked.borrow());
+    second
+        .reject(liar_protocol::online::OnlineError::Malformed)
+        .unwrap();
+    assert!(matches!(
+        tokio::time::timeout(std::time::Duration::from_secs(2), second.next())
+            .await
+            .unwrap()
+            .unwrap()
+            .payload,
+        OnlinePayload::Error { .. }
+    ));
+    assert!(!*second.authority().revoked().borrow());
 }

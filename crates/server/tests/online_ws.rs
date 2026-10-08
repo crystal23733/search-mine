@@ -42,11 +42,14 @@ struct Sessions {
     hash: [u8; 32],
     account: Uuid,
     nickname: AtomicBool,
+    hold: AtomicBool,
+    started: tokio::sync::Notify,
+    released: tokio::sync::Notify,
 }
 impl SessionReader for Sessions {
     fn read(&self, hash: [u8; 32]) -> PortFuture<'_, Result<Option<Session>, OnlineError>> {
         Box::pin(async move {
-            Ok((hash == self.hash).then(|| Session {
+            let session = (hash == self.hash).then(|| Session {
                 id: Uuid::from_u128(46),
                 account: Account {
                     id: self.account,
@@ -58,7 +61,12 @@ impl SessionReader for Sessions {
                 created_at: 17000,
                 authenticated_at: 17000,
                 expires_at: 20000,
-            }))
+            });
+            if self.hold.load(Ordering::SeqCst) {
+                self.started.notify_one();
+                self.released.notified().await;
+            }
+            Ok(session)
         })
     }
 }
@@ -86,6 +94,9 @@ async fn fixture_with_capacity(capacity: usize) -> Fixture {
         hash: token.hash(),
         account,
         nickname: AtomicBool::new(true),
+        hold: AtomicBool::new(false),
+        started: tokio::sync::Notify::new(),
+        released: tokio::sync::Notify::new(),
     });
     let authorities = AuthorityRegistry::new(2).unwrap();
     let clock = Arc::new(Clock(AtomicU64::new(0)));
@@ -135,6 +146,31 @@ async fn fixture_with_capacity(capacity: usize) -> Fixture {
         clock,
         task,
     }
+}
+#[tokio::test]
+async fn logout_between_session_read_and_registration_rejects_a_stale_handshake() {
+    use liar_server::auth::SessionInvalidator;
+    let f = fixture().await;
+    f.source.hold.store(true, Ordering::SeqCst);
+    let handshake = tokio::spawn(connect_async(request(
+        &f,
+        Some("https://liar.example"),
+        true,
+    )));
+    tokio::time::timeout(Duration::from_secs(2), f.source.started.notified())
+        .await
+        .unwrap();
+    let barrier = f.authorities.session(f.token.hash());
+    drop(barrier);
+    f.source.released.notify_one();
+    let result = tokio::time::timeout(Duration::from_secs(2), handshake)
+        .await
+        .unwrap()
+        .unwrap();
+    let tokio_tungstenite::tungstenite::Error::Http(response) = result.unwrap_err() else {
+        panic!("stale authority rejection")
+    };
+    assert_eq!(response.status().as_u16(), 401);
 }
 #[tokio::test]
 async fn oversized_frame_closes_with_a_stable_protocol_code() {
@@ -289,8 +325,18 @@ async fn actual_socket_authenticates_and_sends_only_public_projection() {
         .send(Message::Text(input.to_string().into()))
         .await
         .unwrap();
-    let ack = socket.next().await.unwrap().unwrap();
-    let ack: serde_json::Value = serde_json::from_str(ack.to_text().unwrap()).unwrap();
+    let ack = tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let message = socket.next().await.unwrap().unwrap();
+            let value: serde_json::Value =
+                serde_json::from_str(message.to_text().unwrap()).unwrap();
+            if value["payload"]["type"] == "ack" {
+                break value;
+            }
+        }
+    })
+    .await
+    .unwrap();
     assert_eq!(ack["payload"]["type"], "ack");
     assert_eq!(ack["payload"]["status"], "applied");
 }

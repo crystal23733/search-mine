@@ -24,6 +24,8 @@ capacity는 환경 설정으로 주입하며 개발 시험값을 출시 동접 �
 
 인증 snapshot을 읽는 handshake 시작 때 registry generation을 잡고 응답 후 같은 generation에서 연결을 등록한다. 그 사이 logout/삭제/회전이 있으면 거절한다. account별 한 active connection이며 새 연결 epoch가 이전 socket과 queued command를 무효화한다. raw token/hash는 private authority에만 있고 DTO/로그/URL/DB 결과에 넣지 않는다. 세션 만료도 입력과 heartbeat에서 검증한다.
 
+generation은 철회/만료 경계를 나타내며 정상 연결 등록으로 바꾸지 않는다. 서로 다른 계정의 동시 handshake가 같은 유효 snapshot에서 등록되어야 한다. 등록은 account ownership token으로 직렬화하고 generation 포화는 fail closed다.
+
 PgAuthStore에 SessionInvalidator를 주입한다. logout·session 회전·account 철회·연결 해제/삭제·유효 Apple 철회는 인증/잠금 확인 후 DB commit 전에 메모리 권위를 먼저 철회한다. 실패/rollback에서도 socket은 보수적으로 닫고 재인증하도록 한다. 이를 actor 적용과 같은 동기 authority lock으로 직렬화하여 이미 철회된 명령이 commit하지 않게 한다. 매 클릭마다 SQL을 수행하지 않는다. DB 계정 삭제와 새 결과 저장은 account FK/동일 transaction 경계로 개인정보를 재생성하지 않는다.
 
 최종 결과는 match UUID unique 부모와 본인 account FK cascade 참여 행을 한 transaction으로 저장한다. 중복 저장은 기존 부모를 바꾸거나 삭제된 참여자를 다시 넣지 않는다. 닉네임은 결과에 복사하지 않는다. seed는 서버 전용 bytea이며 공개 결과 DTO와 분리한다. 저장은 입력 경로 밖에서 제한된 재시도/대기 상태로 처리하고 장애 결과를 일반 승패로 조작하지 않는다. seed/replay와 기록 보존·백업 운영은 #25에 이어 검증한다.

@@ -109,16 +109,12 @@ impl AuthorityRegistry {
             return Err(OnlineError::Unauthorized);
         }
         let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
-        if generation != inner.generation || inner.pending != 0 {
+        if generation != inner.generation || inner.pending != 0 || inner.generation == u64::MAX {
             return Err(OnlineError::Unauthorized);
         }
         if inner.active.len() >= self.capacity && !inner.active.contains_key(&account) {
             return Err(OnlineError::Capacity);
         }
-        inner.generation = inner
-            .generation
-            .checked_add(1)
-            .ok_or(OnlineError::Unavailable)?;
         let (closed, revoked) = watch::channel(false);
         let token = Uuid::new_v4();
         if let Some(previous) = inner.active.insert(

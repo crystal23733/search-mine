@@ -407,7 +407,7 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
     .execute(&pool)
     .await
     .unwrap();
-    sqlx::query("GRANT SELECT,INSERT,UPDATE,DELETE ON auth_accounts,auth_identities,auth_credentials,auth_sessions,auth_transactions,auth_deletion_tombstones,auth_apple_revoke_queue,auth_apple_notification_receipts TO liar_auth_test_dml").execute(&pool).await.unwrap();
+    sqlx::query("GRANT SELECT,INSERT,UPDATE,DELETE ON auth_accounts,auth_identities,auth_credentials,auth_sessions,auth_transactions,auth_deletion_tombstones,auth_apple_revoke_queue,auth_apple_notification_receipts,online_match_results,online_match_players TO liar_auth_test_dml").execute(&pool).await.unwrap();
     let url = env::var("DATABASE_URL").unwrap();
     let schema: String = sqlx::query_scalar("SELECT current_schema()")
         .fetch_one(&pool)
@@ -471,11 +471,28 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
             .id,
         result.account.id
     );
+    use liar_server::online::{PgResultRepository, ResultRepository, SaveResult};
+    let final_result = online::finished([Some(result.account.id), None]);
+    assert_eq!(
+        PgResultRepository::new(dml.clone(), Arc::new(HttpClock))
+            .save(final_result.clone())
+            .await
+            .unwrap(),
+        SaveResult::Saved
+    );
     sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
         .bind(result.account.id)
         .execute(&dml)
         .await
         .unwrap();
+    let humans: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM online_match_players WHERE match_id=$1 AND NOT is_bot",
+    )
+    .bind(final_result.id)
+    .fetch_one(&dml)
+    .await
+    .unwrap();
+    assert_eq!(humans, 0);
     dml.close().await;
     close_auth_pool(pool).await;
 }

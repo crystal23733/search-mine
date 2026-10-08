@@ -33,3 +33,5 @@
 2026-10-08 #43 인증 기반 리뷰에는 pm-ai-shipping/code-review(SKILL.md와 correctness-taxonomy/security-review references)를 읽고 정확성·보안 경계, authority/identity/atomicity 반례와 반증을 순차 검토했다. 결과와 실제 근거는 [#43 검증](../verification/43-auth-foundation.md), 상세 일별 기록은 ignored review/2026-10-08.md다. 성능/실제 제공자 검수를 코드 리뷰로 대체하지 않는다.
 
 2026-10-08 #46은 pm-ai-shipping/code-review2.1.0의 정확성·보안 지침을 적용했다. scope#46, baseline develop de55e16에서 UI→AuthPort→bootstrap/세대→strict HTTP→제품 권리 API의 권위를 추적하고 stale account/cookie·observer 재진입·늦은 완료·2탭 전환·대기 결과 보존을 강제 검사했다. [실제 검증과 수정](../verification/46-oauth-account-ui.md)에 근거를 기록하며 실제 OAuth 제공자 proof는 #42다.
+
+2026-10-09 #16은 같은 code-review2.1.0과 두 references를 읽고 정확성·보안을 순차 검토했다. scope#16/base develop684673e5, session snapshot→generation/ownership→actor input/DTO와 match end→async result→SQL transaction/계정 삭제를 함께 추적했다. 원본 ack revision·완료 통지·시간 단위·공통 error envelope·독립 handshake 반례를 실제 실행해 수정했다. [실행 근거](../verification/16-authoritative-match-actor.md), 상세 ignored review/2026-10-09.md에 근거·반증·미검증 환경을 기록한다. 실제 외부 키·성능·광고·사람 검수는 별도다.

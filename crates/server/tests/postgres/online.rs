@@ -11,7 +11,7 @@ impl AuthClock for ResultClock {
         19000
     }
 }
-fn finished(accounts: [Option<Uuid>; 2]) -> FinishedMatch {
+pub(super) fn finished(accounts: [Option<Uuid>; 2]) -> FinishedMatch {
     use liar_protocol::game::{Outcome, PublicEndReason};
     FinishedMatch {
         id: Uuid::new_v4(),

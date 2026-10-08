@@ -1,5 +1,18 @@
 use liar_server::{auth::SessionInvalidator, online::AuthorityRegistry};
 use uuid::Uuid;
+#[test]
+fn independent_handshakes_share_the_same_revocation_snapshot_without_rejecting_each_other() {
+    let registry = AuthorityRegistry::new(2).unwrap();
+    let generation = registry.generation().unwrap();
+    let first = registry
+        .bind(generation, Uuid::new_v4(), [1; 32], 200, 100)
+        .unwrap();
+    let second = registry
+        .bind(generation, Uuid::new_v4(), [2; 32], 200, 100)
+        .expect("Unrelated registration must not invalidate a valid session snapshot");
+    assert!(registry.with_authority(&first, 100, || ()).is_ok());
+    assert!(registry.with_authority(&second, 100, || ()).is_ok());
+}
 
 #[test]
 fn revocation_rejects_queued_work_and_handshakes_started_before_or_during_commit() {

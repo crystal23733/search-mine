@@ -14,6 +14,8 @@
 - `adr/0001~0022`: 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·공개 보드 조작·로컬 대전/학습·솔로 데일리·공개 cache/안전 업데이트·인증 기반/HTTP의 결정.
 - `workflow/`: develop·이슈/마일스톤·승인 상태·작업 백로그·스킬 출처.
 
+[#16 권위 actor·WS·원자 결과 검증](verification/16-authoritative-match-actor.md)과 [ADR0023](adr/0023-authoritative-match-actor.md)은 인증 철회/직렬 입력/공개 DTO/결과 transaction의 실행 근거와 후속 매칭·클라이언트·운영의 경계를 기록한다.
+
 [ADR0019](adr/0019-auth-foundation-and-delivery.md)와 [#43 인증 기반 검증](verification/43-auth-foundation.md)은 최소 저장·원자 거래·세션·실DB/coverage 근거를 기록한다. #43→44→45→46 순차 구현, #42 실제 계정 확인의 별도 출시 조건을 따른다.
 
 [ADR0020](adr/0020-oauth-providers-and-http.md)과 [#44 제공자/HTTP 검증](verification/44-oauth-providers-http.md), [운영 secret 설정](workflow/oauth-configuration.md)은 최소 권한·JWKS·브라우저/세션 경계와 실제 계정 검수 제한을 기록한다.

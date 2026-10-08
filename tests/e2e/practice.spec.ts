@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { unrequestedServiceCall } from "./network";
 test("first visit runs actual WASM attack and accusation, preserves locale and completes only training", async ({
   page,
 }, info) => {
@@ -50,11 +51,9 @@ test("first visit runs actual WASM attack and accusation, preserves locale and c
   expect(
     await page.evaluate(() => localStorage.getItem("liar.tutorial.v1")),
   ).toBe('"complete"');
-  expect(
-    requests.some((uri) =>
-      /\/auth\/|doubleclick|googlesyndication|\/api\//.test(uri),
-    ),
-  ).toBe(false);
+  expect(requests.some((uri) => unrequestedServiceCall(uri, page.url()))).toBe(
+    false,
+  );
   if (process.env.LIAR_CAPTURE_DESIGN) {
     mkdirSync(".tmp/screenshots", { recursive: true });
     await page.screenshot({

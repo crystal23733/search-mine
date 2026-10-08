@@ -4,6 +4,8 @@
 
 ## 세션과 브라우저 경계
 
+HTTP 응답은 스트림을 읽는 중 64KiB 상한을 넘으면 취소한다. 잘못된 응답 DTO/JSON/content-type/redirect는 서버 응답 권위를 신뢰할 수 없으므로 auth_unavailable로 온라인 권위를 철회한다. 서버가 정상 형식400 auth_invalid로 거절한 사용자 입력은 수정할 수 있도록 계정 상태를 유지한다. 완료 결과를 소비할 때도 요청 generation을 다시 검사하고 탈퇴/로그아웃 뒤 bootstrap이 다른 갱신에 대체되면 이전 완료 안내를 새 계정에 붙이지 않는다.
+
 AuthIdentity/Export 시각은 JSON 정수 초와 생성 TypeScript number로 일치시킨다. 서버 timestamp 범위0~253402300799는 JavaScript 안전 정수 이내다. Rust ts-rs의 기본 i64→bigint 선언은 실제 serde JSON(number)과 달라 해당 공개 필드의 ts(type="number")를 원천에 명시하며 수신 어댑터도 안전 정수를 검사한다.
 
 AuthPort는 bootstrap·start·nickname·연결/재인증·내보내기·해제/탈퇴·로그아웃을 제공한다. 생성 Rust DTO를 사용하며 브라우저 HTTP 어댑터가 응답을 최소 allowlist로 검증한다. fetch는 same-origin credentials, cache:no-store, redirect:error와 deadline을 사용한다. API 오류는 안정된 code만 UI 상태로 옮기고 HTML/raw body/비밀값을 표시하지 않는다. authorize redirect만 선택한 제공자의 고정 HTTPS origin/path allowlist를 허용한다.
@@ -11,6 +13,8 @@ AuthPort는 bootstrap·start·nickname·연결/재인증·내보내기·해제/�
 CSRF와 account/session_revision은 메모리에만 보관한다. HttpOnly session cookie를 JS로 읽거나 localStorage/IndexedDB/SW/공개 cache로 옮기지 않는다. 요청 generation으로 bootstrap/변경 응답의 역순 도착을 무효화하고401/연결 장애에서는 온라인 인증 권위를 철회한다. 내부 단조 revision을 PendingSubmissions의 숫자 revision으로 제공하며 서버 UUID revision·account·연결 상태 변경에 따라 갱신한다. 다른 탭에는 BroadcastChannel의 무정보 invalidation만 전송하고 visibility/online 때 서버 bootstrap을 다시 읽는다.
 
 ## 화면과 권리
+
+삭제/해제 확인의 최초 키보드 focus는 취소/닫기에 둔다. Enter 한 번으로 파괴적 작업을 실행하지 않도록 native dialog의 기본 첫 버튼 focus를 명시적으로 바꾼다. 기존 일반 dialog의 기본 동작은 유지한다.
 
 브라우저 mutation 직전에 bootstrap으로 CSRF를 새로 받고 현재 account/session revision이 화면의 인증 권위와 같은지 확인한다. 계정 또는 세션이 달라지면 작업을 실행하지 않고 상태를 다시 확인하도록 안내한다. 파괴적 확인은 dialog를 열 때의 account UUID에 묶고 account 전환 후 확인으로 다른 계정을 삭제하지 않는다.
 

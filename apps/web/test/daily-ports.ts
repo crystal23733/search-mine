@@ -1,11 +1,11 @@
 import { createDailyRecords } from "../src/services/daily-records";
 import { createActivity } from "../src/services/activity";
 import { createOffline } from "../src/services/offline";
-import { authTestPorts } from "./auth-ports";
+import { guestAuthPorts } from "./guest-auth";
 import { createPendingSubmissions } from "../src/services/pending-submissions";
 export function dailyTestPorts() {
   const activity = createActivity();
-  const auth = authTestPorts();
+  const auth = guestAuthPorts();
   const records = createDailyRecords();
   return {
     ...auth,

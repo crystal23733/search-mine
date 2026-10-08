@@ -13,6 +13,7 @@ class OwnershipChanged extends AuthError {
     super("auth_invalid");
   }
 }
+type Completion<T> = { result: AuthResult<T>; generation: number };
 export function createAuth(
   transport: AuthTransport,
   online: () => boolean = () => true,
@@ -54,7 +55,15 @@ export function createAuth(
   function clear(status: AuthState["status"], error: AuthCode | null = null) {
     csrf = null;
     sessionId = null;
-    publish({ status, account: null, identities: [], working: false, error });
+    publish({
+      status,
+      account: null,
+      identities: [],
+      working: false,
+      error,
+      notice: null,
+      manualAppleDisconnect: false,
+    });
   }
   function begin() {
     active?.abort();
@@ -114,10 +123,14 @@ export function createAuth(
   async function operate<T>(
     expected: string | undefined,
     work: (csrf: string, signal: AbortSignal) => Promise<T>,
-  ): Promise<AuthResult<T>> {
+  ): Promise<Completion<T>> {
+    const complete = (
+      result: AuthResult<T>,
+      at = generation,
+    ): Completion<T> => ({ result, generation: at });
     if (expected !== undefined && state.account?.id !== expected) {
       publish({ error: "auth_invalid" });
-      return { ok: false, code: "auth_invalid" };
+      return complete({ ok: false, code: "auth_invalid" });
     }
     if (
       disposed ||
@@ -126,7 +139,7 @@ export function createAuth(
       state.working ||
       !csrf
     )
-      return { ok: false, code: "auth_unavailable" };
+      return complete({ ok: false, code: "auth_unavailable" });
     const owner = state.account?.id ?? null,
       session = sessionId,
       request = begin();
@@ -138,7 +151,8 @@ export function createAuth(
     });
     try {
       const fresh = await transport.bootstrap(request.signal);
-      if (!current(request)) return { ok: false, code: "auth_invalid" };
+      if (!current(request))
+        return complete({ ok: false, code: "auth_invalid" });
       if (
         (fresh.account?.id ?? null) !== owner ||
         fresh.session_revision !== session ||
@@ -147,9 +161,10 @@ export function createAuth(
         throw new OwnershipChanged();
       csrf = fresh.csrf;
       const value = await work(csrf, request.signal);
-      if (!current(request)) return { ok: false, code: "auth_invalid" };
+      if (!current(request))
+        return complete({ ok: false, code: "auth_invalid" });
       publish({ working: false });
-      return { ok: true, value };
+      return complete({ ok: true, value }, request.generation);
     } catch (error) {
       const failure = code(error);
       if (current(request)) {
@@ -161,7 +176,7 @@ export function createAuth(
           clear("unavailable", failure);
         else publish({ working: false, error: failure });
       }
-      return { ok: false, code: failure };
+      return complete({ ok: false, code: failure });
     }
   }
   function requireOwner(account: AuthAccount, expected: string) {
@@ -169,18 +184,29 @@ export function createAuth(
       throw new OwnershipChanged();
     }
   }
+  function checked<T>(completion: Completion<T>): AuthResult<T> {
+    return completion.result.ok && !current(completion)
+      ? { ok: false, code: "auth_invalid" }
+      : completion.result;
+  }
   async function erased(
-    result: AuthResult<AuthErasure>,
+    completion: Completion<AuthErasure>,
     notice: "deleted" | "unlinked",
   ): Promise<AuthResult<AuthErasure>> {
+    const result = checked(completion);
     if (!result.ok) return result;
     clear("ready");
     notification();
-    await refresh();
-    publish({
-      notice,
-      manualAppleDisconnect: result.value.manual_apple_disconnect,
-    });
+    if (current(completion)) {
+      const refreshed = refresh(),
+        at = generation;
+      await refreshed;
+      if (current({ generation: at }))
+        publish({
+          notice,
+          manualAppleDisconnect: result.value.manual_apple_disconnect,
+        });
+    }
     return result;
   }
   return {
@@ -216,13 +242,15 @@ export function createAuth(
         !state.identities.some((i) => i.provider === provider)
       )
         return { ok: false, code: "auth_invalid" };
-      const result = await operate(owner, (proof, signal) =>
-        transport.start(
-          provider,
-          intent,
-          { locale, return_path: destination },
-          proof,
-          signal,
+      const result = checked(
+        await operate(owner, (proof, signal) =>
+          transport.start(
+            provider,
+            intent,
+            { locale, return_path: destination },
+            proof,
+            signal,
+          ),
         ),
       );
       return result.ok
@@ -230,23 +258,27 @@ export function createAuth(
         : result;
     },
     async nickname(value, expected) {
-      const result = await operate(expected, async (proof, signal) => {
-        const accepted = await transport.nickname(value, proof, signal);
-        requireOwner(accepted, expected);
-        return accepted;
-      });
+      const result = checked(
+        await operate(expected, async (proof, signal) => {
+          const accepted = await transport.nickname(value, proof, signal);
+          requireOwner(accepted, expected);
+          return accepted;
+        }),
+      );
       if (result.ok) {
         publish({ account: result.value });
         notification();
       }
       return result;
     },
-    export: (expected) =>
-      operate<AuthExport>(expected, async (proof, signal) => {
-        const value = await transport.export(proof, signal);
-        requireOwner(value.account, expected);
-        return value;
-      }),
+    export: async (expected) =>
+      checked(
+        await operate<AuthExport>(expected, async (proof, signal) => {
+          const value = await transport.export(proof, signal);
+          requireOwner(value.account, expected);
+          return value;
+        }),
+      ),
     erase: async (expected) =>
       erased(
         await operate(expected, (proof, signal) =>
@@ -262,14 +294,19 @@ export function createAuth(
         "unlinked",
       ),
     async logout() {
-      const result = await operate(undefined, (proof, signal) =>
+      const completion = await operate(undefined, (proof, signal) =>
         transport.logout(proof, signal),
       );
+      const result = checked(completion);
       if (result.ok) {
         clear("ready");
         notification();
-        await refresh();
-        publish({ notice: "logged_out" });
+        if (current(completion)) {
+          const refreshed = refresh(),
+            at = generation;
+          await refreshed;
+          if (current({ generation: at })) publish({ notice: "logged_out" });
+        }
       }
       return result;
     },

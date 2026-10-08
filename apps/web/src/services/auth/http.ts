@@ -40,27 +40,57 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
-      if (response.redirected) throw new AuthError("auth_invalid");
+      if (response.redirected) throw new AuthError("auth_unavailable");
       if (response.status === 204 && path === "/api/v1/auth/logout")
         return undefined as T;
       if (
-        !response.headers
+        response.headers
           .get("content-type")
           ?.toLowerCase()
-          .startsWith("application/json")
+          .split(";")[0]
+          .trim() !== "application/json"
       )
         throw new AuthError("auth_unavailable");
-      const text = await response.text();
-      if (text.length > 65536) throw new AuthError("auth_invalid");
+      if (!response.body) throw new AuthError("auth_unavailable");
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        for (;;) {
+          const part = await reader.read();
+          if (part.done) break;
+          size += part.value.byteLength;
+          if (size > 65536) {
+            await reader.cancel();
+            throw new AuthError("auth_unavailable");
+          }
+          chunks.push(part.value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+      const bytes = new Uint8Array(size);
+      let offset = 0;
+      for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
       let raw: unknown;
       try {
-        raw = JSON.parse(text);
+        raw = JSON.parse(
+          new TextDecoder("utf-8", { fatal: true }).decode(bytes),
+        );
       } catch {
-        throw new AuthError("auth_invalid");
+        throw new AuthError("auth_unavailable");
       }
       if (response.status !== 200) {
         let code: AuthCode = "auth_unavailable";
-        const v = object(raw, ["code"]);
+        let v: Record<string, unknown>;
+        try {
+          v = object(raw, ["code"]);
+        } catch {
+          throw new AuthError("auth_unavailable");
+        }
         if (response.status === 401 && v.code === "auth_required")
           code = "auth_required";
         else if (response.status === 400 && v.code === "auth_invalid")
@@ -73,7 +103,11 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
         else if (response.status === 429) code = "auth_rate_limited";
         throw new AuthError(code);
       }
-      return decode(raw);
+      try {
+        return decode(raw);
+      } catch {
+        throw new AuthError("auth_unavailable");
+      }
     };
     try {
       return await Promise.race([

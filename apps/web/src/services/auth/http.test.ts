@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { createAuthHttp } from "./http";
 import { PROVIDERS, AuthError } from "./types";
+import { createAuth } from "./session";
 const account = {
   id: "a0000000-0000-4000-8000-000000000001",
   nickname: "player",
@@ -75,7 +76,7 @@ test("unknown profile data, mismatched session authority and unsafe redirects ne
       vi.fn<typeof fetch>().mockResolvedValue(json(body)),
     );
     await expect(http.bootstrap()).rejects.toEqual(
-      new AuthError("auth_invalid"),
+      new AuthError("auth_unavailable"),
     );
   }
   for (const authorize_url of [
@@ -94,7 +95,7 @@ test("unknown profile data, mismatched session authority and unsafe redirects ne
         { locale: "en", return_path: "home" },
         "csrf",
       ),
-    ).rejects.toEqual(new AuthError("auth_invalid"));
+    ).rejects.toEqual(new AuthError("auth_unavailable"));
   }
 });
 test("stable errors and stalled fetch have bounded completion without echoing provider bodies", async () => {
@@ -119,4 +120,51 @@ test("stable errors and stalled fetch have bounded completion without echoing pr
   } finally {
     vi.useRealTimers();
   }
+});
+
+test("a malformed reconciliation response revokes authority", async () => {
+  let malformed = false;
+  const fetcher = vi.fn<typeof fetch>(async (path) =>
+    json(
+      path === "/api/v1/me/identities"
+        ? [{ provider: "google", linked_at: 1 }]
+        : malformed
+          ? { ...bootstrap, csrf: null }
+          : bootstrap,
+    ),
+  );
+  const auth = createAuth(createAuthHttp(fetcher));
+  await auth.refresh();
+  malformed = true;
+  expect((await auth.export(account.id)).ok).toBe(false);
+  expect(auth.connected()).toBe(false);
+});
+
+test("oversized responses are cancelled before the full body is consumed", async () => {
+  let cancelled = false,
+    pulls = 0;
+  const stream = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      pulls++;
+      controller.enqueue(new Uint8Array(20000));
+      if (pulls === 10) controller.close();
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  const http = createAuthHttp(
+    vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(stream, {
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+  );
+  await expect(http.bootstrap()).rejects.toEqual(
+    new AuthError("auth_unavailable"),
+  );
+  expect(cancelled).toBe(true);
+  expect(pulls).toBeLessThanOrEqual(5);
 });

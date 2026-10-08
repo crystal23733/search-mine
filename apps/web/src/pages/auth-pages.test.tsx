@@ -8,12 +8,15 @@ import { createNavigation } from "../services/navigation";
 import { createPreferences } from "../services/preferences";
 import { createLearning } from "../services/learning";
 import type { AppServices } from "../services/ports";
+import type { AuthAccount } from "@liar/protocol";
+import { AuthError } from "../services/auth/types";
 async function setup(
   path: string,
-  account: typeof TEST_ACCOUNT | null = TEST_ACCOUNT,
+  account: AuthAccount | null = TEST_ACCOUNT,
+  enabled = true,
 ) {
   window.history.replaceState(null, "", path);
-  const ports = authTestPorts(account, true);
+  const ports = authTestPorts(account, enabled);
   await ports.auth.refresh();
   const services: AppServices = {
     ...dailyTestPorts(),
@@ -125,4 +128,125 @@ test("settings protect the last provider and an open deletion confirmation keeps
     screen.getByRole("button", { name: "Delete account permanently" }),
   );
   expect(ports.authTransport.erase).not.toHaveBeenCalled();
+});
+
+test("unconfigured providers do not start a transaction and guest practice stays available", async () => {
+  const ports = await setup("/en/login", null, false);
+  expect(await screen.findAllByText("Not configured")).toHaveLength(4);
+  for (const provider of ["Google", "Apple", "Kakao", "Naver"]) {
+    const button = screen.getByRole("button", {
+      name: `Continue with ${provider}`,
+    }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
+  }
+  expect(ports.authTransport.start).not.toHaveBeenCalled();
+});
+
+test("a first nickname keeps invalid input editable and only a server-accepted name starts the tutorial", async () => {
+  const ports = await setup("/en/onboarding?return_path=https://evil.example", {
+    ...TEST_ACCOUNT,
+    nickname: null,
+  });
+  const input = (await screen.findByRole("textbox", {
+    name: "Nickname",
+  })) as HTMLInputElement;
+  expect(input.value).toBe("");
+  vi.mocked(ports.authTransport.nickname).mockRejectedValueOnce(
+    new AuthError("auth_invalid"),
+  );
+  fireEvent.input(input, { target: { value: "X" } });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Save and skip tutorial" }),
+  );
+  await screen.findByRole("alert");
+  expect(input.value).toBe("X");
+  expect(input.getAttribute("aria-invalid")).toBe("true");
+  expect(window.location.pathname).toBe("/en/onboarding");
+  fireEvent.click(screen.getByRole("button", { name: "QuietSolver" }));
+  fireEvent.submit(input.closest("form")!);
+  await waitFor(() => expect(window.location.pathname).toBe("/en/tutorial"));
+  expect(new URLSearchParams(window.location.search).get("return")).toBe("/");
+  expect(ports.auth.read().account?.nickname).toBe("QuietSolver");
+});
+
+test("settings downloads a minimal export, changes the canonical nickname and explicitly connects a provider", async () => {
+  const ports = await setup("/en/settings");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Download my data" }),
+  );
+  await waitFor(() =>
+    expect(ports.authEffects.download).toHaveBeenCalledWith({
+      account: TEST_ACCOUNT,
+      created_at: 1,
+      last_seen_at: 2,
+      identities: [{ provider: "google", linked_at: 1 }],
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Change nickname" }));
+  const input = screen.getByRole("textbox", { name: "Nickname" });
+  fireEvent.input(input, { target: { value: "e\u0301探偵" } });
+  fireEvent.submit(input.closest("form")!);
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(screen.getByText("é探偵", { exact: true })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Connect Naver" }));
+  await waitFor(() =>
+    expect(ports.authTransport.start).toHaveBeenCalledWith(
+      "naver",
+      "link",
+      { locale: "en", return_path: "settings" },
+      "fixture-memory-csrf",
+      expect.any(AbortSignal),
+    ),
+  );
+});
+
+test("reauthentication closes deletion confirmation and never repeats deletion automatically", async () => {
+  const ports = await setup("/en/settings");
+  vi.mocked(ports.authTransport.erase).mockRejectedValueOnce(
+    new AuthError("reauth_required"),
+  );
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Delete account" }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Delete account permanently" }),
+  );
+  await screen.findByRole("heading", { name: "Confirm your sign-in again" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(ports.authTransport.start).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Confirm with Google" }));
+  await waitFor(() =>
+    expect(ports.authTransport.start).toHaveBeenCalledWith(
+      "google",
+      "reauth",
+      { locale: "en", return_path: "settings" },
+      "fixture-memory-csrf",
+      expect.any(AbortSignal),
+    ),
+  );
+  expect(ports.authTransport.erase).toHaveBeenCalledTimes(1);
+});
+
+test("an explicit deletion ends account authority and presents manual Apple disconnection when returned by the server", async () => {
+  const ports = await setup("/en/settings");
+  const original = vi
+    .mocked(ports.authTransport.erase)
+    .getMockImplementation()!;
+  vi.mocked(ports.authTransport.erase).mockImplementationOnce(
+    async (...args) => {
+      await original(...args);
+      return { manual_apple_disconnect: true };
+    },
+  );
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Delete account" }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Delete account permanently" }),
+  );
+  await screen.findByText("Your Liar Sweeper account was deleted.");
+  expect(screen.getByText(/Open your Apple account settings/)).toBeTruthy();
+  expect(ports.auth.account()).toBeNull();
+  expect(ports.auth.connected()).toBe(false);
 });

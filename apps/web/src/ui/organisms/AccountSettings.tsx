@@ -161,6 +161,7 @@ export function AccountSettings() {
       )}
       <Dialog
         open={confirmation !== null}
+        focusClose={confirmation?.kind !== "nickname"}
         onClose={() => setConfirmation(null)}
         title={t(
           confirmation?.kind === "nickname"

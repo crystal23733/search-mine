@@ -7,11 +7,13 @@ export function Dialog({
   onClose,
   title,
   children,
+  focusClose = false,
 }: {
   open: boolean;
   onClose(): void;
   title: string;
   children: ComponentChildren;
+  focusClose?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -24,11 +26,15 @@ export function Dialog({
         : null;
     const dialog = ref.current;
     dialog.showModal();
+    if (focusClose)
+      dialog
+        .querySelector<HTMLButtonElement>(":scope > [data-dialog-close]")
+        ?.focus();
     return () => {
       dialog.close();
       previous?.focus();
     };
-  }, [open]);
+  }, [open, focusClose]);
   return (
     <dialog
       ref={ref}
@@ -61,7 +67,7 @@ export function Dialog({
     >
       <h2 id={titleId}>{title}</h2>
       {children}
-      <Button variant="primary" onClick={onClose}>
+      <Button data-dialog-close="" variant="primary" onClick={onClose}>
         {t("close")}
       </Button>
     </dialog>

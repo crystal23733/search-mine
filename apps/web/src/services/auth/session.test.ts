@@ -1,6 +1,9 @@
 import { expect, test, vi } from "vitest";
 import { createAuth } from "./session";
 import { PROVIDERS, AuthError, type AuthTransport } from "./types";
+import { createDailyRecords } from "../daily-records";
+import { createPendingSubmissions } from "../pending-submissions";
+import { record } from "../../../test/daily-record";
 test("writes refresh memory CSRF and reconcile the effective session before any mutation", async () => {
   const t = transport(),
     auth = createAuth(t);
@@ -155,4 +158,94 @@ test("a destructive confirmation bound to A cannot mutate B and reauthentication
   });
   expect(t.erase).toHaveBeenCalledTimes(1);
   expect(t.start).not.toHaveBeenCalled();
+});
+
+test("completion observers cannot apply an old nickname or erasure notice after starting a new authority generation", async () => {
+  const t = transport(),
+    auth = createAuth(t);
+  await auth.refresh();
+  let armed = false;
+  const unsubscribe = auth.subscribe(() => {
+    const state = auth.read();
+    if (state.working) armed = true;
+    else if (armed && state.status === "ready") {
+      armed = false;
+      auth.invalidate();
+    }
+  });
+  expect((await auth.nickname("old-result", a.id)).ok).toBe(false);
+  expect(auth.account()).toBeNull();
+  unsubscribe();
+});
+
+test("a deletion acknowledgement cannot label a newer account as deleted", async () => {
+  const t = transport(),
+    auth = createAuth(t);
+  await auth.refresh();
+  let resolve!: (value: ReturnType<typeof snapshot>) => void;
+  vi.mocked(t.bootstrap)
+    .mockImplementationOnce(async () => snapshot())
+    .mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+  const erasure = auth.erase(a.id);
+  await vi.waitFor(() => expect(resolve).toBeTypeOf("function"));
+  vi.mocked(t.bootstrap).mockResolvedValue(
+    snapshot(b, "b0000000-0000-4000-8000-000000000002"),
+  );
+  await auth.refresh();
+  resolve(snapshot(null));
+  await erasure;
+  expect(auth.read()).toMatchObject({ account: b, notice: null });
+});
+
+test("a later authority refresh clears a completed action's account-specific notice", async () => {
+  const t = transport(),
+    auth = createAuth(t);
+  await auth.refresh();
+  vi.mocked(t.erase).mockImplementationOnce(async () => {
+    vi.mocked(t.bootstrap).mockResolvedValue(snapshot(null));
+    return { manual_apple_disconnect: true };
+  });
+  await auth.erase(a.id);
+  expect(auth.read()).toMatchObject({
+    notice: "deleted",
+    manualAppleDisconnect: true,
+  });
+  vi.mocked(t.bootstrap).mockResolvedValue(snapshot(b));
+  await auth.refresh();
+  expect(auth.read()).toMatchObject({
+    account: b,
+    notice: null,
+    manualAppleDisconnect: false,
+  });
+});
+
+test("the actual auth revision retains a pending result after logout, outage and a late acknowledgement", async () => {
+  const t = transport(),
+    auth = createAuth(t),
+    records = createDailyRecords();
+  await auth.refresh();
+  await records.saveFirst(record());
+  let reply!: (value: "accepted") => void;
+  const submit = vi.fn(
+    () =>
+      new Promise<"accepted">((resolve) => {
+        reply = resolve;
+      }),
+  );
+  const queue = createPendingSubmissions(records, auth, { submit });
+  const pending = queue.flush(a.id);
+  await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+  vi.mocked(t.bootstrap).mockResolvedValue(snapshot(null));
+  await auth.logout();
+  reply("accepted");
+  expect((await pending).retained).toBe(true);
+  auth.invalidate();
+  await queue.flush(a.id);
+  expect(submit).toHaveBeenCalledTimes(1);
+  expect((await records.pending()).value).toEqual([record()]);
 });

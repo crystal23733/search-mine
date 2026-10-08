@@ -222,7 +222,17 @@ async fn erase<S: AccountStore, V: CredentialVault, D: SubjectDigester, P: OAuth
     let result = async {
         let (_, auth) = authority(&ctx, &headers, true).await?;
         let _ = body.map_err(|_| AuthError::Invalid)?;
-        erased_response(ctx.service.store.erase_authorized(auth).await?)
+        let manual = !ctx.providers.available(Provider::Apple)
+            && ctx
+                .service
+                .store
+                .identities(auth)
+                .await?
+                .iter()
+                .any(|i| i.provider == Provider::Apple);
+        let mut result = ctx.service.store.erase_authorized(auth).await?;
+        result.manual_apple_disconnect |= manual;
+        erased_response(result)
     }
     .await;
     result.unwrap_or_else(failure)
@@ -236,12 +246,11 @@ async fn unlink<S: AccountStore, V: CredentialVault, D: SubjectDigester, P: OAut
     let result = async {
         let (_, auth) = authority(&ctx, &headers, true).await?;
         let _ = body.map_err(|_| AuthError::Invalid)?;
-        erased_response(
-            ctx.service
-                .store
-                .unlink(auth, Provider::parse(&provider)?)
-                .await?,
-        )
+        let provider = Provider::parse(&provider)?;
+        let mut result = ctx.service.store.unlink(auth, provider).await?;
+        result.manual_apple_disconnect |=
+            provider == Provider::Apple && !ctx.providers.available(Provider::Apple);
+        erased_response(result)
     }
     .await;
     result.unwrap_or_else(failure)

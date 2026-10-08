@@ -41,12 +41,15 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
 #[derive(Debug, Serialize, TS)]
 pub struct AuthIdentity {
     pub provider: String,
+    #[ts(type = "number")]
     pub linked_at: i64,
 }
 #[derive(Debug, Serialize, TS)]
 pub struct AuthExport {
     pub account: AuthAccount,
+    #[ts(type = "number")]
     pub created_at: i64,
+    #[ts(type = "number")]
     pub last_seen_at: i64,
     pub identities: Vec<AuthIdentity>,
 }

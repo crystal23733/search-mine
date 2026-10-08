@@ -19,6 +19,8 @@
 
 #17/#52의 FR06/07·TS10/12는 [ADR0024](../adr/0024-atomic-lobby-and-online-composition.md)와 `crates/server/tests/lobby_policy.rs`의 IO 없는 경계 시험을 따른다. 실제 보드/봇·인증 전송/초대 거래·browser 출구는 후속 #17 하위 작업에서 검증한다.
 
+#54의 FR02/06/07·TS02/10/11/12/21은 [ADR0025](../adr/0025-bounded-private-certified-board-pool.md)와 `crates/server/tests/board_pool.rs`의 실제 생성·통제된 blocking source·capacity/수명 검사로 추적한다. pool만으로 실제 대전 조립을 완료했다고 보고하지 않는다.
+
 #16의 FR02~05/15·TS14/20/21/22는 [ADR0023](../adr/0023-authoritative-match-actor.md), `crates/protocol/tests/online.rs`, `crates/server/tests/online_state.rs`, `online_authority.rs`와 실제 PostgreSQL/WS 시험으로 추적한다. 승인된 계정 철회 observer를 actor에 연결하며 구현 중 결과를 완료 증거와 구분한다.
 
 [#16 실행 근거](../verification/16-authoritative-match-actor.md)는 실DB23·실제TCP WS9·actor4·state11의 결과, Red→Green과 coverage gate를 기록한다. 매칭17/화면18·실제 키42·운영25/26의 출구를 완료로 표현하지 않는다.

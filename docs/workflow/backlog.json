@@ -435,6 +435,18 @@
       ],
       "acceptance": "10초 FIFO/봇 원자 예약·8문자/10분 방·2seat/ready·취소/늦은 완료·bounded capacity·pure domain95%",
       "issue": 52
+    },
+    {
+      "key": "private-board-pool",
+      "milestone": "M3",
+      "title": "feat(server): 검증된 비공개 보드 풀과 공급 포트",
+      "requirements": "FR02/06/07",
+      "scenarios": "TS02/10/11/12/21",
+      "deps": [
+        "lobby-policy"
+      ],
+      "acceptance": "OS entropy·core 인증·cached+generating/worker bounds·deadline·refill/실패/Drop·비공개 seed/Board",
+      "issue": 54
     }
   ]
 }

@@ -92,3 +92,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 초기 검증 기록은 PR #29의 813d13f 기준이다. 이 변경의 문서/Mermaid 결과는 #3 PR에 별도 기록한다.
 
 #56의 FR06·TS10/11/21은 [ADR0026](../adr/0026-public-observation-online-bot-driver.md)와 `crates/server/tests/online_bot.rs`의 실제 core 봇·통제된 blocking 입력·늦은 완료/실패·public projection 검사로 추적한다.
+
+#58의 FR02/06/07·TS02/10/11/12/21은 [ADR0027](../adr/0027-atomic-lobby-match-composition.md)와 `crates/core/tests/prepared_engine.rs`·`crates/server/tests/lobby_service.rs`의 준비/시각 시작·actual blocking 수명·취소/generation·실제 registry/core bot snapshot으로 추적한다.

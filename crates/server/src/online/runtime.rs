@@ -76,6 +76,9 @@ pub(super) enum Event {
     },
 }
 impl MatchRegistry {
+    pub fn now_ms(&self) -> u64 {
+        self.clock.now_ms()
+    }
     pub fn new(
         limits: MatchLimits,
         clock: Arc<dyn MatchClock>,
@@ -214,6 +217,16 @@ impl HandleInner {
     }
 }
 impl MatchHandle {
+    pub fn seat(&self, account: Uuid) -> Result<Seat, OnlineError> {
+        match self.0.players.iter().position(|p| *p == Some(account)) {
+            Some(0) => Ok(Seat::One),
+            Some(1) => Ok(Seat::Two),
+            _ => Err(OnlineError::NotMatched),
+        }
+    }
+    pub fn is_bot(&self, seat: Seat) -> bool {
+        self.0.players[seat.index()].is_none()
+    }
     pub fn id(&self) -> Uuid {
         self.0.id
     }

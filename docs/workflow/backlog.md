@@ -62,3 +62,5 @@
 #52는 PR53/develop16b7495d에 병합·종료했다. 다음 [#54 검증된 비공개 보드 공급](https://github.com/crystal23733/search-mine/issues/54)은 source port/풀을 구현하며 실제 매치 조립·온라인 봇·인증 전송/초대/화면은 후속 #17 하위 작업이다. [ADR0025](../adr/0025-bounded-private-certified-board-pool.md).
 
 #54는 PR55/develop8d2d08e에 병합·종료했다. 다음 [#56 공개 관측 온라인 봇 actor](https://github.com/crystal23733/search-mine/issues/56)은 독립 행동 RNG·bounded blocking·기존 serial actor를 연결한다. [ADR0026](../adr/0026-public-observation-online-bot-driver.md). 실제 reservation→registry 조립·인증 전송/초대/화면은 다음 하위 작업이며 상위17은 OPEN이다.
+
+#56은 PR57/develop8dc226b에 병합·종료했다. 다음 [#58 실제 매치 조립](https://github.com/crystal23733/search-mine/issues/58)은 core prepare/start와 bounded LobbyService를 연결한다. [ADR0027](../adr/0027-atomic-lobby-match-composition.md). 인증 전송·OAuth invite·화면/main은 후속이며 상위17은 OPEN이다.

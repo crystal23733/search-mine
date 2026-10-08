@@ -76,6 +76,11 @@ pub struct MatchState {
     created_at: u64,
     acknowledgements: [HashMap<Uuid, u32>; 2],
 }
+pub(super) struct BotIntent {
+    pub id: Uuid,
+    pub seq: u32,
+    pub action: Action,
+}
 impl MatchState {
     pub fn new(
         id: Uuid,
@@ -227,6 +232,36 @@ impl MatchState {
     pub fn proof_work(&self, seat: Seat) -> AnalysisJob {
         self.engine.proof_work(seat)
     }
+    pub(super) fn bot_projection(&self, seat: Seat) -> liar_core::game::Projection {
+        self.engine.projection(seat)
+    }
+    pub(super) fn apply_bot(
+        &mut self,
+        seat: Seat,
+        intent: BotIntent,
+        at: u64,
+    ) -> Result<bool, OnlineError> {
+        if self.players[seat.index()].is_some() {
+            return Err(OnlineError::Unauthorized);
+        }
+        self.advance(at);
+        let ack = self.engine.apply(Command {
+            id: intent.id.as_u128(),
+            seq: u64::from(intent.seq),
+            epoch: self.epochs[seat.index()],
+            seat,
+            received_at: at,
+            action: intent.action,
+        });
+        self.synchronize();
+        Ok(ack.status == ActionStatus::Applied)
+    }
+    pub(super) fn abort(&mut self, at: u64) {
+        if self.engine.abort(at).is_ok() {
+            self.now = at;
+            self.synchronize();
+        }
+    }
     pub fn commit_proof(&mut self, proof: AnalysisResult) -> bool {
         self.engine.commit_proof(proof).is_ok()
     }
@@ -279,5 +314,45 @@ impl MatchState {
                 correct_accusations: views[i].own.stats.correct_accusations,
             }),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use liar_core::{board::Board, rules::RulesSnapshot};
+
+    #[test]
+    fn bot_system_input_cannot_claim_human_authority_or_bypass_mine_stun() {
+        let mut rules = RulesSnapshot::bundled().rules;
+        rules.width = 3;
+        rules.height = 3;
+        rules.mines = 2;
+        let rules = RulesSnapshot::from_rules(rules).unwrap();
+        let board = Board::from_mines(rules.rules.board_spec(), &[CellId(5), CellId(7)]).unwrap();
+        let mut state = MatchState::new(
+            Uuid::new_v4(),
+            RuleEngine::new(board, rules, 0).unwrap(),
+            [Some(Uuid::new_v4()), None],
+            [48; 8],
+            0,
+        )
+        .unwrap();
+        let intent = |seq, cell| BotIntent {
+            id: Uuid::new_v4(),
+            seq,
+            action: Action::Open(CellId(cell)),
+        };
+        let human = state.view(Seat::One);
+        assert_eq!(
+            state.apply_bot(Seat::One, intent(1, 8), 3000),
+            Err(OnlineError::Unauthorized)
+        );
+        assert_eq!(state.view(Seat::One), human);
+        assert_eq!(state.apply_bot(Seat::Two, intent(1, 5), 3000), Ok(true));
+        assert!(state.view(Seat::Two).own.stun_ms > 0);
+        assert_eq!(state.apply_bot(Seat::Two, intent(2, 8), 3020), Ok(false));
+        assert_eq!(state.view(Seat::Two).own.cells[8].number, None);
+        assert_eq!(state.apply_bot(Seat::Two, intent(3, 8), 10000), Ok(true));
     }
 }

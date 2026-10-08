@@ -90,3 +90,5 @@ OAuth 기반 FR01/NFR02·TS01/20/31/32/35 → [ADR0019](../adr/0019-auth-foundat
 TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33 → 4개 어댑터/확장 검증·FR01/NFR01/02, TS34 → 명시적 계정 연결·FR01, TS35 → 내보내기/삭제·FR01/16, TS36 → 무계정 연습/18개 화면·FR01/08/10/11/13. 상세 계약은 17/18 설계와 ADR0009, 구현 이슈는 #10~15/#20/#21이다.
 
 초기 검증 기록은 PR #29의 813d13f 기준이다. 이 변경의 문서/Mermaid 결과는 #3 PR에 별도 기록한다.
+
+#56의 FR06·TS10/11/21은 [ADR0026](../adr/0026-public-observation-online-bot-driver.md)와 `crates/server/tests/online_bot.rs`의 실제 core 봇·통제된 blocking 입력·늦은 완료/실패·public projection 검사로 추적한다.

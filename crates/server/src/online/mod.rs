@@ -5,6 +5,8 @@ pub use authority::*;
 mod ports;
 pub use ports::*;
 mod actor;
+mod bot;
+pub use bot::*;
 mod runtime;
 pub use runtime::*;
 mod rate;

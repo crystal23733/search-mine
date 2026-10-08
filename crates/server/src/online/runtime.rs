@@ -106,6 +106,13 @@ impl MatchRegistry {
         }))
     }
     pub fn create(self: &Arc<Self>, state: MatchState) -> Result<MatchHandle, OnlineError> {
+        self.create_inner(state, None)
+    }
+    fn create_inner(
+        self: &Arc<Self>,
+        state: MatchState,
+        bot: Option<super::bot::BotDriver>,
+    ) -> Result<MatchHandle, OnlineError> {
         let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
         let id = state.id();
         let players = state.players();
@@ -135,8 +142,31 @@ impl MatchRegistry {
         for account in players.iter().flatten() {
             inner.accounts.insert(*account, id);
         }
-        super::actor::spawn(state, receiver, Arc::downgrade(&handle.0), self, permit);
+        super::actor::spawn(
+            state,
+            receiver,
+            Arc::downgrade(&handle.0),
+            self,
+            permit,
+            bot,
+        );
         Ok(handle)
+    }
+    pub fn create_with_bot(
+        self: &Arc<Self>,
+        state: MatchState,
+        difficulty: liar_core::bot::Difficulty,
+        executor: Arc<BotExecutor>,
+    ) -> Result<MatchHandle, OnlineError> {
+        let seat = match state.players() {
+            [Some(_), None] => Seat::Two,
+            [None, Some(_)] => Seat::One,
+            _ => return Err(OnlineError::Malformed),
+        };
+        self.create_inner(
+            state,
+            Some(super::bot::BotDriver::new(seat, difficulty, executor)),
+        )
     }
     pub fn for_account(&self, account: Uuid) -> Result<MatchHandle, OnlineError> {
         let inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;

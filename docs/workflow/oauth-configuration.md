@@ -24,6 +24,12 @@
 
 Apple assertion은 요청별 ES256·5분이며 provider refresh credential은 #45의 AEAD 저장/철회에만 사용한다. 공개 DTO·이벤트·로그에 credential/subject/이메일/실명/사진을 넣지 않는다. Cloudflare와 역프록시 운영 로그도 callback query/code/state와 cookie를 기록하지 않도록 운영 배포 #24에서 설정한다. JWT header의 jku/x5u는 거절하고 외부 URL을 따라가지 않는다.
 
+## 계정 권리와 Apple 유지보수
+
+`LIAR_APPLE_NOTIFICATION_AUDIENCE`는 실제 등록 알림의 정확한 audience다. 없으면 알림 endpoint는503으로 비활성이고 Services ID에서 자동 추정하지 않는다. 값이 잘못되거나 Apple 설정 없이 일부만 있으면 시작을 거절한다. `{origin}/api/v1/auth/apple/notifications`를 console에 등록하고 실제 audience와 이벤트/재시도를 #42에서 확인한다.
+
+Apple refresh는 identity UUID를 AAD로 AEAD 저장한다. 런타임 worker는60초마다 최대8개 철회와8개 일일 확인을 처리한다. 철회 요청10초·확인20초 deadline, queue lease60초·backoff·24시간 삭제를 적용한다. 일반 credential은 하루 한 번만 확인하며 outage/invalid_client/서명 오류는 계정을 삭제하지 않는다. 네트워크가 없어도 로컬 탈퇴는 원자 완료되고 credential 부재/Apple 비활성은 수동 연결 철회를 안내한다. 백업 복구 후28일 tombstone을 적용하는 실제 운영 절차는 #25에서 검증한다.
+
 ## 검수 한계
 
 로컬 서명 fixture/HTTP 계약/CI PostgreSQL 검증은 실제 외부 계정 인증을 대신하지 않는다. 제공자별 앱 등록, domain/redirect 승인, 키 발급, 한국/글로벌 실계정 로그인·취소·명시 연결·재인증·삭제/Apple 철회는 실제 환경에서 확인해야 한다. 개인정보 처리 근거/고지·운영자·미성년자 방침 등은 #21에서 확정하며 OAuth 사용만으로 법적 준수를 주장하지 않는다.

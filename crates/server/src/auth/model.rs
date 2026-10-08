@@ -10,6 +10,8 @@ pub enum AuthError {
     Invalid,
     Unavailable,
     Conflict,
+    ReauthenticationRequired,
+    CredentialRevoked,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -90,6 +92,7 @@ impl fmt::Debug for SecretToken {
 }
 pub const TRANSACTION_SECONDS: i64 = 300;
 pub const SESSION_SECONDS: i64 = 30 * 24 * 60 * 60;
+pub const RECENT_AUTH_SECONDS: i64 = 300;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AuthIntent {
     Login,
@@ -177,6 +180,7 @@ pub struct AuthTransaction {
     pub created_at: i64,
     pub expires_at: i64,
     pub encrypted_verifier: Option<Vec<u8>>,
+    pub bound_session_hash: Option<[u8; 32]>,
 }
 impl AuthTransaction {
     pub fn matches(

@@ -1,5 +1,7 @@
 # 17. OAuth 인증·개인정보 최소 수집
 
+구현 상세: [ADR0021 계정 권리·Apple 철회](../adr/0021-account-rights-and-apple-revocation.md)는 #45의 최근 재인증, 세션에 고정된 연결, 원자 credential 저장/계정 삭제와 목적 제한 queue를 구체화한다. 실제 제공자 검수는 #42에 남긴다.
+
 > 대응: FR01/13/16, NFR01/02 · TS01/20/29/31~36 · [ADR 0009](../adr/0009-oauth-minimal-identity.md)
 > 2026-10-06 사용자 변경 요청: 비밀번호 미보관, 최소 정보, Google·Apple·카카오·네이버 필수, 다른 제공자도 재사용 가능한 구조.
 

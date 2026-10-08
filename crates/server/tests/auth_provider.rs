@@ -33,6 +33,7 @@ fn auth() -> Authorization {
 }
 fn tx(auth: &Authorization, provider: Provider) -> AuthTransaction {
     AuthTransaction {
+        bound_session_hash: None,
         id: auth.id,
         state_hash: auth.state.hash(),
         browser_hash: [9; 32],

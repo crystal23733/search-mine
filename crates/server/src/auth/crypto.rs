@@ -35,6 +35,11 @@ pub struct DigestKeys(Keyring);
 pub trait SubjectDigester: Send + Sync {
     fn digest(&self, provider: Provider, subject: &str) -> Result<Vec<(u32, [u8; 32])>, AuthError>;
 }
+impl<T: SubjectDigester + ?Sized> SubjectDigester for std::sync::Arc<T> {
+    fn digest(&self, provider: Provider, subject: &str) -> Result<Vec<(u32, [u8; 32])>, AuthError> {
+        (**self).digest(provider, subject)
+    }
+}
 impl SubjectDigester for DigestKeys {
     fn digest(&self, provider: Provider, subject: &str) -> Result<Vec<(u32, [u8; 32])>, AuthError> {
         DigestKeys::digest(self, provider, subject)
@@ -99,6 +104,26 @@ pub trait CredentialVault: Send + Sync {
         purpose: CredentialPurpose,
         value: &[u8],
     ) -> Result<Zeroizing<Vec<u8>>, AuthError>;
+}
+impl<T: CredentialVault + ?Sized> CredentialVault for std::sync::Arc<T> {
+    fn seal(
+        &self,
+        id: Uuid,
+        provider: Provider,
+        purpose: CredentialPurpose,
+        value: &[u8],
+    ) -> Result<Vec<u8>, AuthError> {
+        (**self).seal(id, provider, purpose, value)
+    }
+    fn open(
+        &self,
+        id: Uuid,
+        provider: Provider,
+        purpose: CredentialPurpose,
+        value: &[u8],
+    ) -> Result<Zeroizing<Vec<u8>>, AuthError> {
+        (**self).open(id, provider, purpose, value)
+    }
 }
 pub struct AeadVault(Keyring);
 impl AeadVault {

@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43 병합 완료. #44 네 OAuth 제공자와 로그인 API를 구현합니다. 이후 계정 권리·화면·온라인을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43·#44 병합 완료. #45 계정 권리·Apple 철회 검증 완료. 이후 계정 화면·온라인을 순차 진행합니다.** [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -48,7 +48,7 @@ pnpm dev
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 온라인 계정·대전·정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 아직 로그인 제공자 키를 요구하지 않으며 #15에서 실제 연동 준비 항목을 별도 기록합니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 온라인 계정·대전·정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
 
 ## 오프라인 확인
 
@@ -58,7 +58,7 @@ cargo run --locked -p liar-server
 
 [OAuth 운영 설정](docs/workflow/oauth-configuration.md)은 키 없는 비활성 실행·secret 변수·최소 callback/권한과 실제 계정 검수의 한계를 기록합니다. 실계정 검수 #42를 테스트 fixture 성공으로 대체하지 않습니다.
 
-인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 아직 로그인 HTTP/제공자/화면은 #44~46 구현 대상입니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 아래는 격리된 테스트 DB 예시입니다.
+인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 네 제공자와 로그인 HTTP는 [#44 검증](docs/verification/44-oauth-providers-http.md)에 기록합니다. 계정 권리는 [#45 검증](docs/verification/45-account-rights-apple-revocation.md)에 기록하며 화면은 #46에서 구현합니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 아래는 격리된 테스트 DB 예시입니다.
 
 ```powershell
 pnpm exec playwright install chromium

@@ -14,6 +14,8 @@ use uuid::Uuid;
 use zeroize::Zeroizing;
 
 struct HttpClock;
+#[path = "postgres/rights.rs"]
+mod rights;
 impl AuthClock for HttpClock {
     fn now(&self) -> i64 {
         1100
@@ -199,10 +201,40 @@ async fn http_auth_with_real_storage_binds_locale_consumes_once_and_rotates_revi
         .unwrap();
 }
 
+// Identifiers cannot be bound. Only a generated UUID test schema passes this audited path.
+fn isolated_schema_sql(
+    prefix: &'static str,
+    schema: &str,
+    suffix: &'static str,
+) -> sqlx::AssertSqlSafe<String> {
+    assert!(
+        schema.len() == 42
+            && schema.starts_with("auth_test_")
+            && schema[10..].bytes().all(|b| b.is_ascii_hexdigit())
+    );
+    sqlx::AssertSqlSafe(format!("{prefix} {schema} {suffix}"))
+}
 async fn auth_pool() -> sqlx::PgPool {
     let url = env::var("DATABASE_URL").expect("DATABASE_URL is required");
+    let admin = PgPoolOptions::new().connect(&url).await.unwrap();
+    let schema = format!("auth_test_{}", Uuid::new_v4().simple());
+    sqlx::query(isolated_schema_sql("CREATE SCHEMA", &schema, ""))
+        .execute(&admin)
+        .await
+        .unwrap();
+    admin.close().await;
     let pool = PgPoolOptions::new()
         .max_connections(8)
+        .after_connect(move |conn, _| {
+            let schema = schema.clone();
+            Box::pin(async move {
+                sqlx::query("SELECT set_config('search_path',$1,false)")
+                    .bind(schema)
+                    .execute(conn)
+                    .await?;
+                Ok(())
+            })
+        })
         .connect(&url)
         .await
         .unwrap();
@@ -217,17 +249,40 @@ async fn auth_pool() -> sqlx::PgPool {
     .unwrap();
     pool
 }
+async fn close_auth_pool(pool: sqlx::PgPool) {
+    let schema: String = sqlx::query_scalar("SELECT current_schema()")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    if schema.starts_with("auth_test_")
+        && schema
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_')
+    {
+        sqlx::query(isolated_schema_sql("DROP SCHEMA", &schema, "CASCADE"))
+            .execute(&pool)
+            .await
+            .unwrap();
+    }
+    pool.close().await;
+}
 
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account_and_old_session() {
     let pool = auth_pool().await;
-    let store = PgAuthStore::new(pool.clone());
+    let store = PgAuthStore::with_vault(
+        pool.clone(),
+        Arc::new(AeadVault::new(1, vec![(1, [13; 32])]).unwrap()),
+    );
     let keys = DigestKeys::new(2, vec![(1, [1; 32]), (2, [2; 32])]).unwrap();
     let subject = Uuid::new_v4().to_string();
     let first_token = SecretToken::generate().unwrap();
     let second_token = SecretToken::generate().unwrap();
     let request = |token: &SecretToken| LoginWrite {
+        intent: AuthIntent::Login,
+        bound_session: None,
+        apple_refresh: None,
         provider: Provider::Google,
         digests: keys.digest(Provider::Google, &subject).unwrap(),
         session_hash: token.hash(),
@@ -251,6 +306,9 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
         1
     );
     let conflict = LoginWrite {
+        intent: AuthIntent::Login,
+        bound_session: None,
+        apple_refresh: None,
         provider: Provider::Google,
         digests: keys.digest(Provider::Google, &subject).unwrap(),
         session_hash: second_token.hash(),
@@ -277,6 +335,9 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
     );
     let fresh = SecretToken::generate().unwrap();
     let failed = LoginWrite {
+        intent: AuthIntent::Login,
+        bound_session: None,
+        apple_refresh: Some(Zeroizing::new("fixture-apple-refresh".into())),
         provider: Provider::Apple,
         digests: keys.digest(Provider::Apple, &subject).unwrap(),
         session_hash: second_token.hash(),
@@ -289,6 +350,9 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
     ));
     let apple = store
         .login(LoginWrite {
+            intent: AuthIntent::Login,
+            bound_session: None,
+            apple_refresh: Some(Zeroizing::new("fixture-apple-refresh".into())),
             provider: Provider::Apple,
             digests: keys.digest(Provider::Apple, &subject).unwrap(),
             session_hash: fresh.hash(),
@@ -321,7 +385,7 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
         .execute(&pool)
         .await
         .unwrap();
-    pool.close().await;
+    close_auth_pool(pool).await;
 }
 
 #[tokio::test]
@@ -329,16 +393,33 @@ async fn simultaneous_identity_creation_and_failed_rotation_preserve_one_account
 async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables() {
     let pool = auth_pool().await;
     sqlx::query("DO $$ BEGIN CREATE ROLE liar_auth_test_dml NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$").execute(&pool).await.unwrap();
-    sqlx::query("GRANT USAGE ON SCHEMA public TO liar_auth_test_dml")
-        .execute(&pool)
+    let schema: String = sqlx::query_scalar("SELECT current_schema()")
+        .fetch_one(&pool)
         .await
         .unwrap();
-    sqlx::query("GRANT SELECT,INSERT,UPDATE,DELETE ON auth_accounts,auth_identities,auth_credentials,auth_sessions,auth_transactions TO liar_auth_test_dml").execute(&pool).await.unwrap();
+    sqlx::query(isolated_schema_sql(
+        "GRANT USAGE ON SCHEMA",
+        &schema,
+        "TO liar_auth_test_dml",
+    ))
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query("GRANT SELECT,INSERT,UPDATE,DELETE ON auth_accounts,auth_identities,auth_credentials,auth_sessions,auth_transactions,auth_deletion_tombstones,auth_apple_revoke_queue,auth_apple_notification_receipts TO liar_auth_test_dml").execute(&pool).await.unwrap();
     let url = env::var("DATABASE_URL").unwrap();
+    let schema: String = sqlx::query_scalar("SELECT current_schema()")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     let dml = PgPoolOptions::new()
         .max_connections(2)
-        .after_connect(|conn, _| {
+        .after_connect(move |conn, _| {
+            let schema = schema.clone();
             Box::pin(async move {
+                sqlx::query("SELECT set_config('search_path',$1,false)")
+                    .bind(schema)
+                    .execute(&mut *conn)
+                    .await?;
                 sqlx::query("SET ROLE liar_auth_test_dml")
                     .execute(conn)
                     .await?;
@@ -364,6 +445,9 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
     let token = SecretToken::generate().unwrap();
     let result = store
         .login(LoginWrite {
+            intent: AuthIntent::Login,
+            bound_session: None,
+            apple_refresh: None,
             provider: Provider::Naver,
             digests: DigestKeys::new(1, vec![(1, [1; 32])])
                 .unwrap()
@@ -391,27 +475,13 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
         .await
         .unwrap();
     dml.close().await;
-    pool.close().await;
+    close_auth_pool(pool).await;
 }
 
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn auth_storage_enforces_minimal_data_atomic_consumption_rotation_and_constraints() {
-    let url = env::var("DATABASE_URL").expect("DATABASE_URL is required");
-    let pool = PgPoolOptions::new()
-        .max_connections(6)
-        .connect(&url)
-        .await
-        .unwrap();
-    Migrator::new(Path::new(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../migrations"
-    )))
-    .await
-    .unwrap()
-    .run(&pool)
-    .await
-    .unwrap();
+    let pool = auth_pool().await;
     let store = PgAuthStore::new(pool.clone());
     let service = AuthService::new(
         store.clone(),
@@ -589,7 +659,7 @@ async fn auth_storage_enforces_minimal_data_atomic_consumption_rotation_and_cons
         .execute(&pool)
         .await
         .unwrap();
-    pool.close().await;
+    close_auth_pool(pool).await;
 }
 
 #[tokio::test]
@@ -617,7 +687,7 @@ async fn readiness_tracks_actual_database_availability() {
         serde_json::from_slice::<serde_json::Value>(&body).unwrap(),
         serde_json::json!({"status":"ok"})
     );
-    pool.close().await;
+    close_auth_pool(pool).await;
     let response = server.oneshot(request()).await.unwrap();
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     let body = to_bytes(response.into_body(), 1024).await.unwrap();

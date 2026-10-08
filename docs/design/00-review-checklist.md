@@ -21,6 +21,7 @@
 |---|---|---|---|
 | FR01 OAuth·최소 정보 | US01 | [07 DB](07-database.md), [17 인증](17-auth-privacy.md), [18 화면](18-design-layout.md) | TS01/20/31/32/33/34/35/36 AuthService·OAuthProvider·AccountRepository |
 | FR01 #44 제공자/HTTP | US01 | [ADR0020](../adr/0020-oauth-providers-and-http.md), [06 프로토콜](06-protocol.md) | TS01/20/31/32/33: 최소 authorize·signed JWT·CSRF/Origin·one-use callback·session revision·실DB |
+| FR01/16 #45 권리/철회 | US01 | [ADR0021](../adr/0021-account-rights-and-apple-revocation.md), [17 인증](17-auth-privacy.md) | TS20/29/34/35: 최근 인증·명시적 연결·원자 삭제·last provider·signed notifications·실DB |
 | FR02 노게스/동일판 | US02 | [03 도메인](03-domain-model.md), [05 알고리즘](05-algorithms.md) | TS02/TS03 BoardGenerator·KnowledgeSolver |
 | FR03 승패/실수 | US03 | [04 규칙](04-game-rules-spec.md) | TS04/TS05/TS14 RuleEngine·Clock |
 | FR04 공격 | US04 | [04](04-game-rules-spec.md), [05](05-algorithms.md) | TS06/TS07/TS21/TS22 LieValidator·ProtocolDecoder |

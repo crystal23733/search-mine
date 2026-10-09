@@ -303,6 +303,125 @@ fn request(
     }
     request
 }
+
+async fn receive_kind(
+    socket: &mut tokio_tungstenite::WebSocketStream<
+        tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+    >,
+    kind: &str,
+) -> serde_json::Value {
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let message = socket.next().await.unwrap().unwrap();
+            if let Message::Text(text) = message {
+                let value: serde_json::Value = serde_json::from_str(text.as_str()).unwrap();
+                if value["payload"]["type"] == kind {
+                    break value;
+                }
+            }
+        }
+    })
+    .await
+    .unwrap()
+}
+
+#[tokio::test]
+async fn reconnect_snapshot_restores_consumed_cursor_and_retries_keep_the_original_ack() {
+    let f = fixture().await;
+    let (mut first, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    let initial = receive_kind(&mut first, "snapshot").await;
+    assert_eq!(initial["payload"]["last_client_seq"], 0);
+    f.clock.0.store(3000, Ordering::SeqCst);
+    let mut original = serde_json::json!({"v":1,"match_id":initial["match_id"],"command_id":Uuid::new_v4().to_string(),"client_seq":9,"session_epoch":2,"known_revision":0,"action":{"type":"flag","cell":8}});
+    first
+        .send(Message::Text(original.to_string().into()))
+        .await
+        .unwrap();
+    let original_ack = receive_kind(&mut first, "ack").await;
+    assert_eq!(original_ack["payload"]["status"], "applied");
+    let mut later = original.clone();
+    later["command_id"] = serde_json::json!(Uuid::new_v4().to_string());
+    later["client_seq"] = serde_json::json!(11);
+    later["action"]["cell"] = serde_json::json!(5);
+    first
+        .send(Message::Text(later.to_string().into()))
+        .await
+        .unwrap();
+    assert_eq!(
+        receive_kind(&mut first, "ack").await["payload"]["status"],
+        "applied"
+    );
+    first.close(None).await.unwrap();
+    drop(first);
+    let (mut resumed, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    let snapshot = receive_kind(&mut resumed, "snapshot").await;
+    assert_eq!(snapshot["payload"]["last_client_seq"], 11);
+    assert_eq!(snapshot["payload"]["session_epoch"], 3);
+    assert_eq!(
+        snapshot["payload"]["view"]["own"]["cells"][8]["flagged"],
+        true
+    );
+    assert_eq!(
+        snapshot["payload"]["view"]["opponent"]
+            .as_object()
+            .unwrap()
+            .len(),
+        2
+    );
+    original["session_epoch"] = serde_json::json!(3);
+    resumed
+        .send(Message::Text(original.to_string().into()))
+        .await
+        .unwrap();
+    let repeated = receive_kind(&mut resumed, "ack").await;
+    assert_eq!(repeated["payload"]["duplicate"], true);
+    assert_eq!(
+        repeated["payload"]["revision"],
+        original_ack["payload"]["revision"]
+    );
+    let mut conflict = original.clone();
+    conflict["action"]["type"] = serde_json::json!("open");
+    resumed
+        .send(Message::Text(conflict.to_string().into()))
+        .await
+        .unwrap();
+    assert_eq!(
+        receive_kind(&mut resumed, "ack").await["payload"]["error"],
+        "conflict"
+    );
+    later["command_id"] = serde_json::json!(Uuid::new_v4().to_string());
+    later["client_seq"] = serde_json::json!(12);
+    later["action"]["cell"] = serde_json::json!(8);
+    later["session_epoch"] = serde_json::json!(3);
+    resumed
+        .send(Message::Text(later.to_string().into()))
+        .await
+        .unwrap();
+    assert_eq!(
+        receive_kind(&mut resumed, "ack").await["payload"]["status"],
+        "applied"
+    );
+    let delta = receive_kind(&mut resumed, "delta").await;
+    assert_eq!(
+        delta["payload"]["view"]["own"]["cells"][8]["flagged"],
+        false
+    );
+    assert_eq!(delta["payload"]["view"]["own"]["cells"][5]["flagged"], true);
+    assert_eq!(delta["payload"]["view"]["own"]["gauge"], 0);
+    later["session_epoch"] = serde_json::json!(2);
+    resumed
+        .send(Message::Text(later.to_string().into()))
+        .await
+        .unwrap();
+    assert_eq!(
+        receive_kind(&mut resumed, "error").await["payload"]["code"],
+        "invalid_epoch"
+    );
+}
 #[tokio::test]
 async fn actual_socket_authenticates_and_sends_only_public_projection() {
     let f = fixture().await;

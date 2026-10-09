@@ -226,6 +226,7 @@ impl Actor {
                                 seat,
                                 OnlinePayload::Snapshot {
                                     session_epoch: epoch,
+                                    last_client_seq: self.state.last_client_seq(seat),
                                     view: self.state.view(seat),
                                 },
                                 at,

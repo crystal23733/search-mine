@@ -555,6 +555,18 @@
         "online-quick-match-ui"
       ],
       "acceptance": "디자인06·8문자/명시 join/OAuth 복귀·공유/2seat/ready/나가기/서버 만료·공통 OnlineEntry/보드/결과·역순/권한·8언어 실DB/HTTPS/WS TDD"
+    },
+    {
+      "key": "reconnect-command-cursor",
+      "issue": 74,
+      "milestone": "M3",
+      "title": "feat(online): 재접속 snapshot의 본인 입력 순번 복구",
+      "requirements": "FR14, NFR01/02",
+      "scenarios": "TS15/16/20/21",
+      "deps": [
+        "matchmaking"
+      ],
+      "acceptance": "Rust 본인 소비 cursor→snapshot→새 controller·u32 exhaustion·새epoch cached ACK/original revision·상대 cursor/secret 무노출·actual WS/HTTPS PC/mobile reload TDD; 자동 backoff/영속 장애복구 후속18"
     }
   ]
 }

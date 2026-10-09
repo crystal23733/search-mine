@@ -74,6 +74,8 @@ Pixi도 CellDisplay→BoardDisplay, FlagDisplay, StunEffect, GaugeDisplay로 나
 
 ## 토큰과 상태
 
+#18/#74 [ADR0035](../adr/0035-reconnect-command-cursor.md): 새 온라인 controller는 권위 snapshot의 본인 last_client_seq 다음부터 입력하며 epoch가 바뀌었다고 소비 순번을 초기화하지 않는다. 값은 strictu32/최댓값에서는 capacity로 중단한다. 자동 재접속·미확인 명령 재전송은 다음 하위 작업이다.
+
 design-tokens 원천에 semantic color(background/surface/text/danger/flag/lieFeedback), spacing(4/8/12/16/24), typography(scale·locale fonts), radius, elevation, duration, motion policy를 둔다. CSS custom property와 Pixi 숫자값을 생성한다. 색만으로 mine/flag/stun을 구분하지 않는다. 예산과 토큰값은 실제 저사양 기기 테스트로 조정한다.
 
 서버 delta는 revision 순으로 적용, 누락은 snapshot 요청. UI optimistic 변화는 focus/hover·네트워크 대기 표시까지만 허용하며 안전칸/공격 성공/승패를 로컬 확정하지 않는다. store selector로 셀 변경만 redraw, WASM 계산은 Web Worker에서 수행하고 TypedArray 전송을 활용한다.

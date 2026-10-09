@@ -48,7 +48,7 @@ server_seq/revision은 본인의 공개 stream 기준이다. 상대 flag·상대
 | HTTP C→S | status / queue_join / cancel | version, difficulty / source queue·room·preparing identity |
 | HTTP C→S | room_create / room_join / ready | version, code, room_id, ready |
 | C→S | open / flag / accuse / attack | cell 또는 빈 payload, attack에 target 금지 |
-| C→S | resume | match_id, last_server_seq, session_epoch |
+| WS handshake C→S | 재접속 | 고정 cookie/Origin WS; 서버 배정 매치·새 epoch·본인 last_client_seq를 snapshot으로 반환 |
 | HTTP S→C | idle / queued / room / preparing / matched / failed | version/server_time_ms, 본인 queue deadline·좌석/ready·취소 identity·human/bot 종류 |
 | S→C | snapshot / delta | 본인 opened 숫자·mine·flag·gauge·stun, 상대 진행률·공개 기절, 남은 시간 |
 | S→C | ack / error | applied/duplicate/rejected, 안정된 error code |
@@ -122,13 +122,15 @@ sequenceDiagram
   participant M as MatchActor
   C->>M: socket lost
   Note over M: deadline keeps running, grace 30s
-  C->>M: resume with cookie and last_server_seq
-  M-->>C: new epoch and authoritative snapshot
+  C->>M: reconnect fixed WS with cookie and Origin
+  M-->>C: new epoch and authoritative snapshot with own command cursor
   C->>M: retry old command_id
   M-->>C: cached ack without second transition
 ```
 
 heartbeat는 15초 ping, 45초 무응답 시 끊김 판정을 제안한다. 실제 끊김 감지는 최대 이 지연이 더해질 수 있으며 reconnect grace는 서버가 감지한 disconnect 시점부터다. reconnect backoff 0.5/1/2/4/8초+지터, 30초 유예는 서버 권위로 표시한다.
+
+#18/#74는 [ADR0035](../adr/0035-reconnect-command-cursor.md)의 snapshot.last_client_seq(u32)를 Rust core의 본인 소비 순번에서 투영한다. 새 controller는 그다음 순번을 사용하고u32::MAX에서는 입력을 중단한다. 새 epoch로 같은 UUID/seq/action을 보내도 원본 ACK/revision만 반환한다. 상대 cursor나 내부 전역 sequence를 노출하지 않는다. 자동 backoff/재전송·30초 화면과 영속 장애 복구는 다음18 하위 작업이다.
 
 ## 데일리 제출과 한계
 

@@ -113,6 +113,7 @@ impl Fixture {
         let OnlinePayload::Snapshot {
             session_epoch,
             view,
+            ..
         } = initial.payload
         else {
             panic!("snapshot")

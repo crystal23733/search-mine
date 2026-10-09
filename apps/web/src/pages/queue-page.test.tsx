@@ -53,6 +53,7 @@ test("quick queue reuses the actual public board, keeps locale and activity thro
           server_time_ms: 0,
           payload: {
             type: "snapshot",
+            last_client_seq: 0,
             session_epoch: 1,
             view: { ...view(), phase: "playing" },
           },

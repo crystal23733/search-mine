@@ -138,6 +138,9 @@ impl MatchState {
         self.synchronize();
         Ok(epoch)
     }
+    pub fn last_client_seq(&self, seat: Seat) -> u32 {
+        u32::try_from(self.engine.last_sequence(seat)).unwrap_or(u32::MAX)
+    }
     pub fn view(&self, seat: Seat) -> GameView {
         let mut view = from_projection(&self.engine.projection(seat), seat);
         view.revision = u64::from(self.revisions[seat.index()]);

@@ -57,7 +57,9 @@
 
 백로그 데이터의 원천은 [backlog.json](backlog.json)이다. 변경 때 GitHub 이슈 제목·인수 조건과 함께 갱신한다.
 
-#70은 PR71/develop37914fd5에 병합·종료했다. CI18 DB26·웹128unit/72browser와6checks를 통과했다. 다음 [#72 친구 방·초대·준비·온라인 화면](https://github.com/crystal23733/search-mine/issues/72)은 [ADR0034](../adr/0034-friends-room-ui.md)의8문자/명시 참가·현재 방/ready/취소·공유·8언어와 실제 SQL/HTTPS/WS 출구를 연결한다. 상위17은 친구 방 통합 출구 후 종료하며 자동 재접속은18이다.
+#72/PR73은 develop1b619ec2에 병합·종료했고 상위17의 통합 출구도 완료·종료했다. CI18 DB26·138unit/75browser·6checks를 통과했다. 다음 [#74 재접속 입력 순번 복구](https://github.com/crystal23733/search-mine/issues/74)는 [ADR0035](../adr/0035-reconnect-command-cursor.md)의 본인 cursor·새 epoch cached ACK와 실제 WS/HTTPS reload를 연결한다. 자동 backoff·grace 공개 상태/재전송·영속 서버 재시작 복구는 상위18의 후속 하위 작업이다.
+
+#70은 PR71/develop37914fd5에 병합·종료했다. CI18 DB26·웹128unit/72browser와6checks를 통과했다. [#72 친구 방·초대·준비·온라인 화면](https://github.com/crystal23733/search-mine/issues/72)은 [ADR0034](../adr/0034-friends-room-ui.md)의8문자/명시 참가·현재 방/ready/취소·공유·8언어와 실제 SQL/HTTPS/WS 출구를 연결했다.
 
 #68은 PR69/develop4686ceb4에 병합·종료했다. [#70 빠른 대전과 실제 온라인 보드·결과](https://github.com/crystal23733/search-mine/issues/70)는 [ADR0033](../adr/0033-online-quick-match-ui.md)의 세션 HTTP/WS·닫힌 공개 DTO·3난이도/취소·8언어·실제 SQL/WS/HTTPS를 연결했다.
 

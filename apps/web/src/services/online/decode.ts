@@ -260,6 +260,7 @@ function payload(v: unknown): OnlinePayload {
       return struct({
         type: one("snapshot"),
         session_epoch: int(4294967295, 1),
+        last_client_seq: u32,
         view: decodeView,
       })(v);
     case "delta":

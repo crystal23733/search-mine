@@ -24,6 +24,10 @@ struct Work {
     token: Uuid,
     started: u64,
 }
+struct InitialAdmission {
+    deadline: u64,
+    admission: MatchAdmission,
+}
 struct Actor {
     state: MatchState,
     handle: Weak<HandleInner>,
@@ -41,6 +45,7 @@ struct Actor {
     finished_at: Option<u64>,
     stored: Option<oneshot::Receiver<Result<SaveResult, OnlineError>>>,
     bot: Option<super::bot::BotDriver>,
+    initial: Option<InitialAdmission>,
 }
 pub(super) fn spawn(
     state: MatchState,
@@ -49,6 +54,7 @@ pub(super) fn spawn(
     registry: &Arc<MatchRegistry>,
     permit: OwnedSemaphorePermit,
     bot: Option<super::bot::BotDriver>,
+    admission: Option<MatchAdmission>,
 ) {
     let ticker = handle.clone();
     tokio::spawn(async move {
@@ -64,6 +70,10 @@ pub(super) fn spawn(
             }
             let _ = handle.enqueue(Event::Tick);
         }
+    });
+    let initial = admission.map(|admission| InitialAdmission {
+        deadline: state.start_deadline(),
+        admission,
     });
     let mut actor = Actor {
         state,
@@ -82,6 +92,7 @@ pub(super) fn spawn(
         finished_at: None,
         stored: None,
         bot,
+        initial,
     };
     tokio::spawn(async move {
         let _permit = permit;
@@ -107,6 +118,36 @@ pub(super) fn spawn(
     });
 }
 impl Actor {
+    fn check_initial(&mut self, at: u64) {
+        let Some(initial) = self.initial.as_ref() else {
+            return;
+        };
+        if self.state.view(Seat::One).result.is_some() {
+            self.initial = None;
+            return;
+        }
+        let leases: Vec<_> = initial.admission.participants.iter().flatten().collect();
+        let error = initial
+            .admission
+            .authorities
+            .with_authorities(&leases, initial.admission.clock.now(), || ())
+            .err();
+        if at >= initial.deadline || error == Some(OnlineError::Unauthorized) {
+            self.state.cancel_initial(at.min(initial.deadline));
+            self.initial = None;
+        } else if error.is_some() {
+            self.state.abort(at);
+            self.initial = None;
+        }
+    }
+    fn attached_initial(&mut self, seat: Seat) {
+        if let Some(initial) = self.initial.as_mut() {
+            initial.admission.participants[seat.index()] = None;
+            if initial.admission.participants.iter().all(Option::is_none) {
+                self.initial = None;
+            }
+        }
+    }
     fn poll_bot(&mut self, at: u64) {
         let Some(bot) = self.bot.as_mut() else {
             return;
@@ -138,6 +179,7 @@ impl Actor {
     }
     fn process(&mut self, ingress: Ingress) {
         let at = ingress.at;
+        self.check_initial(at);
         match ingress.event {
             Event::Attach {
                 authority,
@@ -145,11 +187,30 @@ impl Actor {
                 outgoing,
                 reply,
             } => {
-                let result =
+                let pending = self.initial.as_ref().and_then(|initial| {
+                    initial.admission.participants[seat.index()]
+                        .clone()
+                        .map(|lease| {
+                            (
+                                initial.admission.authorities.clone(),
+                                lease,
+                                initial.admission.clock.now(),
+                            )
+                        })
+                });
+                let mut attach = || {
                     self.authorities
                         .with_authority(&authority, self.auth_clock.now(), || {
                             self.state.attach(seat, at)
-                        });
+                        })
+                };
+                let result = if let Some((owners, lease, now)) = pending {
+                    owners
+                        .with_authority(&lease, now, attach)
+                        .and_then(|result| result)
+                } else {
+                    attach()
+                };
                 match result {
                     Ok(Ok(epoch)) => {
                         self.sinks[seat.index()] = Some(Sink {
@@ -169,6 +230,9 @@ impl Actor {
                                 },
                                 at,
                             );
+                            if self.sinks[seat.index()].is_some() {
+                                self.attached_initial(seat);
+                            }
                         }
                     }
                     Ok(Err(error)) | Err(error) => {
@@ -498,6 +562,7 @@ mod tests {
             finished_at: None,
             stored: None,
             bot: None,
+            initial: None,
         };
         actor.publish(243000);
         assert_eq!(actor.recording, Some(RecordingStatus::Pending));

@@ -41,6 +41,12 @@ pub struct MatchConnection {
     epoch: u32,
     receiver: mpsc::Receiver<OnlineEvent>,
 }
+#[derive(Clone)]
+pub struct MatchAdmission {
+    pub authorities: Arc<AuthorityRegistry>,
+    pub clock: Arc<dyn AuthClock>,
+    pub participants: [Option<ConnectionAuthority>; 2],
+}
 pub(super) struct Ingress {
     pub at: u64,
     pub event: Event,
@@ -112,12 +118,50 @@ impl MatchRegistry {
         }))
     }
     pub fn create(self: &Arc<Self>, state: MatchState) -> Result<MatchHandle, OnlineError> {
-        self.create_inner(state, None)
+        self.create_inner(state, None, None)
+    }
+    pub fn create_admitted(
+        self: &Arc<Self>,
+        state: MatchState,
+        admission: MatchAdmission,
+        bot: Option<(liar_core::bot::Difficulty, Arc<BotExecutor>)>,
+    ) -> Result<MatchHandle, OnlineError> {
+        let players = state.players();
+        if self.uses_authorities(&admission.authorities)
+            || state.view(Seat::One).phase != liar_protocol::game::GamePhase::Countdown
+            || admission
+                .participants
+                .each_ref()
+                .map(|lease| lease.as_ref().map(ConnectionAuthority::account))
+                != players
+        {
+            return Err(OnlineError::Malformed);
+        }
+        let driver = if let Some((difficulty, executor)) = bot {
+            let seat = match players {
+                [Some(_), None] => Seat::Two,
+                [None, Some(_)] => Seat::One,
+                _ => return Err(OnlineError::Malformed),
+            };
+            Some(super::bot::BotDriver::new(seat, difficulty, executor))
+        } else {
+            if players.iter().any(Option::is_none) {
+                return Err(OnlineError::Malformed);
+            }
+            None
+        };
+        let leases: Vec<_> = admission.participants.iter().flatten().collect();
+        admission
+            .authorities
+            .with_authorities(&leases, admission.clock.now(), || {
+                self.create_inner(state, driver, Some(admission.clone()))
+            })?
     }
     fn create_inner(
         self: &Arc<Self>,
         state: MatchState,
         bot: Option<super::bot::BotDriver>,
+        admission: Option<MatchAdmission>,
     ) -> Result<MatchHandle, OnlineError> {
         let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
         let id = state.id();
@@ -155,6 +199,7 @@ impl MatchRegistry {
             self,
             permit,
             bot,
+            admission,
         );
         Ok(handle)
     }
@@ -172,6 +217,7 @@ impl MatchRegistry {
         self.create_inner(
             state,
             Some(super::bot::BotDriver::new(seat, difficulty, executor)),
+            None,
         )
     }
     pub fn for_account(&self, account: Uuid) -> Result<MatchHandle, OnlineError> {

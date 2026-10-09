@@ -66,3 +66,5 @@
 #56은 PR57/develop8dc226b에 병합·종료했다. 다음 [#58 실제 매치 조립](https://github.com/crystal23733/search-mine/issues/58)은 core prepare/start와 bounded LobbyService를 연결한다. [ADR0027](../adr/0027-atomic-lobby-match-composition.md). 인증 전송·OAuth invite·화면/main은 후속이며 상위17은 OPEN이다.
 
 #58은 PR59/develop0a9eb49에 병합·종료했다. 다음 [#60 세션 수명과 원자 로비 입장](https://github.com/crystal23733/search-mine/issues/60)은 별도 공유 lease·합성 철회 barrier·준비 완료 시 두 사람의 권한을 연결한다. [ADR0028](../adr/0028-session-bound-lobby-admission.md). 최초 WS 연결 수명·공개 HTTP/main·OAuth invite·8언어 화면은 이어지는 하위 작업이며 상위17은 OPEN이다.
+
+#60은 PR61/develop904de85에 병합·종료했다. 다음 [#62 배정 후 최초 게임 연결](https://github.com/crystal23733/search-mine/issues/62)은 초기 lease를 actor로 넘기고 시작 기한의 미연결/철회를 취소한다. [ADR0029](../adr/0029-initial-match-connection-lifecycle.md). 공개 HTTP/main·OAuth invite·8언어 화면의 실제 통합 출구는 후속이며 상위17은 OPEN이다.

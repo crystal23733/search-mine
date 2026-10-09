@@ -88,6 +88,9 @@ async fn fixture() -> Fixture {
     fixture_with_capacity(2).await
 }
 async fn fixture_with_capacity(capacity: usize) -> Fixture {
+    fixture_with_admission(capacity, false).await
+}
+async fn fixture_with_admission(capacity: usize, admitted: bool) -> Fixture {
     let account = Uuid::new_v4();
     let token = SecretToken::generate().unwrap();
     let source = Arc::new(Sessions {
@@ -119,18 +122,35 @@ async fn fixture_with_capacity(capacity: usize) -> Fixture {
     rules.mines = 2;
     let rules = RulesSnapshot::from_rules(rules).unwrap();
     let board = Board::from_mines(rules.rules.board_spec(), &[CellId(5), CellId(7)]).unwrap();
-    registry
-        .create(
-            MatchState::new(
-                Uuid::new_v4(),
-                RuleEngine::new(board, rules, 0).unwrap(),
-                [Some(account), Some(Uuid::new_v4())],
-                [46; 8],
-                0,
+    let peer = Uuid::new_v4();
+    let state = MatchState::new(
+        Uuid::new_v4(),
+        RuleEngine::new(board, rules, 0).unwrap(),
+        [Some(account), Some(peer)],
+        [46; 8],
+        0,
+    )
+    .unwrap();
+    if admitted {
+        let lobby = AuthorityRegistry::new(2).unwrap();
+        let one = lobby
+            .bind_shared(0, account, token.hash(), 20000, 18000)
+            .unwrap();
+        let two = lobby.bind_shared(0, peer, [2; 32], 20000, 18000).unwrap();
+        registry
+            .create_admitted(
+                state,
+                MatchAdmission {
+                    authorities: lobby,
+                    clock: clock.clone(),
+                    participants: [Some(one), Some(two)],
+                },
+                None,
             )
-            .unwrap(),
-        )
-        .unwrap();
+            .unwrap();
+    } else {
+        registry.create(state).unwrap();
+    }
     let app = websocket_router("https://liar.example", source.clone(), registry, capacity).unwrap();
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let uri = format!("ws://{}/api/v1/ws", listener.local_addr().unwrap());
@@ -402,4 +422,42 @@ async fn malformed_input_error_uses_the_generated_sequenced_wire_envelope() {
         Some(initial["server_seq"].as_u64().unwrap() + 1)
     );
     assert!(error["server_time_ms"].is_u64());
+}
+
+#[tokio::test]
+async fn actual_socket_observes_initial_cancel_and_exact_boundary_handshake_is_rejected() {
+    let f = fixture_with_admission(2, true).await;
+    f.clock.0.store(2999, Ordering::SeqCst);
+    let (mut socket, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    let initial = socket.next().await.unwrap().unwrap();
+    let initial: serde_json::Value = serde_json::from_str(initial.to_text().unwrap()).unwrap();
+    assert_eq!(initial["payload"]["type"], "snapshot");
+    assert_eq!(initial["payload"]["view"]["countdown_ms"], 1);
+    f.clock.0.store(40000, Ordering::SeqCst);
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let event = socket.next().await.unwrap().unwrap();
+            let event: serde_json::Value = serde_json::from_str(event.to_text().unwrap()).unwrap();
+            assert_eq!(event["match_id"], initial["match_id"]);
+            if event["payload"]["type"] == "match_end" && event["payload"]["recording"] == "saved" {
+                assert_eq!(event["payload"]["view"]["result"]["reason"], "cancelled");
+                assert_eq!(event["payload"]["view"]["result"]["completed"], false);
+                break;
+            }
+        }
+    })
+    .await
+    .unwrap();
+
+    let f = fixture_with_admission(2, true).await;
+    f.clock.0.store(3000, Ordering::SeqCst);
+    let error = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap_err();
+    let tokio_tungstenite::tungstenite::Error::Http(response) = error else {
+        panic!("HTTP rejection");
+    };
+    assert_eq!(response.status().as_u16(), 409);
 }

@@ -27,3 +27,5 @@
 [ADR0021](adr/0021-account-rights-and-apple-revocation.md)과 [#45 계정 권리·Apple 철회 검증](verification/45-account-rights-apple-revocation.md)은 명시적 연결·재인증·최소 내보내기·원자 삭제·서명 알림·일일 확인과 동시성 수정 근거를 기록한다. 실제 키/계정은 #42, 화면은 #46에서 별도 검증한다.
 
 [ADR0022](adr/0022-web-oauth-account-ui.md)와 [#46 계정 화면·실제 HTTPS 검증](verification/46-oauth-account-ui.md)은 메모리 인증 권위·계정 전환·최소 공개 DTO·확인/재인증·8언어 화면과 실DB browser 근거를 기록한다. 실제 제공자 검수는 #42, 전체 초대 왕복은 #17, 공식 제출은 #19다.
+
+[ADR0029](adr/0029-initial-match-connection-lifecycle.md)와 [#62 최초 연결 검증](verification/62-initial-match-connection-lifecycle.md)은 로비→actor 초기 권한 전달·Rust 시작 기한 취소·실제 WS와 남은 공개 HTTP/초대/화면 출구를 기록한다.

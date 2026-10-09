@@ -982,3 +982,44 @@ async fn composition_rejects_reusing_socket_authority_for_http_lobby_requests() 
         Err(LobbyServiceError::Online(OnlineError::Malformed))
     ));
 }
+
+#[tokio::test]
+async fn actual_lobby_hands_initial_leases_to_human_and_bot_matches_until_start_cancellation() {
+    for bot in [false, true] {
+        let gate = Gate::new(true, false);
+        let f = Fixture::new(&gate, 2, 1, 1);
+        let a = f.service.lease(Uuid::new_v4()).unwrap();
+        let account = a.account();
+        let watcher = a.revoked();
+        f.service.inner.join(&a, Difficulty::Normal).unwrap();
+        let b = if bot {
+            f.clock.0.store(10000, Ordering::SeqCst);
+            None
+        } else {
+            let b = f.service.lease(Uuid::new_v4()).unwrap();
+            f.service.inner.join(&b, Difficulty::Hard).unwrap();
+            Some(b)
+        };
+        eventually(|| f.registry.for_account(account).is_ok()).await;
+        let id = f.registry.for_account(account).unwrap().id();
+        drop(a);
+        drop(b);
+        assert!(
+            !*watcher.borrow(),
+            "the actor must own the initial lobby lease"
+        );
+        f.clock.0.store(40000, Ordering::SeqCst);
+        eventually(|| !f.results.0.lock().unwrap().is_empty()).await;
+        let results = f.results.0.lock().unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id, id);
+        assert_eq!(results[0].reason, PublicEndReason::Cancelled);
+        assert_eq!(results[0].ended_ms, 3000);
+        assert_eq!(results[0].players[1].account.is_none(), bot);
+        assert!(*watcher.borrow());
+        assert!(matches!(
+            f.registry.for_account(account),
+            Err(OnlineError::NotMatched)
+        ));
+    }
+}

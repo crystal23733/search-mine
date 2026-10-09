@@ -399,6 +399,10 @@ export class OnlineController {
     this.publish();
   }
   private disconnected(code: string) {
+    if (code === "unauthorized") {
+      this.auth.invalidate();
+      return;
+    }
     this.fail(code);
     const owner = this.owner;
     if (owner && !this.disposed) {

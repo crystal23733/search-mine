@@ -196,7 +196,7 @@ function setup() {
         server_time_ms: 0,
         payload,
       }),
-    closed: () => closed(new OnlineFailure("disconnected")),
+    closed: (code = "disconnected") => closed(new OnlineFailure(code)),
   };
 }
 test("polls one request at a time only after waiting reply, then cancels exact identity and ignores late status", async () => {
@@ -360,6 +360,19 @@ test("verifies the same authority after socket close and clears a revoked public
     expect.any(Function),
     expect.any(AbortSignal),
   );
+  s.controller.dispose();
+});
+
+test("policy closure invalidates immediately without trusting a proof before server deletion commits", async () => {
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({ type: "snapshot", session_epoch: 1, view: view() });
+  const proof = vi.spyOn(s.auth, "execute");
+  s.closed("unauthorized");
+  expect(s.auth.account()).toBeNull();
+  expect(s.controller.read().view).toBeNull();
+  expect(proof).not.toHaveBeenCalled();
   s.controller.dispose();
 });
 test("does not connect or report cancel success when the reservation committed during cancellation", async () => {

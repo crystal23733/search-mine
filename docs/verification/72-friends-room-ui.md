@@ -25,3 +25,11 @@ pm-ai-shipping code-review의 correctness를 scope72/base37914fd5에 순차 적�
 P2: 새 방의 복사가 빠르게 완료되면 방 변경 effect가 완료 안내를 다시 지우는 실행을1failed/15passed로 재현했다. FriendsPanel의 공유 완료와 방 변경 effect 사이의 수명 불일치였다. 단순250ms 재렌더는 사라진 안내를 복원하지 못한다. ADR을 먼저 갱신하고 안내 자체를 room ID에 묶으며 최신 공유 순서·현재 방·언마운트를 확인하도록 수정했다. 역순 이전 방 실패가 새 방 성공을 덮지 못하는 검사까지 통과했다. Auth invalidation의 activity 해제는 DOM 교체와 다른 effect 경계이므로 기존 계약대로 실제 busy=false를 기다린다.
 
 공개 입력→canonical code→HTTP, 서버 room/seat/ready→UI, query→로그인 거래/공유 URL, controller/리스→재사용 Board/Result와 오류 경계를 함께 읽었다. 검토한 범위의 추가 근거 있는 결함은 없었다. 전체 성능 감사나 실계정/사람 검수를 수행했다는 의미는 아니다. 자동 재접속/명령 재전송/30초 유예 클라이언트 출구는 #18이다.
+
+## CI 철회 경합의 추가 수정
+
+최초 CI Product37897139375의 웹 검사는74passed/1flaky(재시도 성공)였다. 기존 빠른 대전의 logout204 뒤5초에도9cell이 남았다. PostgreSQL18.6 DB26개(ignored0/3.64s, coverage 재실행7.31s)와 다른 검사는 성공했지만 병합을 중단했다. PgAccountRepository.logout의 철회 barrier가 await DELETE보다 먼저 WS를 닫으므로, 직후 bootstrap이 아직 유효한 DB 세션을 읽는 경합이 있었다.
+
+ADR0033을 먼저 갱신하고 선행 공개 오류가 없는 정책 close1008은 로컬 권한을 즉시 폐기하도록 변경했다. 서버도 outgoing/watch 종료 경합에서 권한이 없으면1008을 보낸다. 일반1000/1006 네트워크 종료의 bounded proof와 결과 pending 보존, 선행 rate/malformed 오류는 유지한다. 웹2failed/14passed Red 후 관련17개와 실제 TCP WS10개가 통과했다. 새 head의 최종 전체/HTTPS/CI 결과는 PR에 기록한다.
+
+수정 뒤 단일 worker 실제 HTTPS 철회6회는 재시도 없이6passed(23.0s)였다. repeat 간 병렬 실행은 공유 fixture 시계/큐를 서로 진행시켜6failed였으므로 trace를 보존하고 단일 worker로 실행했다. 마지막 scripts/check.ps1 exit0:138unit·lines1952/2242=87.06%, 실제 HTTPS 포함75browser(1.9m), locked fmt/Clippy/native/WASM·생성 freshness·형식/lint/typecheck/build·docs125/Mermaid34 실패0. 새 head의 CI는 PR에서 별도 확인한다.

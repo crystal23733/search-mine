@@ -397,7 +397,11 @@ async fn session_revocation_closes_the_actual_socket() {
     let message = tokio::time::timeout(Duration::from_secs(2), socket.next())
         .await
         .unwrap();
-    assert!(matches!(message, None | Some(Ok(Message::Close(_)))));
+    assert!(matches!(
+        message,
+        Some(Ok(Message::Close(Some(frame))))
+            if frame.code == tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode::Policy
+    ));
 }
 
 #[tokio::test]

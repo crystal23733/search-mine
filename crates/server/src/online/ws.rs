@@ -187,6 +187,19 @@ async fn run(
             }
         }
     }
+    // Revocation can end outgoing delivery before the watch branch is observed.
+    if context
+        .registry
+        .authorities
+        .with_authority(
+            connection.authority(),
+            context.registry.auth_clock.now(),
+            || (),
+        )
+        .is_err()
+    {
+        close_code = 1008;
+    }
     let _ = send(
         &mut socket,
         Message::Close(Some(CloseFrame {

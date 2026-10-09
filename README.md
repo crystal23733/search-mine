@@ -105,7 +105,7 @@ pnpm build
 pnpm exec playwright test --project auth
 ```
 
-DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회 시험을 포함한81개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md)과 [#72 친구 방 검증](docs/verification/72-friends-room-ui.md)을 확인한다.
+DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속 시험을 포함한85개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md)과 [#72 친구 방 검증](docs/verification/72-friends-room-ui.md)을 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
 
 [#68 세션 인증 요청 포트](docs/verification/68-authenticated-web-requests.md)는 온라인 조회의 전/후 bootstrap·fresh CSRF와 취소/late reply를 제공한다. 실제 로비/WS 화면은 #70/#72에서 연결했다. #74 재접속 입력 순번 계약은 ADR0035를 따른다.
 

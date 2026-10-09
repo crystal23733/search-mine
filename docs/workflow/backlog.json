@@ -603,6 +603,55 @@
         "session-recovery-candidate"
       ],
       "acceptance": "30초단조backoff/jitter/동시1·새lease/epoch/snapshot·최대16메모리원본명령재전송·cursor/원본ACK·후보중읽기전용/8언어·역순/종료/권한·actual PG/WS/HTTPS TDD"
+    },
+    {
+      "key": "offline-update-coordination",
+      "issue": 83,
+      "milestone": "M3",
+      "title": "fix(offline): 두 탭 업데이트의 간헐 load 실패 진단과 복구",
+      "requirements": "FR10, NFR05/07",
+      "scenarios": "TS18/20/26",
+      "deps": [
+        "bounded-online-reconnect"
+      ],
+      "acceptance": "재시도 성공에도 trace 보존·native lifecycle/연속 client 관측·실제 중단/역순 분리·근거 있는 Red 수정·timeout/retry 완화 없이 PC/mobile 반복·원인 미확정이면 종료하지 않음"
+    },
+    {
+      "key": "unit-arrangement-observation",
+      "issue": 84,
+      "milestone": "M3",
+      "title": "test(web): 로컬 단위 테스트 준비와 DOM 조회 지연 진단",
+      "requirements": "NFR05/06",
+      "scenarios": "TS02/18/26",
+      "deps": [
+        "offline-update-observation"
+      ],
+      "acceptance": "기존 지연 재현·동적 로딩/256셀 accessible name 관측 분리·행동 assertion 유지·timeout/retry 완화 없음·전체 coverage/CI"
+    },
+    {
+      "key": "authenticated-personal-result",
+      "issue": 82,
+      "milestone": "M3",
+      "title": "feat(online): 인증된 본인 결과 조회 API",
+      "requirements": "FR14/16, NFR01/02/05/07",
+      "scenarios": "TS15/16/20/21/31/35/36",
+      "deps": [
+        "bounded-online-reconnect",
+        "unit-arrangement-observation"
+      ],
+      "acceptance": "actor 독립 ResultReader/Pg·Rust→TS 본인 최소 DTO·인증/Origin/CSRF/전후 철회·uniform notfound/동시 상한/deadline/rate·실제 PG/HTTP·secret0; 웹/영속 journal 후속"
+    },
+    {
+      "key": "offline-update-observation",
+      "issue": 85,
+      "milestone": "M3",
+      "title": "test(offline): 재로드 전후 업데이트 진단과 CI trace 보존",
+      "requirements": "FR10, NFR05/07",
+      "scenarios": "TS18/20/26",
+      "deps": [
+        "bounded-online-reconnect"
+      ],
+      "acceptance": "항상 CI 최초 실패 trace·재로드 전후 runner/JSON·native lifecycle·제품/timeout/retry 변경 없음·PC/mobile 반복/검사/CI·83 원인 미확정 OPEN"
     }
   ]
 }

@@ -9,6 +9,8 @@
 
 ## 결정
 
+2026-10-09 #83 조사: #74의 mobile과 #80/PR81의 PC CI에서 idle 적용 뒤 load가 간헐 실패했다. #80은 재시도로 성공했고 `browser-failures`의 `if: failure()` 때문에 최초 실패 trace가 업로드되지 않았다. 기존16회 성공을 원인 해결의 증거로 확대하지 않는다. 먼저 성공/실패 모두 artifact를 보존하고, 시험에서 클릭·요청/응답·prepare/release·controllerchange와 native worker lifecycle을 재로드 전후 연속 기록한다. 진단은 시험 fixture에만 두며 제품 제한 시간·retry·권한/캐시 정책을 바꾸지 않는다. [표준 skipWaiting](https://w3c.github.io/ServiceWorker/#service-worker-global-scope-skipwaiting)은 활성화 시도를 요청하며, 실제 controller 변경 완료와 동일한 관측이 아니다. pending/지연/탭 종료를 통제한 행동 실패로 뒷받침되는 결함만 수정하고, 원인이 미확정이면 #83을 수정 완료로 닫지 않는다.
+
 #66의 계측 제거/일반 Chromium 새 headless 검사에서 PC·mobile 각8회16개가1.7분에 통과했다. 제품 SW/adapter/coordinator diff0이며 전체/CI 결과를 추가 확인한다.
 
 Service Worker는 build revision으로 관리하는 정적 shell/index·JS/CSS·8locale chunk·public Rust WASM/glue만 precache한다. 캐시한 Rust/RNG/rules는 UTC 공개 데일리를 재현한다. API 응답·OAuth/session/cookie·POST·WS·광고·외부 origin은 캐시하지 않는다. 캐시 없는 첫 오프라인 접근은 보장하지 않고 캐시/설치/저장소 실패도 온라인 로컬 플레이를 막지 않는다. 연결 신호는 서버 인증·가용성·매치 권위를 뜻하지 않는다. 온라인 매치를 오프라인 코어/봇으로 승격하지 않는다.
@@ -26,6 +28,8 @@ IndexedDB v2의 records+pending은 같은 transaction에서 첫 local clear와 r
 TDD는 activity lease/시작 경합·busy/누락/새 client 업데이트·DB upgrade/원자 큐/손상·명시적 계정/재시도/만료 정책을 검사한다. 실제 production preview에서 cache 상태/8locale/WASM·offline daily/reload·대기 저장·최초 미캐시 실패·two-tab busy 업데이트 차단·개인정보/API/광고 cache0과 삭제를 검증한다. 개발 Vite 서버는 SW를 켜지 않으며 별도 production preview를 사용한다. M2의 실제 사람 E1/E2는 #27 수동 게이트로 유지한다.
 
 ## 기술 근거
+
+#85 첫 CI37942446331은176unit/20.97초·web line87.48% 뒤 offline PC의 최초/재시도 load10000ms가 실패했다(82pass/1fail/measurement2 미실행). artifact11623171248을 내려 받아 trace2개와 JSON3개를 확인했다. 두 탭은 같은 token에 true를 응답했고 이후10초에 controllerchange가 없었다. native 이전 worker는 stopping→stopped→starting→running으로 복귀했고 새 worker는 installed에 머물렀다. 이를 skipWaiting 호출/완료의 증거로 간주하지 않는다. 시험 fixture의 production 본문 뒤 console observer를 붙여 matchAll/get·skipWaiting 호출/완료·메시지 최종 응답·JS waitUntil pending을 관측한다. 추가 debugger·활성화 강제·제품 수정은 하지 않는다. 정상 전체 검사가 실패한 경우에만 설치된 Playwright1.63 소스의 `PLAYWRIGHT_DISABLE_SERVICE_WORKER_NETWORK`를 켠 별도 비교 검사를 수행하고, 정상 실패 상태/trace와 비교 출력을 함께 보존한다. 이 내부 진단 flag를 정상 검사/제품 구성으로 채택하거나 성공으로 덮어쓰지 않는다. JS pending0과 native idle은 다르며 결과를 근거로 다음 조사를 결정한다.
 
 #70의 온라인 lazy chunk 분리에 따라 공개 로컬 controller 코드가 local-session-*.js 파일로 precache된다. 파일명에 session 문자열이 있다는 이유로 인증 데이터라고 분류하지 않는다. 실제 cache URL은 같은 origin의 공개 asset인지, API/인증 경로 segment나 credential query가 아닌지를 구조적으로 검사하며 기존8언어/WASM·오프라인·대기 기록·다중 탭 출구는 유지한다.
 

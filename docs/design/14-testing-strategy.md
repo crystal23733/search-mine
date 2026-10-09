@@ -11,6 +11,8 @@ flowchart TD
 
 ## 테스트 경계
 
+#83/#85 FR10/NFR05/07·TS18/20/26: production 두 탭 업데이트의 재시도 성공에도 첫 실패 trace/진단을 업로드한다. 시험 observer는 재로드 전후 클릭·전송/응답·token 준비/해제·controllerchange·native worker 상태를 수집하고 제한 시간/추가 retry로 통과를 만들지 않는다. #74/#80 간헐 load 실패의 원인은 미확정이다. #85는 진단 보존만 먼저 병합하고 #83을 열어 둔다. [ADR0018](../adr/0018-public-offline-cache-and-safe-update.md)의 실제 반복·강제 실패·원인 분리 기준을 따른다.
+
 - 코어: cargo test + proptest. fake Clock/RNG, 작은 판 전수 검사, Board invariant, safe 추론 증명, 두 lie 조합, timeout·동시 순서, native/WASM fixture 일치.
 - 클라이언트: Vitest·DOM testing. fake Network/Storage/Ads/I18n/CMP, 공개 delta·revision·입력 모드·long press·토큰 접근 금지.
 - 통합: 실제 PostgreSQL/testcontainers 또는 격리 compose test DB, sqlx migration·transaction·unique·삭제·idempotency; 실제 axum WS handshake·Origin·disconnect.

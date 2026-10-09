@@ -51,3 +51,5 @@
 [ADR0037](adr/0037-session-recovery-candidate.md)과 [#78 세션 복구 후보 검증](verification/78-session-recovery-candidate.md)은 권한 없는 메모리 후보·전후 동일 세션 proof·단조 기한과 중단된 제출의 늦은 응답 폐기를 기록한다. WS 자동 복구는 후속18이다.
 
 [ADR0038](adr/0038-bounded-online-reconnect.md)과 [#80 자동 WS 복구 검증](verification/80-bounded-online-reconnect.md)은 제한된 재연결·읽기 전용 보드·메모리 명령의 새 epoch 재전송·실제 ACK 유실과 오프라인 복귀를 기록한다. 영속 장애 복구/결과 조회는 후속18이다.
+
+[#85 두 탭 업데이트 진단 보존](verification/85-offline-update-observation.md)은 기존 CI 간헐 load 실패의 artifact·native lifecycle과 탭 이벤트 관측을 기록한다. 제품 조사 #83의 원인은 미확정이며 열어 둔다.

@@ -83,4 +83,4 @@
 
 #76/PR77은 developc25181e3에 병합·종료했다. CI PG18.6 DB26·143unit/79browser(재시도0)·최신6checks를 통과했다. 다음 [#78 비권위 세션 복구 후보](https://github.com/crystal23733/search-mine/issues/78)는 [ADR0037](../adr/0037-session-recovery-candidate.md)의 권한 차단/메모리 후보/동일 세션 fresh proof·단조 기한을 연결한다. 자동 WS backoff/명령 재전송·영속 재시작/결과 조회와 상위18은 후속이다.
 
-#78/PR79는 developa223bd4f에 병합·종료했다. 실제CI PG18.6 DB26·162unit/81browser(재시도0)·최신6checks를 통과했다. 다음 [#80 자동 WS 복구/미확인 명령](https://github.com/crystal23733/search-mine/issues/80)은 [ADR0038](../adr/0038-bounded-online-reconnect.md)의 bounded backoff/새 lease·epoch/snapshot/메모리 재전송·8언어 화면을 연결한다. 영속 재시작/결과 조회와 상위18은 후속이다.
+#80/PR81은 developc0fa4875에 병합·종료했다. CI PG18.6 DB26·176unit·browser84pass+기존offline1flaky와 최신6checks SUCCESS를 확인했다. [#85 업데이트 진단 보존](https://github.com/crystal23733/search-mine/issues/85) → [#84 로컬 단위 테스트 준비/DOM 조회](https://github.com/crystal23733/search-mine/issues/84) → [#82 인증된 개인 결과 조회](https://github.com/crystal23733/search-mine/issues/82) 순으로 진행한다. 원인 미확정 #83은 OPEN이며 #85의 CI 자료로 분석한다. #84/#82는 원인 분석과 독립적이다. timeout/retry를 완화하지 않는다. 상위18과 영속 재시작 출구는 아직 OPEN이다.

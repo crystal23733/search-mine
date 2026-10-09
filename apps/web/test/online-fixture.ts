@@ -20,7 +20,7 @@ export function view(): GameView {
       history: [],
       stats: { mistakes: 0, accusation_attempts: 0, correct_accusations: 0 },
     },
-    opponent: { opened_safe: 0, stun_ms: 0 },
+    opponent: { opened_safe: 0, stun_ms: 0, reconnect_ms: null },
     result: null,
   };
 }

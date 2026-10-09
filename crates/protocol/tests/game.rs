@@ -92,7 +92,7 @@ fn serialized_projection_contains_only_own_display_and_public_opponent_progress(
     assert_eq!(json["own"]["cells"][5]["number"], serde_json::Value::Null);
     assert_eq!(
         json["opponent"],
-        serde_json::json!({"opened_safe":5,"stun_ms":0})
+        serde_json::json!({"opened_safe":5,"stun_ms":0,"reconnect_ms":null})
     );
     fn audit(value: &serde_json::Value) {
         match value {
@@ -126,6 +126,46 @@ fn serialized_projection_contains_only_own_display_and_public_opponent_progress(
         }
     }
     audit(&json);
+}
+
+#[test]
+fn public_grace_follows_the_detected_disconnect_and_keeps_zero_pending_until_both_expire() {
+    use liar_core::game::Seat;
+    use liar_protocol::game::from_projection;
+    let mut g = engine();
+    let peer = |g: &liar_core::game::RuleEngine, seat| {
+        serde_json::to_value(from_projection(&g.projection(seat), seat)).unwrap()
+    };
+    assert_eq!(
+        peer(&g, Seat::Two)["opponent"]["reconnect_ms"],
+        serde_json::Value::Null
+    );
+    g.disconnect(Seat::One, 3000).unwrap();
+    assert_eq!(peer(&g, Seat::Two)["opponent"]["reconnect_ms"], 30000);
+    g.disconnect(Seat::One, 3500).unwrap();
+    assert_eq!(peer(&g, Seat::Two)["opponent"]["reconnect_ms"], 29500);
+    assert_eq!(
+        peer(&g, Seat::One)["opponent"]["reconnect_ms"],
+        serde_json::Value::Null
+    );
+    g.resume(Seat::One, 2, 4000).unwrap();
+    assert_eq!(
+        peer(&g, Seat::Two)["opponent"]["reconnect_ms"],
+        serde_json::Value::Null
+    );
+    g.disconnect(Seat::One, 5000).unwrap();
+    g.disconnect(Seat::Two, 6000).unwrap();
+    g.advance(35000).unwrap();
+    let waiting = peer(&g, Seat::Two);
+    assert_eq!(waiting["opponent"]["reconnect_ms"], 0);
+    assert_eq!(waiting["result"], serde_json::Value::Null);
+    g.advance(35001).unwrap();
+    assert_eq!(peer(&g, Seat::Two)["opponent"]["reconnect_ms"], 0);
+    g.advance(36000).unwrap();
+    let ended = peer(&g, Seat::Two);
+    assert_eq!(ended["opponent"]["reconnect_ms"], serde_json::Value::Null);
+    assert_eq!(ended["result"]["reason"], "abandoned");
+    assert_eq!(ended["result"]["outcome"], "draw");
 }
 #[test]
 fn public_results_distinguish_abort_cancel_completion_and_both_viewer_outcomes() {

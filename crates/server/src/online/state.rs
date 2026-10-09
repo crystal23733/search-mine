@@ -38,6 +38,7 @@ struct Visible {
     view: GameView,
     own_stun_until: u64,
     opponent_stun_until: u64,
+    opponent_reconnect_until: Option<u64>,
 }
 impl Visible {
     fn new(mut view: GameView, at: u64) -> Self {
@@ -51,15 +52,24 @@ impl Visible {
         } else {
             at.saturating_add(u64::from(view.opponent.stun_ms))
         };
+        let opponent_reconnect_until = view.opponent.reconnect_ms.map(|remaining| {
+            if remaining == 0 {
+                0
+            } else {
+                at.saturating_add(u64::from(remaining))
+            }
+        });
         view.revision = 0;
         view.countdown_ms = 0;
         view.remaining_ms = 0;
         view.own.stun_ms = 0;
         view.opponent.stun_ms = 0;
+        view.opponent.reconnect_ms = None;
         Self {
             view,
             own_stun_until,
             opponent_stun_until,
+            opponent_reconnect_until,
         }
     }
 }

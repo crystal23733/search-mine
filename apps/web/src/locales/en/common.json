@@ -263,5 +263,7 @@
   "friends.explicitJoin": "An invitation fills the code. You choose when to join.",
   "friends.joinHint": "Eight letters or digits, without I, O, 0 or 1. Lowercase letters are accepted.",
   "friends.otherQueue": "You are already waiting for a quick match. Return to the queue or cancel waiting.",
-  "friends.again": "Back to friends lobby"
+  "friends.again": "Back to friends lobby",
+  "match.opponentReconnecting": "Opponent is reconnecting. {{seconds}} s left. Match time keeps running.",
+  "match.reconnectWaiting": "Waiting for the server result."
 }

@@ -11,6 +11,7 @@ import { NavLink } from "../ui/molecules/NavLink";
 import { Board } from "../ui/organisms/Board";
 import { MatchSummary } from "../ui/organisms/MatchSummary";
 import { OnlineResult } from "../ui/organisms/OnlineResult";
+import { ReconnectNotice } from "../ui/organisms/ReconnectNotice";
 import { MatchLayout } from "../ui/templates/MatchLayout";
 export interface OnlinePanelProps {
   controller: OnlineController;
@@ -132,6 +133,12 @@ function OnlineSession({
       </div>
       {(locked || state.error) && (
         <p role="alert">{t(locked ? "offline.error" : error)}</p>
+      )}
+      {state.status === "playing" && state.view && !state.view.result && (
+        <ReconnectNotice
+          remainingMs={state.view.opponent.reconnect_ms}
+          maxMs={state.view.rules.rules.reconnect_grace_ms}
+        />
       )}
       {state.view?.result ? (
         <OnlineResult

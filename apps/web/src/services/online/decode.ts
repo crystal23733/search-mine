@@ -129,7 +129,11 @@ const game = struct({
       correct_accusations: u16,
     }),
   }),
-  opponent: struct({ opened_safe: u16, stun_ms: u32 }),
+  opponent: struct({
+    opened_safe: u16,
+    stun_ms: u32,
+    reconnect_ms: optional(u32),
+  }),
   result: optional(
     struct({
       reason: one(
@@ -150,7 +154,9 @@ export function decodeView(value: unknown): GameView {
   if (
     result.own.cells.length !==
       result.rules.rules.width * result.rules.rules.height ||
-    result.own.cells.some((c, i) => c.cell !== i)
+    result.own.cells.some((c, i) => c.cell !== i) ||
+    (result.opponent.reconnect_ms !== null &&
+      result.opponent.reconnect_ms > result.rules.rules.reconnect_grace_ms)
   )
     fail();
   return result;

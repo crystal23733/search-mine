@@ -22,7 +22,7 @@ export function view(): GameView {
       history: [],
       stats: { mistakes: 0, accusation_attempts: 0, correct_accusations: 0 },
     },
-    opponent: { opened_safe: 0, stun_ms: 0 },
+    opponent: { opened_safe: 0, stun_ms: 0, reconnect_ms: null },
     result: null,
   };
 }
@@ -46,6 +46,26 @@ test("projects valid public snapshots and rejects secrets at every nested bounda
     },
   ])
     expect(() => decodeView(altered)).toThrow();
+});
+
+test("decodes required null or bounded server grace and rejects an inferred or malformed countdown", () => {
+  const base = view();
+  const withGrace = (reconnect_ms: unknown) => ({
+    ...base,
+    opponent: { ...base.opponent, reconnect_ms },
+  });
+  for (const remaining of [null, 0, 1, 30000])
+    expect(decodeView(withGrace(remaining)).opponent).toMatchObject({
+      reconnect_ms: remaining,
+    });
+  for (const remaining of [undefined, -1, 1.2, 30001, 4294967296, "30000"])
+    expect(() => decodeView(withGrace(remaining))).toThrow();
+  expect(() =>
+    decodeView({
+      ...base,
+      opponent: { ...base.opponent, reconnect_ms: 1, account_id: matchId },
+    }),
+  ).toThrow();
 });
 test("rejects unsupported wire versions, unsafe integers, malformed cell arrays and unknown variants", () => {
   const value = view();

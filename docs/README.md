@@ -11,7 +11,7 @@
 - `planning/`: 제공된 브레인스토밍·핸드오프 원문, 내용 그대로 보존.
 - `product/01~21`: 비전·경쟁·세그먼트·여정·가치·경제·리스크·요구·테스트·지표·로드맵.
 - `design/01~18`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준.
-- `adr/0001~0035`: 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀·세션 인증 요청·온라인 화면/친구방·재접속 cursor의 결정.
+- `adr/0001~0036`: 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀·세션 인증 요청·온라인 화면/친구방·재접속 cursor의 결정.
 - `workflow/`: develop·이슈/마일스톤·승인 상태·작업 백로그·스킬 출처.
 
 [#16 권위 actor·WS·원자 결과 검증](verification/16-authoritative-match-actor.md)과 [ADR0023](adr/0023-authoritative-match-actor.md)은 인증 철회/직렬 입력/공개 DTO/결과 transaction의 실행 근거와 후속 매칭·클라이언트·운영의 경계를 기록한다.
@@ -45,3 +45,5 @@
 [#70 빠른 대전 검증](verification/70-online-quick-match-ui.md)은 실제 SQL/HTTPS/WS 화면과 공개 DTO·취소·권한/결과 수명·난이도 복원의 실행 근거와 후속 출구를 기록한다.
 
 [ADR0035](adr/0035-reconnect-command-cursor.md)와 [#74 재접속 순번 검증](verification/74-reconnect-command-cursor.md)은 본인 소비 cursor·새 epoch의 원본 ACK와 실제 재로드 뒤 새 입력을 연결한다. 자동 재접속·영속 장애 복구는 후속18이다.
+
+[ADR0036](adr/0036-opponent-reconnect-grace.md)과 [#76 상대 연결 유예 검증](verification/76-opponent-reconnect-grace.md)은 상대 공개 유예·빈 delta 억제·8언어 상태 표시와 실제 WS/HTTPS 복귀·서버 판정 출구를 기록한다. 본인 자동 재접속·영속 장애 복구는 후속18이다.

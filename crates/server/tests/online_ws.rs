@@ -370,7 +370,7 @@ async fn reconnect_snapshot_restores_consumed_cursor_and_retries_keep_the_origin
             .as_object()
             .unwrap()
             .len(),
-        2
+        3
     );
     original["session_epoch"] = serde_json::json!(3);
     resumed
@@ -442,7 +442,7 @@ async fn actual_socket_authenticates_and_sends_only_public_projection() {
             .as_object()
             .unwrap()
             .len(),
-        2
+        3
     );
     assert_eq!(value["payload"]["view"]["own"]["gauge"], 0);
     for forbidden in [

@@ -2,6 +2,8 @@
 
 > 대응: FR08~13, NFR01/03/06 · Preact+Vite, PixiJS, i18next, Rust WASM.
 
+#76의 [ADR0036](../adr/0036-opponent-reconnect-grace.md)은 Rust 상대 유예를 strict decode하고 수신 잔여에서 단조 시간 경과만 빼 표시한다. null/양수/0을 구분하고0에서도 서버 결과를 기다린다. ReconnectNotice는 보드 앞에서8언어 상태/진행 막대를 공유하며 본인 입력은 연결된 동안 계속 가능하다. 본인 연결 상실 시각으로 상대/서버 grace를 만들지 않는다.
+
 ```mermaid
 classDiagram
   class MatchController { +dispatch(intent) +apply(delta) }

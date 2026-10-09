@@ -53,6 +53,95 @@ fn state(id: Uuid, accounts: [Option<Uuid>; 2]) -> MatchState {
     )
     .unwrap()
 }
+
+async fn grace_view(
+    connection: &mut MatchConnection,
+    grace: Option<u32>,
+) -> liar_protocol::game::GameView {
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        loop {
+            let event = connection.next().await.unwrap();
+            let view = match event.payload {
+                OnlinePayload::Snapshot { view, .. }
+                | OnlinePayload::Delta { view }
+                | OnlinePayload::MatchEnd { view, .. } => view,
+                _ => continue,
+            };
+            if view.phase != liar_protocol::game::GamePhase::Countdown
+                && view.opponent.reconnect_ms == grace
+            {
+                break view;
+            }
+        }
+    })
+    .await
+    .unwrap()
+}
+
+#[tokio::test]
+async fn actor_publishes_peer_grace_and_resume_then_an_authoritative_forfeit_result_once() {
+    let clock = Arc::new(Clock(AtomicU64::new(3000)));
+    let results = Arc::new(Results(AtomicUsize::new(0)));
+    let authority = AuthorityRegistry::new(2).unwrap();
+    let registry = MatchRegistry::new(
+        MatchLimits {
+            matches: 1,
+            mailbox: 16,
+            outgoing: 16,
+            proof_workers: 1,
+        },
+        clock.clone(),
+        clock.clone(),
+        authority.clone(),
+        results.clone(),
+    )
+    .unwrap();
+    let accounts = [Uuid::new_v4(), Uuid::new_v4()];
+    let handle = registry
+        .create(state(Uuid::new_v4(), accounts.map(Some)))
+        .unwrap();
+    let bind = |index: usize| {
+        authority
+            .bind(
+                authority.generation().unwrap(),
+                accounts[index],
+                [index as u8 + 1; 32],
+                20000,
+                18000,
+            )
+            .unwrap()
+    };
+    let mut one = handle.connect(bind(0)).await.unwrap();
+    let mut two = handle.connect(bind(1)).await.unwrap();
+    grace_view(&mut one, None).await;
+    grace_view(&mut two, None).await;
+    clock.0.store(4000, Ordering::SeqCst);
+    drop(one);
+    let lost = grace_view(&mut two, Some(30000)).await;
+    assert!(lost.result.is_none());
+    clock.0.store(14000, Ordering::SeqCst);
+    let mut resumed = handle.connect(bind(0)).await.unwrap();
+    grace_view(&mut resumed, None).await;
+    let restored = grace_view(&mut two, None).await;
+    assert_eq!(restored.remaining_ms, 229000);
+    assert!(restored.result.is_none());
+    drop(resumed);
+    grace_view(&mut two, Some(30000)).await;
+    clock.0.store(44000, Ordering::SeqCst);
+    let ended = grace_view(&mut two, None).await;
+    let result = ended.result.unwrap();
+    assert_eq!(result.reason, liar_protocol::game::PublicEndReason::Forfeit);
+    assert_eq!(result.outcome, liar_protocol::game::Outcome::Win);
+    assert!(result.completed);
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while results.0.load(Ordering::SeqCst) == 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(results.0.load(Ordering::SeqCst), 1);
+}
 #[tokio::test]
 async fn serialized_actor_applies_once_then_commits_one_deadline_result() {
     let clock = Arc::new(Clock(AtomicU64::new(0)));
@@ -330,13 +419,20 @@ async fn slow_consumer_is_retired_without_blocking_the_other_seat() {
     second
         .reject(liar_protocol::online::OnlineError::Malformed)
         .unwrap();
-    assert!(matches!(
-        tokio::time::timeout(std::time::Duration::from_secs(2), second.next())
-            .await
-            .unwrap()
-            .unwrap()
-            .payload,
-        OnlinePayload::Error { .. }
-    ));
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        loop {
+            match second.next().await.unwrap().payload {
+                OnlinePayload::Delta { view } => {
+                    assert_eq!(view.opponent.reconnect_ms, Some(30000))
+                }
+                OnlinePayload::Error {
+                    code: liar_protocol::online::OnlineError::Malformed,
+                } => break,
+                _ => panic!("Unexpected public event"),
+            }
+        }
+    })
+    .await
+    .unwrap();
     assert!(!*second.authority().revoked().borrow());
 }

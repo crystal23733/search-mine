@@ -78,3 +78,5 @@
 #60은 PR61/develop904de85에 병합·종료했다. 다음 [#62 배정 후 최초 게임 연결](https://github.com/crystal23733/search-mine/issues/62)은 초기 lease를 actor로 넘기고 시작 기한의 미연결/철회를 취소한다. [ADR0029](../adr/0029-initial-match-connection-lifecycle.md). 공개 HTTP/main·OAuth invite·8언어 화면의 실제 통합 출구는 후속이며 상위17은 OPEN이다.
 
 #62는 PR63/developba91e66에 병합·종료했다. 다음 [#64 인증 로비 HTTP와 실행 구성](https://github.com/crystal23733/search-mine/issues/64)은 Rust→TS·Origin/CSRF·bounded read/rate·persistent 철회와 main을 연결한다. [ADR0030](../adr/0030-authenticated-lobby-http-runtime.md). OAuth 초대·8언어 로비/온라인 화면은 후속이며 상위17은 OPEN이다.
+
+#74는 PR75/develope27f9226에 병합·종료했다. CI 실제 PG18.6 DB26·웹141unit/77browser·최신6checks가 통과했다. 이전 offline-mobile 두 탭 update 실패는 원인 미확정으로 PR75에 보존했고 테스트 진단을 추가했다. 다음 [#76 상대 연결 유예와 화면](https://github.com/crystal23733/search-mine/issues/76)은 [ADR0036](../adr/0036-opponent-reconnect-grace.md)의 Rust 공개 상태와8언어 표시를 연결한다. 자동 backoff/미확인 명령·영속 재시작/결과 재조회와 상위18은 후속이다.

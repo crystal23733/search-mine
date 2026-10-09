@@ -263,5 +263,7 @@
   "friends.explicitJoin": "Die Einladung füllt den Code aus. Du entscheidest, wann du beitrittst.",
   "friends.joinHint": "Acht Buchstaben oder Ziffern, ohne I, O, 0 und 1. Kleinbuchstaben sind erlaubt.",
   "friends.otherQueue": "Du wartest bereits auf ein schnelles Spiel. Gehe zur Warteschlange oder brich das Warten ab.",
-  "friends.again": "Zurück zur Freundeslobby"
+  "friends.again": "Zurück zur Freundeslobby",
+  "match.opponentReconnecting": "Die andere Person verbindet sich erneut. Noch {{seconds}} s Zeit. Die Spielzeit läuft weiter.",
+  "match.reconnectWaiting": "Warten auf das Serverergebnis."
 }

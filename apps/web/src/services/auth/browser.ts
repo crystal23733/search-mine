@@ -35,9 +35,11 @@ export function createBrowserAuth(
     () => channel?.postMessage("invalidate"),
   );
   const refresh = () => {
-    void auth.refresh();
+    const candidate = auth.recoveryOwner();
+    if (candidate) void auth.resume(candidate);
+    else void auth.refresh();
   };
-  const offline = () => auth.invalidate();
+  const offline = () => auth.suspend();
   const visible = () => {
     if (browser.document.visibilityState === "visible") refresh();
   };

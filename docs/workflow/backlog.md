@@ -80,3 +80,5 @@
 #62는 PR63/developba91e66에 병합·종료했다. 다음 [#64 인증 로비 HTTP와 실행 구성](https://github.com/crystal23733/search-mine/issues/64)은 Rust→TS·Origin/CSRF·bounded read/rate·persistent 철회와 main을 연결한다. [ADR0030](../adr/0030-authenticated-lobby-http-runtime.md). OAuth 초대·8언어 로비/온라인 화면은 후속이며 상위17은 OPEN이다.
 
 #74는 PR75/develope27f9226에 병합·종료했다. CI 실제 PG18.6 DB26·웹141unit/77browser·최신6checks가 통과했다. 이전 offline-mobile 두 탭 update 실패는 원인 미확정으로 PR75에 보존했고 테스트 진단을 추가했다. 다음 [#76 상대 연결 유예와 화면](https://github.com/crystal23733/search-mine/issues/76)은 [ADR0036](../adr/0036-opponent-reconnect-grace.md)의 Rust 공개 상태와8언어 표시를 연결한다. 자동 backoff/미확인 명령·영속 재시작/결과 재조회와 상위18은 후속이다.
+
+#76/PR77은 developc25181e3에 병합·종료했다. CI PG18.6 DB26·143unit/79browser(재시도0)·최신6checks를 통과했다. 다음 [#78 비권위 세션 복구 후보](https://github.com/crystal23733/search-mine/issues/78)는 [ADR0037](../adr/0037-session-recovery-candidate.md)의 권한 차단/메모리 후보/동일 세션 fresh proof·단조 기한을 연결한다. 자동 WS backoff/명령 재전송·영속 재시작/결과 조회와 상위18은 후속이다.

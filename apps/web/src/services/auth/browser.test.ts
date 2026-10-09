@@ -31,8 +31,10 @@ test("offline, visible-page and peer invalidation reconcile server authority wit
   const browser = createBrowserAuth(window, transport, channel);
   try {
     await browser.auth.refresh();
+    const revision = browser.auth.revision();
     window.dispatchEvent(new Event("offline"));
     expect(browser.auth.account()).toBeNull();
+    expect(browser.auth.revision()).toBe(revision);
     window.dispatchEvent(new Event("online"));
     await vi.waitFor(() => expect(browser.auth.connected()).toBe(true));
     await browser.auth.nickname("changed", account.id);

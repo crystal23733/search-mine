@@ -1,5 +1,6 @@
 import type { AuthAccount, AuthErasure, AuthExport } from "@liar/protocol";
 import { createAuthenticatedRequests } from "./requests";
+import { SessionRecovery } from "./recovery";
 import {
   AuthError,
   PROVIDERS,
@@ -19,6 +20,7 @@ export function createAuth(
   transport: AuthTransport,
   online: () => boolean = () => true,
   mutated: () => void = () => {},
+  now: () => number = () => performance.now(),
 ): AuthPort {
   let state: AuthState = {
     status: "loading",
@@ -44,9 +46,32 @@ export function createAuth(
     state.status === "ready" &&
     !state.working &&
     state.account !== null;
+  const recovery = new SessionRecovery(
+    transport,
+    online,
+    now,
+    (accepted, identities) => {
+      csrf = accepted.csrf;
+      sessionId = accepted.session_revision;
+      publish({
+        status: "ready",
+        account: accepted.account,
+        providers: accepted.providers,
+        identities,
+        working: false,
+        error: null,
+      });
+    },
+    (failure = "auth_unavailable") => {
+      begin();
+      clear("unavailable", failure);
+    },
+  );
   function publish(patch: Partial<AuthState>) {
     state = { ...state, ...patch };
-    const key = `${connected()}/${state.account?.id ?? ""}/${sessionId ?? ""}`;
+    const key =
+      recovery.key() ??
+      `${connected()}/${state.account?.id ?? ""}/${sessionId ?? ""}`;
     if (key !== authorityKey) {
       authorityKey = key;
       revision++;
@@ -66,7 +91,8 @@ export function createAuth(
       manualAppleDisconnect: false,
     });
   }
-  function begin() {
+  function begin(preserveRecovery = false) {
+    if (!preserveRecovery) recovery.clear();
     requests.abortAll();
     active?.abort();
     active = new AbortController();
@@ -126,6 +152,10 @@ export function createAuth(
     expected: string | undefined,
     work: (csrf: string, signal: AbortSignal) => Promise<T>,
   ): Promise<Completion<T>> {
+    if (recovery.owner()) {
+      begin();
+      clear("unavailable", "auth_unavailable");
+    }
     const complete = (
       result: AuthResult<T>,
       at = generation,
@@ -222,11 +252,34 @@ export function createAuth(
           }
         : null,
     bootstrap: (signal) => transport.bootstrap(signal),
-    invalidated(failure) {
+    invalidated(failure, retryable) {
+      if (retryable) {
+        suspend();
+        return;
+      }
       begin();
       clear("unavailable", failure);
     },
   });
+  function suspend() {
+    if (disposed) return;
+    if (
+      !recovery.owner() &&
+      state.status === "ready" &&
+      !state.working &&
+      state.account?.nickname &&
+      sessionId
+    )
+      recovery.capture({
+        accountId: state.account.id,
+        revision,
+        sessionId,
+        authorityKey,
+      });
+    recovery.interrupt();
+    begin(true);
+    clear("unavailable", "auth_unavailable");
+  }
   return {
     execute: requests.execute,
     read: () => ({
@@ -245,12 +298,19 @@ export function createAuth(
       };
     },
     refresh,
+    suspend,
+    recoveryOwner: () => recovery.owner(),
+    resume: (expected) => recovery.resume(expected),
     invalidate() {
       if (disposed) return;
       begin();
       clear("unavailable", "auth_unavailable");
     },
     async start(provider, intent, locale, destination, inviteCode) {
+      if (recovery.owner()) {
+        begin();
+        clear("unavailable", "auth_unavailable");
+      }
       if (!state.providers.some((p) => p.provider === provider && p.available))
         return { ok: false, code: "auth_unavailable" };
       const owner = intent === "login" ? undefined : state.account?.id;
@@ -336,6 +396,7 @@ export function createAuth(
     dispose() {
       if (disposed) return;
       disposed = true;
+      recovery.clear();
       generation++;
       active?.abort();
       requests.abortAll();

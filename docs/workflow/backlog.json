@@ -579,6 +579,18 @@
         "reconnect-command-cursor"
       ],
       "acceptance": "Rust 상대 유예 null/양수/0·공개 revision 정규화·Rust→TS/WASM/strict decoder·8언어 상태/0 결과 대기·실제 WS/PG/HTTPS PC/mobile TDD·자체 판정 없음"
+    },
+    {
+      "key": "session-recovery-candidate",
+      "issue": 78,
+      "milestone": "M3",
+      "title": "feat(auth): 연결 장애의 비권위 세션 복구 후보",
+      "requirements": "FR01/14, NFR01/02/05",
+      "scenarios": "TS15/16/20/31/35/36",
+      "deps": [
+        "opponent-reconnect-grace"
+      ],
+      "acceptance": "메모리 비권위 후보30초/동시1·resume10초·전후 account/session proof·권한 없는 offline/late reply/동일revision·HTTP 오류 구분·실제 PG/HTTPS PC/mobile TDD; WS backoff 별도"
     }
   ]
 }

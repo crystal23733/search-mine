@@ -1,5 +1,7 @@
 # 06. HTTP·WebSocket 프로토콜
 
+#78의 [ADR0037](../adr/0037-session-recovery-candidate.md)은 인증 전송 실패와 수신한 잘못된 proof를 분리한다. 복구 후보에는 요청 권한이 없으며 bootstrap→identities→bootstrap에서 원래 account/session을 재확인한다. WS나 Rust 공개 DTO·서버 유예 규칙은 변경하지 않는다.
+
 > 대응: FR01/06/07/09/14, NFR02 · Rust public DTO → ts-rs → TS. 내부 Board와 public DTO는 분리한다.
 
 #76은 [ADR0036](../adr/0036-opponent-reconnect-grace.md)의 opponent.reconnect_ms를 공개한다. null은 연결됨/종료, 양수는 Rust가 계산한 서버 유예 잔여,0은 권위 결과 대기다. 시간 감소만으로 매tick delta를 보내지 않으며 끊김·복귀·유예0은 공개 전환이다. 값은 해당 rules.reconnect_grace_ms 이하의u32다. 웹의 표시0은 forfeit/abandon 판정이 아니다.

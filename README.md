@@ -105,11 +105,13 @@ pnpm build
 pnpm exec playwright test --project auth
 ```
 
-DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회 시험을 포함한79개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md)과 [#72 친구 방 검증](docs/verification/72-friends-room-ui.md)을 확인한다.
+DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회 시험을 포함한81개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md)과 [#72 친구 방 검증](docs/verification/72-friends-room-ui.md)을 확인한다.
 
 [#68 세션 인증 요청 포트](docs/verification/68-authenticated-web-requests.md)는 온라인 조회의 전/후 bootstrap·fresh CSRF와 취소/late reply를 제공한다. 실제 로비/WS 화면은 #70/#72에서 연결했다. #74 재접속 입력 순번 계약은 ADR0035를 따른다.
 
 [#76 상대 재연결 유예](docs/verification/76-opponent-reconnect-grace.md)는 서버가 계산한 상대의 연결 유예를8언어로 보드 위에 표시한다. 표시가0이어도 서버 결과를 기다리고, 상대가 복귀하면 같은 판을 이어간다. 본인 자동 재연결과 서버 재시작 복구는 #18 후속 작업이다.
+
+[#78 세션 복구 후보](docs/verification/78-session-recovery-candidate.md)는 offline 시 공개 계정/요청 권한을 차단하고 최대30초 메모리 후보만 보존한다. 원래 account/session의 fresh proof에 성공해야 복원되며 중단 전 데일리 제출의 늦은 응답은 기록을 지우지 않는다. WS 자동 backoff·미확인 입력 재전송은 다음 #18 하위 작업이다.
 
 ## 권위 서버와 WebSocket
 

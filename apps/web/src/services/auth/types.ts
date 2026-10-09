@@ -10,7 +10,7 @@ import type {
 } from "@liar/protocol";
 import type { Locale } from "../locale";
 import type { SubmissionSession } from "../pending-submissions";
-import type { AuthenticatedRequests } from "./requests";
+import type { AuthenticatedRequests, RequestOwner } from "./requests";
 export const PROVIDERS = [
   {
     id: "google",
@@ -50,6 +50,11 @@ export type AuthCode =
 export class AuthError extends Error {
   constructor(public readonly code: AuthCode) {
     super(code);
+  }
+}
+export class AuthConnectionError extends AuthError {
+  constructor() {
+    super("auth_unavailable");
   }
 }
 export type AuthResult<T> =
@@ -93,6 +98,9 @@ export interface AuthPort extends SubmissionSession, AuthenticatedRequests {
   subscribe(listener: () => void): () => void;
   refresh(): Promise<void>;
   invalidate(): void;
+  suspend(): void;
+  recoveryOwner(): RequestOwner | null;
+  resume(expected: RequestOwner): Promise<AuthResult<void>>;
   start(
     provider: AuthProvider,
     intent: AuthIntent,

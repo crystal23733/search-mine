@@ -4,12 +4,14 @@ import { mkdir, readFile } from "node:fs/promises";
 import { registerOnlineQuickTests } from "./helpers/online-quick";
 import { registerOnlineFriendsTests } from "./helpers/online-friends";
 import { registerOnlineReconnectTests } from "./helpers/online-reconnect";
+import { registerAuthRecoveryTests } from "./helpers/auth-recovery";
 const origin = "https://localhost:8443";
 const providers = ["Google", "Apple", "Kakao", "Naver"] as const;
 test.describe.configure({ mode: "serial" }); // The fixture's explicit clock control must not overlap accounts.
 registerOnlineQuickTests(approve, login);
 registerOnlineFriendsTests(approve, login);
 registerOnlineReconnectTests(approve, login);
+registerAuthRecoveryTests(approve, login);
 
 const invitationLocales = [
   "en",

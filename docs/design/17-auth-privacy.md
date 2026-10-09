@@ -1,5 +1,7 @@
 # 17. OAuth 인증·개인정보 최소 수집
 
+#78의 [ADR0037](../adr/0037-session-recovery-candidate.md)은 연결 장애 시 공개 계정·요청 권한을 지운 뒤 메모리에만30초 비권위 복구 후보를 보존한다. 같은 account/session의 전/후 fresh proof에 성공할 때만 복원한다. recoveryOwner는 최소 accountId/revision이며 private session/CSRF를 노출하지 않는다. 후보는 권한이나 자격 증명이 아니다.
+
 구현 상세: [ADR0021 계정 권리·Apple 철회](../adr/0021-account-rights-and-apple-revocation.md)는 #45의 최근 재인증, 세션에 고정된 연결, 원자 credential 저장/계정 삭제와 목적 제한 queue를 구체화한다. 실제 제공자 검수는 #42에 남긴다.
 
 > 대응: FR01/13/16, NFR01/02 · TS01/20/29/31~36 · [ADR 0009](../adr/0009-oauth-minimal-identity.md)

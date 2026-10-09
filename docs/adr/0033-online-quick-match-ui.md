@@ -24,6 +24,8 @@ WS URL은 같은 HTTPS origin의 /api/v1/ws이며 query·subprotocol·계정·ma
 
 연결 종료 직후 입력을 중단한 뒤 같은 예상 권한에 한 번의 bounded bootstrap 검증을 실행한다. 서버 철회가 close frame으로만 전달돼도 이전 보드를 지우고, 정상 권한의 네트워크 단절은 수동 상태 확인으로 안내한다. 이 검증은 자동 재접속/입력 재전송을 시작하지 않는다.
 
+#72 통합 CI에서 철회 barrier가 DB DELETE보다 먼저 연결을 닫는 경합을 확인했다. 정책 close1008에 선행 공개 error가 없으면 브라우저의 현재 권한을 즉시 폐기한다. DB 삭제 전 성공한 bootstrap으로 철회된 보드를 유지하지 않는다. 이미 받은 rate/malformed 등의 공개 error가 있으면 최초 terminal 원인을 유지한다. 서버는 outgoing 종료와 watch 철회의 경합에서도 현재 권한이 없으면1008로 닫는다. 일반1000/1006 네트워크 종료는 기존 bounded proof를 사용하며 미확정 결과를 saved로 바꾸지 않는다.
+
 디코더/HTTP/WS/controller/UI의 의미 있는 행동을 Red→Green으로 확인한다. 실제 Rust router/PostgreSQL/WS/HTTPS 브라우저 출구를 연결한다. loopback 테스트 fixture만 제공자 proof·통제 Clock·3×3/지뢰2/공격 게이지1의 작은 검증 판을 사용하고 실제 BoardPool/CoreMatchPreparer/CoreBot/MatchRegistry/PgResultRepository/합성 철회를 조립한다. HTTPS proxy는 고정 loopback WS upgrade를 전달한다. 공유 통제 Clock을 쓰는 브라우저 검사는 같은 serial suite에서 실행한다. 운영 router/인증/Clock을 우회하지 않는다.
 
 두 계정의 동일 공개 초기 판·실제 입력/결과·10초 봇 3난이도·취소/계정 철회·8언어·광고 요청/온라인 저장0을 검증한다. 작은 fixture는 운영16×16/지뢰40 성능이나 공정성 실험을 대체하지 않는다. 실제 키 #42, 하드웨어 #26, 사람 관찰 #27은 별도다. 친구 방 UI는 다음 #17 하위 작업이며 상위 #17/#18을 이 작업만으로 종료하지 않는다.

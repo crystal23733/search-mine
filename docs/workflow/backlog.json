@@ -543,6 +543,18 @@
         "authenticated-web-requests"
       ],
       "acceptance": "닫힌 Rust→TS 공개 DTO·bounded 세션 HTTP/WS·3난이도/10초/취소·실제 보드/ACK/결과·8언어·권한/늦은 응답·실DB/HTTPS TDD; 친구 UI/재접속 별도"
+    },
+    {
+      "key": "friends-room-ui",
+      "issue": 72,
+      "milestone": "M3",
+      "title": "feat(web): 친구 방과 초대·준비·온라인 대전 화면",
+      "requirements": "FR01/02/06/07/08/10/11/14, NFR01/02/05/06",
+      "scenarios": "TS02/10/12/13/15/18~22/26/31/36",
+      "deps": [
+        "online-quick-match-ui"
+      ],
+      "acceptance": "디자인06·8문자/명시 join/OAuth 복귀·공유/2seat/ready/나가기/서버 만료·공통 OnlineEntry/보드/결과·역순/권한·8언어 실DB/HTTPS/WS TDD"
     }
   ]
 }

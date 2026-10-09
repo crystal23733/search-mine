@@ -64,8 +64,12 @@ export function createOnlineSocket(
           function abort() {
             fail("cancelled");
           }
-          function error() {
-            fail("disconnected");
+          function error(event: Event) {
+            fail(
+              event.type === "close" && (event as CloseEvent).code === 1008
+                ? "unauthorized"
+                : "disconnected",
+            );
           }
           function message(event: MessageEvent) {
             if (closed) return;

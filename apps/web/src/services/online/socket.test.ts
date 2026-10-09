@@ -138,3 +138,65 @@ test("bounds pre-acceptance buffering and closes when post-snapshot authority ve
   await failed;
   expect(second.close).toHaveBeenCalledTimes(1);
 });
+
+test("treats a policy close without a public error as revoked authority even if bootstrap would still accept the session", async () => {
+  const socket = new Socket();
+  const pending = createOnlineSocket(
+    auth,
+    "https://example.test",
+    () => socket as unknown as WebSocket,
+  )(owner, matchId, new AbortController().signal);
+  socket.emit(event());
+  const connection = await pending;
+  const ended = vi.fn();
+  connection.listen(vi.fn(), ended);
+  const closed = new Event("close");
+  Object.defineProperty(closed, "code", { value: 1008 });
+  socket.dispatchEvent(closed);
+  expect(ended).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ code: "unauthorized" }),
+  );
+});
+
+test("keeps a preceding public error and ordinary network closure distinct from authority revocation", async () => {
+  for (const [code, publicError] of [
+    [1000, null],
+    [1006, null],
+    [1008, "rate_limited"],
+    [1008, "malformed"],
+  ] as const) {
+    const socket = new Socket();
+    const pending = createOnlineSocket(
+      auth,
+      "https://example.test",
+      () => socket as unknown as WebSocket,
+    )(owner, matchId, new AbortController().signal);
+    socket.emit(event());
+    const connection = await pending;
+    const ended = vi.fn();
+    const received = vi.fn();
+    connection.listen((event) => {
+      received(event);
+      if (event.payload.type === "error") connection.close();
+    }, ended);
+    if (publicError)
+      socket.emit({
+        ...event(2),
+        payload: { type: "error", code: publicError },
+      });
+    const closed = new Event("close");
+    Object.defineProperty(closed, "code", { value: code });
+    socket.dispatchEvent(closed);
+    if (publicError) {
+      expect(received).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          payload: { type: "error", code: publicError },
+        }),
+      );
+      expect(ended).not.toHaveBeenCalled();
+    } else
+      expect(ended).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ code: "disconnected" }),
+      );
+  }
+});

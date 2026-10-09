@@ -24,6 +24,8 @@ MatchController는 intent와 공개 결과 연결만, MatchStore는 공개 상�
 
 ## 컴포넌트 목록과 재사용
 
+#72의 /friends와 계정/controller/activity·보드/결과의 OnlineEntry 재사용은 [ADR0034](../adr/0034-friends-room-ui.md)를 따른다. FriendsPanel은 생성/코드 입력·공유·공개 두 자리/ready/만료 표시만 맡는다.
+
 #70의 빠른 대기→실제 온라인 보드·결과와 bounded HTTP/WS·공개 DTO·권한 수명은 [ADR0033](../adr/0033-online-quick-match-ui.md)을 따른다. /queue의 controller를 언어 변경에 유지하고 Board/MatchSummary/MatchLayout를 재사용한다. 친구 방 UI와 자동 재접속은 후속이다.
 
 ```mermaid

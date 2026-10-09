@@ -1060,6 +1060,61 @@ input[type="checkbox"]:checked::before {
 .auth-feedback {
   line-height: 1.6;
 }
+.friends-panel {
+  width: min(100%, 38rem);
+  margin: auto;
+  display: grid;
+  gap: var(--space-lg);
+}
+.friend-code-card {
+  text-align: center;
+}
+.friend-code {
+  display: block;
+  font-family: ui-monospace, monospace;
+  font-size: clamp(1.4rem, 6vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+.friend-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: center;
+}
+.friend-seats {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-md);
+}
+.friend-seat {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  overflow-wrap: anywhere;
+}
+.friend-seat--empty {
+  border-style: dashed;
+  color: var(--color-muted);
+}
+.friend-join {
+  margin-top: var(--space-xl);
+  display: grid;
+  gap: var(--space-md);
+}
+.friend-join input {
+  width: 100%;
+  min-width: 0;
+  text-transform: uppercase;
+}
 .queue-panel {
   max-width: 42rem;
   margin: 2rem auto;

@@ -1,3 +1,4 @@
+import { ROOM_CODE } from "./invitation";
 import {
   PROTOCOL_VERSION,
   type GameView,
@@ -204,7 +205,7 @@ function state(v: unknown): LobbyState {
       return struct({
         type: one("room"),
         room_id: uuid,
-        code: text(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/),
+        code: text(ROOM_CODE),
         own_seat: seat,
         occupied: pair,
         ready: pair,

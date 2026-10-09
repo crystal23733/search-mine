@@ -33,6 +33,115 @@ const matched: LobbyResponse = {
   server_time_ms: 0,
   state: { type: "matched", match_id: matchId, own_seat: 0, opponent: "human" },
 };
+const room: LobbyResponse = {
+  v: 1,
+  server_time_ms: 1000,
+  state: {
+    type: "room",
+    room_id: matchId,
+    code: "ABCD2345",
+    own_seat: 0,
+    occupied: [true, false],
+    ready: [false, false],
+    expires_at_ms: 601000,
+  },
+};
+test("room create and ready abort old polls, use the current room identity and discard late state before exact cancel", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  await s.controller.start();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(room);
+  await s.controller.createRoom();
+  expect(s.port.lobby).toHaveBeenLastCalledWith(
+    expect.anything(),
+    { type: "room_create" },
+    expect.any(AbortSignal),
+  );
+  const late = deferred<LobbyResponse>();
+  vi.mocked(s.port.lobby).mockReturnValueOnce(late.promise);
+  await vi.advanceTimersByTimeAsync(500);
+  const oldSignal = vi.mocked(s.port.lobby).mock.calls.at(-1)![2];
+  const accepted: LobbyResponse = {
+    ...room,
+    state: {
+      ...(room.state as Extract<LobbyResponse["state"], { type: "room" }>),
+      ready: [true, false],
+    },
+  };
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(accepted);
+  await s.controller.setReady(true);
+  expect(oldSignal.aborted).toBe(true);
+  expect(s.port.lobby).toHaveBeenLastCalledWith(
+    expect.anything(),
+    { type: "ready", room_id: matchId, ready: true },
+    expect.any(AbortSignal),
+  );
+  late.resolve(room);
+  await Promise.resolve();
+  expect(s.controller.read().lobby).toEqual(accepted);
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(idle);
+  await s.controller.cancel();
+  expect(s.port.lobby).toHaveBeenLastCalledWith(
+    expect.anything(),
+    { type: "cancel", identity: { kind: "room", room_id: matchId } },
+    expect.any(AbortSignal),
+  );
+  expect(s.controller.read().status).toBe("ready");
+  s.controller.dispose();
+});
+test("room join canonicalizes input, rejects invalid codes without requests, and ready remains server-owned with duplicate click suppression", async () => {
+  const s = setup();
+  await s.controller.start();
+  await s.controller.joinRoom("ABCD2340");
+  expect(s.port.lobby).toHaveBeenCalledTimes(1);
+  const joined: LobbyResponse = {
+    ...room,
+    state: {
+      ...(room.state as Extract<LobbyResponse["state"], { type: "room" }>),
+      own_seat: 1,
+      occupied: [true, true],
+      ready: [true, false],
+    },
+  };
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(joined);
+  await s.controller.joinRoom(" abcd2345 ");
+  expect(s.port.lobby).toHaveBeenLastCalledWith(
+    expect.anything(),
+    { type: "room_join", code: "ABCD2345" },
+    expect.any(AbortSignal),
+  );
+  const pending = deferred<LobbyResponse>();
+  vi.mocked(s.port.lobby).mockReturnValueOnce(pending.promise);
+  const ready = s.controller.setReady(true);
+  await s.controller.setReady(false);
+  expect(s.controller.read().lobby).toEqual(joined);
+  expect(s.port.lobby).toHaveBeenCalledTimes(3);
+  s.replace();
+  pending.resolve(joined);
+  await ready;
+  expect(s.controller.read().lobby).toBeNull();
+  expect(s.controller.read().view).toBeNull();
+  s.controller.dispose();
+});
+test("displaying zero room time never expires an active server room or starts a match while a bounded status is pending", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(room);
+  await s.controller.start();
+  expect(s.controller.read().roomMs).toBe(600000);
+  const pending = deferred<LobbyResponse>();
+  vi.mocked(s.port.lobby).mockReturnValueOnce(pending.promise);
+  await vi.advanceTimersByTimeAsync(600000);
+  expect(s.controller.read().roomMs).toBe(0);
+  expect(s.controller.read().status).toBe("waiting");
+  expect(s.controller.read().lobby).toEqual(room);
+  expect(s.port.lobby).toHaveBeenCalledTimes(2);
+  expect(s.port.connect).not.toHaveBeenCalled();
+  pending.resolve(idle);
+  await Promise.resolve();
+  expect(s.controller.read().status).toBe("ready");
+  s.controller.dispose();
+});
 function setup() {
   let account: string | null = matchId,
     revision = 1,
@@ -87,7 +196,7 @@ function setup() {
         server_time_ms: 0,
         payload,
       }),
-    closed: () => closed(new OnlineFailure("disconnected")),
+    closed: (code = "disconnected") => closed(new OnlineFailure(code)),
   };
 }
 test("polls one request at a time only after waiting reply, then cancels exact identity and ignores late status", async () => {
@@ -251,6 +360,19 @@ test("verifies the same authority after socket close and clears a revoked public
     expect.any(Function),
     expect.any(AbortSignal),
   );
+  s.controller.dispose();
+});
+
+test("policy closure invalidates immediately without trusting a proof before server deletion commits", async () => {
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({ type: "snapshot", session_epoch: 1, view: view() });
+  const proof = vi.spyOn(s.auth, "execute");
+  s.closed("unauthorized");
+  expect(s.auth.account()).toBeNull();
+  expect(s.controller.read().view).toBeNull();
+  expect(proof).not.toHaveBeenCalled();
   s.controller.dispose();
 });
 test("does not connect or report cancel success when the reservation committed during cancellation", async () => {

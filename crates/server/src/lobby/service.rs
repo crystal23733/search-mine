@@ -1,7 +1,10 @@
 use super::*;
 use crate::{
     auth::AuthClock,
-    online::{AuthorityRegistry, BotExecutor, ConnectionAuthority, MatchRegistry, MatchState},
+    online::{
+        AuthorityRegistry, BotExecutor, ConnectionAuthority, MatchAdmission, MatchRegistry,
+        MatchState,
+    },
 };
 use liar_core::{
     bot::Difficulty,
@@ -385,43 +388,52 @@ impl LobbyService {
             else {
                 continue;
             };
-            let leases: Vec<_> = reservation
+            let leases = reservation
                 .players
-                .iter()
-                .flatten()
-                .filter_map(|account| inner.leases.get(account).cloned())
-                .collect();
-            if leases.len() != reservation.players.iter().flatten().count() {
+                .map(|account| account.and_then(|account| inner.leases.get(&account).cloned()));
+            if leases.iter().flatten().count() != reservation.players.iter().flatten().count() {
                 return Err(OnlineError::Unauthorized.into());
             }
-            let participants: Vec<_> = leases.iter().collect();
-            let started = self.authentication.authorities.with_authorities(
-                &participants,
-                self.authentication.clock.now(),
-                || {
-                    result.and_then(|prepared| {
-                        let engine = prepared
-                            .engine
-                            .start(now)
-                            .map_err(|_| OnlineError::Unavailable)?;
-                        let state = MatchState::new(
-                            Uuid::new_v4(),
-                            engine,
-                            reservation.players,
-                            prepared.seed,
-                            now,
-                        )?;
-                        match reservation.opponent {
-                            OpponentKind::Human => self.registry.create(state),
-                            OpponentKind::Bot => self.registry.create_with_bot(
-                                state,
-                                reservation.difficulty,
-                                self.bots.clone(),
-                            ),
-                        }
-                    })
-                },
-            );
+            let state = result.and_then(|prepared| {
+                let engine = prepared
+                    .engine
+                    .start(now)
+                    .map_err(|_| OnlineError::Unavailable)?;
+                MatchState::new(
+                    Uuid::new_v4(),
+                    engine,
+                    reservation.players,
+                    prepared.seed,
+                    now,
+                )
+            });
+            let started = match state {
+                Ok(state) => {
+                    // Admission owns the atomic guard; do not recursively lock its registry.
+                    let admitted = self.registry.create_admitted(
+                        state,
+                        MatchAdmission {
+                            authorities: self.authentication.authorities.clone(),
+                            clock: self.authentication.clock.clone(),
+                            participants: leases.clone(),
+                        },
+                        (reservation.opponent == OpponentKind::Bot)
+                            .then(|| (reservation.difficulty, self.bots.clone())),
+                    );
+                    match admitted {
+                        Err(OnlineError::Unauthorized) => Err(OnlineError::Unauthorized),
+                        result => Ok(result),
+                    }
+                }
+                Err(error) => {
+                    let participants: Vec<_> = leases.iter().flatten().collect();
+                    self.authentication.authorities.with_authorities(
+                        &participants,
+                        self.authentication.clock.now(),
+                        || Err(error),
+                    )
+                }
+            };
             let started = match started {
                 Ok(started) => started,
                 Err(OnlineError::Unauthorized) => continue,

@@ -223,6 +223,17 @@ impl MatchState {
             self.synchronize();
         }
     }
+    pub(super) fn start_deadline(&self) -> u64 {
+        self.engine.start_ms()
+    }
+    pub(super) fn cancel_initial(&mut self, at: u64) {
+        if self.engine.cancel_before_start(at).is_ok() {
+            self.now = at;
+            self.synchronize();
+        } else {
+            self.abort(self.now.max(at));
+        }
+    }
     pub fn disconnect(&mut self, seat: Seat, epoch: u32, at: u64) {
         if self.epochs[seat.index()] == epoch && self.engine.disconnect(seat, at).is_ok() {
             self.now = at;

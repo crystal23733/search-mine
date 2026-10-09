@@ -483,6 +483,18 @@
         "lobby-composition"
       ],
       "acceptance": "분리된 shared lease·합성 철회 barrier·권한/expiry/cancel·두 사람 원자 registry guard·actual CPU late discard·실DB/TDD"
+    },
+    {
+      "key": "initial-match-admission",
+      "issue": 62,
+      "milestone": "M3",
+      "title": "feat(server): 배정 후 최초 WS 연결과 세션 수명",
+      "requirements": "FR02/06/07/14/16, NFR02",
+      "scenarios": "TS10/12/15/16/20/21/35",
+      "deps": [
+        "lobby-session-admission"
+      ],
+      "acceptance": "core 시작 전 취소·initial lease actor 이전/first attach·논리 시작 기한/늦은 ingress·철회/expiry·봇/seat guard·단일 결과/소유권 반환·TDD"
     }
   ]
 }

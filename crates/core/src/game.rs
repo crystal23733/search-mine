@@ -574,6 +574,20 @@ impl RuleEngine {
             *revision += 1;
         }
     }
+    pub fn start_ms(&self) -> u64 {
+        self.start
+    }
+    pub fn cancel_before_start(&mut self, at: u64) -> Result<(), Rejection> {
+        if self.end.is_some() {
+            return Err(Rejection::Finished);
+        }
+        if at < self.now || at > self.start || self.now >= self.start {
+            return Err(Rejection::InvalidTime);
+        }
+        self.now = at;
+        self.finish(EndReason::Cancelled, None, at);
+        Ok(())
+    }
     pub fn disconnect(&mut self, seat: Seat, now: u64) -> Result<(), Rejection> {
         self.advance(now)?;
         if self.end.is_some() {

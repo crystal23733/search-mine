@@ -2,6 +2,7 @@
 pub mod auth;
 pub mod lobby;
 pub mod online;
+pub mod room_code;
 use axum::{
     Json, Router,
     extract::State,

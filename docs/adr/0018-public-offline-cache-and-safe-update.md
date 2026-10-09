@@ -1,9 +1,15 @@
 # ADR0018: 공개 정적 오프라인 캐시·다중 탭 안전 업데이트·제출 대기
 
+2026-10-09 #66 회귀 조사: 기존 검사는 실제 배포의 고정 URL·새 bytes 대신 worker URL의 쿼리를 바꿨다. 두 idle ACK·동일 client 집합 뒤 활성화가 끝나지 않는 trace를 보존했다. 활성화 Promise를 message lifetime에서 분리한 후보도 추적 없는 모바일 반복에서 실패하여 폐기했다. 제품의 prepare/집합 재확인·게임 시작 lock·controllerchange 재로드·실패 release·15초 복구는 그대로 유지한다. 두 탭 검사는 자체 loopback 정적 fixture에서 실제 production 산출물을 제공하고, 같은 service-worker.js의 bytes만 변경하여 실제 배포를 재현한다. fixture는 각 시험의 임의 포트·메모리 revision·자동 close를 사용하고 공유 산출물을 수정하지 않는다. [공식 lifecycle](https://web.dev/articles/service-worker-lifecycle#avoid-changing-the-url-of-your-service-worker-script)과 [Playwright 제한](https://playwright.dev/docs/service-workers#known-limitations)에 따라 worker 업데이트를 URL 변경이나 route mock으로 대체하지 않는다. 반복/전체 검사가 통과하기 전에는 해결로 보고하지 않는다.
+
 - 날짜: 2026-10-07
+
+업데이트 검증의 브라우저 차이도 조사한다. 기본 chromium-headless-shell에서 고정 URL 시험도16개 중3개가 실패했고 임시 worker pending 계측에서 await skipWaiting 앞·이전 worker의 JS waitUntil pending0을 확인했다. Chromium의 native no-work/renderer-idle 조건과 JS pending0은 같은 관측이 아니므로 제품 결함의 원인으로 단정하지 않는다. [Playwright 공식 browsers](https://playwright.dev/docs/browsers#chromium-new-headless-mode)의 `channel: chromium`은 일반 Chromium의 새 headless 모드다. 오프라인/다중 탭 lifecycle 검사를 이 모드에서 대조하고 제품 SW는 변경하지 않는다. 라이브러리/브라우저 버전을 낮추거나 시간 제한/검사를 완화하지 않는다. shell 실패 사실과 새 모드의 실제 반복/전체/CI 결과를 기록한다.
 - 상태: 채택 — #14, FR10, TS18/19/36. PR40/#13 병합·종료 확인.
 
 ## 결정
+
+#66의 계측 제거/일반 Chromium 새 headless 검사에서 PC·mobile 각8회16개가1.7분에 통과했다. 제품 SW/adapter/coordinator diff0이며 전체/CI 결과를 추가 확인한다.
 
 Service Worker는 build revision으로 관리하는 정적 shell/index·JS/CSS·8locale chunk·public Rust WASM/glue만 precache한다. 캐시한 Rust/RNG/rules는 UTC 공개 데일리를 재현한다. API 응답·OAuth/session/cookie·POST·WS·광고·외부 origin은 캐시하지 않는다. 캐시 없는 첫 오프라인 접근은 보장하지 않고 캐시/설치/저장소 실패도 온라인 로컬 플레이를 막지 않는다. 연결 신호는 서버 인증·가용성·매치 권위를 뜻하지 않는다. 온라인 매치를 오프라인 코어/봇으로 승격하지 않는다.
 

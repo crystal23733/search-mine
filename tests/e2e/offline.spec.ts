@@ -1,6 +1,21 @@
-import { test, expect } from "@playwright/test";
+import { test as base, expect } from "@playwright/test";
+import {
+  createWorkerUpdateServer,
+  type WorkerUpdateServer,
+} from "./helpers/worker-update-server";
 import { readFileSync, mkdirSync } from "node:fs";
 import type { DailyStep } from "../../packages/protocol/src/index";
+const test = base.extend<{ workerUpdate: WorkerUpdateServer }>({
+  workerUpdate: async ({ browserName }, use) => {
+    expect(browserName).toBe("chromium");
+    const server = await createWorkerUpdateServer();
+    try {
+      await use(server);
+    } finally {
+      await server.close();
+    }
+  },
+});
 const daily = JSON.parse(
   readFileSync(
     new URL("../fixtures/native-wasm.json", import.meta.url),
@@ -141,6 +156,7 @@ test("offline completion atomically survives reload with a pending replay; setti
 test("two-tab update cannot interrupt a game; idle update reloads both, cache deletion is scoped and can be re-enabled", async ({
   page,
   context,
+  workerUpdate,
 }) => {
   test.setTimeout(60_000);
   await context.addInitScript(() =>
@@ -149,19 +165,23 @@ test("two-tab update cannot interrupt a game; idle update reloads both, cache de
       String(Number(sessionStorage.getItem("offline-test-boots") ?? 0) + 1),
     ),
   );
-  await page.goto("/en/settings");
+  await page.goto(`${workerUpdate.origin}/en/settings`);
   await expect(
     page.getByText("Public local play assets are cached on this device."),
   ).toBeVisible();
   const other = await context.newPage();
-  await other.goto("/en/daily");
+  await other.goto(`${workerUpdate.origin}/en/daily`);
   await expect(other.getByRole("gridcell")).toHaveCount(256);
   const progress = await other.getByTestId("own-progress").textContent();
+  for (const tab of [page, other])
+    await expect
+      .poll(() =>
+        tab.evaluate(() => navigator.serviceWorker.controller?.scriptURL),
+      )
+      .toBe(`${workerUpdate.origin}/service-worker.js`);
+  workerUpdate.advance();
   await page.evaluate(async () => {
-    await navigator.serviceWorker.register("/service-worker.js?review=14", {
-      scope: "/",
-      updateViaCache: "none",
-    });
+    await (await navigator.serviceWorker.getRegistration("/"))!.update();
   });
   await expect(
     page.getByRole("button", { name: "Apply update" }),
@@ -181,6 +201,13 @@ test("two-tab update cannot interrupt a game; idle update reloads both, cache de
   ).toBe("1");
   await other.getByRole("link", { name: "Home", exact: true }).click();
   await expect(other.getByRole("gridcell")).toHaveCount(0);
+  // Route removal precedes the game effect's release of its activity hold.
+  await expect(
+    other.getByRole("button", { name: "Apply update" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Apply update" }),
+  ).toBeEnabled();
   await Promise.all([
     page.waitForEvent("load"),
     other.waitForEvent("load"),

@@ -505,6 +505,16 @@
       "scenarios": "TS10/12/20/21/31~36",
       "deps": ["initial-match-admission"],
       "acceptance": "닫힌 Rust→TS DTO·모든 호출 Origin/CSRF·닉네임/session generation·bounded read/rate/열거·no-store·shared security/main 실제 pool/bot/합성 철회·실HTTP/DB/WS TDD"
+    },
+    {
+      "key": "oauth-invitation-return",
+      "issue": 66,
+      "milestone": "M3",
+      "title": "feat(auth): OAuth 서버 거래에 친구 초대 보존과 복귀",
+      "requirements": "FR01/07/08/11, NFR02",
+      "scenarios": "TS01/12/13/19/20/31~36",
+      "deps": ["lobby-http-runtime"],
+      "acceptance": "공유 canonical RoomCode·login/friends의5분 DB 거래/CHECK/원자 consume·중첩/역순/성공/실패/expiry·nickname/tutorial/8locale/저장소 거부·실DB/HTTPS TDD"
     }
   ]
 }

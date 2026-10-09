@@ -13,6 +13,7 @@ use zeroize::Zeroizing;
 struct Memory {
     transactions: Mutex<Vec<AuthTransaction>>,
     sessions: Mutex<Vec<([u8; 32], Session)>>,
+    login_nickname: Mutex<Option<Nickname>>,
 }
 #[derive(Clone, Default)]
 struct Store(Arc<Memory>);
@@ -45,7 +46,7 @@ impl AuthStore for Store {
         }
         let account = Account {
             id: Uuid::new_v4(),
-            nickname: None,
+            nickname: self.0.login_nickname.lock().unwrap().clone(),
         };
         let identity_id = Uuid::new_v4();
         sessions.push((
@@ -143,6 +144,227 @@ fn router(store: Store) -> Router {
         BrowserSecurity::new("https://game.example", [3; 32]).unwrap(),
         Arc::new(Clock),
     )
+}
+
+async fn invitation_start(router: &Router, browser: &str, csrf: &str, body: &str) -> String {
+    let response = router
+        .clone()
+        .oneshot(mutation(
+            "POST",
+            "/api/v1/auth/google/start",
+            browser,
+            csrf,
+            body,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: serde_json::Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 8192).await.unwrap()).unwrap();
+    let url = url::Url::parse(body["authorize_url"].as_str().unwrap()).unwrap();
+    assert!(
+        !url.query_pairs()
+            .any(|(k, _)| matches!(k.as_ref(), "invite_code" | "return_path" | "locale"))
+    );
+    url.query_pairs()
+        .find(|(k, _)| k == "state")
+        .unwrap()
+        .1
+        .to_string()
+}
+async fn invitation_callback(
+    router: &Router,
+    browser: &str,
+    state: &str,
+    outcome: &str,
+) -> axum::response::Response {
+    router.clone().oneshot(Request::builder().uri(format!("/api/v1/auth/google/callback?state={state}&{outcome}&iss=https%3A%2F%2Faccounts.google.com")).header(header::COOKIE, browser).body(Body::empty()).unwrap()).await.unwrap()
+}
+#[tokio::test]
+async fn invitation_keeps_each_locale_and_returns_new_or_named_accounts_to_the_same_code() {
+    for named in [false, true] {
+        for locale in ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"] {
+            let store = Store::default();
+            if named {
+                *store.0.login_nickname.lock().unwrap() = Some(Nickname::parse("Player").unwrap());
+            }
+            let router = router(store.clone());
+            let (browser, bootstrap) = bootstrap(&router, None).await;
+            let state = invitation_start(
+                &router,
+                &browser,
+                bootstrap["csrf"].as_str().unwrap(),
+                &format!(
+                    r#"{{"locale":"{locale}","return_path":"friends","invite_code":"ABCD2345"}}"#
+                ),
+            )
+            .await;
+            let response = invitation_callback(&router, &browser, &state, "code=valid-code").await;
+            assert_eq!(response.status(), StatusCode::SEE_OTHER);
+            assert_eq!(
+                response.headers()[header::LOCATION],
+                if named {
+                    format!("/{locale}/friends?code=ABCD2345")
+                } else {
+                    format!("/{locale}/onboarding?return_path=friends&code=ABCD2345")
+                }
+            );
+            assert_eq!(response.headers()["cache-control"], "no-store");
+            assert!(store.0.transactions.lock().unwrap().is_empty());
+            assert_eq!(
+                invitation_callback(&router, &browser, &state, "code=valid-code")
+                    .await
+                    .status(),
+                StatusCode::BAD_REQUEST
+            );
+        }
+    }
+}
+#[tokio::test]
+async fn overlapping_invites_bind_their_own_codes_and_consumed_failures_keep_a_safe_retry() {
+    let store = Store::default();
+    let router = router(store.clone());
+    let (browser, bootstrap_value) = bootstrap(&router, None).await;
+    let csrf = bootstrap_value["csrf"].as_str().unwrap();
+    let korean = invitation_start(
+        &router,
+        &browser,
+        csrf,
+        r#"{"locale":"ko","return_path":"friends","invite_code":"ABCD2345"}"#,
+    )
+    .await;
+    let french = invitation_start(
+        &router,
+        &browser,
+        csrf,
+        r#"{"locale":"fr","return_path":"friends","invite_code":"ZZZZ6789"}"#,
+    )
+    .await;
+    let german = invitation_start(
+        &router,
+        &browser,
+        csrf,
+        r#"{"locale":"de","return_path":"friends","invite_code":"MMMM2345"}"#,
+    )
+    .await;
+    let (other, _) = bootstrap(&router, None).await;
+    assert_eq!(
+        invitation_callback(&router, &other, &french, "code=valid-code")
+            .await
+            .status(),
+        StatusCode::BAD_REQUEST
+    );
+    for (state, outcome, path) in [
+        (
+            german,
+            "code=invalid-code",
+            "/de/login?error=auth_failed&return_path=friends&code=MMMM2345",
+        ),
+        (
+            french,
+            "error=access_denied",
+            "/fr/login?error=auth_failed&return_path=friends&code=ZZZZ6789",
+        ),
+        (
+            korean,
+            "code=valid-code",
+            "/ko/onboarding?return_path=friends&code=ABCD2345",
+        ),
+    ] {
+        let response = invitation_callback(&router, &browser, &state, outcome).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers()[header::LOCATION], path);
+        if outcome != "code=valid-code" {
+            assert!(response.headers().get(header::SET_COOKIE).is_none());
+        }
+        assert_eq!(
+            invitation_callback(&router, &browser, &state, "code=valid-code")
+                .await
+                .status(),
+            StatusCode::BAD_REQUEST
+        );
+    }
+    assert!(store.0.transactions.lock().unwrap().is_empty());
+}
+#[tokio::test]
+async fn malformed_invitation_or_other_destination_never_allocates_a_transaction() {
+    let store = Store::default();
+    let router = router(store.clone());
+    let (browser, bootstrap) = bootstrap(&router, None).await;
+    let csrf = bootstrap["csrf"].as_str().unwrap();
+    let mut bodies = vec![r#"{"locale":"en","return_path":"friends","invite_code":"ABCD2345","invite_code":"ZZZZ6789"}"#.to_string()];
+    for code in [
+        "",
+        "ABCD1234",
+        "abcd2345",
+        " ABCD2345",
+        "ABCD2345?",
+        "ABCD2345\n",
+        "https://evil.example",
+        "ABCD%234",
+        "ＡBCD2345",
+    ] {
+        bodies.push(
+            serde_json::json!({"locale":"en","return_path":"friends","invite_code":code})
+                .to_string(),
+        );
+    }
+    for path in [
+        "home",
+        "daily",
+        "settings",
+        "https://evil.example",
+        "friends?code=ABCD2345",
+    ] {
+        bodies.push(
+            serde_json::json!({"locale":"en","return_path":path,"invite_code":"ABCD2345"})
+                .to_string(),
+        );
+    }
+    for body in bodies {
+        let response = router
+            .clone()
+            .oneshot(mutation(
+                "POST",
+                "/api/v1/auth/google/start",
+                &browser,
+                csrf,
+                &body,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+    assert!(store.0.transactions.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn callback_query_cannot_replace_the_invitation_stored_in_the_matching_transaction() {
+    let store = Store::default();
+    let router = router(store.clone());
+    let (browser, initial) = bootstrap(&router, None).await;
+    let state = invitation_start(
+        &router,
+        &browser,
+        initial["csrf"].as_str().unwrap(),
+        r#"{"locale":"ko","return_path":"friends","invite_code":"ABCD2345"}"#,
+    )
+    .await;
+    let response = invitation_callback(
+        &router,
+        &browser,
+        &state,
+        "code=valid-code&invite_code=ZZZZ6789",
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(store.0.transactions.lock().unwrap().len(), 1);
+    let response = invitation_callback(&router, &browser, &state, "code=valid-code").await;
+    assert_eq!(
+        response.headers()[header::LOCATION],
+        "/ko/onboarding?return_path=friends&code=ABCD2345"
+    );
+    assert!(store.0.transactions.lock().unwrap().is_empty());
 }
 async fn bootstrap(router: &Router, cookie: Option<&str>) -> (String, serde_json::Value) {
     let mut request = Request::builder().uri("/api/v1/auth/bootstrap");

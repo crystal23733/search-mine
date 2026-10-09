@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 #[derive(Debug, Serialize, TS)]
@@ -22,6 +22,15 @@ pub struct AuthBootstrap {
 pub struct AuthStart {
     pub authorize_url: String,
 }
+#[derive(Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct AuthLoginRequest {
+    pub locale: String,
+    pub return_path: String,
+    #[ts(optional)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub invite_code: Option<String>,
+}
 #[derive(Debug, Serialize, TS)]
 pub struct AuthFailure {
     pub code: String,
@@ -32,6 +41,7 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         AuthProviderStatus::decl(config),
         AuthBootstrap::decl(config),
         AuthStart::decl(config),
+        AuthLoginRequest::decl(config),
         AuthFailure::decl(config),
         AuthIdentity::decl(config),
         AuthExport::decl(config),

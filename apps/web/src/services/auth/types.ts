@@ -4,6 +4,7 @@ import type {
   AuthErasure,
   AuthExport,
   AuthIdentity,
+  AuthLoginRequest,
   AuthProviderStatus,
   AuthStart,
 } from "@liar/protocol";
@@ -68,7 +69,7 @@ export interface AuthTransport {
   start(
     provider: AuthProvider,
     intent: AuthIntent,
-    request: { locale: Locale; return_path: AuthReturn },
+    request: AuthLoginRequest & { locale: Locale; return_path: AuthReturn },
     csrf: string,
     signal?: AbortSignal,
   ): Promise<AuthStart>;
@@ -96,6 +97,7 @@ export interface AuthPort extends SubmissionSession {
     intent: AuthIntent,
     locale: Locale,
     destination: AuthReturn,
+    inviteCode?: string,
   ): Promise<AuthResult<string>>;
   nickname(
     value: string,

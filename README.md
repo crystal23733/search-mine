@@ -91,6 +91,8 @@ cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](test
 
 ## 계정 화면 검증
 
+[#66 OAuth 초대 복귀](docs/verification/66-oauth-invitation-return.md)는 `/{locale}/login?return_path=friends&code=ABCD2345`의 canonical 초대를 서버5분 인증 거래에 보존한다. callback·nickname·tutorial 뒤 같은 code로 friends에 돌아가고, 소비된 취소/실패에서도 안전한 새 로그인 재시도를 제공한다. 실제 로비/온라인 화면은 #17의 다음 작업이다.
+
 `/{locale}/login`, `/onboarding`, `/settings`에서 네 제공자·닉네임·연결/해제·내보내기·로그아웃·삭제를 제공한다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 #19, 친구 초대의 OAuth 왕복 연결은 #17이다.
 
 위의 격리된 PostgreSQL 테스트 DB가 실행되고 `DATABASE_URL`이 설정된 환경에서 아래를 실행한다. 실제 제품 router와 DB를 사용하고 외부 제공자 proof만 시험 port로 대체한다. 저장소의 HTTPS 키는 공개된 loopback 시험 전용이며 운영 키로 사용하지 않는다.

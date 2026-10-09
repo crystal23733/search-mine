@@ -14,6 +14,132 @@ use uuid::Uuid;
 use zeroize::Zeroizing;
 
 struct HttpClock;
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn invitation_transactions_preserve_canonical_codes_consume_once_and_expire_without_accounts()
+{
+    let pool = auth_pool().await;
+    let service = AuthService::new(
+        PgAuthStore::new(pool.clone()),
+        AeadVault::new(1, vec![(1, [66; 32])]).unwrap(),
+        DigestKeys::new(1, vec![(1, [67; 32])]).unwrap(),
+    );
+    let browser = SecretToken::generate().unwrap();
+    let invited = service
+        .start_localized(
+            &browser,
+            Provider::Google,
+            AuthIntent::Login,
+            ReturnPath::parse_invite("friends", Some("ABCD2345")).unwrap(),
+            AuthLocale::parse("fr").unwrap(),
+            1000,
+        )
+        .await
+        .unwrap();
+    let plain = service
+        .start_localized(
+            &browser,
+            Provider::Google,
+            AuthIntent::Login,
+            ReturnPath::Daily,
+            AuthLocale::parse("ja").unwrap(),
+            1000,
+        )
+        .await
+        .unwrap();
+    let saved: (String, String, Option<String>) =
+        sqlx::query_as("SELECT return_path,locale,invite_code FROM auth_transactions WHERE id=$1")
+            .bind(invited.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        saved,
+        ("friends".into(), "fr".into(), Some("ABCD2345".into()))
+    );
+    let none: Option<String> =
+        sqlx::query_scalar("SELECT invite_code FROM auth_transactions WHERE id=$1")
+            .bind(plain.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert!(none.is_none());
+    for code in ["", "ABCD1234", "ABCD2345\n", "abcd2345", "ＡBCD2345"] {
+        assert!(
+            sqlx::query("UPDATE auth_transactions SET invite_code=$1 WHERE id=$2")
+                .bind(code)
+                .bind(invited.id)
+                .execute(&pool)
+                .await
+                .is_err()
+        );
+    }
+    assert!(
+        sqlx::query("UPDATE auth_transactions SET return_path='daily' WHERE id=$1")
+            .bind(invited.id)
+            .execute(&pool)
+            .await
+            .is_err()
+    );
+    let foreign = SecretToken::generate().unwrap();
+    assert!(
+        service
+            .consume(&invited.state, &foreign, Provider::Google, 1001)
+            .await
+            .is_err()
+    );
+    assert!(
+        service
+            .consume(&invited.state, &browser, Provider::Apple, 1001)
+            .await
+            .is_err()
+    );
+    let (left, right) = tokio::join!(
+        service.consume(&invited.state, &browser, Provider::Google, 1001),
+        service.consume(&invited.state, &browser, Provider::Google, 1001)
+    );
+    assert_eq!(usize::from(left.is_ok()) + usize::from(right.is_ok()), 1);
+    let tx = left.or(right).unwrap();
+    assert_eq!(tx.return_path.invite_code(), Some("ABCD2345"));
+    assert_eq!(tx.locale.as_str(), "fr");
+    assert_eq!(
+        service
+            .consume(&plain.state, &browser, Provider::Google, 1299)
+            .await
+            .unwrap()
+            .return_path,
+        ReturnPath::Daily
+    );
+    let expired = service
+        .start_localized(
+            &browser,
+            Provider::Naver,
+            AuthIntent::Login,
+            ReturnPath::parse_invite("friends", Some("ZZZZ6789")).unwrap(),
+            AuthLocale::parse("ko").unwrap(),
+            1000,
+        )
+        .await
+        .unwrap();
+    assert!(
+        service
+            .consume(&expired.state, &browser, Provider::Naver, 1300)
+            .await
+            .is_err()
+    );
+    service.store.cleanup(1300).await.unwrap();
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM auth_transactions")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 0);
+    let accounts: i64 = sqlx::query_scalar("SELECT count(*) FROM auth_accounts")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(accounts, 0);
+    close_auth_pool(pool).await;
+}
 #[path = "postgres/online.rs"]
 mod online;
 #[path = "postgres/rights.rs"]

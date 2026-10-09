@@ -1,15 +1,124 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 const origin = "https://localhost:8443";
 const providers = ["Google", "Apple", "Kakao", "Naver"] as const;
 test.describe.configure({ mode: "serial" }); // The fixture's explicit clock control must not overlap accounts.
+
+const invitationLocales = [
+  "en",
+  "ko",
+  "ja",
+  "zh-CN",
+  "es",
+  "pt-BR",
+  "de",
+  "fr",
+];
+for (const [index, locale] of invitationLocales.entries()) {
+  test(`invitation keeps ${locale} through ${providers[index % 4]} and nickname/tutorial with storage denied`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      baseURL: origin,
+      viewport:
+        index % 2 ? { width: 390, height: 844 } : { width: 1440, height: 900 },
+      ignoreHTTPSErrors: true,
+    });
+    try {
+      await context.addInitScript(() => {
+        for (const method of ["getItem", "setItem"] as const)
+          Object.defineProperty(Storage.prototype, method, {
+            value: () => {
+              throw new DOMException("Storage denied", "SecurityError");
+            },
+          });
+      });
+      await approve(context);
+      const messages = JSON.parse(
+        await readFile(
+          new URL(
+            `../../apps/web/src/locales/${locale}/common.json`,
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      ) as Record<string, string>;
+      const page = await context.newPage();
+      await page.goto(`/${locale}/login?return_path=friends&code=ABCD2345`);
+      await expect(page.locator('meta[name="referrer"]')).toHaveAttribute(
+        "content",
+        "no-referrer",
+      );
+      await page
+        .getByRole("button", {
+          name: messages["auth.continue"].replace(
+            "{{provider}}",
+            messages[`auth.provider.${providers[index % 4].toLowerCase()}`],
+          ),
+        })
+        .click();
+      await expect(page).toHaveURL(
+        `${origin}/${locale}/onboarding?return_path=friends&code=ABCD2345`,
+      );
+      await page.getByRole("textbox").fill(`Guest${index}`);
+      await page
+        .getByRole("button", {
+          name: messages[index % 2 ? "auth.tutorial" : "auth.skip"],
+        })
+        .click();
+      if (index % 2) {
+        await expect(page).toHaveURL(new RegExp(`/${locale}/tutorial\\?`));
+        await expect
+          .poll(() => new URL(page.url()).searchParams.get("code"))
+          .toBe("ABCD2345");
+        await page
+          .getByRole("button", { name: messages["tutorial.skip"] })
+          .click();
+      }
+      await expect(page).toHaveURL(`${origin}/${locale}/friends?code=ABCD2345`);
+      expect(
+        await page.evaluate(() => localStorage.length + sessionStorage.length),
+      ).toBe(0);
+      const account = (
+        await page.request.get("/api/v1/auth/bootstrap").then((r) => r.json())
+      ).account;
+      expect(account.nickname).toBe(`Guest${index}`);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+test("cancelled invitation returns the consumed transaction for a fresh safe login retry", async ({
+  page,
+  context,
+}) => {
+  await approve(context, true);
+  await page.goto("/en/login?return_path=friends&code=ZZZZ6789");
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+  await expect(page).toHaveURL(
+    `${origin}/en/login?error=auth_failed&return_path=friends&code=ZZZZ6789`,
+  );
+  await expect(page.getByRole("alert")).toBeVisible();
+  await approve(context);
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+  await expect(page).toHaveURL(
+    `${origin}/en/onboarding?return_path=friends&code=ZZZZ6789`,
+  );
+  await page.getByRole("textbox").fill("Invited");
+  await page.getByRole("button", { name: "Save and skip tutorial" }).click();
+  await expect(page).toHaveURL(`${origin}/en/friends?code=ZZZZ6789`);
+});
 async function approve(context: BrowserContext, cancel = false) {
   const subject = randomUUID();
   await context.route(
     /^https:\/\/(accounts\.google\.com|appleid\.apple\.com|kauth\.kakao\.com|nid\.naver\.com)\//,
     async (route) => {
       const url = new URL(route.request().url());
+      expect(url.searchParams.has("invite_code")).toBe(false);
+      expect(url.searchParams.has("return_path")).toBe(false);
+      expect(route.request().headers().referer).toBeUndefined();
       const provider =
         url.hostname === "accounts.google.com"
           ? "google"

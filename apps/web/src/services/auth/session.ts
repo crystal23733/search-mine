@@ -231,7 +231,7 @@ export function createAuth(
       begin();
       clear("unavailable", "auth_unavailable");
     },
-    async start(provider, intent, locale, destination) {
+    async start(provider, intent, locale, destination, inviteCode) {
       if (!state.providers.some((p) => p.provider === provider && p.available))
         return { ok: false, code: "auth_unavailable" };
       const owner = intent === "login" ? undefined : state.account?.id;
@@ -247,7 +247,11 @@ export function createAuth(
           transport.start(
             provider,
             intent,
-            { locale, return_path: destination },
+            {
+              locale,
+              return_path: destination,
+              ...(inviteCode === undefined ? {} : { invite_code: inviteCode }),
+            },
             proof,
             signal,
           ),

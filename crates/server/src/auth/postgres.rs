@@ -38,10 +38,10 @@ impl AuthStore for PgAuthStore {
     async fn insert_transaction(&self, value: AuthTransaction) -> Result<(), AuthError> {
         let now = timestamp(value.created_at)?;
         let expiry = timestamp(value.expires_at)?;
-        sqlx::query("INSERT INTO auth_transactions(id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,created_at,expires_at,encrypted_verifier,locale,bound_session_hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9),to_timestamp($10),$11,$12,$13)")
+        sqlx::query("INSERT INTO auth_transactions(id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,created_at,expires_at,encrypted_verifier,locale,bound_session_hash,invite_code) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9),to_timestamp($10),$11,$12,$13,$14)")
             .bind(value.id).bind(value.state_hash.as_slice()).bind(value.browser_hash.as_slice()).bind(value.nonce_hash.as_slice())
             .bind(value.provider.as_str()).bind(value.intent.kind()).bind(value.intent.account()).bind(value.return_path.as_str())
-            .bind(now).bind(expiry).bind(value.encrypted_verifier).bind(value.locale.as_str()).bind(value.bound_session_hash.map(|h|h.to_vec())).execute(&self.pool).await.map_err(database_error)?;
+            .bind(now).bind(expiry).bind(value.encrypted_verifier).bind(value.locale.as_str()).bind(value.bound_session_hash.map(|h|h.to_vec())).bind(value.return_path.invite_code()).execute(&self.pool).await.map_err(database_error)?;
         Ok(())
     }
     async fn consume_transaction(
@@ -51,7 +51,7 @@ impl AuthStore for PgAuthStore {
         provider: Provider,
         now: i64,
     ) -> Result<Option<AuthTransaction>, AuthError> {
-        let row=sqlx::query("DELETE FROM auth_transactions WHERE state_hash=$1 AND browser_hash=$2 AND provider=$3 AND created_at<=to_timestamp($4) AND expires_at>to_timestamp($4) RETURNING id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM expires_at)::bigint AS expires_at,encrypted_verifier,locale,bound_session_hash")
+        let row=sqlx::query("DELETE FROM auth_transactions WHERE state_hash=$1 AND browser_hash=$2 AND provider=$3 AND created_at<=to_timestamp($4) AND expires_at>to_timestamp($4) RETURNING id,state_hash,browser_hash,nonce_hash,provider,intent,account_id,return_path,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM expires_at)::bigint AS expires_at,encrypted_verifier,locale,bound_session_hash,invite_code")
             .bind(state.as_slice()).bind(browser.as_slice()).bind(provider.as_str()).bind(timestamp(now)?).fetch_optional(&self.pool).await.map_err(database_error)?;
         row.map(transaction_row).transpose()
     }
@@ -177,7 +177,12 @@ fn transaction_row(row: PgRow) -> Result<AuthTransaction, AuthError> {
         nonce_hash: digest("nonce_hash")?,
         provider: Provider::parse(&provider)?,
         intent: AuthIntent::restore(&intent, row.try_get("account_id").map_err(database_error)?)?,
-        return_path: ReturnPath::parse(&path)?,
+        return_path: ReturnPath::parse_invite(
+            &path,
+            row.try_get::<Option<String>, _>("invite_code")
+                .map_err(database_error)?
+                .as_deref(),
+        )?,
         locale: AuthLocale::parse(&row.try_get::<String, _>("locale").map_err(database_error)?)?,
         created_at: row.try_get("created_at").map_err(database_error)?,
         expires_at: row.try_get("expires_at").map_err(database_error)?,

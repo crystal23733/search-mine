@@ -17,6 +17,8 @@
 
 ## 요구사항 → 설계 → 시나리오 추적
 
+#17/#66의 FR01/07/08/11·TS01/12/13/19/20/31~36은 [ADR0031](../adr/0031-oauth-invitation-return.md), auth HTTP/service·실제 PostgreSQL·HTTPS browser로 추적한다. 서버 거래의 canonical 초대/locale·중첩/역순·일회 소비/expiry·nickname/tutorial·저장소 거부를 검증하며 실제 온라인 화면은 다음 출구다.
+
 #17/#52의 FR06/07·TS10/12는 [ADR0024](../adr/0024-atomic-lobby-and-online-composition.md)와 `crates/server/tests/lobby_policy.rs`의 IO 없는 경계 시험을 따른다. 실제 보드/봇·인증 전송/초대 거래·browser 출구는 후속 #17 하위 작업에서 검증한다.
 
 #54의 FR02/06/07·TS02/10/11/12/21은 [ADR0025](../adr/0025-bounded-private-certified-board-pool.md)와 `crates/server/tests/board_pool.rs`의 실제 생성·통제된 blocking source·capacity/수명 검사로 추적한다. pool만으로 실제 대전 조립을 완료했다고 보고하지 않는다.
@@ -100,3 +102,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #62의 FR02/06/07/14/16·NFR02·TS10/12/15/16/20/21/35는 [ADR0029](../adr/0029-initial-match-connection-lifecycle.md)의 core 시작 전 취소와 admitted actor의 첫 연결/권한 이전·지연 ingress·취소 결과/소유권 반환으로 추적한다.
 
 #64의 FR01/02/06/07/14/16·NFR02·TS10/12/20/21/31~36은 [ADR0030](../adr/0030-authenticated-lobby-http-runtime.md)의 닫힌 Rust→TS 로비 계약·인증 HTTP/rate/세션 generation·실제 실행 조립으로 추적한다.
+
+#66 검증에서 발견한 FR10·TS18/36의 다중 탭 업데이트 회귀는 [ADR0018](../adr/0018-public-offline-cache-and-safe-update.md)와 `tests/e2e/offline.spec.ts`의 게임 중 차단·idle 승인 뒤 실제 두 탭 reload로 추적한다. 요청 수락과 controller 변경을 분리하고 기존 lock/시간 제한을 유지한다.

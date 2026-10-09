@@ -113,6 +113,12 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: MIGRATION_DATABASE_URL="$DATABASE_URL" cargo run --locked -p liar-server --bin migrate
       - run: pnpm test:e2e
+        id: browser
+      - name: Compare offline worker network inspection after a failure
+        if: failure() && steps.browser.outcome == 'failure'
+        env:
+          PLAYWRIGHT_DISABLE_SERVICE_WORKER_NETWORK: '1'
+        run: pnpm exec playwright test tests/e2e/offline.spec.ts --grep 'two-tab update' --project offline-chromium --project offline-mobile --repeat-each 4 --retries 0 --output test-results/offline-inspection-comparison
       - uses: actions/upload-artifact@v7
         if: always()
         with:

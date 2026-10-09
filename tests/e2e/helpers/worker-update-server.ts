@@ -9,6 +9,10 @@ export interface WorkerUpdateServer {
 // Serve unchanged production assets, with per-test byte revisions at the stable worker URL.
 export async function createWorkerUpdateServer(): Promise<WorkerUpdateServer> {
   const root = resolve("apps/web/dist");
+  const producer = await readFile(
+    "tests/fixtures/worker-update-producer.js",
+    "utf8",
+  );
   let revision = 0;
   const types: Record<string, string> = {
     ".html": "text/html",
@@ -41,7 +45,10 @@ export async function createWorkerUpdateServer(): Promise<WorkerUpdateServer> {
           path === "/service-worker.js"
             ? Buffer.concat([
                 bytes,
-                Buffer.from(`\n// fixture revision ${revision}\n`),
+                Buffer.from(
+                  `\n// fixture revision ${revision}\n` +
+                    producer.replace('"fixture-revision"', String(revision)),
+                ),
               ])
             : bytes;
         response.writeHead(200, {

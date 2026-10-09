@@ -27,7 +27,15 @@ export async function observeWorkerUpdate(
   page: Page,
   origin: string,
 ): Promise<(info: TestInfo) => Promise<void>> {
-  const events: unknown[] = [];
+  const events: unknown[] = [
+    {
+      type: "runner-config",
+      at: Date.now(),
+      networkInspectionDisabled: Boolean(
+        process.env.PLAYWRIGHT_DISABLE_SERVICE_WORKER_NETWORK,
+      ),
+    },
+  ];
   const prefix = "offline-update-probe:";
   const onConsole = (message: ConsoleMessage) => {
     if (message.type() !== "debug" || !message.text().startsWith(prefix))

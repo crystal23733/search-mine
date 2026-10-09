@@ -6,6 +6,8 @@ FR10/NFR05/07 · TS18/20/26 · [ADR0018](../adr/0018-public-offline-cache-and-sa
 
 ## 변경과 실제 관측
 
+첫 CI37942446331의 실제 결과는176unit20.97초/line87.48%·Rust/core coverage/실DB 성공 뒤82browser pass/기존offline PC1fail/measurement2 미실행(4분)이다. 최초/재시도 load10000ms가 모두 실패했다. always/hidden 포함 artifact11623171248 다운로드로 trace2개·JSON3개 보존을 확인했다. 같은 token의 두 true ACK 뒤 이전 worker 종료/재시작과 새 installed 상태, controllerchange 없음이 관측됐다. 제품 원인은 아직 미확정이다. fixture producer console observer와 실패 때만 실행하는 SW 네트워크 계측 비활성 비교로 다음 경계를 조사한다. 비교 성공이 정상 실패를 덮어쓰지 않으며 내부 flag는 정상 구성에 넣지 않는다.
+
 - CI browser-failures artifact를 always로 업로드해 재시도 성공의 최초 실패 trace도 보존한다. [공식 upload-artifact](https://github.com/actions/upload-artifact#uploading-hidden-files)의 hidden 기본 제외에 맞춰 선택한 test-results/진단 폴더에 `include-hidden-files: true`를 명시한다. 전체 `.tmp`나 secret 폴더는 선택하지 않는다.
 - 시험 전용 observer가 클릭·전송·prepare/release·token별 응답·controllerchange/load와 CDP native worker 상태를 수집한다. runner 메모리와 ignored `.tmp/offline-update-probes` JSON/attachment를 사용해 재로드 전후를 연결한다. fixture teardown에서 초기 준비 실패도 수집하고, 멈춘 renderer의 마지막 상태 조회/observer 해제는 각각1초 진단 예산으로 제한한다.
 - SW/업데이트 어댑터/activity·게임/인증/캐시 정책·제품/테스트 제한 시간·retry는 변경하지 않았다. worker debugger나 강제 활성화를 사용하지 않는다. CDP/page observer가 타이밍에 영향을 줄 가능성은 남는다.

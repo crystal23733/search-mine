@@ -107,7 +107,7 @@ DB 환경변수가 없는 기본 로컬 실행은 기존 browser50개만 검사�
 
 ## 권위 서버와 WebSocket
 
-[#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. 현재는 내부 매치에 배정된 계정만 입장하며, 공개 매칭/친구 방은 #17에서 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다.
+[#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. `POST /api/v1/lobby`의 인증 큐/친구방에서 배정된 계정이 게임 WS를 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다. 웹의 로비/온라인 화면은 후속 #17 작업이다.
 
 개발 제한의 기본값은 매치16/mailbox64/송신16/proof2/물리 연결32이며 `LIAR_ONLINE_MATCHES`, `LIAR_ONLINE_MAILBOX`, `LIAR_ONLINE_OUTGOING`, `LIAR_ONLINE_PROOF_WORKERS`, `LIAR_ONLINE_CONNECTIONS`로 설정한다. 잘못된 값은 시작을 거절한다. 이 값은 미니 PC 출시 성능의 실측 결과가 아니며 #26에서 admission을 결정한다. 최종 결과는 새 migration으로 저장하고 닉네임·세션을 복사하지 않는다. 계정 삭제는 참여 기록을 제거하며 retry로 복원하지 않는다.
 
@@ -120,3 +120,7 @@ DB 환경변수가 없는 기본 로컬 실행은 기존 browser50개만 검사�
 [로비 세션 권한](docs/verification/60-session-bound-lobby-admission.md)은 별도 공유 lease와 합성 철회 barrier로 대기/준비 중 logout·삭제·expiry를 적용한다. 두 참여자의 검증과 실제 registry 생성은 같은 authority lock에서 수행하고 유효 상대의 순서/방을 복구한다. 최초 WS 연결 수명·공개 HTTP/main·초대/화면 연결은 후속 통합 출구다.
 
 [최초 게임 연결](docs/verification/62-initial-match-connection-lifecycle.md)은 실제 로비 배정 뒤 actor가 각 인간의 초기 세션 권한을 소유한다. 시작 기한까지 모두 처음 연결하지 않거나 그 전에 철회/만료되면 Rust core의 시작 전 취소로 종료한다. 공개 HTTP/main·초대/8언어 화면은 다음 #17 하위 작업이다.
+
+[인증 로비 HTTP와 실행 구성](docs/verification/64-authenticated-lobby-http-runtime.md)은 `POST /api/v1/lobby`에 `{v:1,command:{type:"status"}}` 등 Rust→TS 계약을 제공한다. 모든 호출에 Origin·session-bound CSRF·닉네임을 요구하고 동시 read/2초 deadline·세션/계정 rate·room_join5회/분을 적용한다. main은 실제 비공개 보드/core bot과 두 권한의 합성 철회를 연결한다. OAuth 초대·8언어 로비/온라인 화면은 후속이다.
+
+로비 개발 기본값은 `LIAR_LOBBY_CAPACITY=32`, `LIAR_LOBBY_WORKERS=2`, `LIAR_LOBBY_AUTHORITIES=64`, `LIAR_LOBBY_REQUESTS=16`, `LIAR_BOARD_CAPACITY=4`, `LIAR_BOARD_WORKERS=1`, `LIAR_BOT_WORKERS=2`다. 잘못된 구성은 시작을 거절한다. auth 설정이 없으면 로비는 unavailable이며 무계정 연습은 유지한다. 이 상한은 #26의 미니 PC 실측을 대신하지 않는다.

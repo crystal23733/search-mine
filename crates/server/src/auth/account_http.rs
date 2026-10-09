@@ -18,13 +18,13 @@ pub fn account_auth_router<
 >(
     service: AuthService<S, V, D>,
     providers: P,
-    security: BrowserSecurity,
+    security: impl Into<Arc<BrowserSecurity>>,
     clock: Arc<dyn AuthClock>,
 ) -> Router {
     let ctx = Arc::new(Context {
         service,
         providers,
-        security,
+        security: security.into(),
         clock,
         rate: Default::default(),
     });

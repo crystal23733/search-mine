@@ -1,4 +1,5 @@
 use liar_server::auth::*;
+use liar_server::lobby::*;
 use liar_server::online::*;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
@@ -21,8 +22,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let auth = if let Some(config) = config {
         let online = load_online_config(|name| env::var(name).ok())
             .map_err(|_| "Online limits are invalid")?;
+        let lobby_config = load_lobby_config(|name| env::var(name).ok())
+            .map_err(|_| "Lobby limits are invalid")?;
         let authorities =
             AuthorityRegistry::new(online.connections).map_err(|_| "Online capacity is invalid")?;
+        let lobby_authorities = AuthorityRegistry::new(lobby_config.authorities)
+            .map_err(|_| "Lobby capacity is invalid")?;
+        let clock = Arc::new(SystemMatchClock::default());
+        let auth_clock = Arc::new(SystemAuthClock);
         let origin = config.security.origin().to_string();
         let auth_pool = pool.clone().ok_or("Authentication requires a database")?;
         let store = PgAuthStore::new(auth_pool.clone());
@@ -36,32 +43,63 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
         let registry = MatchRegistry::new(
             online.limits,
-            Arc::new(SystemMatchClock::default()),
-            Arc::new(SystemAuthClock),
+            clock,
+            auth_clock.clone(),
             authorities.clone(),
             Arc::new(PgResultRepository::new(
                 auth_pool.clone(),
-                Arc::new(SystemAuthClock),
+                auth_clock.clone(),
             )),
         )
         .map_err(|_| "Online initialization failed")?;
         let runtime = config
-            .initialize_with_invalidations(auth_pool, authorities)
+            .initialize_with_invalidations(
+                auth_pool,
+                Arc::new(CombinedSessionInvalidator::new(
+                    authorities,
+                    lobby_authorities.clone(),
+                )),
+            )
             .map_err(|_| "Authentication initialization failed")?;
-        tokio::spawn(runtime.maintenance);
-        let ws = websocket_router(
-            &origin,
-            Arc::new(PgSessionReader::new(
-                runtime.store,
-                Arc::new(SystemAuthClock),
-            )),
-            registry,
-            online.connections,
+        let sessions = Arc::new(PgSessionReader::new(
+            runtime.store.clone(),
+            auth_clock.clone(),
+        ));
+        let service = LobbyService::new(
+            lobby_config.limits,
+            Arc::new(
+                BoardPool::start(
+                    liar_core::rules::RulesSnapshot::bundled(),
+                    lobby_config.board_capacity,
+                    lobby_config.board_workers,
+                    Arc::new(OsSeedSource),
+                )
+                .map_err(|_| "Board pool initialization failed")?,
+            ),
+            Arc::new(CoreMatchPreparer),
+            Arc::new(OsRoomCodeSource),
+            registry.clone(),
+            BotExecutor::new(lobby_config.bot_workers, Arc::new(CoreBotFactory))
+                .map_err(|_| "Bot initialization failed")?,
+            LobbyAuthentication {
+                authorities: lobby_authorities,
+                clock: auth_clock,
+            },
         )
-        .map_err(|_| "WebSocket initialization failed")?;
-        runtime.router.merge(ws)
+        .map_err(|_| "Lobby initialization failed")?;
+        let lobby = lobby_router(
+            service,
+            sessions.clone(),
+            runtime.security.clone(),
+            lobby_config.requests,
+        )
+        .map_err(|_| "Lobby HTTP initialization failed")?;
+        let ws = websocket_router(&origin, sessions, registry, online.connections)
+            .map_err(|_| "WebSocket initialization failed")?;
+        tokio::spawn(runtime.maintenance);
+        runtime.router.merge(ws).merge(lobby)
     } else {
-        disabled_auth_router()
+        disabled_auth_router().merge(disabled_lobby_router())
     };
     let bind = env::var("LIAR_BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());
     let listener = tokio::net::TcpListener::bind(bind)

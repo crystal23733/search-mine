@@ -3,6 +3,7 @@ import type { LobbyResponse, OnlineEvent, OnlineInput } from "@liar/protocol";
 import { OnlineController, type OnlineAuth } from "./controller";
 import { OnlineFailure, type OnlineConnection, type OnlinePort } from "./types";
 import { matchId, view } from "../../../test/online-fixture";
+import type { RequestOwner } from "../auth/requests";
 afterEach(() => vi.useRealTimers());
 function deferred<T>() {
   let resolve!: (v: T) => void;
@@ -146,18 +147,29 @@ function setup() {
   let account: string | null = matchId,
     revision = 1,
     listener = () => {};
+  let candidate: RequestOwner | null = null;
   const auth: OnlineAuth = {
     execute: async (_owner, work, signal) =>
       work({ csrf: "proof", signal: signal ?? new AbortController().signal }),
     account: () => account,
     connected: () => account !== null,
     revision: () => revision,
+    recoveryOwner: () => candidate,
+    resume: vi.fn(async () => {
+      if (!candidate)
+        return { ok: false as const, code: "auth_invalid" as const };
+      account = candidate.accountId;
+      candidate = null;
+      listener();
+      return { ok: true as const, value: undefined };
+    }),
     subscribe: (fn) => {
       listener = fn;
       return () => {};
     },
     invalidate: () => {
       account = null;
+      candidate = null;
       revision++;
       listener();
     },
@@ -165,24 +177,36 @@ function setup() {
   let event: (v: OnlineEvent) => void = () => {},
     closed: (e: OnlineFailure) => void = () => {};
   const connection: OnlineConnection = {
-    listen: (e, c) => {
+    listen: vi.fn((e, c) => {
       event = e;
       closed = c;
-    },
+    }),
     send: vi.fn((_input: OnlineInput) => true),
     close: vi.fn(),
   };
   const port: OnlinePort = {
     lobby: vi.fn(async () => idle),
-    connect: vi.fn(async () => connection),
+    connect: vi.fn(async (owner, _match, signal) =>
+      auth.execute(owner, async () => connection, signal),
+    ),
   };
-  const controller = new OnlineController(auth, port, () => Date.now());
+  const controller = new OnlineController(
+    auth,
+    port,
+    () => Date.now(),
+    () => 0,
+  );
   let seq = 0;
   return {
     controller,
     port,
     connection,
     auth,
+    suspend: () => {
+      candidate = { accountId: matchId, revision };
+      account = null;
+      listener();
+    },
     replace: () => {
       account = "22222222-2222-4222-8222-222222222222";
       revision++;
@@ -199,6 +223,376 @@ function setup() {
     closed: (code = "disconnected") => closed(new OnlineFailure(code)),
   };
 }
+
+function replacement(
+  snapshot: Extract<OnlineEvent["payload"], { type: "snapshot" }>,
+) {
+  let event: (value: OnlineEvent) => void = () => {};
+  let closed: (error: OnlineFailure) => void = () => {};
+  let sequence = 1;
+  const connection: OnlineConnection = {
+    listen: (receive, end) => {
+      event = receive;
+      closed = end;
+      receive({
+        v: 1,
+        match_id: matchId,
+        server_seq: 1,
+        server_time_ms: 0,
+        payload: snapshot,
+      });
+    },
+    send: vi.fn(() => true),
+    close: vi.fn(),
+  };
+  return {
+    connection,
+    event: (payload: OnlineEvent["payload"]) =>
+      event({
+        v: 1,
+        match_id: matchId,
+        server_seq: ++sequence,
+        server_time_ms: 0,
+        payload,
+      }),
+    closed: () => closed(new OnlineFailure("disconnected")),
+  };
+}
+
+test("a new lease replays the original command with only its epoch changed, accepts its old ACK revision and ignores late old connection messages", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 4,
+    view: { ...view(), phase: "playing", revision: 7 },
+  });
+  const old = vi.mocked(s.connection.listen).mock.calls[0]!;
+  const action = { type: "flag" as const, cell: 2 };
+  s.controller.submit(action);
+  const input = structuredClone(vi.mocked(s.connection.send).mock.calls[0]![0]);
+  action.cell = 5;
+  const next = replacement({
+    type: "snapshot",
+    last_client_seq: 9,
+    session_epoch: 5,
+    view: { ...view(), phase: "playing", revision: 8, remaining_ms: 230000 },
+  });
+  vi.mocked(s.port.connect).mockResolvedValueOnce(next.connection);
+  s.closed();
+  expect(s.controller.read().status).toBe("reconnecting");
+  expect(s.controller.read().pending).toBe(1);
+  s.controller.submit({ type: "flag", cell: 6 });
+  expect(s.connection.send).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(499);
+  expect(s.port.connect).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(next.connection.send).toHaveBeenCalledExactlyOnceWith({
+    ...input,
+    session_epoch: 5,
+  });
+  expect(s.controller.read().status).toBe("playing");
+  expect(s.controller.read().view?.remaining_ms).toBe(230000);
+  const signal = vi.mocked(s.port.connect).mock.calls.at(-1)![2];
+  expect(signal.aborted).toBe(false);
+  old[1](new OnlineFailure("unauthorized"));
+  old[0]({
+    v: 1,
+    match_id: matchId,
+    server_seq: 2,
+    server_time_ms: 0,
+    payload: { type: "error", code: "unauthorized" },
+  });
+  expect(s.auth.account()).toBe(matchId);
+  expect(next.connection.close).not.toHaveBeenCalled();
+  next.event({
+    type: "ack",
+    command_id: input.command_id,
+    revision: 7,
+    status: "applied",
+    duplicate: true,
+    error: null,
+  });
+  expect(s.controller.read().pending).toBe(0);
+  expect(s.controller.read().view?.revision).toBe(8);
+  s.controller.submit({ type: "flag", cell: 5 });
+  expect(vi.mocked(next.connection.send).mock.calls[1]![0].client_seq).toBe(10);
+  s.controller.dispose();
+  expect(signal.aborted).toBe(true);
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+test.each(["epoch", "rules", "revision"])(
+  "a replacement with stale %s cannot replay pending inputs",
+  async (kind) => {
+    vi.useFakeTimers();
+    const s = setup();
+    vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+    await s.controller.start();
+    s.event({
+      type: "snapshot",
+      last_client_seq: 0,
+      session_epoch: 4,
+      view: { ...view(), phase: "playing", revision: 7 },
+    });
+    s.controller.submit({ type: "flag", cell: 2 });
+    const accepted = {
+      ...view(),
+      phase: "playing" as const,
+      revision: kind === "revision" ? 6 : 7,
+    };
+    if (kind === "rules")
+      accepted.rules = { ...accepted.rules, hash: "changed" };
+    const next = replacement({
+      type: "snapshot",
+      last_client_seq: 1,
+      session_epoch: kind === "epoch" ? 4 : 5,
+      view: accepted,
+    });
+    vi.mocked(s.port.connect).mockResolvedValueOnce(next.connection);
+    s.closed();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(s.controller.read().error).toBe("stale");
+    expect(s.controller.read().pending).toBe(0);
+    expect(next.connection.send).not.toHaveBeenCalled();
+    expect(next.connection.close).toHaveBeenCalled();
+    s.controller.dispose();
+    expect(vi.getTimerCount()).toBe(0);
+  },
+);
+
+test("a saturated replacement cursor still recovers a cached ACK but prevents a new input", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({
+    type: "snapshot",
+    last_client_seq: 4294967294,
+    session_epoch: 4,
+    view: { ...view(), phase: "playing" },
+  });
+  s.controller.submit({ type: "flag", cell: 2 });
+  const original = vi.mocked(s.connection.send).mock.calls[0]![0];
+  expect(original.client_seq).toBe(4294967295);
+  const next = replacement({
+    type: "snapshot",
+    last_client_seq: 4294967295,
+    session_epoch: 5,
+    view: { ...view(), phase: "playing", revision: 1 },
+  });
+  vi.mocked(s.port.connect).mockResolvedValueOnce(next.connection);
+  s.closed();
+  await vi.advanceTimersByTimeAsync(500);
+  expect(next.connection.send).toHaveBeenCalledExactlyOnceWith({
+    ...original,
+    session_epoch: 5,
+  });
+  next.event({
+    type: "ack",
+    command_id: original.command_id,
+    revision: 1,
+    status: "applied",
+    duplicate: true,
+    error: null,
+  });
+  expect(s.controller.read().pending).toBe(0);
+  s.controller.submit({ type: "flag", cell: 5 });
+  expect(s.controller.read().error).toBe("capacity");
+  expect(next.connection.send).toHaveBeenCalledTimes(1);
+  s.controller.dispose();
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+test("a terminal replacement discards pending input and preserves the server result without replay", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 1,
+    view: { ...view(), phase: "playing" },
+  });
+  s.controller.submit({ type: "flag", cell: 2 });
+  const next = replacement({
+    type: "snapshot",
+    last_client_seq: 1,
+    session_epoch: 2,
+    view: {
+      ...view(),
+      phase: "finished",
+      revision: 1,
+      result: { reason: "forfeit", outcome: "loss", completed: true },
+    },
+  });
+  vi.mocked(s.port.connect).mockResolvedValueOnce(next.connection);
+  s.closed();
+  await vi.advanceTimersByTimeAsync(500);
+  expect(s.controller.read().status).toBe("ended");
+  expect(s.controller.read().pending).toBe(0);
+  expect(s.controller.read().view?.result?.outcome).toBe("loss");
+  expect(s.controller.read().recording).toBeNull();
+  expect(next.connection.send).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(30000);
+  expect(s.port.connect).toHaveBeenCalledTimes(2);
+  s.controller.dispose();
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+test.each(["saved", "failed"] as const)(
+  "a recovered connection's close preserves confirmed %s without adding a disconnection error",
+  async (recording) => {
+    vi.useFakeTimers();
+    const s = setup();
+    vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+    await s.controller.start();
+    s.event({
+      type: "snapshot",
+      last_client_seq: 0,
+      session_epoch: 1,
+      view: { ...view(), phase: "playing" },
+    });
+    const next = replacement({
+      type: "snapshot",
+      last_client_seq: 0,
+      session_epoch: 2,
+      view: { ...view(), phase: "playing" },
+    });
+    vi.mocked(s.port.connect).mockResolvedValueOnce(next.connection);
+    s.closed();
+    await vi.advanceTimersByTimeAsync(500);
+    next.event({
+      type: "match_end",
+      view: {
+        ...view(),
+        phase: "finished",
+        revision: 1,
+        result: { reason: "timeout", outcome: "draw", completed: true },
+      },
+      recording,
+    });
+    next.closed();
+    expect(s.controller.read().status).toBe("ended");
+    expect(s.controller.read().recording).toBe(recording);
+    expect(s.controller.read().error).toBeNull();
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(s.port.connect).toHaveBeenCalledTimes(2);
+    s.controller.dispose();
+    expect(vi.getTimerCount()).toBe(0);
+  },
+);
+
+test("an offline candidate keeps a read-only board and requires the same owner's successful resume before opening the next socket", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 1,
+    view: { ...view(), phase: "playing" },
+  });
+  s.controller.submit({ type: "flag", cell: 2 });
+  s.suspend();
+  expect(s.controller.read().view).not.toBeNull();
+  expect(s.controller.read().status).toBe("reconnecting");
+  expect(s.controller.read().pending).toBe(1);
+  s.controller.submit({ type: "open", cell: 3 });
+  expect(s.connection.send).toHaveBeenCalledTimes(1);
+  const next = replacement({
+    type: "snapshot",
+    last_client_seq: 1,
+    session_epoch: 2,
+    view: { ...view(), phase: "playing", revision: 1 },
+  });
+  vi.mocked(s.port.connect).mockResolvedValueOnce(next.connection);
+  await vi.advanceTimersByTimeAsync(500);
+  expect(s.auth.resume).toHaveBeenCalledExactlyOnceWith({
+    accountId: matchId,
+    revision: 1,
+  });
+  expect(s.controller.read().status).toBe("playing");
+  expect(next.connection.send).toHaveBeenCalledTimes(1);
+  s.controller.dispose();
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+test("a retransmitted command's missing ACK terminates uncertainty and does not create another recovery cycle", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 1,
+    view: { ...view(), phase: "playing" },
+  });
+  s.controller.submit({ type: "flag", cell: 2 });
+  const next = replacement({
+    type: "snapshot",
+    last_client_seq: 1,
+    session_epoch: 2,
+    view: { ...view(), phase: "playing", revision: 1 },
+  });
+  vi.mocked(s.port.connect).mockResolvedValueOnce(next.connection);
+  await vi.advanceTimersByTimeAsync(10500);
+  expect(s.controller.read().pending).toBe(1);
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(s.controller.read().error).toBe("timeout");
+  expect(s.controller.read().pending).toBe(0);
+  expect(s.port.connect).toHaveBeenCalledTimes(2);
+  expect(s.controller.read().view?.result).toBeNull();
+  s.controller.dispose();
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+test("a connect that ignores cancellation cannot close a later manually established connection", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 1,
+    view: { ...view(), phase: "playing" },
+  });
+  const late = deferred<OnlineConnection>();
+  vi.mocked(s.port.connect).mockReturnValueOnce(late.promise);
+  s.closed();
+  await vi.advanceTimersByTimeAsync(30000);
+  expect(s.controller.read().error).toBe("timeout");
+  const next = replacement({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 3,
+    view: { ...view(), phase: "playing", revision: 1 },
+  });
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  vi.mocked(s.port.connect).mockResolvedValueOnce(next.connection);
+  await s.controller.start();
+  const orphan = replacement({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 2,
+    view: view(),
+  });
+  late.resolve(orphan.connection);
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(orphan.connection.close).toHaveBeenCalledTimes(1);
+  expect(next.connection.close).not.toHaveBeenCalled();
+  expect(s.controller.read().status).toBe("playing");
+  s.controller.dispose();
+  expect(vi.getTimerCount()).toBe(0);
+});
 test("polls one request at a time only after waiting reply, then cancels exact identity and ignores late status", async () => {
   vi.useFakeTimers();
   const s = setup();
@@ -391,7 +785,7 @@ test("preserves unconfirmed result on close and reports actual recording saved/f
   expect(s.controller.read().view?.result).toEqual(finished.result);
   s.controller.dispose();
 });
-test("fails closed on stream gaps, rejects input afterward and disposes pending deadline", async () => {
+test("pauses input and preserves commands for a fresh snapshot after a stream gap", async () => {
   vi.useFakeTimers();
   const s = setup();
   vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
@@ -407,14 +801,15 @@ test("fails closed on stream gaps, rejects input afterward and disposes pending 
     { type: "delta", view: { ...view(), phase: "playing", revision: 1 } },
     4,
   );
-  expect(s.controller.read().error).toBe("stale");
+  expect(s.controller.read().status).toBe("reconnecting");
+  expect(s.controller.read().pending).toBe(1);
   s.controller.submit({ type: "attack" });
   expect(s.connection.send).toHaveBeenCalledTimes(1);
   expect(s.connection.close).toHaveBeenCalled();
   s.controller.dispose();
   expect(vi.getTimerCount()).toBe(0);
 });
-test("caps unacknowledged commands and times out the actual missing ACK without retrying", async () => {
+test("caps unacknowledged commands and preserves them for bounded recovery on the first missing ACK", async () => {
   vi.useFakeTimers();
   const s = setup();
   vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
@@ -429,13 +824,14 @@ test("caps unacknowledged commands and times out the actual missing ACK without 
   expect(s.connection.send).toHaveBeenCalledTimes(16);
   expect(s.controller.read().error).toBe("capacity");
   await vi.advanceTimersByTimeAsync(10000);
-  expect(s.controller.read().error).toBe("timeout");
+  expect(s.controller.read().status).toBe("reconnecting");
   expect(s.connection.send).toHaveBeenCalledTimes(16);
-  expect(s.controller.read().pending).toBe(0);
+  expect(s.controller.read().pending).toBe(16);
   s.controller.dispose();
   expect(vi.getTimerCount()).toBe(0);
 });
 test("verifies the same authority after socket close and clears a revoked public board", async () => {
+  vi.useFakeTimers();
   const s = setup();
   vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
   await s.controller.start();
@@ -450,7 +846,8 @@ test("verifies the same authority after socket close and clears a revoked public
     throw Error("revoked");
   });
   s.closed();
-  await vi.waitFor(() => expect(s.controller.read().view).toBeNull());
+  await vi.advanceTimersByTimeAsync(500);
+  expect(s.controller.read().view).toBeNull();
   expect(proof).toHaveBeenCalledExactlyOnceWith(
     { accountId: matchId, revision: 1 },
     expect.any(Function),

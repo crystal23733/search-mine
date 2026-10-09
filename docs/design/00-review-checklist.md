@@ -116,3 +116,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #72의 FR01/02/06/07/08/10/11/14·NFR01/02/05/06·TS02/10/12/13/15/18~22/26/31/36은 [ADR0034](../adr/0034-friends-room-ui.md)의 명시 참가/초대 복귀·현재 방 identity/ready·seat 이동/만료·공유된 실제 온라인 화면과 Rust/SQL/HTTPS/WS 출구로 추적한다. 자동 재접속 #18은 별도다.
 
 #78 FR01/14/NFR01/02/05 · TS15/16/20/31/35/36 → [ADR0037](../adr/0037-session-recovery-candidate.md) → AuthPort/SessionRecovery/HTTP proof 분류·브라우저 lifecycle와 실제 SQL/HTTPS 권한 차단/동일 세션 복구. WS backoff/미확인 명령은 다음18 하위 작업이다.
+
+#80 FR14/NFR01/02/05/06 · TS15/16/20/21/26/31/36 → [ADR0038](../adr/0038-bounded-online-reconnect.md) → BoundedReconnect/OnlineController/OnlineEntry·권한 없는 후보/단조 기한/메모리 원본 명령·실제 WS/PG/HTTPS. 영속 재시작·결과 조회는 후속18이다.

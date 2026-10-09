@@ -265,5 +265,6 @@
   "friends.otherQueue": "이미 빠른 대전을 기다리고 있습니다. 대기로 돌아가거나 취소해 주세요.",
   "friends.again": "친구 대전 대기로",
   "match.opponentReconnecting": "상대가 다시 연결하고 있습니다. 남은 유예 {{seconds}}초. 대전 시간은 계속 흐릅니다.",
-  "match.reconnectWaiting": "서버 결과를 기다리고 있습니다."
+  "match.reconnectWaiting": "서버 결과를 기다리고 있습니다.",
+  "match.reconnecting": "다시 연결하고 있습니다. {{seconds}}초 후 시도를 멈춥니다. 서버에서는 경기가 계속 진행됩니다."
 }

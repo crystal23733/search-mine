@@ -3,6 +3,7 @@ import type { ComponentType } from "preact";
 import type { OnlineState } from "../services/online/controller";
 import { roomCode } from "../services/online/invitation";
 import { OnlineController } from "../services/online/controller";
+import { RECONNECT_BUDGET_MS } from "../services/online/reconnect";
 import { useUi } from "../ui/context";
 import { useSnapshot } from "../ui/useSnapshot";
 import { Button } from "../ui/atoms/Button";
@@ -26,7 +27,8 @@ type EntryProps = {
 export function OnlineEntry({ mode, Panel }: EntryProps) {
   const { t, services } = useUi(),
     auth = useSnapshot(services.auth);
-  if (!services.auth.connected())
+  const candidate = services.auth.recoveryOwner();
+  if (!services.auth.connected() && !candidate)
     return (
       <div class="reading-page">
         <Card>
@@ -71,8 +73,8 @@ export function OnlineEntry({ mode, Panel }: EntryProps) {
     <OnlineSession
       mode={mode}
       Panel={Panel}
-      key={`${auth.account?.id}-${services.auth.revision()}`}
-      nickname={auth.account?.nickname ?? ""}
+      key={`${auth.account?.id ?? candidate?.accountId}-${services.auth.revision()}`}
+      nickname={auth.account?.nickname ?? t("match.you")}
     />
   );
 }
@@ -133,6 +135,13 @@ function OnlineSession({
       </div>
       {(locked || state.error) && (
         <p role="alert">{t(locked ? "offline.error" : error)}</p>
+      )}
+      {state.status === "reconnecting" && (
+        <ReconnectNotice
+          kind="own"
+          remainingMs={state.reconnectMs}
+          maxMs={RECONNECT_BUDGET_MS}
+        />
       )}
       {state.status === "playing" && state.view && !state.view.result && (
         <ReconnectNotice

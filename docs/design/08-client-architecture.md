@@ -1,5 +1,7 @@
 # 08. 클라이언트 구조와 Atomic Design
 
+#80의 [ADR0038](../adr/0038-bounded-online-reconnect.md)은 같은 owner/복구 후보 동안 OnlineSession을 유지하고 입력 없는 복구 화면·BoundedReconnect·메모리 미확인 명령을 분리한다. 세대/연결 lease·dispose·전체 기한/AbortSignal 수명과 accepted snapshot 이후에만 재전송하는 경계를 따른다.
+
 #78의 [ADR0037](../adr/0037-session-recovery-candidate.md)은 AuthPort의 suspend/recoveryOwner/resume 경계와 단조30초 후보/시도10초/동시1·늦은 완료 폐기를 정의한다. 브라우저 offline은 권한을 차단하고 online에서 같은 세션을 확인한다. 실제 WS 자동 backoff·미확인 명령/화면 보존은 다음 #18 하위 작업이다.
 
 > 대응: FR08~13, NFR01/03/06 · Preact+Vite, PixiJS, i18next, Rust WASM.

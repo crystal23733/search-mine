@@ -621,12 +621,12 @@
       "issue": 84,
       "milestone": "M3",
       "title": "test(web): 로컬 단위 테스트 준비와 DOM 조회 지연 진단",
-      "requirements": "NFR05/06",
-      "scenarios": "TS02/18/26",
+      "requirements": "NFR05/08",
+      "scenarios": "TS18/26/30",
       "deps": [
         "offline-update-observation"
       ],
-      "acceptance": "기존 지연 재현·동적 로딩/256셀 accessible name 관측 분리·행동 assertion 유지·timeout/retry 완화 없음·전체 coverage/CI"
+      "acceptance": "기존 지연 재현·동적 로딩/256셀 accessible name 관측·순수 port Node/DOM jsdom 분리·정상poll/명령·행동 assertion/격리 유지·timeout/retry 완화 없음·전체 coverage/cold browser/CI"
     },
     {
       "key": "authenticated-personal-result",

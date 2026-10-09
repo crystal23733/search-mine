@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test, vi } from "vitest";
 import type { AuthenticatedRequests, RequestOwner } from "../auth/requests";
 import { AuthError } from "../auth/types";

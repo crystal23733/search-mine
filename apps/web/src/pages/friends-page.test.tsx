@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
-import { expect, test, vi } from "vitest";
+import { beforeAll, expect, test, vi } from "vitest";
 import type { AuthAccount, LobbyResponse } from "@liar/protocol";
 import { App } from "../App";
 import { dailyTestPorts } from "../../test/daily-ports";
@@ -11,6 +11,10 @@ import { createPreferences } from "../services/preferences";
 import { createLearning } from "../services/learning";
 import { matchId } from "../../test/online-fixture";
 import type { AppServices } from "../services/ports";
+// Cold route loading is exercised by the production browser tests.
+beforeAll(async () => {
+  await import("./FriendsPage");
+});
 async function setup(account: AuthAccount | null) {
   const transport: AuthTransport = {
     bootstrap: async () => ({
@@ -42,22 +46,24 @@ async function setup(account: AuthAccount | null) {
   const learning = createLearning();
   learning.mark("skipped");
   let state: LobbyResponse["state"] = { type: "idle" };
-  const lobby = vi.fn(async (_owner, command): Promise<LobbyResponse> => {
-    if (command.type === "room_create" || command.type === "room_join")
-      state = {
-        type: "room",
-        room_id: matchId,
-        code: "ABCD2345",
-        own_seat: 1,
-        occupied: [true, true],
-        ready: [false, false],
-        expires_at_ms: 600000,
-      };
-    if (command.type === "ready" && state.type === "room")
-      state = { ...state, ready: [false, command.ready] };
-    if (command.type === "cancel") state = { type: "idle" };
-    return { v: 1, server_time_ms: 0, state };
-  });
+  const lobby = vi.fn(
+    async (_owner, command, _signal: AbortSignal): Promise<LobbyResponse> => {
+      if (command.type === "room_create" || command.type === "room_join")
+        state = {
+          type: "room",
+          room_id: matchId,
+          code: "ABCD2345",
+          own_seat: 1,
+          occupied: [true, true],
+          ready: [false, false],
+          expires_at_ms: 600000,
+        };
+      if (command.type === "ready" && state.type === "room")
+        state = { ...state, ready: [false, command.ready] };
+      if (command.type === "cancel") state = { type: "idle" };
+      return { v: 1, server_time_ms: 0, state };
+    },
+  );
   const services: AppServices = {
     ...dailyTestPorts(),
     auth,
@@ -113,6 +119,7 @@ test("friend invitation is explicit, shares only the public locale/code, preserv
     ).toBe("true"),
   );
   fireEvent.click(screen.getByRole("button", { name: "Copy invitation link" }));
+  const readySignal = s.lobby.mock.calls.at(-1)![2];
   await waitFor(() =>
     expect(s.services.share.copy).toHaveBeenCalledWith(
       `${window.location.origin}/en/friends?code=ABCD2345`,
@@ -126,7 +133,15 @@ test("friend invitation is explicit, shares only the public locale/code, preserv
     target: { value: "ko" },
   });
   await waitFor(() => expect(document.documentElement.lang).toBe("ko"));
-  expect(s.lobby).toHaveBeenCalledTimes(3);
+  expect(readySignal.aborted).toBe(false);
+  expect(
+    s.lobby.mock.calls
+      .filter(([, command]) => command.type !== "status")
+      .map(([, command]) => command),
+  ).toEqual([
+    { type: "room_join", code: "ABCD2345" },
+    { type: "ready", room_id: matchId, ready: true },
+  ]);
   fireEvent.click(screen.getByRole("button", { name: "방 나가기" }));
   await screen.findByRole("button", { name: "방 만들기", exact: true });
   expect(s.lobby).toHaveBeenLastCalledWith(

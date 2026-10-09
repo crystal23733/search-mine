@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, expect, test, vi } from "vitest";
 import type { LobbyResponse, OnlineEvent, OnlineInput } from "@liar/protocol";
 import { OnlineController, type OnlineAuth } from "./controller";

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test, vi } from "vitest";
 import { createDailyRecords } from "./daily-records";
 import { createPendingSubmissions } from "./pending-submissions";

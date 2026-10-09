@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, expect, test, vi } from "vitest";
 import { BoundedReconnect } from "./reconnect";
 afterEach(() => vi.useRealTimers());

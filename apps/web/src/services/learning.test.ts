@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test, vi } from "vitest";
 import { createLearning, LEARNING_KEY } from "./learning";
 test("persists only tutorial status and distinguishes skip from completion", () => {

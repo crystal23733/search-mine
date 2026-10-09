@@ -51,9 +51,21 @@ test("production precaches public WASM and all locales; offline reload starts a 
   });
   expect(cache.some((url) => url.includes("liar_wasm_bg.wasm"))).toBe(true);
   expect(
-    cache.filter((url) =>
-      /\/api\/|oauth|session|doubleclick|googlesyndication/.test(url),
-    ),
+    cache.filter((value) => {
+      const url = new URL(value);
+      // Public code such as local-session-*.js is not an authenticated API response.
+      return (
+        url.origin !== new URL(page.url()).origin ||
+        /(?:^|\/)(?:api|auth|oauth|session)(?:\/|$)/.test(
+          decodeURIComponent(url.pathname),
+        ) ||
+        [...url.searchParams.keys()].some((key) =>
+          /^(?:code|state|nonce|csrf|session(?:_id|_revision)?|credential|token|access_token|refresh_token)$/i.test(
+            key,
+          ),
+        )
+      );
+    }),
   ).toEqual([]);
   await context.setOffline(true);
   for (const locale of ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"]) {

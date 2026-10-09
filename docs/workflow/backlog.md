@@ -57,6 +57,8 @@
 
 백로그 데이터의 원천은 [backlog.json](backlog.json)이다. 변경 때 GitHub 이슈 제목·인수 조건과 함께 갱신한다.
 
+#68은 PR69/develop4686ceb4에 병합·종료했다. 다음 [#70 빠른 대전과 실제 온라인 보드·결과](https://github.com/crystal23733/search-mine/issues/70)는 [ADR0033](../adr/0033-online-quick-match-ui.md)의 세션 HTTP/WS·닫힌 공개 DTO·3난이도/취소·8언어·실제 SQL/WS/HTTPS를 연결한다. 친구 방 UI는 다음 하위 작업이며 상위17은 OPEN이다.
+
 #66은 PR67/developf5f9dd26에 병합·종료했다. 다음 [#68 세션 인증 요청 포트](https://github.com/crystal23733/search-mine/issues/68)는 전/후 bootstrap·fresh CSRF와 account/session/generation을 연결하고 안정된 조회의 working/revision을 보존한다. [ADR0032](../adr/0032-session-bound-web-requests.md). 로비/온라인 화면·재접속과 상위17의 통합 출구는 후속이다.
 
 #16은 PR51/develop951dff11에 병합·종료했다. 상위 #17은 [#52 원자 큐·방 정책](https://github.com/crystal23733/search-mine/issues/52)부터 순차 검토·병합하며, 이후 비공개 보드/봇 실행과 인증 전송/OAuth 초대·화면의 별도 하위 작업을 연결한다. #17의 통합 출구는 모든 하위 작업이 완료될 때 닫는다. [ADR0024](../adr/0024-atomic-lobby-and-online-composition.md).

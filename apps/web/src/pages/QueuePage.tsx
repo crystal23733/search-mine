@@ -1,0 +1,229 @@
+import { useEffect, useMemo, useState } from "preact/hooks";
+import type { LobbyDifficulty } from "@liar/protocol";
+import { OnlineController } from "../services/online/controller";
+import { useUi } from "../ui/context";
+import { useSnapshot } from "../ui/useSnapshot";
+import { Button } from "../ui/atoms/Button";
+import { Card } from "../ui/atoms/Card";
+import { NavLink } from "../ui/molecules/NavLink";
+import { Board } from "../ui/organisms/Board";
+import { MatchSummary } from "../ui/organisms/MatchSummary";
+import { OnlineResult } from "../ui/organisms/OnlineResult";
+import { MatchLayout } from "../ui/templates/MatchLayout";
+export function QueuePage() {
+  const { t, services } = useUi(),
+    auth = useSnapshot(services.auth);
+  if (!services.auth.connected())
+    return (
+      <div class="reading-page">
+        <Card>
+          <h1>{t("status.title")}</h1>
+          <p role={auth.status === "unavailable" ? "alert" : "status"}>
+            {t(
+              auth.status === "loading"
+                ? "match.loading"
+                : auth.status === "unavailable"
+                  ? "queue.error"
+                  : auth.account
+                    ? "queue.nickname"
+                    : "queue.signIn",
+            )}
+          </p>
+          <div class="match-controls">
+            <NavLink
+              path={auth.account ? "/onboarding" : "/login"}
+              class="button button--primary"
+            >
+              {t(auth.account ? "auth.nicknameTitle" : "auth.title")}
+            </NavLink>
+            <NavLink path="/practice">{t("auth.local")}</NavLink>
+            <NavLink path="/">{t("home")}</NavLink>
+          </div>
+        </Card>
+      </div>
+    );
+  return (
+    <OnlineQueue
+      key={`${auth.account?.id}-${services.auth.revision()}`}
+      nickname={auth.account?.nickname ?? ""}
+    />
+  );
+}
+function OnlineQueue({ nickname }: { nickname: string }) {
+  const { t, locale, services } = useUi();
+  const controller = useMemo(
+    () => new OnlineController(services.auth, services.online),
+    [services],
+  );
+  const state = useSnapshot(controller);
+  const [locked, setLocked] = useState(false),
+    [difficulty, setDifficulty] = useState<LobbyDifficulty>("normal");
+  const selectedDifficulty =
+    state.status === "ready" ? difficulty : (state.difficulty ?? difficulty);
+  useEffect(() => {
+    let release: () => void;
+    try {
+      release = services.activity.hold();
+    } catch {
+      setLocked(true);
+      return;
+    }
+    void controller.start();
+    return () => {
+      controller.dispose();
+      release();
+    };
+  }, [controller, services]);
+  const opponent =
+    state.opponent === "bot"
+      ? `${t("match.bot")}${state.difficulty ? ` · ${t(`match.${state.difficulty}`)}` : ""}`
+      : t("queue.human");
+  const error = state.error?.startsWith("input_")
+    ? "match.rejected"
+    : state.error === "disconnected" || state.error === "timeout"
+      ? "queue.disconnected"
+      : state.error === "capacity" || state.error === "rate_limited"
+        ? "queue.limit"
+        : state.error === "stale" || state.error === "busy"
+          ? "queue.stale"
+          : "queue.error";
+  return (
+    <>
+      <div class="page-title">
+        <div>
+          <p class="eyebrow">{nickname}</p>
+          <h1>{t("queue.title")}</h1>
+        </div>
+        <NavLink path="/">{t("home")}</NavLink>
+      </div>
+      {(locked || state.error) && (
+        <p role="alert">{t(locked ? "offline.error" : error)}</p>
+      )}
+      {state.view?.result ? (
+        <OnlineResult
+          view={state.view}
+          ownName={nickname}
+          opponent={opponent}
+          recording={state.recording}
+          onAgain={() => void controller.start()}
+        />
+      ) : state.view ? (
+        <MatchLayout
+          summary={
+            <>
+              <MatchSummary
+                view={state.view}
+                opponent={opponent}
+                ownName={nickname}
+                heading={t("queue.online")}
+              />
+            </>
+          }
+        >
+          <Board
+            view={state.view}
+            disabled={state.status !== "playing"}
+            createRenderer={services.boardRenderer}
+            onAction={(action) => controller.submit(action)}
+          />
+          <Button
+            variant="primary"
+            disabled={
+              state.status !== "playing" ||
+              state.view.phase !== "playing" ||
+              state.view.own.stun_ms > 0 ||
+              state.view.own.gauge < state.view.rules.rules.gauge_capacity
+            }
+            onClick={() => controller.submit({ type: "attack" })}
+          >
+            {t("home.attack")}
+          </Button>
+        </MatchLayout>
+      ) : (
+        <div class="queue-panel">
+          <Card>
+            {state.lobby?.state.type === "queued" ? (
+              <>
+                <div
+                  class="queue-clock"
+                  style={{
+                    "--queue-progress": `${Math.min(100, state.waitMs / 100)}%`,
+                  }}
+                >
+                  <div>
+                    <output aria-live="off" aria-label={t("queue.searching")}>
+                      {new Intl.NumberFormat(locale, {
+                        minimumIntegerDigits: 2,
+                      }).format(Math.ceil(state.waitMs / 1000))}
+                    </output>
+                    <span>
+                      {t("queue.botIn", {
+                        seconds: Math.ceil(state.waitMs / 1000),
+                      })}
+                    </span>
+                  </div>
+                </div>
+                <h2>{t("queue.searching")}</h2>
+              </>
+            ) : (
+              <output class="status-message">
+                {t(
+                  state.status === "connecting"
+                    ? "queue.connecting"
+                    : state.status === "waiting"
+                      ? "queue.preparing"
+                      : state.status === "loading"
+                        ? "match.loading"
+                        : "queue.hint",
+                )}
+              </output>
+            )}
+            <fieldset
+              class="queue-difficulties"
+              disabled={state.status !== "ready" || state.working || locked}
+            >
+              <legend>{t("match.difficulty")}</legend>
+              {(["easy", "normal", "hard"] as const).map((value) => (
+                <Button
+                  key={value}
+                  aria-pressed={selectedDifficulty === value}
+                  onClick={() => setDifficulty(value)}
+                >
+                  {t(`match.${value}`)}
+                </Button>
+              ))}
+            </fieldset>
+            {state.status === "ready" && (
+              <Button
+                variant="primary"
+                disabled={state.working || locked}
+                onClick={() => void controller.join(difficulty)}
+              >
+                {t("queue.find")}
+              </Button>
+            )}
+            {state.status === "waiting" && (
+              <>
+                <p>{t("queue.hint")}</p>
+                <Button
+                  disabled={state.working}
+                  onClick={() => void controller.cancel()}
+                >
+                  {t("queue.cancel")}
+                </Button>
+              </>
+            )}
+          </Card>
+        </div>
+      )}
+      {state.status === "error" && !locked && (
+        <div class="match-controls">
+          <Button onClick={() => void controller.start()}>
+            {t("queue.retry")}
+          </Button>
+          <NavLink path="/practice">{t("auth.local")}</NavLink>
+        </div>
+      )}
+    </>
+  );
+}

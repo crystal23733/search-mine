@@ -4,7 +4,7 @@ import { useUi } from "../ui/context";
 export function GameRoute({
   route,
 }: {
-  route: "practice" | "tutorial" | "daily";
+  route: "practice" | "tutorial" | "daily" | "queue";
 }) {
   const { t } = useUi();
   const [loaded, setLoaded] = useState<{
@@ -15,11 +15,13 @@ export function GameRoute({
   useEffect(() => {
     let current = true;
     const loading =
-      route === "practice"
-        ? import("./MatchPage").then((module) => module.MatchPage)
-        : route === "daily"
-          ? import("./DailyPage").then((module) => module.DailyPage)
-          : import("./TutorialPage").then((module) => module.TutorialPage);
+      route === "queue"
+        ? import("./QueuePage").then((module) => module.QueuePage)
+        : route === "practice"
+          ? import("./MatchPage").then((module) => module.MatchPage)
+          : route === "daily"
+            ? import("./DailyPage").then((module) => module.DailyPage)
+            : import("./TutorialPage").then((module) => module.TutorialPage);
     void loading
       .then((Page) => {
         if (current) setLoaded({ route, Page });
@@ -36,11 +38,13 @@ export function GameRoute({
     <>
       <h1>
         {t(
-          route === "practice"
-            ? "match.title"
-            : route === "daily"
-              ? "daily.title"
-              : "tutorial.title",
+          route === "queue"
+            ? "queue.title"
+            : route === "practice"
+              ? "match.title"
+              : route === "daily"
+                ? "daily.title"
+                : "tutorial.title",
         )}
       </h1>
       <p role={loaded?.error ? "alert" : "status"}>

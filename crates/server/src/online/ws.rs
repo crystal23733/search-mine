@@ -12,7 +12,7 @@ use axum::{
     routing::get,
 };
 use liar_protocol::{
-    game::{MAX_INPUT_BYTES, PublicError},
+    game::{MAX_INPUT_BYTES, MAX_OUTPUT_BYTES, PublicError},
     online::{OnlineError, OnlinePayload, decode_online},
 };
 use std::{
@@ -153,7 +153,7 @@ async fn run(
                 let Some(event) = outgoing else { break; };
                 if context.registry.authorities.with_authority(connection.authority(), context.registry.auth_clock.now(), || ()).is_err() { break; }
                 let Ok(text) = serde_json::to_string(&event) else { break; };
-                if text.len() > 131072 || !send(&mut socket, Message::Text(text.into())).await { break; }
+                if text.len() > MAX_OUTPUT_BYTES || !send(&mut socket, Message::Text(text.into())).await { break; }
             }
             incoming = socket.recv() => {
                 let message = match incoming { Some(Ok(message)) => message, Some(Err(_)) => { close_code = 1002; break; }, None => break };
@@ -223,7 +223,7 @@ async fn send_error(
             let Ok(text) = serde_json::to_string(&event) else {
                 return false;
             };
-            if text.len() > 131072 || !send(socket, Message::Text(text.into())).await {
+            if text.len() > MAX_OUTPUT_BYTES || !send(socket, Message::Text(text.into())).await {
                 return false;
             }
             if is_error {

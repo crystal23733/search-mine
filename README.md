@@ -105,7 +105,7 @@ pnpm build
 pnpm exec playwright test --project auth
 ```
 
-DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·취소 시험을 포함한66개를 검사한다.
+DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른 대전/실제 WS·취소·철회 시험을 포함한72개를 실행한다. [#70 검증](docs/verification/70-online-quick-match-ui.md)을 확인한다.
 
 [#68 세션 인증 요청 포트](docs/verification/68-authenticated-web-requests.md)는 온라인 조회의 전/후 bootstrap·fresh CSRF와 취소/late reply를 제공한다. 실제 로비/WS 화면 연결은 다음 #17 작업이다.
 

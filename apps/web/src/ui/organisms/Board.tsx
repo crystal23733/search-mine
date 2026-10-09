@@ -18,6 +18,7 @@ export interface BoardProps {
   allowedModes?: readonly Mode[];
   createRenderer: BoardRendererFactory;
   onAction(action: PublicAction): void;
+  disabled?: boolean;
 }
 type Mode = "open" | "flag" | "accuse";
 export function Board({
@@ -25,6 +26,7 @@ export function Board({
   createRenderer,
   onAction,
   allowedModes = ["open", "flag", "accuse"],
+  disabled = false,
 }: BoardProps) {
   const { t, locale, preferences } = useUi();
   const { width, height } = view.rules.rules;
@@ -52,7 +54,7 @@ export function Board({
     width: 1,
     height: 1,
   });
-  const locked = view.phase !== "playing" || view.own.stun_ms > 0;
+  const locked = disabled || view.phase !== "playing" || view.own.stun_ms > 0;
   const latest = useRef({
     locked,
     onAction,

@@ -36,6 +36,41 @@ const server = https.createServer(
     req.pipe(upstream);
   },
 );
+server.on("upgrade", (req, client, head) => {
+  if (req.url !== "/api/v1/ws") {
+    client.destroy();
+    return;
+  }
+  const upstream = http.request({
+    hostname: "127.0.0.1",
+    port: 3001,
+    path: "/api/v1/ws",
+    method: "GET",
+    headers: { ...req.headers, host: "localhost:8443" },
+  });
+  upstream.setTimeout(12000, () => upstream.destroy());
+  upstream.on("upgrade", (reply, socket, serverHead) => {
+    upstream.setTimeout(0);
+    const headers = [];
+    for (let i = 0; i < reply.rawHeaders.length; i += 2)
+      headers.push(`${reply.rawHeaders[i]}: ${reply.rawHeaders[i + 1]}`);
+    client.write(
+      `HTTP/1.1 ${reply.statusCode} ${reply.statusMessage}\r\n${headers.join("\r\n")}\r\n\r\n`,
+    );
+    if (serverHead.length) client.write(serverHead);
+    if (head.length) socket.write(head);
+    socket.on("error", () => client.destroy());
+    client.on("error", () => socket.destroy());
+    socket.on("close", () => client.destroy());
+    client.on("close", () => socket.destroy());
+    socket.pipe(client);
+    client.pipe(socket);
+  });
+  upstream.on("response", () => client.destroy());
+  upstream.on("error", () => client.destroy());
+  client.on("close", () => upstream.destroy());
+  upstream.end();
+});
 server.listen(8443, "127.0.0.1");
 for (const signal of ["SIGTERM", "SIGINT"])
   process.on(signal, () => server.close(() => process.exit(0)));

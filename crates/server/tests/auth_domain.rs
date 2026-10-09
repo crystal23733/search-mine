@@ -58,6 +58,38 @@ fn provider_and_return_boundaries_reject_arbitrary_identity_or_redirect_targets(
 }
 
 #[test]
+fn invitation_uses_the_shared_canonical_room_code_and_only_the_friends_destination() {
+    use liar_server::auth::ReturnPath;
+    let invite = ReturnPath::parse_invite("friends", Some("ABCD2345")).unwrap();
+    assert_eq!(invite.as_str(), "friends");
+    assert_eq!(invite.invite_code(), Some("ABCD2345"));
+    assert_eq!(
+        invite,
+        ReturnPath::FriendsInvite(liar_server::lobby::RoomCode::parse("ABCD2345").unwrap())
+    );
+    for path in ["home", "daily", "friends", "settings"] {
+        assert_eq!(
+            ReturnPath::parse_invite(path, None).unwrap(),
+            ReturnPath::parse(path).unwrap()
+        );
+        if path != "friends" {
+            assert!(ReturnPath::parse_invite(path, Some("ABCD2345")).is_err());
+        }
+    }
+    for code in [
+        "",
+        "ABCD1234",
+        "abcd2345",
+        "ABCD2345\n",
+        "ABCD2345/",
+        "ＡBCD2345",
+    ] {
+        assert!(ReturnPath::parse_invite("friends", Some(code)).is_err());
+        assert!(liar_server::lobby::RoomCode::parse(code).is_err());
+    }
+}
+
+#[test]
 fn session_reauthentication_is_bounded_and_pkce_matches_the_rfc_vector() {
     use liar_server::auth::{Account, Session};
     let session = Session {

@@ -62,8 +62,30 @@ test("login offers the four minimal providers, disabled setup and guest practice
       .getAttribute("href"),
   ).toBe("/en/practice");
 });
+test("login passes its invitation to the server transaction without browser storage", async () => {
+  const ports = await setup(
+    "/en/login?return_path=friends&code=ABCD2345",
+    null,
+  );
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Continue with Google" }),
+  );
+  await waitFor(() =>
+    expect(ports.authTransport.start).toHaveBeenCalledWith(
+      "google",
+      "login",
+      { locale: "en", return_path: "friends", invite_code: "ABCD2345" },
+      "fixture-memory-csrf",
+      expect.any(AbortSignal),
+    ),
+  );
+  expect(JSON.stringify({ ...localStorage, ...sessionStorage })).not.toContain(
+    "ABCD2345",
+  );
+});
+
 test("nickname onboarding uses the server result and skip preserves a validated invitation destination", async () => {
-  const ports = await setup("/en/onboarding?return_path=friends&code=ABCD1234");
+  const ports = await setup("/en/onboarding?return_path=friends&code=ABCD2345");
   // A nickname form is also used by the already authenticated account.
   const input = await screen.findByRole("textbox", { name: "Nickname" });
   fireEvent.input(input, { target: { value: "e\u0301探偵" } });
@@ -74,8 +96,36 @@ test("nickname onboarding uses the server result and skip preserves a validated 
     expect(ports.auth.read().account?.nickname).toBe("é探偵"),
   );
   await waitFor(() => expect(window.location.pathname).toBe("/en/friends"));
-  expect(window.location.search).toContain("code=ABCD1234");
+  expect(window.location.search).toContain("code=ABCD2345");
   expect(ports.services.learning.read()).toBe("skipped");
+});
+
+test("changing language before OAuth keeps the same invitation in the new server transaction", async () => {
+  const ports = await setup(
+    "/en/login?return_path=friends&code=ZZZZ6789",
+    null,
+  );
+  fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+    target: { value: "ja" },
+  });
+  await waitFor(() => expect(document.documentElement.lang).toBe("ja"));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: ports.services.i18n.t("ja", "auth.continue", {
+        provider: "Google",
+      }),
+    }),
+  );
+  await waitFor(() =>
+    expect(ports.authTransport.start).toHaveBeenCalledWith(
+      "google",
+      "login",
+      { locale: "ja", return_path: "friends", invite_code: "ZZZZ6789" },
+      "fixture-memory-csrf",
+      expect.any(AbortSignal),
+    ),
+  );
+  expect(window.location.search).toContain("code=ZZZZ6789");
 });
 test("a blocked provider redirect reports a recoverable error", async () => {
   const ports = await setup("/en/login", null);

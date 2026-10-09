@@ -56,7 +56,16 @@ export function ProviderButton({
         onClick={() => {
           setFailed(false);
           void services.auth
-            .start(provider, intent, locale, return_path)
+            .start(
+              provider,
+              intent,
+              locale,
+              return_path,
+              intent === "login" && return_path === "friends"
+                ? (services.navigation.current().searchParams.get("code") ??
+                    undefined)
+                : undefined,
+            )
             .then((result) => {
               if (result.ok) services.authEffects.redirect(result.value);
             })

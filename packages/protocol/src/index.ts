@@ -52,6 +52,7 @@ export type AuthAccount = { id: string, nickname: string | null, };
 export type AuthProviderStatus = { provider: string, available: boolean, };
 export type AuthBootstrap = { providers: Array<AuthProviderStatus>, account: AuthAccount | null, session_revision: string | null, csrf: string | null, };
 export type AuthStart = { authorize_url: string, };
+export type AuthLoginRequest = { locale: string, return_path: string, invite_code?: string, };
 export type AuthFailure = { code: string, };
 export type AuthIdentity = { provider: string, linked_at: number, };
 export type AuthExport = { account: AuthAccount, created_at: number, last_seen_at: number, identities: Array<AuthIdentity>, };

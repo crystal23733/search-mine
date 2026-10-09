@@ -108,6 +108,9 @@ impl<S: AuthStore, V: CredentialVault, D: SubjectDigester> AuthService<S, V, D> 
             return_path,
             locale,
         } = request;
+        if return_path.invite_code().is_some() && intent != AuthIntent::Login {
+            return Err(AuthError::Invalid);
+        }
         let expires_at = now
             .checked_add(TRANSACTION_SECONDS)
             .filter(|_| now >= 0)

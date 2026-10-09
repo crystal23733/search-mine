@@ -149,6 +149,8 @@ sequenceDiagram
 
 ## OAuth 경계
 
+#66 [ADR0031](../adr/0031-oauth-invitation-return.md)의 login start는 Rust AuthLoginRequest에서 생성한 `{locale,return_path,invite_code?}`를 받는다. 선택 코드는 canonical8문자/login/friends에만 허용하고 서버5분 거래에 보존한다. success→friends 또는 onboarding, 소비된 실패→login의 로컬 code 복귀를 제공한다. link/reauth에는 초대 필드를 허용하지 않는다. provider 요청·계정·세션·브라우저 저장소에 초대를 복사하지 않는다.
+
 #45 계정 권리 계약은 [ADR0021](../adr/0021-account-rights-and-apple-revocation.md)을 따른다. `GET /api/v1/me/identities`는 제공자와 연결 시각만 공개한다. `POST /api/v1/me/identities/{provider}/link`와 `POST /api/v1/auth/{provider}/reauth`는 `{locale,return_path}`를 받고 현재 세션에 거래를 묶는다. 연결은 최근300초 인증이 필요하고 재인증은 이미 연결된 제공자만 허용한다. 민감 작업의 인증 기한 만료는409/reauth_required, 다른 계정의 subject나 마지막 제공자 해제는409/auth_conflict다.
 
 `POST /api/v1/me/export`와 `DELETE /api/v1/me`, `DELETE /api/v1/me/identities/{provider}`는 strict `{}`와 같은 Origin·메모리 CSRF를 요구한다. 내보내기는 account UUID/nickname·생성/최근 접속 시각·provider/연결 시각만 포함한다. 해제·삭제는 모든 해당 계정 세션을 철회하고 cookie를 지운다. 응답 `AuthErasure.manual_apple_disconnect`는 Apple credential 부재/제공자 비활성으로 직접 철회가 필요한지를 알린다. 공개 DTO는 Rust에서 생성한다. 계정 권리 API의 본문 한도는4096byte다.

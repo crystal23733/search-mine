@@ -198,7 +198,9 @@ fn dispatch(
             },
         ),
         LobbyCommand::RoomCreate => service.create_room(authority),
-        LobbyCommand::RoomJoin { code } => service.join_room(authority, RoomCode::parse(&code)?),
+        LobbyCommand::RoomJoin { code } => {
+            service.join_room(authority, RoomCode::parse(&code).map_err(LobbyError::from)?)
+        }
         LobbyCommand::Ready { room_id, ready } => service.ready(authority, uuid(&room_id)?, ready),
         LobbyCommand::Cancel { identity } => service.cancel(
             authority,

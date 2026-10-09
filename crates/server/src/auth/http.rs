@@ -234,12 +234,7 @@ async fn provider_status<S: AuthStore, V: CredentialVault, D: SubjectDigester, P
 ) -> Json<Vec<AuthProviderStatus>> {
     Json(statuses(&ctx.providers))
 }
-#[derive(serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-struct StartBody {
-    locale: String,
-    return_path: String,
-}
+type StartBody = liar_protocol::auth::AuthLoginRequest;
 async fn start<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuthProvider>(
     State(ctx): State<Arc<Context<S, V, D, P>>>,
     Path(provider): Path<String>,
@@ -253,7 +248,7 @@ async fn start<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuthPro
         let Json(body) = body.map_err(|_| AuthError::Invalid)?;
         let provider = Provider::parse(&provider)?;
         let locale = AuthLocale::parse(&body.locale)?;
-        let return_path = ReturnPath::parse(&body.return_path)?;
+        let return_path = ReturnPath::parse_invite(&body.return_path, body.invite_code.as_deref())?;
         if !ctx.providers.available(provider) {
             return Err(AuthError::Unavailable);
         }
@@ -324,7 +319,7 @@ async fn callback<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuth
         ctx.permit(browser, true, now)?;
         let tx = ctx.service.consume(&state, browser, provider, now).await?;
         let locale = tx.locale.as_str();
-        let destination = tx.return_path.as_str();
+        let destination = tx.return_path;
         let complete = async {
             let issuer = pairs.get("iss").map(String::as_str);
             if (provider == Provider::Google && issuer != Some(provider.issuer()))
@@ -352,7 +347,11 @@ async fn callback<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuth
                 .finish_verified(tx, identity, cookies.session.as_ref(), ctx.clock.now())
                 .await?;
             let path = if issued.account.nickname.is_none() {
-                format!("/{locale}/onboarding?return_path={destination}")
+                let path = format!("/{locale}/onboarding?return_path={}", destination.as_str());
+                match destination.invite_code() {
+                    Some(code) => format!("{path}&code={code}"),
+                    None => path,
+                }
             } else {
                 return_url(locale, destination)
             };
@@ -364,15 +363,22 @@ async fn callback<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuth
             Ok::<_, AuthError>(response)
         }
         .await;
-        complete.or_else(|_| redirect(format!("/{locale}/login?error=auth_failed")))
+        complete.or_else(|_| {
+            let path = format!("/{locale}/login?error=auth_failed");
+            redirect(match destination.invite_code() {
+                Some(code) => format!("{path}&return_path=friends&code={code}"),
+                None => path,
+            })
+        })
     }
     .await;
     result.unwrap_or_else(failure)
 }
-fn return_url(locale: &str, destination: &str) -> String {
+fn return_url(locale: &str, destination: ReturnPath) -> String {
     match destination {
-        "home" => format!("/{locale}/"),
-        _ => format!("/{locale}/{destination}"),
+        ReturnPath::Home => format!("/{locale}/"),
+        ReturnPath::FriendsInvite(code) => format!("/{locale}/friends?code={}", code.as_str()),
+        _ => format!("/{locale}/{}", destination.as_str()),
     }
 }
 async fn me<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuthProvider>(

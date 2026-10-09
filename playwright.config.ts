@@ -71,12 +71,20 @@ export default defineConfig({
     {
       name: "offline-chromium",
       testMatch: "**/offline.spec.ts",
-      use: { ...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:4173" },
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: "chromium",
+        baseURL: "http://127.0.0.1:4173",
+      },
     },
     {
       name: "offline-mobile",
       testMatch: "**/offline.spec.ts",
-      use: { ...devices["Pixel 7"], baseURL: "http://127.0.0.1:4173" },
+      use: {
+        ...devices["Pixel 7"],
+        channel: "chromium",
+        baseURL: "http://127.0.0.1:4173",
+      },
     },
     {
       name: "measurement",

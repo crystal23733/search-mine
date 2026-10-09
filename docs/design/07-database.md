@@ -120,6 +120,8 @@ erDiagram
 
 ## Migration과 복구
 
+#66의 [ADR0031](../adr/0031-oauth-invitation-return.md)은 새 nullable auth_transactions.invite_code를 추가한다. 정확8byte/허용 문자·login/friends CHECK와 기존 NULL 거래 호환성을 적용하고 원자 consume에 함께 복원한다. 초대는5분 transaction 목적에만 보존하며 계정/세션/결과에 복사하지 않는다.
+
 #45 migration003은 기존001/002를 수정하지 않고 account당 provider unique, 계정 거래의 session hash binding, Apple credential의 일일 확인 시각/revision,28일 삭제 tombstone, 최대24시간 암호화 revoke queue와 알림 jti digest receipt를 추가한다. [ADR0021](../adr/0021-account-rights-and-apple-revocation.md)을 따른다. 현재 계정·identity·credential·session·거래의 삭제는 한 transaction이며, 백업 복구에서 tombstone 적용은 #25 운영 검증 대상이다. 후속 개인 기록 테이블은 account 소유 FK와 동일 삭제 port에 참여하고, 공개 매치 집계의 익명화 계약은 해당 구현 이슈에서 검증한다.
 
 계정 행을 먼저 잠근 뒤 세션/identity를 검증해 동시 해제의 마지막 로그인 수단을 보존한다. revoke queue는 계정 FK 없이 철회 목적의 ciphertext와 identity AAD만 보관한다. `FOR UPDATE SKIP LOCKED`·60초 lease·lease UUID로 중복 처리/오래된 완료를 막고24시간 이후 claim하지 않는다. 만료 ciphertext의 물리 제거는60초 cleanup 및 복구 운영 절차에 의존한다. 일일 확인 결과는 ciphertext와 check revision이 같을 때만 적용하고, 늦은 알림은 credential/연결 갱신 시각보다 이전이면 새 연결을 철회하지 않는다.

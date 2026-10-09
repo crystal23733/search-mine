@@ -155,6 +155,17 @@ async fn bound_account_intents_require_current_cookie_and_recent_link_authority(
         return_path: ReturnPath::Settings,
         locale: AuthLocale::parse("fr").unwrap(),
     };
+    for intent in [AuthIntent::Link(account), AuthIntent::Reauth(account)] {
+        let invited = AccountAuthorization {
+            return_path: ReturnPath::parse_invite("friends", Some("ABCD2345")).unwrap(),
+            ..request(intent)
+        };
+        assert!(matches!(
+            service.start_account(&browser, &token, invited, 1001).await,
+            Err(AuthError::Invalid)
+        ));
+    }
+    assert!(service.store.transactions.lock().unwrap().is_empty());
     assert!(matches!(
         service
             .start_account(&browser, &token, request(AuthIntent::Login), 1001)

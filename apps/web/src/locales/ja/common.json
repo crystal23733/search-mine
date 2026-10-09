@@ -263,5 +263,7 @@
   "friends.explicitJoin": "招待コードを入力後、自分で参加を選べます。",
   "friends.joinHint": "I、O、0、1を除く英数字8文字。小文字も使えます。",
   "friends.otherQueue": "クイックマッチの待機中です。待機画面に戻るか、キャンセルしてください。",
-  "friends.again": "友達ルームに戻る"
+  "friends.again": "友達ルームに戻る",
+  "match.opponentReconnecting": "相手が再接続しています。猶予は残り{{seconds}}秒です。対戦時間は進み続けます。",
+  "match.reconnectWaiting": "サーバーの結果を待っています。"
 }

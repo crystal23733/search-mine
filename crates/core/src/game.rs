@@ -106,6 +106,7 @@ pub struct GameStats {
 pub struct OpponentView {
     pub opened_safe: u16,
     pub stun_ms: u32,
+    pub reconnect_ms: Option<u32>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Projection {
@@ -259,6 +260,14 @@ impl RuleEngine {
             opponent: OpponentView {
                 opened_safe: opponent.view.opened_safe() as u16,
                 stun_ms: opponent.stun_until.saturating_sub(now) as u32,
+                reconnect_ms: if self.end.is_some() {
+                    None
+                } else {
+                    opponent.disconnected_at.map(|at| {
+                        at.saturating_add(u64::from(self.rules.rules.reconnect_grace_ms))
+                            .saturating_sub(now) as u32
+                    })
+                },
             },
             revision: self.public_revision[seat.index()],
             countdown_ms: self.start.saturating_sub(now) as u32,

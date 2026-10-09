@@ -263,5 +263,7 @@
   "friends.explicitJoin": "L’invitation remplit le code. Vous choisissez quand rejoindre le salon.",
   "friends.joinHint": "Huit lettres ou chiffres, sans I, O, 0 ni 1. Les minuscules sont acceptées.",
   "friends.otherQueue": "Vous attendez déjà une partie rapide. Retournez à la file ou annulez l’attente.",
-  "friends.again": "Retour aux salons d’amis"
+  "friends.again": "Retour aux salons d’amis",
+  "match.opponentReconnecting": "L’adversaire se reconnecte. Il reste {{seconds}} s de délai. Le temps de la partie continue de s’écouler.",
+  "match.reconnectWaiting": "En attente du résultat du serveur."
 }

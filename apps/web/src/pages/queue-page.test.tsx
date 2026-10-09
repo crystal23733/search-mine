@@ -105,6 +105,33 @@ test("quick queue reuses the actual public board, keeps locale and activity thro
   );
   expect(services.activity.read().busy).toBe(true);
   expect(screen.getByText("Online match")).toBeTruthy();
+  event({
+    v: 1,
+    match_id: matchId,
+    server_seq: 2,
+    server_time_ms: 0,
+    payload: {
+      type: "delta",
+      view: {
+        ...view(),
+        phase: "playing",
+        revision: 1,
+        opponent: { ...view().opponent, reconnect_ms: 30000 },
+      },
+    },
+  });
+  await waitFor(() =>
+    expect(screen.getByTestId("opponent-reconnect").textContent).toContain(
+      "Opponent is reconnecting",
+    ),
+  );
+  expect(
+    screen
+      .getByTestId("opponent-reconnect")
+      .compareDocumentPosition(screen.getByRole("grid")) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(screen.queryByTestId("recording")).toBeNull();
   fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
     target: { value: "ko" },
   });
@@ -113,14 +140,35 @@ test("quick queue reuses the actual public board, keeps locale and activity thro
   event({
     v: 1,
     match_id: matchId,
-    server_seq: 2,
+    server_seq: 3,
+    server_time_ms: 0,
+    payload: {
+      type: "delta",
+      view: {
+        ...view(),
+        phase: "playing",
+        revision: 2,
+        opponent: { ...view().opponent, reconnect_ms: 0 },
+      },
+    },
+  });
+  await waitFor(() =>
+    expect(screen.getByTestId("opponent-reconnect").textContent).toContain(
+      "서버 결과를 기다리고 있습니다",
+    ),
+  );
+  expect(screen.queryByTestId("recording")).toBeNull();
+  event({
+    v: 1,
+    match_id: matchId,
+    server_seq: 4,
     server_time_ms: 0,
     payload: {
       type: "match_end",
       view: {
         ...view(),
         phase: "finished",
-        revision: 1,
+        revision: 3,
         result: { reason: "timeout", outcome: "draw", completed: true },
       },
       recording: "saved",

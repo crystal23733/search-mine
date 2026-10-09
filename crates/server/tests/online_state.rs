@@ -89,6 +89,52 @@ fn private_flag_does_not_change_opponent_stream_revision_or_send_empty_delta() {
     assert_eq!(changes.len(), 1);
     assert_eq!(changes[0].0, Seat::One);
 }
+
+#[test]
+fn grace_transitions_are_public_but_time_only_ticks_and_old_connection_close_emit_no_delta() {
+    let mut s = state();
+    s.advance(3000);
+    s.take_changes();
+    s.disconnect(Seat::One, 1, 4000);
+    let peer = serde_json::to_value(s.view(Seat::Two)).unwrap();
+    assert_eq!(peer["opponent"]["reconnect_ms"], 30000);
+    let revision = s.view(Seat::Two).revision;
+    let changes = s.take_changes();
+    assert_eq!(changes.len(), 1);
+    assert_eq!(changes[0].0, Seat::Two);
+    for at in [4001, 4500, 4999] {
+        s.advance(at);
+        assert_eq!(s.view(Seat::Two).revision, revision);
+        assert!(s.take_changes().is_empty());
+    }
+    let epoch = s.attach(Seat::One, 5000).unwrap();
+    assert_eq!(s.view(Seat::Two).opponent.reconnect_ms, None);
+    assert_eq!(s.view(Seat::Two).revision, revision + 1);
+    s.take_changes();
+    s.disconnect(Seat::One, 1, 5001);
+    assert_eq!(s.view(Seat::Two).opponent.reconnect_ms, None);
+    assert!(s.take_changes().is_empty());
+    s.disconnect(Seat::One, epoch, 6000);
+    s.disconnect(Seat::Two, 1, 7000);
+    s.take_changes();
+    s.advance(36000);
+    assert_eq!(s.view(Seat::Two).opponent.reconnect_ms, Some(0));
+    assert!(s.view(Seat::Two).result.is_none());
+    assert_eq!(s.take_changes().len(), 1);
+    let zero_revision = s.view(Seat::Two).revision;
+    for at in [36001, 36999] {
+        s.advance(at);
+        assert_eq!(s.view(Seat::Two).revision, zero_revision);
+        assert!(s.take_changes().is_empty());
+    }
+    s.advance(37000);
+    let ended = s.view(Seat::Two);
+    assert_eq!(ended.opponent.reconnect_ms, None);
+    assert_eq!(
+        ended.result.unwrap().reason,
+        liar_protocol::game::PublicEndReason::Abandoned
+    );
+}
 #[test]
 fn retried_ack_keeps_its_original_revision_after_later_private_changes() {
     let mut state = state();

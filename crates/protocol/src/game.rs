@@ -101,6 +101,7 @@ pub struct MatchStats {
 pub struct OpponentProgress {
     pub opened_safe: u16,
     pub stun_ms: u32,
+    pub reconnect_ms: Option<u32>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "snake_case")]
@@ -261,6 +262,7 @@ pub fn from_projection(projection: &Projection, viewer: Seat) -> GameView {
         opponent: OpponentProgress {
             opened_safe: projection.opponent.opened_safe,
             stun_ms: projection.opponent.stun_ms,
+            reconnect_ms: projection.opponent.reconnect_ms,
         },
         result,
     }

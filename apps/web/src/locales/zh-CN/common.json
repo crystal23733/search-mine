@@ -263,5 +263,7 @@
   "friends.explicitJoin": "邀请会填入代码，你可以自行选择加入时间。",
   "friends.joinHint": "8位英文字母或数字，不含I、O、0、1，也可输入小写字母。",
   "friends.otherQueue": "你正在等待快速匹配，请返回队列或取消等待。",
-  "friends.again": "返回好友大厅"
+  "friends.again": "返回好友大厅",
+  "match.opponentReconnecting": "对手正在重新连接，宽限时间还剩{{seconds}}秒。对局计时继续。",
+  "match.reconnectWaiting": "正在等待服务器结果。"
 }

@@ -263,5 +263,7 @@
   "friends.explicitJoin": "O convite preenche o código. Você escolhe quando entrar.",
   "friends.joinHint": "Oito letras ou números, sem I, O, 0 ou 1. Letras minúsculas são aceitas.",
   "friends.otherQueue": "Você já está esperando uma partida rápida. Volte à fila ou cancele a espera.",
-  "friends.again": "Voltar às salas de amigos"
+  "friends.again": "Voltar às salas de amigos",
+  "match.opponentReconnecting": "O adversário está se reconectando. Restam {{seconds}} s de tolerância. O tempo da partida continua correndo.",
+  "match.reconnectWaiting": "Aguardando o resultado do servidor."
 }

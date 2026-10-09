@@ -567,6 +567,18 @@
         "matchmaking"
       ],
       "acceptance": "Rust 본인 소비 cursor→snapshot→새 controller·u32 exhaustion·새epoch cached ACK/original revision·상대 cursor/secret 무노출·actual WS/HTTPS PC/mobile reload TDD; 자동 backoff/영속 장애복구 후속18"
+    },
+    {
+      "key": "opponent-reconnect-grace",
+      "issue": 76,
+      "milestone": "M3",
+      "title": "feat(online): 상대 연결 유예의 권위 상태와 화면",
+      "requirements": "FR14, NFR01/02/05/06",
+      "scenarios": "TS15/16/20/21/26",
+      "deps": [
+        "reconnect-command-cursor"
+      ],
+      "acceptance": "Rust 상대 유예 null/양수/0·공개 revision 정규화·Rust→TS/WASM/strict decoder·8언어 상태/0 결과 대기·실제 WS/PG/HTTPS PC/mobile TDD·자체 판정 없음"
     }
   ]
 }

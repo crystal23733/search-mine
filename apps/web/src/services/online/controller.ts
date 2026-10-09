@@ -90,6 +90,10 @@ export class OnlineController {
             opponent: {
               ...view.opponent,
               stun_ms: Math.max(0, view.opponent.stun_ms - elapsed),
+              reconnect_ms:
+                view.opponent.reconnect_ms === null
+                  ? null
+                  : Math.max(0, view.opponent.reconnect_ms - elapsed),
             },
           }
         : view;

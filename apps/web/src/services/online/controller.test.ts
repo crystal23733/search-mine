@@ -269,6 +269,43 @@ test("uses server epoch/revision, bounded command IDs and ACKs without optimisti
   s.controller.dispose();
 });
 
+test("shows only sampled server grace, waits at zero and keeps connected play until the authoritative result", async () => {
+  vi.useFakeTimers();
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  const game = {
+    ...view(),
+    phase: "playing" as const,
+    opponent: { ...view().opponent, reconnect_ms: 5000 },
+  };
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 2,
+    view: game,
+  });
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(s.controller.read().view?.opponent.reconnect_ms).toBe(4000);
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(s.controller.read().view?.opponent.reconnect_ms).toBe(0);
+  expect(s.controller.read().view?.result).toBeNull();
+  expect(s.controller.read().status).toBe("playing");
+  s.controller.submit({ type: "flag", cell: 8 });
+  expect(s.connection.send).toHaveBeenCalledTimes(1);
+  s.event({
+    type: "delta",
+    view: {
+      ...game,
+      revision: 1,
+      opponent: { ...game.opponent, reconnect_ms: null },
+    },
+  });
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(s.controller.read().view?.opponent.reconnect_ms).toBeNull();
+  s.controller.dispose();
+});
+
 test("restores the consumed server cursor on a new controller instead of restarting inputs at one", async () => {
   const s = setup();
   vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);

@@ -328,6 +328,8 @@ fn reconnect_before_grace_rotates_epoch_and_retransmits_the_same_command() {
     assert_eq!(g.last_sequence(Seat::One), 1);
     g.disconnect(Seat::One, 3001).unwrap();
     g.disconnect(Seat::One, 3002).unwrap();
+    assert_eq!(g.projection(Seat::Two).opponent.reconnect_ms, Some(29999));
+    assert_eq!(g.projection(Seat::One).opponent.reconnect_ms, None);
     assert_eq!(
         g.apply(command(2, Seat::One, 3003, Action::Open(CellId(2))))
             .status,
@@ -336,6 +338,7 @@ fn reconnect_before_grace_rotates_epoch_and_retransmits_the_same_command() {
     assert_eq!(g.resume(Seat::One, 1, 3004), Err(Rejection::InvalidEpoch));
     assert_eq!(g.last_sequence(Seat::One), 2);
     g.resume(Seat::One, 2, 3005).unwrap();
+    assert_eq!(g.projection(Seat::Two).opponent.reconnect_ms, None);
     let replay = g.apply(Command {
         received_at: 3006,
         epoch: 2,
@@ -368,6 +371,7 @@ fn disconnect_terminal_time_precedes_timeout_and_both_expired_abandon() {
     both.disconnect(Seat::One, 3000).unwrap();
     both.disconnect(Seat::Two, 4000).unwrap();
     both.advance(33000).unwrap();
+    assert_eq!(both.projection(Seat::Two).opponent.reconnect_ms, Some(0));
     assert_eq!(both.projection(Seat::One).end, None);
     assert_eq!(
         both.resume(Seat::One, 2, 33000),
@@ -376,6 +380,7 @@ fn disconnect_terminal_time_precedes_timeout_and_both_expired_abandon() {
     both.advance(34000).unwrap();
     let end = both.projection(Seat::One).end.unwrap();
     assert_eq!(end.reason, EndReason::Abandoned);
+    assert_eq!(both.projection(Seat::One).opponent.reconnect_ms, None);
     assert_eq!(end.winner, None);
     let mut second = game();
     second.disconnect(Seat::Two, 3000).unwrap();

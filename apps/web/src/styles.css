@@ -891,6 +891,15 @@ input[type="checkbox"]:checked::before {
   display: block;
   margin-block: 1rem;
 }
+.reconnect-notice {
+  margin-block: var(--space-md);
+}
+.reconnect-notice progress {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-sm);
+  accent-color: var(--color-accent);
+}
 .match-layout--guided {
   grid-template-areas: "board guide" "board summary";
 }

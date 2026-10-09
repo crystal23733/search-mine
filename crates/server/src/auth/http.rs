@@ -20,7 +20,7 @@ type RateBuckets = std::collections::HashMap<([u8; 32], bool), (i64, u8)>;
 pub(super) struct Context<S, V, D, P> {
     pub(super) service: AuthService<S, V, D>,
     pub(super) providers: P,
-    pub(super) security: BrowserSecurity,
+    pub(super) security: Arc<BrowserSecurity>,
     pub(super) clock: Arc<dyn AuthClock>,
     pub(super) rate: std::sync::Mutex<RateBuckets>,
 }
@@ -57,13 +57,13 @@ pub fn auth_router<
 >(
     service: AuthService<S, V, D>,
     providers: P,
-    security: BrowserSecurity,
+    security: impl Into<Arc<BrowserSecurity>>,
     clock: Arc<dyn AuthClock>,
 ) -> Router {
     let context = Arc::new(Context {
         service,
         providers,
-        security,
+        security: security.into(),
         clock,
         rate: Default::default(),
     });

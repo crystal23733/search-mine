@@ -20,6 +20,7 @@
 | POST /api/v1/me/export | 최근 재인증·CSRF, 본인 최소 데이터, token/subject 제외 |
 | DELETE /api/v1/me | 최근 재인증·CSRF, 전 세션 철회·개인정보 삭제·제공자 token 철회 |
 | POST /api/v1/auth/apple/notifications | Apple 서버 알림 서명/iss/aud 검증, 사용자 브라우저 API와 별도 |
+| POST /api/v1/lobby | versioned status/queue_join/room_create/room_join/ready/cancel, 모든 호출 Origin·session-bound CSRF·nickname·bounded read/rate; 본인 상태만, no-store; [ADR0030](../adr/0030-authenticated-lobby-http-runtime.md) |
 | GET /api/v1/bootstrap | 지원 locale·공개 rules·daily versions·server availability, 정답/시드 없음 |
 | GET /api/v1/daily/{date} | UTC date·공개 seed/solver version·rules hash, 캐시 가능 |
 | POST /api/v1/daily/{id}/attempts | attempt_id, input_log, elapsed 주장, version; replay 결과와 verification status |
@@ -36,17 +37,17 @@
 
 서버 게임 응답은 `{v,match_id,server_seq,server_time_ms,payload}`이며 payload의 type은 snapshot/delta/ack/error/match_end다. revision은 view 또는 ack 안에, command_id는 ack 안에 있다. 클라이언트 시간은 승패에 사용하지 않는다. 단일 프레임 최대8KiB. 숫자 cell은 0..255, UUID/enum/길이/version을 경계에서 검증한다.
 
-#16의 actor/WS 구현은 [ADR0023](../adr/0023-authoritative-match-actor.md)을 따른다. 게임 action은 기존 PublicAction을 재사용하고 handshake/연결 epoch와 인증 철회 observer를 검증한다. 큐/방 envelope는 #17, 클라이언트 resume는 #18에서 같은 경계에 추가한다.
+#16의 actor/WS 구현은 [ADR0023](../adr/0023-authoritative-match-actor.md)을 따른다. 게임 action은 기존 PublicAction을 재사용하고 handshake/연결 epoch와 인증 철회 observer를 검증한다. 큐/방은 #64의 POST /api/v1/lobby 계약을 사용한다. 클라이언트 resume는 #18에서 같은 경계에 추가한다.
 
 server_seq/revision은 본인의 공개 stream 기준이다. 상대 flag·상대에게 보이지 않는 gauge/공격 등록만 변경됐을 때 본인의 revision을 증가시키거나 빈 delta를 보내지 않는다. 내부 전역 ingress sequence·analysis revision을 public 카운터로 내보내 공격 시점/개수를 추측하게 만들지 않는다.
 
 | 방향 | type | 주요 payload |
 |---|---|---|
-| C→S | queue_join / queue_cancel | difficulty / queue_id |
-| C→S | room_create / room_join / room_leave / ready | code, room_id |
+| HTTP C→S | status / queue_join / cancel | version, difficulty / source queue·room·preparing identity |
+| HTTP C→S | room_create / room_join / ready | version, code, room_id, ready |
 | C→S | open / flag / accuse / attack | cell 또는 빈 payload, attack에 target 금지 |
 | C→S | resume | match_id, last_server_seq, session_epoch |
-| S→C | queued / room_state / matched | queue deadline, room seats, opponent_type |
+| HTTP S→C | idle / queued / room / preparing / matched / failed | version/server_time_ms, 본인 queue deadline·좌석/ready·취소 identity·human/bot 종류 |
 | S→C | snapshot / delta | 본인 opened 숫자·mine·flag·gauge·stun, 상대 진행률·공개 기절, 남은 시간 |
 | S→C | ack / error | applied/duplicate/rejected, 안정된 error code |
 | S→C | match_end | win/loss/draw/abort, reason, safe opened, 오류·지목 집계 |

@@ -187,10 +187,11 @@ impl RuntimeAuthConfig {
             clock.clone(),
         );
         let session_store = store.clone();
+        let security = Arc::new(self.security);
         let router = account_auth_router(
             AuthService::new(store, vault, digests),
             registry,
-            self.security,
+            security.clone(),
             clock,
         );
         let maintenance = Box::pin(async move {
@@ -202,6 +203,7 @@ impl RuntimeAuthConfig {
             }
         });
         Ok(AuthRuntime {
+            security,
             router,
             maintenance,
             store: session_store,
@@ -212,6 +214,7 @@ impl RuntimeAuthConfig {
     }
 }
 pub struct AuthRuntime {
+    pub security: Arc<BrowserSecurity>,
     pub store: PgAuthStore,
     pub router: axum::Router,
     pub maintenance: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>,

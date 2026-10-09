@@ -135,6 +135,12 @@ pub struct LobbyService {
     authentication: LobbyAuthentication,
 }
 impl LobbyService {
+    pub(crate) fn authentication(&self) -> &LobbyAuthentication {
+        &self.authentication
+    }
+    pub(crate) fn now_ms(&self) -> u64 {
+        self.registry.now_ms()
+    }
     pub fn new(
         limits: LobbyLimits,
         boards: Arc<dyn BoardSource>,

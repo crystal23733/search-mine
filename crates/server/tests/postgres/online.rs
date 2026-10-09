@@ -92,6 +92,242 @@ async fn runtime_session_reader_and_logout_share_connection_invalidation() {
     assert!(registry.with_authority(&lease, now, || ()).is_err());
     close_auth_pool(pool).await;
 }
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn authenticated_lobby_http_reads_real_nickname_and_logout_cancels_an_initial_assignment() {
+    use liar_core::rules::RulesSnapshot;
+    use liar_server::{lobby::*, online::*};
+    use std::sync::atomic::{AtomicU64, Ordering};
+    struct GameClock(AtomicU64);
+    impl MatchClock for GameClock {
+        fn now_ms(&self) -> u64 {
+            self.0.load(Ordering::SeqCst)
+        }
+    }
+    let pool = auth_pool().await;
+    let sockets = AuthorityRegistry::new(4).unwrap();
+    let lobby = AuthorityRegistry::new(4).unwrap();
+    let runtime = RuntimeAuthConfig {
+        security: BrowserSecurity::new("https://game.example", [5; 32]).unwrap(),
+        vault: AeadVault::new(1, vec![(1, [6; 32])]).unwrap(),
+        digests: DigestKeys::new(1, vec![(1, [7; 32])]).unwrap(),
+        providers: vec![],
+        notification_audience: None,
+    }
+    .initialize_with_invalidations(
+        pool.clone(),
+        Arc::new(CombinedSessionInvalidator::new(
+            sockets.clone(),
+            lobby.clone(),
+        )),
+    )
+    .unwrap();
+    let clock = Arc::new(GameClock(AtomicU64::new(0)));
+    let auth_clock = Arc::new(SystemAuthClock);
+    let registry = MatchRegistry::new(
+        MatchLimits {
+            matches: 1,
+            mailbox: 16,
+            outgoing: 16,
+            proof_workers: 1,
+        },
+        clock.clone(),
+        auth_clock.clone(),
+        sockets,
+        Arc::new(PgResultRepository::new(pool.clone(), auth_clock.clone())),
+    )
+    .unwrap();
+    let mut rules = RulesSnapshot::bundled().rules;
+    rules.width = 3;
+    rules.height = 3;
+    rules.mines = 2;
+    let service = LobbyService::new(
+        LobbyLimits {
+            capacity: 4,
+            workers: 1,
+        },
+        Arc::new(
+            BoardPool::start(
+                RulesSnapshot::from_rules(rules).unwrap(),
+                2,
+                1,
+                Arc::new(OsSeedSource),
+            )
+            .unwrap(),
+        ),
+        Arc::new(CoreMatchPreparer),
+        Arc::new(OsRoomCodeSource),
+        registry.clone(),
+        BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+        LobbyAuthentication {
+            authorities: lobby,
+            clock: auth_clock,
+        },
+    )
+    .unwrap();
+    let router = lobby_router(
+        service,
+        Arc::new(PgSessionReader::new(
+            runtime.store.clone(),
+            Arc::new(SystemAuthClock),
+        )),
+        runtime.security.clone(),
+        2,
+    )
+    .unwrap();
+    let a = SecretToken::generate().unwrap();
+    let b = SecretToken::generate().unwrap();
+    let browser = SecretToken::generate().unwrap();
+    let now = SystemAuthClock.now();
+    let account_a = runtime
+        .store
+        .login(account_write(
+            Provider::Google,
+            &Uuid::new_v4().to_string(),
+            &a,
+            now,
+        ))
+        .await
+        .unwrap()
+        .account
+        .id;
+    let account_b = runtime
+        .store
+        .login(account_write(
+            Provider::Google,
+            &Uuid::new_v4().to_string(),
+            &b,
+            now,
+        ))
+        .await
+        .unwrap()
+        .account
+        .id;
+    let request = |token: &SecretToken, command: serde_json::Value| {
+        Request::builder()
+            .method("POST")
+            .uri("/api/v1/lobby")
+            .header("origin", "https://game.example")
+            .header("content-type", "application/json")
+            .header(
+                "cookie",
+                format!(
+                    "{BROWSER_COOKIE}={}; {SESSION_COOKIE}={}",
+                    browser.expose().as_str(),
+                    token.expose().as_str()
+                ),
+            )
+            .header(
+                "x-liar-csrf",
+                runtime
+                    .security
+                    .csrf(&browser, Some(token), SystemAuthClock.now())
+                    .unwrap(),
+            )
+            .body(Body::from(
+                serde_json::json!({"v":1,"command":command}).to_string(),
+            ))
+            .unwrap()
+    };
+    let join = serde_json::json!({"type":"queue_join","difficulty":"normal"});
+    assert_eq!(
+        router
+            .clone()
+            .oneshot(request(&a, join.clone()))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::UNAUTHORIZED
+    );
+    assert!(
+        runtime
+            .store
+            .nickname(account_a, Nickname::parse("Lobby探偵A").unwrap())
+            .await
+            .unwrap()
+    );
+    assert!(
+        runtime
+            .store
+            .nickname(account_b, Nickname::parse("Lobby探偵B").unwrap())
+            .await
+            .unwrap()
+    );
+    for token in [&a, &b] {
+        let response = router
+            .clone()
+            .oneshot(request(token, join.clone()))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()["cache-control"], "no-store");
+    }
+    tokio::time::timeout(Duration::from_secs(3), async {
+        while registry.for_account(account_a).is_err() {
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .unwrap();
+    let id = registry.for_account(account_a).unwrap().id();
+    assert_eq!(registry.for_account(account_b).unwrap().id(), id);
+    for (seat, token) in [&a, &b].into_iter().enumerate() {
+        let response = router
+            .clone()
+            .oneshot(request(token, serde_json::json!({"type":"status"})))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let value: serde_json::Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), 4096).await.unwrap()).unwrap();
+        assert_eq!(value["state"]["match_id"], id.to_string());
+        assert_eq!(value["state"]["own_seat"], seat);
+        assert_eq!(value["state"]["opponent"], "human");
+        assert!(value["state"].get("account").is_none());
+    }
+    runtime.store.logout(a.hash()).await.unwrap();
+    assert_eq!(
+        router
+            .clone()
+            .oneshot(request(&a, join))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::UNAUTHORIZED
+    );
+    tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            let reason: Option<String> =
+                sqlx::query_scalar("SELECT reason FROM online_match_results WHERE id=$1")
+                    .bind(id)
+                    .fetch_optional(&pool)
+                    .await
+                    .unwrap();
+            if let Some(reason) = reason {
+                assert_eq!(reason, "cancelled");
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(registry.for_account(account_a).is_err());
+    assert!(registry.for_account(account_b).is_err());
+    let response = router
+        .oneshot(request(&b, serde_json::json!({"type":"status"})))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let value: serde_json::Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 4096).await.unwrap()).unwrap();
+    assert_eq!(value["state"]["type"], "idle");
+    let (elapsed,players):(i64,i64)=sqlx::query_as("SELECT end_elapsed_ms,(SELECT count(*) FROM online_match_players WHERE match_id=$1) FROM online_match_results WHERE id=$1").bind(id).fetch_one(&pool).await.unwrap();
+    assert_eq!((elapsed, players), (0, 2));
+    clock.0.store(30000, Ordering::SeqCst);
+    close_auth_pool(pool).await;
+}
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn persistent_logout_revocation_and_erasure_barrier_cover_lobby_and_socket_before_commit() {

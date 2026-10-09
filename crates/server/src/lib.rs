@@ -13,7 +13,10 @@ use sqlx::PgPool;
 use std::time::Duration;
 
 pub fn app(pool: Option<PgPool>) -> Router {
-    app_with_auth(pool, auth::disabled_auth_router())
+    app_with_auth(
+        pool,
+        auth::disabled_auth_router().merge(lobby::disabled_lobby_router()),
+    )
 }
 pub fn app_with_auth(pool: Option<PgPool>, auth: Router) -> Router {
     Router::new()

@@ -49,3 +49,5 @@
 [ADR0036](adr/0036-opponent-reconnect-grace.md)과 [#76 상대 연결 유예 검증](verification/76-opponent-reconnect-grace.md)은 상대 공개 유예·빈 delta 억제·8언어 상태 표시와 실제 WS/HTTPS 복귀·서버 판정 출구를 기록한다. 본인 자동 재접속·영속 장애 복구는 후속18이다.
 
 [ADR0037](adr/0037-session-recovery-candidate.md)과 [#78 세션 복구 후보 검증](verification/78-session-recovery-candidate.md)은 권한 없는 메모리 후보·전후 동일 세션 proof·단조 기한과 중단된 제출의 늦은 응답 폐기를 기록한다. WS 자동 복구는 후속18이다.
+
+[ADR0038](adr/0038-bounded-online-reconnect.md)과 [#80 자동 WS 복구 검증](verification/80-bounded-online-reconnect.md)은 제한된 재연결·읽기 전용 보드·메모리 명령의 새 epoch 재전송·실제 ACK 유실과 오프라인 복귀를 기록한다. 영속 장애 복구/결과 조회는 후속18이다.

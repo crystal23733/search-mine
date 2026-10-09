@@ -9,17 +9,20 @@ import {
   type RecordingStatus,
   type LobbyOpponent,
   type OnlineEvent,
+  type OnlineInput,
 } from "@liar/protocol";
 import type { AuthPort } from "../auth/types";
 import type { RequestOwner } from "../auth/requests";
 import { OnlineFailure, type OnlineConnection, type OnlinePort } from "./types";
 import { roomCode } from "./invitation";
+import { BoundedReconnect } from "./reconnect";
 export interface OnlineState {
   status:
     | "loading"
     | "ready"
     | "waiting"
     | "connecting"
+    | "reconnecting"
     | "playing"
     | "ended"
     | "error";
@@ -33,11 +36,24 @@ export interface OnlineState {
   waitMs: number;
   roomMs: number;
   difficulty: LobbyDifficulty | null;
+  reconnectMs: number | null;
 }
 export type OnlineAuth = Pick<
   AuthPort,
-  "account" | "revision" | "connected" | "subscribe" | "invalidate" | "execute"
+  | "account"
+  | "revision"
+  | "connected"
+  | "subscribe"
+  | "invalidate"
+  | "execute"
+  | "recoveryOwner"
+  | "resume"
 >;
+interface PendingCommand {
+  input: OnlineInput;
+  timer?: ReturnType<typeof setTimeout>;
+  replayed: boolean;
+}
 export class OnlineController {
   private state: OnlineState = {
     status: "loading",
@@ -51,6 +67,7 @@ export class OnlineController {
     waitMs: 0,
     roomMs: 0,
     difficulty: null,
+    reconnectMs: null,
   };
   private owner: RequestOwner | null = null;
   private generation = 0;
@@ -64,13 +81,23 @@ export class OnlineController {
   private seq = 0;
   private epoch = 0;
   private clientSeq = 0;
-  private commands = new Map<string, ReturnType<typeof setTimeout>>();
+  private commands = new Map<string, PendingCommand>();
+  private lease = 0;
+  private recovery: BoundedReconnect;
   private listeners = new Set<() => void>();
   constructor(
     private auth: OnlineAuth,
     private port: OnlinePort,
     private now: () => number = () => performance.now(),
-  ) {}
+    random: () => number = () => Math.random(),
+  ) {
+    this.recovery = new BoundedReconnect(
+      now,
+      random,
+      (signal) => this.reconnect(signal),
+      () => this.fail("timeout"),
+    );
+  }
   read(): OnlineState {
     const elapsed = Math.max(0, this.now() - this.sampled),
       view = this.state.view;
@@ -102,6 +129,7 @@ export class OnlineController {
       ...this.state,
       view: shown,
       pending: this.commands.size,
+      reconnectMs: this.recovery.remaining(),
       roomMs:
         lobby?.state.type === "room"
           ? Math.max(
@@ -135,16 +163,34 @@ export class OnlineController {
       this.auth.revision() === this.owner.revision
     );
   }
+  private owned() {
+    if (this.disposed || !this.owner) return false;
+    if (this.current(this.generation)) return true;
+    const candidate = this.auth.recoveryOwner();
+    return (
+      candidate?.accountId === this.owner.accountId &&
+      candidate.revision === this.owner.revision
+    );
+  }
+  private closeConnection() {
+    this.lease++;
+    const connection = this.connection;
+    this.connection = null;
+    connection?.close();
+  }
+  private clearCommands() {
+    for (const command of this.commands.values()) clearTimeout(command.timer);
+    this.commands.clear();
+  }
   private stop() {
     this.generation++;
+    this.recovery.stop();
     this.abort.abort();
     this.abort = new AbortController();
     clearTimeout(this.poll);
     this.poll = undefined;
-    this.connection?.close();
-    this.connection = null;
-    for (const timer of this.commands.values()) clearTimeout(timer);
-    this.commands.clear();
+    this.closeConnection();
+    this.clearCommands();
     this.seq = 0;
     this.epoch = 0;
     this.clientSeq = 0;
@@ -173,7 +219,8 @@ export class OnlineController {
     this.owner = { accountId, revision: this.auth.revision() };
     if (!this.unsubscribe)
       this.unsubscribe = this.auth.subscribe(() => {
-        if (!this.current(this.generation)) this.fail("unauthorized", true);
+        if (!this.owned()) this.fail("unauthorized", true);
+        else if (!this.auth.connected()) this.beginRecovery();
       });
     if (!this.ticker)
       this.ticker = setInterval(() => {
@@ -295,13 +342,16 @@ export class OnlineController {
           return;
         }
         this.connection = connection;
+        const lease = ++this.lease;
         connection.listen(
           (event) => {
-            if (this.current(generation)) this.receive(event);
+            if (this.current(generation) && lease === this.lease)
+              this.receive(event);
           },
           (error) => {
             if (
               this.current(generation) &&
+              lease === this.lease &&
               this.state.recording !== "saved" &&
               this.state.recording !== "failed"
             )
@@ -336,14 +386,15 @@ export class OnlineController {
   }
   private receive(event: OnlineEvent) {
     const match = this.state.lobby?.state;
-    if (
-      match?.type !== "matched" ||
-      event.match_id !== match.match_id ||
-      (this.seq !== 0 && event.server_seq !== this.seq + 1)
-    ) {
+    if (match?.type !== "matched" || event.match_id !== match.match_id) {
       this.fail("stale");
       return;
     }
+    if (this.seq !== 0 && event.server_seq !== this.seq + 1) {
+      this.beginRecovery();
+      return;
+    }
+    const first = this.seq === 0;
     if (this.seq === 0 && event.payload.type !== "snapshot") {
       this.fail("stale");
       return;
@@ -359,12 +410,13 @@ export class OnlineController {
       return;
     }
     if (payload.type === "ack") {
-      const timer = this.commands.get(payload.command_id);
-      if (timer === undefined) {
+      if (this.state.view?.result) return;
+      const command = this.commands.get(payload.command_id);
+      if (!command) {
         this.fail("stale");
         return;
       }
-      clearTimeout(timer);
+      clearTimeout(command.timer);
       this.commands.delete(payload.command_id);
       this.state = {
         ...this.state,
@@ -377,12 +429,12 @@ export class OnlineController {
       return;
     }
     if (payload.type === "snapshot") {
-      if (this.epoch !== 0 && this.epoch !== payload.session_epoch) {
+      if (!first || (this.epoch !== 0 && payload.session_epoch <= this.epoch)) {
         this.fail("stale");
         return;
       }
       this.epoch = payload.session_epoch;
-      this.clientSeq = payload.last_client_seq;
+      this.clientSeq = Math.max(this.clientSeq, payload.last_client_seq);
     }
     const view = payload.view,
       previous = this.state.view;
@@ -401,21 +453,162 @@ export class OnlineController {
       status: view.result ? "ended" : "playing",
       ...(payload.type === "match_end" ? { recording: payload.recording } : {}),
     };
+    if (view.result) this.clearCommands();
     this.publish();
+  }
+  private beginRecovery() {
+    if (!this.owned()) {
+      this.fail("unauthorized", true);
+      return;
+    }
+    if (this.state.lobby?.state.type !== "matched" || this.state.view?.result) {
+      this.fail("disconnected");
+      return;
+    }
+    if (this.recovery.remaining() !== null) return;
+    this.generation++;
+    this.abort.abort();
+    this.abort = new AbortController();
+    clearTimeout(this.poll);
+    this.poll = undefined;
+    this.closeConnection();
+    for (const command of this.commands.values()) {
+      clearTimeout(command.timer);
+      command.timer = undefined;
+    }
+    this.seq = 0;
+    this.state = {
+      ...this.state,
+      status: "reconnecting",
+      working: false,
+      error: null,
+    };
+    this.recovery.start();
+    this.publish();
+  }
+  private async reconnect(signal: AbortSignal): Promise<boolean> {
+    const generation = this.generation,
+      owner = this.owner,
+      match = this.state.lobby?.state;
+    if (!owner || match?.type !== "matched" || !this.owned()) {
+      this.fail("unauthorized", true);
+      return false;
+    }
+    const current = () =>
+      generation === this.generation &&
+      !signal.aborted &&
+      this.owned() &&
+      (this.recovery.remaining() ?? 0) > 0;
+    if (!this.auth.connected()) {
+      await this.auth.resume(owner);
+      if (!current()) return false;
+      if (!this.auth.connected()) return false;
+    }
+    const lease = ++this.lease;
+    try {
+      const connection = await this.port.connect(
+        owner,
+        match.match_id,
+        AbortSignal.any([signal, this.abort.signal]),
+      );
+      if (!current() || lease !== this.lease || !this.auth.connected()) {
+        connection.close();
+        return false;
+      }
+      this.connection = connection;
+      this.seq = 0;
+      connection.listen(
+        (event) => {
+          if (
+            this.current(generation) &&
+            lease === this.lease &&
+            !signal.aborted &&
+            this.recovery.remaining() !== 0
+          )
+            this.receive(event);
+        },
+        (error) => {
+          if (
+            this.current(generation) &&
+            lease === this.lease &&
+            !signal.aborted &&
+            this.recovery.remaining() !== 0 &&
+            this.state.recording !== "saved" &&
+            this.state.recording !== "failed"
+          )
+            this.disconnected(error.code);
+        },
+      );
+      if (!current() || lease !== this.lease) {
+        if (lease === this.lease && this.connection === connection)
+          this.closeConnection();
+        else connection.close();
+        return false;
+      }
+      if (this.state.status !== "playing" && this.state.status !== "ended") {
+        this.closeConnection();
+        return false;
+      }
+      for (const command of this.commands.values()) {
+        if (command.input.session_epoch === this.epoch) continue;
+        command.input = { ...command.input, session_epoch: this.epoch };
+        command.replayed = true;
+        this.arm(command);
+        if (!connection.send(command.input)) {
+          this.closeConnection();
+          this.state = { ...this.state, status: "reconnecting" };
+          this.publish();
+          return false;
+        }
+      }
+      return true;
+    } catch (error) {
+      if (!current()) return false;
+      const code =
+        error instanceof Error &&
+        "code" in error &&
+        typeof error.code === "string"
+          ? error.code
+          : "unavailable";
+      if (code === "unauthorized" || code === "auth_required")
+        this.auth.invalidate();
+      else if (
+        ![
+          "disconnected",
+          "unavailable",
+          "timeout",
+          "auth_unavailable",
+          "cancelled",
+          "capacity",
+        ].includes(code)
+      )
+        this.fail(code);
+      return false;
+    }
+  }
+  private arm(command: PendingCommand) {
+    clearTimeout(command.timer);
+    const generation = this.generation;
+    command.timer = setTimeout(() => {
+      if (!this.current(generation)) return;
+      if (command.replayed) this.fail("timeout");
+      else this.beginRecovery();
+    }, 10_000);
   }
   private disconnected(code: string) {
     if (code === "unauthorized") {
       this.auth.invalidate();
       return;
     }
-    this.fail(code);
-    const owner = this.owner;
-    if (owner && !this.disposed) {
-      // A revoked server session can arrive as a close frame without a public error DTO.
-      void this.auth
-        .execute(owner, async () => undefined, this.abort.signal)
-        .catch(() => {});
+    if (code !== "disconnected" && code !== "timeout") {
+      this.fail(code);
+      return;
     }
+    if (this.state.view?.result) {
+      this.stop();
+      this.state = { ...this.state, status: "ended", error: code };
+      this.publish();
+    } else this.beginRecovery();
   }
   submit(action: PublicAction) {
     const view = this.state.view,
@@ -440,24 +633,25 @@ export class OnlineController {
     }
     const commandId = crypto.randomUUID(),
       generation = this.generation;
-    this.commands.set(
-      commandId,
-      setTimeout(() => {
-        if (this.current(generation)) this.fail("timeout");
-      }, 10000),
-    );
-    if (
-      !this.connection.send({
+    const command: PendingCommand = {
+      replayed: false,
+      input: {
         v: PROTOCOL_VERSION,
         match_id: match.match_id,
         command_id: commandId,
         client_seq: ++this.clientSeq,
         session_epoch: this.epoch,
         known_revision: view.revision,
-        action,
-      })
-    ) {
-      if (this.current(generation)) this.fail("disconnected");
+        action:
+          action.type === "attack"
+            ? { type: "attack" }
+            : { type: action.type, cell: action.cell },
+      },
+    };
+    this.commands.set(commandId, command);
+    this.arm(command);
+    if (!this.connection.send(command.input)) {
+      if (this.current(generation)) this.beginRecovery();
       return;
     }
     this.state = { ...this.state, error: null };

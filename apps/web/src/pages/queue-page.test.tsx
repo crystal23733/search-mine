@@ -54,7 +54,7 @@ test("quick queue reuses the actual public board, keeps locale and activity thro
           payload: {
             type: "snapshot",
             last_client_seq: 0,
-            session_epoch: 1,
+            session_epoch: connect.mock.calls.length,
             view: { ...view(), phase: "playing" },
           },
         });
@@ -105,6 +105,25 @@ test("quick queue reuses the actual public board, keeps locale and activity thro
   );
   expect(services.activity.read().busy).toBe(true);
   expect(screen.getByText("Online match")).toBeTruthy();
+  auth.suspend();
+  await waitFor(() => {
+    expect(screen.getAllByRole("gridcell")).toHaveLength(256);
+    expect(screen.getByTestId("own-reconnect").textContent).toContain(
+      "Trying to reconnect",
+    );
+  });
+  expect(services.activity.read().busy).toBe(true);
+  expect(
+    screen.getByRole<HTMLButtonElement>("button", {
+      name: "Attack",
+      exact: true,
+    }).disabled,
+  ).toBe(true);
+  expect(auth.connected()).toBe(false);
+  expect(connect).toHaveBeenCalledTimes(1);
+  await auth.resume({ accountId: matchId, revision: auth.revision() });
+  await waitFor(() => expect(connect).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(screen.queryByTestId("own-reconnect")).toBeNull());
   event({
     v: 1,
     match_id: matchId,
@@ -136,7 +155,7 @@ test("quick queue reuses the actual public board, keeps locale and activity thro
     target: { value: "ko" },
   });
   await waitFor(() => expect(document.documentElement.lang).toBe("ko"));
-  expect(connect).toHaveBeenCalledTimes(1);
+  expect(connect).toHaveBeenCalledTimes(2);
   event({
     v: 1,
     match_id: matchId,

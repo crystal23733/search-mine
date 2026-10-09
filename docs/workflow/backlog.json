@@ -591,6 +591,18 @@
         "opponent-reconnect-grace"
       ],
       "acceptance": "메모리 비권위 후보30초/동시1·resume10초·전후 account/session proof·권한 없는 offline/late reply/동일revision·HTTP 오류 구분·실제 PG/HTTPS PC/mobile TDD; WS backoff 별도"
+    },
+    {
+      "key": "bounded-online-reconnect",
+      "issue": 80,
+      "milestone": "M3",
+      "title": "feat(online): 제한된 자동 재접속과 미확인 명령 재전송",
+      "requirements": "FR14, NFR01/02/05/06",
+      "scenarios": "TS15/16/20/21/26/31/36",
+      "deps": [
+        "session-recovery-candidate"
+      ],
+      "acceptance": "30초단조backoff/jitter/동시1·새lease/epoch/snapshot·최대16메모리원본명령재전송·cursor/원본ACK·후보중읽기전용/8언어·역순/종료/권한·actual PG/WS/HTTPS TDD"
     }
   ]
 }

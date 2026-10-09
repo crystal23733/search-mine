@@ -265,5 +265,6 @@
   "friends.otherQueue": "You are already waiting for a quick match. Return to the queue or cancel waiting.",
   "friends.again": "Back to friends lobby",
   "match.opponentReconnecting": "Opponent is reconnecting. {{seconds}} s left. Match time keeps running.",
-  "match.reconnectWaiting": "Waiting for the server result."
+  "match.reconnectWaiting": "Waiting for the server result.",
+  "match.reconnecting": "Trying to reconnect. Attempts stop in {{seconds}} s. The match keeps running on the server."
 }

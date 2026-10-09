@@ -1,5 +1,7 @@
 # 06. HTTP·WebSocket 프로토콜
 
+#80의 [ADR0038](../adr/0038-bounded-online-reconnect.md)은 진행 중 연결 상실의 단조30초 backoff·새 connection lease/epoch/snapshot과 메모리 원본 UUID/seq/action/known revision 재전송을 정의한다. 권위 결과는 서버만 결정하며 로컬 예산을 grace/승패로 해석하지 않는다.
+
 #78의 [ADR0037](../adr/0037-session-recovery-candidate.md)은 인증 전송 실패와 수신한 잘못된 proof를 분리한다. 복구 후보에는 요청 권한이 없으며 bootstrap→identities→bootstrap에서 원래 account/session을 재확인한다. WS나 Rust 공개 DTO·서버 유예 규칙은 변경하지 않는다.
 
 > 대응: FR01/06/07/09/14, NFR02 · Rust public DTO → ts-rs → TS. 내부 Board와 public DTO는 분리한다.

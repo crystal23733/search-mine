@@ -82,3 +82,5 @@
 #74는 PR75/develope27f9226에 병합·종료했다. CI 실제 PG18.6 DB26·웹141unit/77browser·최신6checks가 통과했다. 이전 offline-mobile 두 탭 update 실패는 원인 미확정으로 PR75에 보존했고 테스트 진단을 추가했다. 다음 [#76 상대 연결 유예와 화면](https://github.com/crystal23733/search-mine/issues/76)은 [ADR0036](../adr/0036-opponent-reconnect-grace.md)의 Rust 공개 상태와8언어 표시를 연결한다. 자동 backoff/미확인 명령·영속 재시작/결과 재조회와 상위18은 후속이다.
 
 #76/PR77은 developc25181e3에 병합·종료했다. CI PG18.6 DB26·143unit/79browser(재시도0)·최신6checks를 통과했다. 다음 [#78 비권위 세션 복구 후보](https://github.com/crystal23733/search-mine/issues/78)는 [ADR0037](../adr/0037-session-recovery-candidate.md)의 권한 차단/메모리 후보/동일 세션 fresh proof·단조 기한을 연결한다. 자동 WS backoff/명령 재전송·영속 재시작/결과 조회와 상위18은 후속이다.
+
+#78/PR79는 developa223bd4f에 병합·종료했다. 실제CI PG18.6 DB26·162unit/81browser(재시도0)·최신6checks를 통과했다. 다음 [#80 자동 WS 복구/미확인 명령](https://github.com/crystal23733/search-mine/issues/80)은 [ADR0038](../adr/0038-bounded-online-reconnect.md)의 bounded backoff/새 lease·epoch/snapshot/메모리 재전송·8언어 화면을 연결한다. 영속 재시작/결과 조회와 상위18은 후속이다.

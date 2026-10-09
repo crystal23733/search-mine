@@ -265,5 +265,6 @@
   "friends.otherQueue": "Du wartest bereits auf ein schnelles Spiel. Gehe zur Warteschlange oder brich das Warten ab.",
   "friends.again": "Zurück zur Freundeslobby",
   "match.opponentReconnecting": "Die andere Person verbindet sich erneut. Noch {{seconds}} s Zeit. Die Spielzeit läuft weiter.",
-  "match.reconnectWaiting": "Warten auf das Serverergebnis."
+  "match.reconnectWaiting": "Warten auf das Serverergebnis.",
+  "match.reconnecting": "Verbindung wird wiederhergestellt. Versuche enden in {{seconds}} s. Das Spiel läuft auf dem Server weiter."
 }

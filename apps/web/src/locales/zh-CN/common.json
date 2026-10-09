@@ -265,5 +265,6 @@
   "friends.otherQueue": "你正在等待快速匹配，请返回队列或取消等待。",
   "friends.again": "返回好友大厅",
   "match.opponentReconnecting": "对手正在重新连接，宽限时间还剩{{seconds}}秒。对局计时继续。",
-  "match.reconnectWaiting": "正在等待服务器结果。"
+  "match.reconnectWaiting": "正在等待服务器结果。",
+  "match.reconnecting": "正在尝试重新连接。{{seconds}}秒后停止尝试。比赛仍在服务器上继续。"
 }

@@ -265,5 +265,6 @@
   "friends.otherQueue": "Ya estás esperando una partida rápida. Vuelve a la cola o cancela la espera.",
   "friends.again": "Volver a las salas de amigos",
   "match.opponentReconnecting": "El rival se está reconectando. Quedan {{seconds}} s de margen. El tiempo de la partida sigue corriendo.",
-  "match.reconnectWaiting": "Esperando el resultado del servidor."
+  "match.reconnectWaiting": "Esperando el resultado del servidor.",
+  "match.reconnecting": "Intentando reconectar. Los intentos terminan en {{seconds}} s. La partida continúa en el servidor."
 }

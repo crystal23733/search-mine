@@ -11,7 +11,7 @@
 - `planning/`: 제공된 브레인스토밍·핸드오프 원문, 내용 그대로 보존.
 - `product/01~21`: 비전·경쟁·세그먼트·여정·가치·경제·리스크·요구·테스트·지표·로드맵.
 - `design/01~18`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준.
-- `adr/0001~0031`: 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀의 결정.
+- `adr/0001~0032`: 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀·세션 인증 요청 포트의 결정.
 - `workflow/`: develop·이슈/마일스톤·승인 상태·작업 백로그·스킬 출처.
 
 [#16 권위 actor·WS·원자 결과 검증](verification/16-authoritative-match-actor.md)과 [ADR0023](adr/0023-authoritative-match-actor.md)은 인증 철회/직렬 입력/공개 DTO/결과 transaction의 실행 근거와 후속 매칭·클라이언트·운영의 경계를 기록한다.
@@ -33,3 +33,5 @@
 [ADR0030](adr/0030-authenticated-lobby-http-runtime.md)와 [#64 인증 로비 HTTP 검증](verification/64-authenticated-lobby-http-runtime.md)은 닫힌 Rust→TS intent·모든 호출의 Origin/CSRF·bounded read/열거 rate·실제 실행 조립과 남은 초대/화면 출구를 기록한다.
 
 [ADR0031](adr/0031-oauth-invitation-return.md)과 [#66 OAuth 초대 검증](verification/66-oauth-invitation-return.md)은 서버5분 거래의 canonical code/locale·일회 consume·성공/취소/실패 복귀와 nickname/tutorial·저장소 거부를 기록한다.
+
+[ADR0032](adr/0032-session-bound-web-requests.md)와 [#68 세션 인증 요청 검증](verification/68-authenticated-web-requests.md)은 온라인 조회의 안정된 working/revision·전/후 권한 확인·fresh memory CSRF·상한/취소/late reply와 후속 화면 출구를 기록한다.

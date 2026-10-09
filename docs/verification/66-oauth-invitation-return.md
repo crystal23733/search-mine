@@ -24,6 +24,8 @@ success는 해당 거래의 locale/code로 friends 또는 onboarding에 돌아�
 
 HTTPS 새8locale별 시험과 취소 retry1개는 실제 SQL/router/cookies를 사용한다. 네 제공자 proof만 test port로 대체하고 mobile/PC·nickname/tutorial·Storage get/set 거부·provider 요청의 code/return_path/referrer 비노출을 검사한다. 전체 브라우저 출구는 기존57+새9=66개다. 최신 CI의 실제 DB26·HTTPS66·coverage 수치는 PR 및 ignored 로컬 review에 기록한다.
 
+PR67/head09a63642의 CI에서 PostgreSQL26개/ignored0·웹92unit/HTTPS포함66browser(3.3m, 실패/retry0)가 통과했다. Auth385/387=99.48%·Match276/278=99.28%·Lobby362/368=98.37%·전체5710/6165=92.62%·core95 gate 및 이름별 최신6checks를 확인한 뒤2026-10-09T02:04:49Z에 squash 병합했다. developf5f9dd26·#66 CLOSED02:04:51Z를 실제 조회했다.
+
 pm-skills 정확성·보안 review scope66/basef8367c7에서 UI/typed input→same RoomCode/목적지→5분 SQL row/원자 consume→provider proof→실제 nickname/본인 거래 redirect→tutorial의 경계를 순차 조사했다. callback의 다른 proposal을 거절하고 세 거래를 역순 처리하는 forced authority/identity probe를 실행했다. SQL은 bound value이고 redirect는 닫힌 enum/canonical ASCII/allowlisted locale에서만 만들며 실패도 matching transaction을 소비한다. 검토 범위에서 추가로 뒷받침되는 결함은 남지 않았다.
 
 실제 친구방 입장·큐·온라인 게임 화면/클라이언트 재접속은 다음 #17/#18 출구다. URL 복귀만으로 온라인 UI 완료를 주장하지 않는다. 실제 제공자 키/등록 #42·미니 PC #26·사람 #27은 별도 검수다.

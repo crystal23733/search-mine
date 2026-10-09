@@ -515,6 +515,16 @@
       "scenarios": "TS01/12/13/19/20/31~36",
       "deps": ["lobby-http-runtime"],
       "acceptance": "공유 canonical RoomCode·login/friends의5분 DB 거래/CHECK/원자 consume·중첩/역순/성공/실패/expiry·nickname/tutorial/8locale/저장소 거부·실DB/HTTPS TDD"
+    },
+    {
+      "key": "authenticated-web-requests",
+      "issue": 68,
+      "milestone": "M3",
+      "title": "feat(web): 온라인 화면의 세션 인증 요청 포트",
+      "requirements": "FR01/06/07/14, NFR01/02/05",
+      "scenarios": "TS10/12/15/20/31/36",
+      "deps": ["oauth-invitation-return"],
+      "acceptance": "account/revision/session/generation·전후 bootstrap/fresh memory CSRF·조회 working/revision 불변·병렬8/전체10초·취소/late reply/domain 오류·TDD/웹 gate"
     }
   ]
 }

@@ -73,6 +73,8 @@ OIDC는 공식 JWKS 서명과 알고리즘 allowlist, issuer, audience/azp, exp/
 
 ## 개인정보와 credential 인벤토리
 
+#68 [ADR0032](../adr/0032-session-bound-web-requests.md)의 온라인 요청은 현재 account/session을 전/후 bootstrap으로 대조하고5분 CSRF를 새로 받는다. 계정 상태에 proof/session UUID를 노출하거나 저장하지 않는다. 권한 변경·취소·기한 뒤 응답은 반환하지 않으며 domain 실패는 로그인 실패로 바꾸지 않는다. 실제 권한 불일치도 캡처한 generation이 현재일 때만 메모리 세션을 무효화한다.
+
 #17/#66 [ADR0031](../adr/0031-oauth-invitation-return.md)은 login/friends에 한해 canonical8문자 초대를 서버의5분 인증 거래에 보존한다. 각 거래가 자기 locale/code를 성공·취소·교환 실패의 로컬 복귀에 사용한다. 초대는 provider URL·계정·세션·이벤트·브라우저 저장소에 복사하지 않으며 nickname/tutorial와 언어 변경 뒤 friends로 돌아간다. 새 nullable DB CHECK와 원자 consume·중첩/역순 callback·실DB/HTTPS 검증을 따른다.
 
 #44 [ADR0020](../adr/0020-oauth-providers-and-http.md)은 JWT 서명과 Google bare issuer, 수동 azp/nonce/time 검증, 고정 endpoint/제한 JWKS cache, 메모리 CSRF·공개 세션 revision을 구체화한다. 8locale는 auth transaction에만5분 보존하며 계정의 추가 개인정보 필드로 저장하지 않는다. 익명 browser cookie·rate hash는 장기 계정/이벤트를 만들지 않는다. rate 메모리는 최대4096개/5분이며 일반 start5회/callback20회 제한, unknown kid 강제 refresh는 coalesce·30초 제한한다. 분산 공격 방어와 실제 제공자 검수의 완료를 의미하지 않는다.

@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vitest";
 import { createAuthHttp } from "./http";
-import { PROVIDERS, AuthError } from "./types";
+import { PROVIDERS, AuthConnectionError, AuthError } from "./types";
 import { createAuth } from "./session";
 const account = {
   id: "a0000000-0000-4000-8000-000000000001",
@@ -17,6 +17,40 @@ const json = (value: unknown, status = 200) =>
     status,
     headers: { "content-type": "application/json" },
   });
+
+test("transport rejection and interrupted reads are classified separately from received invalid proofs", async () => {
+  for (const fetcher of [
+    vi.fn<typeof fetch>().mockRejectedValue(new TypeError("transport")),
+    vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.error(new TypeError("stream"));
+          },
+        }),
+        { headers: { "content-type": "application/json" } },
+      ),
+    ),
+  ]) {
+    await expect(createAuthHttp(fetcher).bootstrap()).rejects.toBeInstanceOf(
+      AuthConnectionError,
+    );
+  }
+  for (const value of [
+    json({ ...bootstrap, email: "unexpected" }),
+    json({ code: "auth_required" }, 401),
+  ]) {
+    try {
+      await createAuthHttp(
+        vi.fn<typeof fetch>().mockResolvedValue(value),
+      ).bootstrap();
+      throw new Error("unexpected success");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AuthError);
+      expect(error).not.toBeInstanceOf(AuthConnectionError);
+    }
+  }
+});
 test("same-origin no-store requests send only minimal data and memory CSRF", async () => {
   const fetcher = vi
     .fn<typeof fetch>()

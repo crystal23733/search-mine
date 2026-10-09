@@ -1,5 +1,5 @@
 import type { AuthBootstrap } from "@liar/protocol";
-import { AuthError, type AuthCode } from "./types";
+import { AuthConnectionError, AuthError, type AuthCode } from "./types";
 
 export type RequestCode =
   "unavailable" | "stale" | "cancelled" | "capacity" | "timeout";
@@ -30,9 +30,15 @@ interface Authority extends RequestOwner {
 interface Dependencies {
   authority(): Authority | null;
   bootstrap(signal: AbortSignal): Promise<AuthBootstrap>;
-  invalidated(code: AuthCode): void;
+  invalidated(code: AuthCode, retryable: boolean): void;
 }
-class ProofFailure extends AuthError {}
+class ProofFailure extends AuthError {
+  constructor(error: unknown) {
+    super(error instanceof AuthError ? error.code : "auth_unavailable");
+    this.retryable = error instanceof AuthConnectionError;
+  }
+  readonly retryable: boolean;
+}
 export function createAuthenticatedRequests(
   dependencies: Dependencies,
 ): AuthenticatedRequests & { abortAll(): void } {
@@ -86,9 +92,7 @@ export function createAuthenticatedRequests(
           fresh = await dependencies.bootstrap(controller.signal);
         } catch (error) {
           assertCurrent();
-          throw new ProofFailure(
-            error instanceof AuthError ? error.code : "auth_unavailable",
-          );
+          throw new ProofFailure(error);
         }
         assertCurrent();
         if (
@@ -97,7 +101,7 @@ export function createAuthenticatedRequests(
           fresh.session_revision !== owner.sessionId ||
           !fresh.csrf
         )
-          throw new ProofFailure("auth_invalid");
+          throw new ProofFailure(new AuthError("auth_invalid"));
         return fresh.csrf;
       }
       const run = async () => {
@@ -118,7 +122,10 @@ export function createAuthenticatedRequests(
           (error instanceof ProofFailure ||
             (error instanceof AuthError && error.code === "auth_required"))
         )
-          dependencies.invalidated(error.code);
+          dependencies.invalidated(
+            error.code,
+            error instanceof ProofFailure && error.retryable,
+          );
         throw error;
       } finally {
         clearTimeout(timer);

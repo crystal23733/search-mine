@@ -1,5 +1,6 @@
 import {
   AuthError,
+  AuthConnectionError,
   isProvider,
   type AuthCode,
   type AuthTransport,
@@ -39,6 +40,8 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
           ...(csrf ? { "x-liar-csrf": csrf } : {}),
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      }).catch(() => {
+        throw new AuthConnectionError();
       });
       if (response.redirected) throw new AuthError("auth_unavailable");
       if (response.status === 204 && path === "/api/v1/auth/logout")
@@ -57,7 +60,9 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
       let size = 0;
       try {
         for (;;) {
-          const part = await reader.read();
+          const part = await reader.read().catch(() => {
+            throw new AuthConnectionError();
+          });
           if (part.done) break;
           size += part.value.byteLength;
           if (size > 65536) {
@@ -115,7 +120,7 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
         new Promise<never>((_, reject) => {
           timer = setTimeout(() => {
             controller.abort();
-            reject(new AuthError("auth_unavailable"));
+            reject(new AuthConnectionError());
           }, 10000);
         }),
       ]);

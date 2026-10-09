@@ -13,7 +13,12 @@ test("only explicit current account and connectivity can submit, retries reuse a
     .mockResolvedValue("accepted");
   const queue = createPendingSubmissions(
     records,
-    { account: () => account, revision: () => 0, connected: () => connected },
+    {
+      account: () => account,
+      revision: () => 0,
+      connected: () => connected,
+      subscribe: () => () => {},
+    },
     { submit },
   );
   await queue.flush("A");
@@ -49,7 +54,12 @@ test("returning to the same account after a session revision or a hanging transp
   );
   const queue = createPendingSubmissions(
     records,
-    { account: () => "A", revision: () => revision, connected: () => true },
+    {
+      account: () => "A",
+      revision: () => revision,
+      connected: () => true,
+      subscribe: () => () => {},
+    },
     { submit },
   );
   const old = queue.flush("A");
@@ -83,7 +93,12 @@ test("coalesces one account flush and account changes or network loss keep candi
   );
   const queue = createPendingSubmissions(
     records,
-    { account: () => account, revision: () => 0, connected: () => true },
+    {
+      account: () => account,
+      revision: () => 0,
+      connected: () => true,
+      subscribe: () => () => {},
+    },
     { submit },
   );
   const first = queue.flush("A"),

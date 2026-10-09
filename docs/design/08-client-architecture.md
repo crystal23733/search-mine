@@ -1,5 +1,7 @@
 # 08. 클라이언트 구조와 Atomic Design
 
+#78의 [ADR0037](../adr/0037-session-recovery-candidate.md)은 AuthPort의 suspend/recoveryOwner/resume 경계와 단조30초 후보/시도10초/동시1·늦은 완료 폐기를 정의한다. 브라우저 offline은 권한을 차단하고 online에서 같은 세션을 확인한다. 실제 WS 자동 backoff·미확인 명령/화면 보존은 다음 #18 하위 작업이다.
+
 > 대응: FR08~13, NFR01/03/06 · Preact+Vite, PixiJS, i18next, Rust WASM.
 
 #76의 [ADR0036](../adr/0036-opponent-reconnect-grace.md)은 Rust 상대 유예를 strict decode하고 수신 잔여에서 단조 시간 경과만 빼 표시한다. null/양수/0을 구분하고0에서도 서버 결과를 기다린다. ReconnectNotice는 보드 앞에서8언어 상태/진행 막대를 공유하며 본인 입력은 연결된 동안 계속 가능하다. 본인 연결 상실 시각으로 상대/서버 grace를 만들지 않는다.

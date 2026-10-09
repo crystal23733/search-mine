@@ -17,6 +17,8 @@
 
 ## 요구사항 → 설계 → 시나리오 추적
 
+#83/#85 FR10/NFR05/07·TS18/20/26 → [ADR0018](../adr/0018-public-offline-cache-and-safe-update.md) → production 두 탭 업데이트의 연속 observer/native lifecycle·항상 보존하는 CI trace. #74/#80의 간헐 실패는 원인 미확정이며 timeout/retry 완화 없이 분리한다. #85 진단 보존과 미완료 #83 제품 조사를 구분해 [진단 기록](../verification/85-offline-update-observation.md)을 갱신한다.
+
 #18/#76의 FR14/NFR01/02/05/06·TS15/16/20/21/26은 [ADR0036](../adr/0036-opponent-reconnect-grace.md)의 Rust 상대 유예→공개 view/Visible 정규화→strict decode/8언어 표시로 추적한다.0은 서버 결과 대기이며 자체 판정하지 않는다. 자동 재접속·재시작 영속 복구는 후속18 출구다.
 
 #18/#74의 FR14/NFR01/02·TS15/16/20/21은 [ADR0035](../adr/0035-reconnect-command-cursor.md)의 Rust 본인 입력 cursor→snapshot→새 controller와 새 epoch cached ACK/original revision·실제 TCP WS/HTTPS reload로 추적한다. 자동 backoff·grace 공개 상태·서버 재시작 영속 복구는 후속18 출구다.

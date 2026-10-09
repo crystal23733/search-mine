@@ -128,8 +128,11 @@ jobs:
             .tmp/online-layout/
           retention-days: 7
       - uses: actions/upload-artifact@v7
-        if: failure()
+        if: always()
         with:
           name: browser-failures
-          path: test-results/
+          include-hidden-files: true
+          path: |
+            test-results/
+            .tmp/offline-update-probes/
           retention-days: 7

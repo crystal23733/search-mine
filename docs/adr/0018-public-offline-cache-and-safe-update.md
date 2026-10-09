@@ -9,6 +9,8 @@
 
 ## 결정
 
+2026-10-09 #83 조사: #74의 mobile과 #80/PR81의 PC CI에서 idle 적용 뒤 load가 간헐 실패했다. #80은 재시도로 성공했고 `browser-failures`의 `if: failure()` 때문에 최초 실패 trace가 업로드되지 않았다. 기존16회 성공을 원인 해결의 증거로 확대하지 않는다. 먼저 성공/실패 모두 artifact를 보존하고, 시험에서 클릭·요청/응답·prepare/release·controllerchange와 native worker lifecycle을 재로드 전후 연속 기록한다. 진단은 시험 fixture에만 두며 제품 제한 시간·retry·권한/캐시 정책을 바꾸지 않는다. [표준 skipWaiting](https://w3c.github.io/ServiceWorker/#service-worker-global-scope-skipwaiting)은 활성화 시도를 요청하며, 실제 controller 변경 완료와 동일한 관측이 아니다. pending/지연/탭 종료를 통제한 행동 실패로 뒷받침되는 결함만 수정하고, 원인이 미확정이면 #83을 수정 완료로 닫지 않는다.
+
 #66의 계측 제거/일반 Chromium 새 headless 검사에서 PC·mobile 각8회16개가1.7분에 통과했다. 제품 SW/adapter/coordinator diff0이며 전체/CI 결과를 추가 확인한다.
 
 Service Worker는 build revision으로 관리하는 정적 shell/index·JS/CSS·8locale chunk·public Rust WASM/glue만 precache한다. 캐시한 Rust/RNG/rules는 UTC 공개 데일리를 재현한다. API 응답·OAuth/session/cookie·POST·WS·광고·외부 origin은 캐시하지 않는다. 캐시 없는 첫 오프라인 접근은 보장하지 않고 캐시/설치/저장소 실패도 온라인 로컬 플레이를 막지 않는다. 연결 신호는 서버 인증·가용성·매치 권위를 뜻하지 않는다. 온라인 매치를 오프라인 코어/봇으로 승격하지 않는다.

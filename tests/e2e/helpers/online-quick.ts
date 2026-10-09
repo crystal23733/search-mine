@@ -7,7 +7,7 @@ import { mkdir } from "node:fs/promises";
 const origin = "https://localhost:8443";
 type Approve = (context: BrowserContext) => Promise<void>;
 type Login = (page: Page) => Promise<void>;
-function stream(page: Page) {
+export function stream(page: Page) {
   const events: OnlineEvent[] = [];
   const commands: OnlineInput[] = [];
   page.on("websocket", (socket) => {
@@ -31,7 +31,7 @@ function stream(page: Page) {
         .at(-1),
   };
 }
-async function advance(page: Page, seconds: number) {
+export async function advance(page: Page, seconds: number) {
   expect(
     (await page.request.post("/__fixture/advance", { data: { seconds } })).ok(),
   ).toBe(true);

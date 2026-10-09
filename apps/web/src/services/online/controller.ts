@@ -13,6 +13,7 @@ import {
 import type { AuthPort } from "../auth/types";
 import type { RequestOwner } from "../auth/requests";
 import { OnlineFailure, type OnlineConnection, type OnlinePort } from "./types";
+import { roomCode } from "./invitation";
 export interface OnlineState {
   status:
     | "loading"
@@ -30,6 +31,7 @@ export interface OnlineState {
   working: boolean;
   pending: number;
   waitMs: number;
+  roomMs: number;
   difficulty: LobbyDifficulty | null;
 }
 export type OnlineAuth = Pick<
@@ -47,6 +49,7 @@ export class OnlineController {
     working: false,
     pending: 0,
     waitMs: 0,
+    roomMs: 0,
     difficulty: null,
   };
   private owner: RequestOwner | null = null;
@@ -95,6 +98,13 @@ export class OnlineController {
       ...this.state,
       view: shown,
       pending: this.commands.size,
+      roomMs:
+        lobby?.state.type === "room"
+          ? Math.max(
+              0,
+              lobby.state.expires_at_ms - lobby.server_time_ms - elapsed,
+            )
+          : 0,
       waitMs:
         lobby?.state.type === "queued"
           ? Math.max(
@@ -190,6 +200,39 @@ export class OnlineController {
     this.state = { ...this.state, working: true, error: null, difficulty };
     this.publish();
     await this.request({ type: "queue_join", difficulty }, this.generation);
+  }
+  private async intent(command: LobbyCommand) {
+    this.stop();
+    this.state = { ...this.state, working: true, error: null };
+    this.publish();
+    await this.request(command, this.generation);
+  }
+  async createRoom() {
+    if (this.disposed || this.state.working || this.state.status !== "ready")
+      return;
+    await this.intent({ type: "room_create" });
+  }
+  async joinRoom(value: string) {
+    if (this.disposed || this.state.working || this.state.status !== "ready")
+      return;
+    const code = roomCode(value);
+    if (!code) {
+      this.state = { ...this.state, error: "invalid_code" };
+      this.publish();
+      return;
+    }
+    await this.intent({ type: "room_join", code });
+  }
+  async setReady(ready: boolean) {
+    const room = this.state.lobby?.state;
+    if (
+      this.disposed ||
+      this.state.working ||
+      this.state.status !== "waiting" ||
+      room?.type !== "room"
+    )
+      return;
+    await this.intent({ type: "ready", room_id: room.room_id, ready });
   }
   private identity(): LobbyCancellation | null {
     const state = this.state.lobby?.state;

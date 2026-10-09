@@ -108,3 +108,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #68의 FR01/06/07/14·NFR01/02/05·TS10/12/15/20/31/36은 [ADR0032](../adr/0032-session-bound-web-requests.md)의 전/후 권한 확인·메모리 fresh proof·병렬 상한/전체 deadline·취소/late reply·domain 오류 보존을 실제 AuthPort 행동 검사로 추적한다. 로비/WS 화면의 실제 HTTPS 출구는 별도 #17 후속이다.
 
 #70의 FR01~06/10/11/14/15·NFR01/02/05/06·TS02/04~11/14~16/18~22/26/31/36은 [ADR0033](../adr/0033-online-quick-match-ui.md)의 실제 빠른 대전/공개 보드·bounded 세션 HTTP/WS·입력/결과·8언어와 Rust/PostgreSQL/HTTPS 출구로 추적한다. 친구 방 UI·자동 재접속·실제 키/하드웨어/사람 검수는 별도다.
+
+#72의 FR01/02/06/07/08/10/11/14·NFR01/02/05/06·TS02/10/12/13/15/18~22/26/31/36은 [ADR0034](../adr/0034-friends-room-ui.md)의 명시 참가/초대 복귀·현재 방 identity/ready·seat 이동/만료·공유된 실제 온라인 화면과 Rust/SQL/HTTPS/WS 출구로 추적한다. 자동 재접속 #18은 별도다.

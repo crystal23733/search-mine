@@ -11,12 +11,14 @@ export function OnlineResult({
   opponent,
   recording,
   onAgain,
+  againLabel,
 }: {
   view: GameView;
   ownName: string;
   opponent: string;
   recording: RecordingStatus | null;
   onAgain(): void;
+  againLabel?: string;
 }) {
   const { t, locale, services } = useUi(),
     [expanded, setExpanded] = useState(false);
@@ -65,7 +67,7 @@ export function OnlineResult({
       </Card>
       <div class="result-actions">
         <Button variant="primary" onClick={onAgain}>
-          {t("queue.again")}
+          {againLabel ?? t("queue.again")}
         </Button>
         <NavLink path="/" class="button">
           {t("home")}

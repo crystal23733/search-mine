@@ -62,6 +62,19 @@ render(
   <App
     services={{
       auth: account.auth,
+      online: {
+        lobby: async (...args) =>
+          (await import("./services/online/http")).createLobbyHttp(
+            account.auth,
+            window.fetch.bind(window),
+          )(...args),
+        connect: async (...args) =>
+          (await import("./services/online/socket")).createOnlineSocket(
+            account.auth,
+            window.location.origin,
+            (url) => new WebSocket(url),
+          )(...args),
+      },
       authEffects: account.effects,
       pendingSubmissions,
       activity,

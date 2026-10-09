@@ -24,6 +24,8 @@ MatchController는 intent와 공개 결과 연결만, MatchStore는 공개 상�
 
 ## 컴포넌트 목록과 재사용
 
+#70의 빠른 대기→실제 온라인 보드·결과와 bounded HTTP/WS·공개 DTO·권한 수명은 [ADR0033](../adr/0033-online-quick-match-ui.md)을 따른다. /queue의 controller를 언어 변경에 유지하고 Board/MatchSummary/MatchLayout를 재사용한다. 친구 방 UI와 자동 재접속은 후속이다.
+
 ```mermaid
 flowchart TD
   Pages[Pages] --> Home[HomePage]

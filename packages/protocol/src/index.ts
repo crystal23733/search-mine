@@ -2,6 +2,7 @@
 export const DAILY_SEED_VERSION = 1;
 export const PROTOCOL_VERSION = 1;
 export const MAX_INPUT_BYTES = 8192;
+export const MAX_OUTPUT_BYTES = 131072;
 export type PublicAccount = { id: string, nickname: string, };
 export type ServiceStatus = "ok" | "unavailable";
 export type HealthResponse = { status: ServiceStatus, };

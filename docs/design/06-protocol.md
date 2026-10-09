@@ -31,11 +31,13 @@
 
 ## WS envelope와 상태 노출
 
+#70 웹 경계는 [ADR0033](../adr/0033-online-quick-match-ui.md)의 닫힌 공개 디코더·Rust 원천 출력 상한·고정 same-origin cookie WS·최초 snapshot 권한 확인·sequence/ACK를 적용한다. 입력8KiB와 출력128KiB를 구분한다. 입력 DTO에 계정/seat/seed/브라우저 시각을 추가하지 않는다.
+
 ```json
 {"v":1,"match_id":"UUID","command_id":"UUID","client_seq":12,"session_epoch":2,"known_revision":44,"action":{"type":"open","cell":18}}
 ```
 
-서버 게임 응답은 `{v,match_id,server_seq,server_time_ms,payload}`이며 payload의 type은 snapshot/delta/ack/error/match_end다. revision은 view 또는 ack 안에, command_id는 ack 안에 있다. 클라이언트 시간은 승패에 사용하지 않는다. 단일 프레임 최대8KiB. 숫자 cell은 0..255, UUID/enum/길이/version을 경계에서 검증한다.
+서버 게임 응답은 `{v,match_id,server_seq,server_time_ms,payload}`이며 payload의 type은 snapshot/delta/ack/error/match_end다. revision은 view 또는 ack 안에, command_id는 ack 안에 있다. 클라이언트 시간은 승패에 사용하지 않는다. 단일 입력 프레임 최대8KiB, 공개 출력 최대128KiB다. 숫자 cell은 0..255, UUID/enum/길이/version을 경계에서 검증한다.
 
 #16의 actor/WS 구현은 [ADR0023](../adr/0023-authoritative-match-actor.md)을 따른다. 게임 action은 기존 PublicAction을 재사용하고 handshake/연결 epoch와 인증 철회 observer를 검증한다. 큐/방은 #64의 POST /api/v1/lobby 계약을 사용한다. 클라이언트 resume는 #18에서 같은 경계에 추가한다.
 

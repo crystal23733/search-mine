@@ -503,7 +503,9 @@
       "title": "feat(server): 인증 로비 HTTP와 운영 조립",
       "requirements": "FR01/02/06/07/14/16, NFR02",
       "scenarios": "TS10/12/20/21/31~36",
-      "deps": ["initial-match-admission"],
+      "deps": [
+        "initial-match-admission"
+      ],
       "acceptance": "닫힌 Rust→TS DTO·모든 호출 Origin/CSRF·닉네임/session generation·bounded read/rate/열거·no-store·shared security/main 실제 pool/bot/합성 철회·실HTTP/DB/WS TDD"
     },
     {
@@ -513,7 +515,9 @@
       "title": "feat(auth): OAuth 서버 거래에 친구 초대 보존과 복귀",
       "requirements": "FR01/07/08/11, NFR02",
       "scenarios": "TS01/12/13/19/20/31~36",
-      "deps": ["lobby-http-runtime"],
+      "deps": [
+        "lobby-http-runtime"
+      ],
       "acceptance": "공유 canonical RoomCode·login/friends의5분 DB 거래/CHECK/원자 consume·중첩/역순/성공/실패/expiry·nickname/tutorial/8locale/저장소 거부·실DB/HTTPS TDD"
     },
     {
@@ -523,8 +527,22 @@
       "title": "feat(web): 온라인 화면의 세션 인증 요청 포트",
       "requirements": "FR01/06/07/14, NFR01/02/05",
       "scenarios": "TS10/12/15/20/31/36",
-      "deps": ["oauth-invitation-return"],
+      "deps": [
+        "oauth-invitation-return"
+      ],
       "acceptance": "account/revision/session/generation·전후 bootstrap/fresh memory CSRF·조회 working/revision 불변·병렬8/전체10초·취소/late reply/domain 오류·TDD/웹 gate"
+    },
+    {
+      "key": "online-quick-match-ui",
+      "issue": 70,
+      "milestone": "M3",
+      "title": "feat(web): 빠른 대전과 실제 온라인 보드·결과 화면",
+      "requirements": "FR01~06/10/11/14/15, NFR01/02/05/06",
+      "scenarios": "TS02/04~11/14~16/18~22/26/31/36",
+      "deps": [
+        "authenticated-web-requests"
+      ],
+      "acceptance": "닫힌 Rust→TS 공개 DTO·bounded 세션 HTTP/WS·3난이도/10초/취소·실제 보드/ACK/결과·8언어·권한/늦은 응답·실DB/HTTPS TDD; 친구 UI/재접속 별도"
     }
   ]
 }

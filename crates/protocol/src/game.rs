@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 pub const PROTOCOL_VERSION: u16 = 1;
 pub const MAX_INPUT_BYTES: usize = 8192;
+pub const MAX_OUTPUT_BYTES: usize = 131072;
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum PublicAction {

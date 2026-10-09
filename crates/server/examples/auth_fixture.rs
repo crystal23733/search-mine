@@ -3,19 +3,39 @@ use axum::{
     Json, Router,
     routing::{get, post},
 };
+use liar_core::{
+    board::{Cell, CellId},
+    generator::{BoardGenerator, GenerationBudget},
+    rules::RulesSnapshot,
+};
 use liar_server::auth::*;
+use liar_server::{lobby::*, online::*};
 use sqlx::postgres::PgPoolOptions;
 use std::sync::{
     Arc,
-    atomic::{AtomicI64, Ordering},
+    atomic::{AtomicI64, AtomicU64, Ordering},
 };
 use zeroize::Zeroizing;
 
 const ORIGIN: &str = "https://localhost:8443";
-struct Clock(AtomicI64);
+struct Clock {
+    auth: AtomicI64,
+    game: AtomicU64,
+}
 impl AuthClock for Clock {
     fn now(&self) -> i64 {
-        self.0.load(Ordering::SeqCst)
+        self.auth.load(Ordering::SeqCst)
+    }
+}
+impl MatchClock for Clock {
+    fn now_ms(&self) -> u64 {
+        self.game.load(Ordering::SeqCst)
+    }
+}
+struct Seed(u64);
+impl SeedSource for Seed {
+    fn seed(&self) -> Result<[u8; 8], liar_protocol::online::OnlineError> {
+        Ok(self.0.to_le_bytes())
     }
 }
 struct Providers;
@@ -81,35 +101,97 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     // Migrations run before this process. The serving fixture uses the production adapters.
     let vault = Arc::new(AeadVault::new(1, vec![(1, [46; 32])]).expect("test vault"));
+    let sockets = AuthorityRegistry::new(32).map_err(|_| "fixture sockets")?;
+    let authorities = AuthorityRegistry::new(32).map_err(|_| "fixture lobby authorities")?;
+    let store = PgAuthStore::with_vault(pool.clone(), vault.clone()).with_invalidations(Arc::new(
+        CombinedSessionInvalidator::new(sockets.clone(), authorities.clone()),
+    ));
     let service = AuthService::new(
-        PgAuthStore::with_vault(pool, vault.clone()),
+        store.clone(),
         vault,
         DigestKeys::new(1, vec![(1, [47; 32])]).expect("test digests"),
     );
-    let clock = Arc::new(Clock(AtomicI64::new(1_800_000_000)));
-    let advance_clock = clock.clone();
-    let router = account_auth_router(
-        service,
-        Providers,
-        BrowserSecurity::new(ORIGIN, [48; 32]).expect("loopback origin"),
-        clock,
+    let clock = Arc::new(Clock {
+        auth: AtomicI64::new(1_800_000_000),
+        game: AtomicU64::new(0),
+    });
+    let security = Arc::new(BrowserSecurity::new(ORIGIN, [48; 32]).expect("loopback origin"));
+    let registry = MatchRegistry::new(
+        MatchLimits {
+            matches: 16,
+            mailbox: 32,
+            outgoing: 64,
+            proof_workers: 1,
+        },
+        clock.clone(),
+        clock.clone(),
+        sockets,
+        Arc::new(PgResultRepository::new(pool, clock.clone())),
     )
-    .merge(
-        Router::new()
-            .route("/__fixture/ready", get(|| async { "test-only" }))
-            .route(
-                "/__fixture/advance",
-                post(move |Json(body): Json<Advance>| {
-                    let clock = advance_clock.clone();
-                    async move {
-                        clock
-                            .0
-                            .fetch_add(i64::from(body.seconds.min(3600)), Ordering::SeqCst);
-                        "advanced"
-                    }
-                }),
-            ),
-    );
+    .map_err(|_| "fixture registry")?;
+    let sessions = Arc::new(PgSessionReader::new(store, clock.clone()));
+    // A small certified board makes browser inputs deterministic; production keeps bundled rules.
+    let mut rules = RulesSnapshot::bundled().rules;
+    rules.width = 3;
+    rules.height = 3;
+    rules.mines = 2;
+    rules.gauge_capacity = 1;
+    let rules = RulesSnapshot::from_rules(rules).map_err(|_| "fixture rules")?;
+    let seed = (0..64)
+        .find(|&seed| {
+            BoardGenerator::generate(rules.rules.board_spec(), seed, GenerationBudget::default())
+                .is_ok_and(|g| {
+                    g.board.cell(CellId(5)) == Some(Cell::Mine)
+                        && g.board.cell(CellId(7)) == Some(Cell::Mine)
+                })
+        })
+        .ok_or("fixture seed")?;
+    let lobby = LobbyService::new(
+        LobbyLimits {
+            capacity: 32,
+            workers: 2,
+        },
+        Arc::new(
+            BoardPool::start(rules, 4, 1, Arc::new(Seed(seed)))
+                .map_err(|_| "fixture board pool")?,
+        ),
+        Arc::new(CoreMatchPreparer),
+        Arc::new(OsRoomCodeSource),
+        registry.clone(),
+        BotExecutor::new(2, Arc::new(CoreBotFactory)).map_err(|_| "fixture bots")?,
+        LobbyAuthentication {
+            authorities,
+            clock: clock.clone(),
+        },
+    )
+    .map_err(|_| "fixture lobby")?;
+    let advance_clock = clock.clone();
+    let router = account_auth_router(service, Providers, security.clone(), clock.clone())
+        .merge(
+            lobby_router(lobby, sessions.clone(), security, 16)
+                .map_err(|_| "fixture lobby HTTP")?,
+        )
+        .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)
+        .merge(
+            Router::new()
+                .route("/__fixture/ready", get(|| async { "test-only" }))
+                .route(
+                    "/__fixture/advance",
+                    post(move |Json(body): Json<Advance>| {
+                        let clock = advance_clock.clone();
+                        async move {
+                            clock
+                                .auth
+                                .fetch_add(i64::from(body.seconds.min(3600)), Ordering::SeqCst);
+                            clock.game.fetch_add(
+                                u64::from(body.seconds.min(3600)) * 1000,
+                                Ordering::SeqCst,
+                            );
+                            "advanced"
+                        }
+                    }),
+                ),
+        );
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3001").await?;
     axum::serve(listener, router).await?;
     Ok(())

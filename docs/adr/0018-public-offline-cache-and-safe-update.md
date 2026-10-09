@@ -27,6 +27,8 @@ TDD는 activity lease/시작 경합·busy/누락/새 client 업데이트·DB upg
 
 ## 기술 근거
 
+#70의 온라인 lazy chunk 분리에 따라 공개 로컬 controller 코드가 local-session-*.js 파일로 precache된다. 파일명에 session 문자열이 있다는 이유로 인증 데이터라고 분류하지 않는다. 실제 cache URL은 같은 origin의 공개 asset인지, API/인증 경로 segment나 credential query가 아닌지를 구조적으로 검사하며 기존8언어/WASM·오프라인·대기 기록·다중 탭 출구는 유지한다.
+
 실제 latest 설치는 VitePWA2.0.0, Workbox7.4.1, assets-generator2.0.0이다. PWA 선언의 optional assets-generator 의존성을 명시하고 DOM 앱·SW·Vite 설정 tsconfig를 분리했다. upstream unconfig7.5.0의 미정의 Args 선언은 runtime load(force=false)에 맞게 boolean으로, sharp-ico0.1.5의 미사용 sharp-bmp type import는 제거하는 pnpm 타입 패치만 적용했다. runtime 코드는 바꾸지 않고 버전을 내리지 않았다. patches와 lockfile을 커밋하고 frozen 설치로 재현한다. skipLibCheck로 오류를 숨기지 않는다.
 
 cache state가 render와 effect subscribe 사이에 먼저 갱신되는 경합을 실제 offline reload에서 확인했다. useSnapshot은 subscribe 직후 최신 read도 반영한다. offline startup에서는 새로운 네트워크 등록을 요구하지 않고 기존 active registration을 조회한다. SW 캐시는 브라우저가 삭제할 수 있으며 installed 상태가 영구 보존을 보장하지 않는다.

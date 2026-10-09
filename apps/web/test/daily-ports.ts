@@ -8,6 +8,14 @@ export function dailyTestPorts() {
   const auth = guestAuthPorts();
   const records = createDailyRecords();
   return {
+    online: {
+      lobby: async () => {
+        throw Error("unavailable");
+      },
+      connect: async () => {
+        throw Error("unavailable");
+      },
+    },
     ...auth,
     pendingSubmissions: createPendingSubmissions(records, auth.auth, {
       submit: async () => {

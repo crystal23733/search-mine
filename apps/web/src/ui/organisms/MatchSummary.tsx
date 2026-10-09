@@ -4,9 +4,13 @@ import { Card } from "../atoms/Card";
 export function MatchSummary({
   view,
   opponent,
+  heading,
+  ownName,
 }: {
   view: GameView;
   opponent: string;
+  heading?: string;
+  ownName?: string;
 }) {
   const { t, locale } = useUi();
   const rules = view.rules.rules;
@@ -18,7 +22,7 @@ export function MatchSummary({
   return (
     <>
       <Card>
-        <p class="eyebrow">{t("match.local")}</p>
+        <p class="eyebrow">{heading ?? t("match.local")}</p>
         <p>
           {t("match.boardSize", {
             width: rules.width,
@@ -38,7 +42,7 @@ export function MatchSummary({
           </output>
         )}
         <p>
-          {t("match.you")}{" "}
+          {ownName ?? t("match.you")}{" "}
           <strong data-testid="own-progress">
             {number(safe)} / {number(total)}
           </strong>

@@ -11,7 +11,9 @@ import type { BoardRendererFactory } from "../board/renderer";
 import type { AuthPort } from "./auth/types";
 import type { AuthEffects } from "./auth/browser";
 import type { PendingSubmissionsPort } from "./pending-submissions";
+import type { OnlinePort } from "./online/types";
 export interface AppServices {
+  online: OnlinePort;
   auth: AuthPort;
   authEffects: AuthEffects;
   pendingSubmissions: PendingSubmissionsPort;

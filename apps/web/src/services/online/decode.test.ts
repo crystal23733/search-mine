@@ -110,9 +110,44 @@ test("decodes queue, exact preparing identity and matched assignment without any
     }),
   ).toThrow();
 });
+test("accepts only a required own u32 command cursor in the snapshot", () => {
+  const value = {
+    v: 1,
+    match_id: matchId,
+    server_seq: 9,
+    server_time_ms: 1000,
+    payload: {
+      type: "snapshot",
+      session_epoch: 3,
+      last_client_seq: 0,
+      view: view(),
+    },
+  };
+  for (const cursor of [0, 41, 4294967295])
+    expect(
+      decodeEvent({
+        ...value,
+        payload: { ...value.payload, last_client_seq: cursor },
+      }).payload,
+    ).toMatchObject({ last_client_seq: cursor });
+  for (const cursor of [undefined, null, -1, 1.2, 4294967296, "41"])
+    expect(() =>
+      decodeEvent({
+        ...value,
+        payload: { ...value.payload, last_client_seq: cursor },
+      }),
+    ).toThrow();
+  expect(() =>
+    decodeEvent({
+      ...value,
+      payload: { ...value.payload, opponent_last_client_seq: 4 },
+    }),
+  ).toThrow();
+});
+
 test("decodes all event variants and rejects foreign envelope fields or malformed ACKs", () => {
   for (const payload of [
-    { type: "snapshot", session_epoch: 1, view: view() },
+    { type: "snapshot", last_client_seq: 0, session_epoch: 1, view: view() },
     { type: "delta", view: view() },
     {
       type: "ack",

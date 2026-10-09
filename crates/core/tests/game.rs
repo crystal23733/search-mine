@@ -322,8 +322,10 @@ fn cached_rejections_sequence_epoch_conflicts_and_command_limits_are_bounded() {
 #[test]
 fn reconnect_before_grace_rotates_epoch_and_retransmits_the_same_command() {
     let mut g = game();
+    assert_eq!(g.last_sequence(Seat::One), 0);
     let original = command(1, Seat::One, 3000, Action::Open(CellId(8)));
     let ack = g.apply(original);
+    assert_eq!(g.last_sequence(Seat::One), 1);
     g.disconnect(Seat::One, 3001).unwrap();
     g.disconnect(Seat::One, 3002).unwrap();
     assert_eq!(
@@ -332,6 +334,7 @@ fn reconnect_before_grace_rotates_epoch_and_retransmits_the_same_command() {
         ActionStatus::Rejected(Rejection::Disconnected)
     );
     assert_eq!(g.resume(Seat::One, 1, 3004), Err(Rejection::InvalidEpoch));
+    assert_eq!(g.last_sequence(Seat::One), 2);
     g.resume(Seat::One, 2, 3005).unwrap();
     let replay = g.apply(Command {
         received_at: 3006,
@@ -341,6 +344,8 @@ fn reconnect_before_grace_rotates_epoch_and_retransmits_the_same_command() {
     assert!(replay.duplicate);
     assert_eq!(replay.revision, ack.revision);
     assert_eq!(replay.status, ack.status);
+    assert_eq!(g.last_sequence(Seat::One), 2);
+    assert_eq!(g.last_sequence(Seat::Two), 0);
     assert_eq!(
         g.apply(command(3, Seat::One, 3007, Action::Attack)).status,
         ActionStatus::Rejected(Rejection::InvalidEpoch)

@@ -233,6 +233,7 @@ test("uses server epoch/revision, bounded command IDs and ACKs without optimisti
   await s.controller.start();
   s.event({
     type: "snapshot",
+    last_client_seq: 0,
     session_epoch: 4,
     view: { ...view(), phase: "playing", revision: 7 },
   });
@@ -267,11 +268,57 @@ test("uses server epoch/revision, bounded command IDs and ACKs without optimisti
   expect(s.controller.read().view?.revision).toBe(8);
   s.controller.dispose();
 });
+
+test("restores the consumed server cursor on a new controller instead of restarting inputs at one", async () => {
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event(
+    {
+      type: "snapshot",
+      session_epoch: 7,
+      last_client_seq: 41,
+      view: { ...view(), phase: "playing", revision: 12 },
+    },
+    90,
+  );
+  s.controller.submit({ type: "flag", cell: 8 });
+  expect(s.connection.send).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({
+      client_seq: 42,
+      session_epoch: 7,
+      known_revision: 12,
+    }),
+  );
+  s.controller.dispose();
+});
+test("an exhausted authoritative cursor prevents overflow and sends no new command", async () => {
+  const s = setup();
+  vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
+  await s.controller.start();
+  s.event({
+    type: "snapshot",
+    session_epoch: 7,
+    last_client_seq: 4294967295,
+    view: { ...view(), phase: "playing" },
+  });
+  s.controller.submit({ type: "flag", cell: 8 });
+  expect(s.connection.send).not.toHaveBeenCalled();
+  expect(s.controller.read().error).toBe("capacity");
+  expect(s.connection.close).toHaveBeenCalled();
+  s.controller.dispose();
+});
+
 test("clears previous public view and closes socket when account changes; late callbacks cannot restore it", async () => {
   const s = setup();
   vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
   await s.controller.start();
-  s.event({ type: "snapshot", session_epoch: 1, view: view() });
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 1,
+    view: view(),
+  });
   expect(s.controller.read().view).not.toBeNull();
   s.replace();
   expect(s.connection.close).toHaveBeenCalled();
@@ -284,7 +331,12 @@ test("preserves unconfirmed result on close and reports actual recording saved/f
   const s = setup();
   vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
   await s.controller.start();
-  s.event({ type: "snapshot", session_epoch: 1, view: view() });
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 1,
+    view: view(),
+  });
   const finished = {
     ...view(),
     revision: 1,
@@ -309,6 +361,7 @@ test("fails closed on stream gaps, rejects input afterward and disposes pending 
   await s.controller.start();
   s.event({
     type: "snapshot",
+    last_client_seq: 0,
     session_epoch: 1,
     view: { ...view(), phase: "playing" },
   });
@@ -331,6 +384,7 @@ test("caps unacknowledged commands and times out the actual missing ACK without 
   await s.controller.start();
   s.event({
     type: "snapshot",
+    last_client_seq: 0,
     session_epoch: 1,
     view: { ...view(), phase: "playing" },
   });
@@ -348,7 +402,12 @@ test("verifies the same authority after socket close and clears a revoked public
   const s = setup();
   vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
   await s.controller.start();
-  s.event({ type: "snapshot", session_epoch: 1, view: view() });
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 1,
+    view: view(),
+  });
   const proof = vi.spyOn(s.auth, "execute").mockImplementation(async () => {
     s.auth.invalidate();
     throw Error("revoked");
@@ -367,7 +426,12 @@ test("policy closure invalidates immediately without trusting a proof before ser
   const s = setup();
   vi.mocked(s.port.lobby).mockResolvedValueOnce(matched);
   await s.controller.start();
-  s.event({ type: "snapshot", session_epoch: 1, view: view() });
+  s.event({
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 1,
+    view: view(),
+  });
   const proof = vi.spyOn(s.auth, "execute");
   s.closed("unauthorized");
   expect(s.auth.account()).toBeNull();

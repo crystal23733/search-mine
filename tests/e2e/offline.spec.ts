@@ -171,12 +171,40 @@ test("two-tab update cannot interrupt a game; idle update reloads both, cache de
   workerUpdate,
 }) => {
   test.setTimeout(60_000);
-  await context.addInitScript(() =>
+  await context.addInitScript(() => {
+    if (location.protocol === "about:") return;
     sessionStorage.setItem(
       "offline-test-boots",
       String(Number(sessionStorage.getItem("offline-test-boots") ?? 0) + 1),
-    ),
-  );
+    );
+    const events: unknown[] = [];
+    Reflect.set(window, "__offlineUpdateProbe", events);
+    document.addEventListener("click", (event) => {
+      const button = (event.target as Element | null)?.closest("button");
+      if (button?.textContent?.includes("Apply update"))
+        events.push({ type: "click", at: performance.now() });
+    });
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (!["prepare", "release"].includes(event.data?.type)) return;
+      events.push({
+        type: event.data.type,
+        token: event.data.token,
+        at: performance.now(),
+      });
+      const port = event.ports[0];
+      if (event.data.type !== "prepare" || !port) return;
+      const send = port.postMessage.bind(port);
+      port.postMessage = (value: unknown) => {
+        events.push({
+          type: "reply",
+          token: event.data.token,
+          value,
+          at: performance.now(),
+        });
+        send(value);
+      };
+    });
+  });
   await page.goto(`${workerUpdate.origin}/en/settings`);
   await expect(
     page.getByText("Public local play assets are cached on this device."),
@@ -220,11 +248,21 @@ test("two-tab update cannot interrupt a game; idle update reloads both, cache de
   await expect(
     page.getByRole("button", { name: "Apply update" }),
   ).toBeEnabled();
-  await Promise.all([
-    page.waitForEvent("load"),
-    other.waitForEvent("load"),
-    page.getByRole("button", { name: "Apply update" }).click(),
-  ]);
+  try {
+    await Promise.all([
+      page.waitForEvent("load", { timeout: 10000 }),
+      other.waitForEvent("load", { timeout: 10000 }),
+      page.getByRole("button", { name: "Apply update" }).click(),
+    ]);
+  } finally {
+    for (const [index, tab] of [page, other].entries())
+      await test.info().attach(`offline-update-events-${index}.json`, {
+        body: JSON.stringify(
+          await tab.evaluate(() => Reflect.get(window, "__offlineUpdateProbe")),
+        ),
+        contentType: "application/json",
+      });
+  }
   await expect
     .poll(() =>
       page.evaluate(() => sessionStorage.getItem("offline-test-boots")),

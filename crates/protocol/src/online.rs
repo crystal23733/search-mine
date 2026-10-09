@@ -76,6 +76,7 @@ pub enum RecordingStatus {
 pub enum OnlinePayload {
     Snapshot {
         session_epoch: u32,
+        last_client_seq: u32,
         view: GameView,
     },
     Delta {

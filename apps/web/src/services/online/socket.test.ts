@@ -22,7 +22,12 @@ const event = (seq = 1) => ({
   match_id: matchId,
   server_seq: seq,
   server_time_ms: 0,
-  payload: { type: "snapshot", session_epoch: 2, view: view() },
+  payload: {
+    type: "snapshot",
+    last_client_seq: 0,
+    session_epoch: 2,
+    view: view(),
+  },
 });
 const auth: AuthenticatedRequests = {
   execute: async (_o, work, signal) =>

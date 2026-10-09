@@ -378,6 +378,7 @@ export class OnlineController {
         return;
       }
       this.epoch = payload.session_epoch;
+      this.clientSeq = payload.last_client_seq;
     }
     const view = payload.view,
       previous = this.state.view;

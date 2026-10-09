@@ -271,6 +271,9 @@ impl RuleEngine {
         engine.solo = true;
         Ok(engine)
     }
+    pub fn last_sequence(&self, seat: Seat) -> u64 {
+        self.players[seat.index()].last_seq
+    }
     pub fn apply(&mut self, command: Command) -> Ack {
         let index = command.seat.index();
         let reject = |reason, revision| Ack {

@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~46 병합 완료. #16 권위 actor·인증 WS·원자 결과 저장을 병합했고 #17 매칭·친구방을 순차 구현합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·실제 WS 보드/결과를 연결했고 #18 재접속·장애 복구를 순차 구현합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -48,7 +48,7 @@ pnpm dev
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정 화면을 제공하며 온라인 대전·정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·장애 복구와 정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
 
 ## 오프라인 확인
 
@@ -91,9 +91,9 @@ cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](test
 
 ## 계정 화면 검증
 
-[#66 OAuth 초대 복귀](docs/verification/66-oauth-invitation-return.md)는 `/{locale}/login?return_path=friends&code=ABCD2345`의 canonical 초대를 서버5분 인증 거래에 보존한다. callback·nickname·tutorial 뒤 같은 code로 friends에 돌아가고, 소비된 취소/실패에서도 안전한 새 로그인 재시도를 제공한다. 실제 로비/온라인 화면은 #17의 다음 작업이다.
+[#66 OAuth 초대 복귀](docs/verification/66-oauth-invitation-return.md)는 `/{locale}/login?return_path=friends&code=ABCD2345`의 canonical 초대를 서버5분 인증 거래에 보존한다. callback·nickname·tutorial 뒤 같은 code로 friends에 돌아가고, 소비된 취소/실패에서도 안전한 새 로그인 재시도를 제공한다. 실제 로비/온라인 화면은 #70/#72에서 연결했다.
 
-`/{locale}/login`, `/onboarding`, `/settings`에서 네 제공자·닉네임·연결/해제·내보내기·로그아웃·삭제를 제공한다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 #19, 친구 초대의 OAuth 왕복 연결은 #17이다.
+`/{locale}/login`, `/onboarding`, `/settings`에서 네 제공자·닉네임·연결/해제·내보내기·로그아웃·삭제를 제공한다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 #19이며 친구 초대의 실제 OAuth 왕복은 #66/#72에서 검증했다.
 
 위의 격리된 PostgreSQL 테스트 DB가 실행되고 `DATABASE_URL`이 설정된 환경에서 아래를 실행한다. 실제 제품 router와 DB를 사용하고 외부 제공자 proof만 시험 port로 대체한다. 저장소의 HTTPS 키는 공개된 loopback 시험 전용이며 운영 키로 사용하지 않는다.
 
@@ -105,26 +105,26 @@ pnpm build
 pnpm exec playwright test --project auth
 ```
 
-DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회 시험을 포함한75개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md)과 [#72 친구 방 검증](docs/verification/72-friends-room-ui.md)을 확인한다.
+DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회 시험을 포함한77개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md)과 [#72 친구 방 검증](docs/verification/72-friends-room-ui.md)을 확인한다.
 
-[#68 세션 인증 요청 포트](docs/verification/68-authenticated-web-requests.md)는 온라인 조회의 전/후 bootstrap·fresh CSRF와 취소/late reply를 제공한다. 실제 로비/WS 화면 연결은 다음 #17 작업이다.
+[#68 세션 인증 요청 포트](docs/verification/68-authenticated-web-requests.md)는 온라인 조회의 전/후 bootstrap·fresh CSRF와 취소/late reply를 제공한다. 실제 로비/WS 화면은 #70/#72에서 연결했다. #74 재접속 입력 순번 계약은 ADR0035를 따른다.
 
 ## 권위 서버와 WebSocket
 
-[#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. `POST /api/v1/lobby`의 인증 큐/친구방에서 배정된 계정이 게임 WS를 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다. 웹의 로비/온라인 화면은 후속 #17 작업이다.
+[#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. `POST /api/v1/lobby`의 인증 큐/친구방에서 배정된 계정이 게임 WS를 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다. 웹의 로비/온라인 화면은 #70/#72에서 연결했고 자동 재접속은 #18의 후속 작업이다.
 
 개발 제한의 기본값은 매치16/mailbox64/송신16/proof2/물리 연결32이며 `LIAR_ONLINE_MATCHES`, `LIAR_ONLINE_MAILBOX`, `LIAR_ONLINE_OUTGOING`, `LIAR_ONLINE_PROOF_WORKERS`, `LIAR_ONLINE_CONNECTIONS`로 설정한다. 잘못된 값은 시작을 거절한다. 이 값은 미니 PC 출시 성능의 실측 결과가 아니며 #26에서 admission을 결정한다. 최종 결과는 새 migration으로 저장하고 닉네임·세션을 복사하지 않는다. 계정 삭제는 참여 기록을 제거하며 retry로 복원하지 않는다.
 
-매칭의 [원자 큐·친구방 정책](docs/verification/52-atomic-lobby-policy.md)과 [비공개 인증 보드 공급 포트](docs/verification/54-private-certified-board-pool.md)를 준비했다. 보드 풀은 생성/저장 수와 대기를 제한하며 게임 countdown은 보드 소비 뒤 시작한다. 인증 lobby와 초대 화면은 #17의 후속 하위 작업이다.
+매칭의 [원자 큐·친구방 정책](docs/verification/52-atomic-lobby-policy.md)과 [비공개 인증 보드 공급 포트](docs/verification/54-private-certified-board-pool.md)를 준비했다. 보드 풀은 생성/저장 수와 대기를 제한하며 게임 countdown은 보드 소비 뒤 시작한다. 인증 로비/초대 화면은 #64/#66/#70/#72에서 연결했다.
 
-[온라인 봇 driver](docs/verification/56-public-observation-online-bot.md)는 공개 Projection과 독립 행동 RNG만으로 core의3난이도를 실행하고 기존 actor에서 입력·결과를 직렬 적용한다. 생성 CPU와 달리 봇 계산도 별도 worker 상한을 가지며 늦은 결과/내부 실패를 처리한다. 공개 lobby의 인증 전송·화면/main 구성은 후속 작업이다.
+[온라인 봇 driver](docs/verification/56-public-observation-online-bot.md)는 공개 Projection과 독립 행동 RNG만으로 core의3난이도를 실행하고 기존 actor에서 입력·결과를 직렬 적용한다. 생성 CPU와 달리 봇 계산도 별도 worker 상한을 가지며 늦은 결과/내부 실패를 처리한다. 공개 로비의 인증 전송·화면/main은 #64/#70에서 연결했다.
 
-[실제 매치 조립](docs/verification/58-atomic-lobby-match-composition.md)의 내부 LobbyService는 큐/친구방 예약→제한된 준비→registry/core bot을 연결한다. core의 준비와 시작을 나누어 준비 완료 시각부터 전체 countdown을 받고, 취소/만료된 generation의 결과를 버린다. 공개 lobby의 인증 전송·초대 OAuth·화면/main은 다음 #17 하위 작업이다.
+[실제 매치 조립](docs/verification/58-atomic-lobby-match-composition.md)의 내부 LobbyService는 큐/친구방 예약→제한된 준비→registry/core bot을 연결한다. core의 준비와 시작을 나누어 준비 완료 시각부터 전체 countdown을 받고, 취소/만료된 generation의 결과를 버린다. 공개 로비의 인증 전송·초대 OAuth·화면/main은 #64/#66/#70/#72에서 연결했다.
 
-[로비 세션 권한](docs/verification/60-session-bound-lobby-admission.md)은 별도 공유 lease와 합성 철회 barrier로 대기/준비 중 logout·삭제·expiry를 적용한다. 두 참여자의 검증과 실제 registry 생성은 같은 authority lock에서 수행하고 유효 상대의 순서/방을 복구한다. 최초 WS 연결 수명·공개 HTTP/main·초대/화면 연결은 후속 통합 출구다.
+[로비 세션 권한](docs/verification/60-session-bound-lobby-admission.md)은 별도 공유 lease와 합성 철회 barrier로 대기/준비 중 logout·삭제·expiry를 적용한다. 두 참여자의 검증과 실제 registry 생성은 같은 authority lock에서 수행하고 유효 상대의 순서/방을 복구한다. 최초 WS·공개 HTTP/main·초대/화면은 #62/#64/#66/#70/#72에서 통합했다.
 
-[최초 게임 연결](docs/verification/62-initial-match-connection-lifecycle.md)은 실제 로비 배정 뒤 actor가 각 인간의 초기 세션 권한을 소유한다. 시작 기한까지 모두 처음 연결하지 않거나 그 전에 철회/만료되면 Rust core의 시작 전 취소로 종료한다. 공개 HTTP/main·초대/8언어 화면은 다음 #17 하위 작업이다.
+[최초 게임 연결](docs/verification/62-initial-match-connection-lifecycle.md)은 실제 로비 배정 뒤 actor가 각 인간의 초기 세션 권한을 소유한다. 시작 기한까지 모두 처음 연결하지 않거나 그 전에 철회/만료되면 Rust core의 시작 전 취소로 종료한다. 공개 HTTP/main·초대/8언어 화면은 #64/#66/#70/#72에서 연결했다.
 
-[인증 로비 HTTP와 실행 구성](docs/verification/64-authenticated-lobby-http-runtime.md)은 `POST /api/v1/lobby`에 `{v:1,command:{type:"status"}}` 등 Rust→TS 계약을 제공한다. 모든 호출에 Origin·session-bound CSRF·닉네임을 요구하고 동시 read/2초 deadline·세션/계정 rate·room_join5회/분을 적용한다. main은 실제 비공개 보드/core bot과 두 권한의 합성 철회를 연결한다. OAuth 초대·8언어 로비/온라인 화면은 후속이다.
+[인증 로비 HTTP와 실행 구성](docs/verification/64-authenticated-lobby-http-runtime.md)은 `POST /api/v1/lobby`에 `{v:1,command:{type:"status"}}` 등 Rust→TS 계약을 제공한다. 모든 호출에 Origin·session-bound CSRF·닉네임을 요구하고 동시 read/2초 deadline·세션/계정 rate·room_join5회/분을 적용한다. main은 실제 비공개 보드/core bot과 두 권한의 합성 철회를 연결한다. OAuth 초대·8언어 로비/온라인 화면은 #66/#70/#72에서 연결했다.
 
 로비 개발 기본값은 `LIAR_LOBBY_CAPACITY=32`, `LIAR_LOBBY_WORKERS=2`, `LIAR_LOBBY_AUTHORITIES=64`, `LIAR_LOBBY_REQUESTS=16`, `LIAR_BOARD_CAPACITY=4`, `LIAR_BOARD_WORKERS=1`, `LIAR_BOT_WORKERS=2`다. 잘못된 구성은 시작을 거절한다. auth 설정이 없으면 로비는 unavailable이며 무계정 연습은 유지한다. 이 상한은 #26의 미니 PC 실측을 대신하지 않는다.

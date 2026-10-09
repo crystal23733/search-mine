@@ -90,6 +90,7 @@ async fn serialized_actor_applies_once_then_commits_one_deadline_result() {
     let OnlinePayload::Snapshot {
         session_epoch,
         view,
+        ..
     } = initial.payload
     else {
         panic!("initial snapshot")

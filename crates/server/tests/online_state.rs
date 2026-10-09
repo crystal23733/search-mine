@@ -155,6 +155,84 @@ fn replacing_connection_invalidates_old_epoch_and_foreign_match_input() {
     ));
     assert!(!state.view(Seat::One).own.cells[8].flagged);
 }
+
+#[test]
+fn cursor_tracks_core_consumption_including_cached_rejections_without_inference_from_ack_count() {
+    let mut state = state();
+    let epoch = state.attach(Seat::One, 0).unwrap();
+    assert_eq!(state.last_client_seq(Seat::One), 0);
+    let wrong = input(&state, 77, epoch - 1, PublicAction::Flag { cell: 8 });
+    state.apply(Seat::One, wrong, 3000);
+    let mut future = input(&state, 80, epoch, PublicAction::Flag { cell: 8 });
+    future.known_revision = u32::MAX;
+    state.apply(Seat::One, future, 3000);
+    assert_eq!(state.last_client_seq(Seat::One), 0);
+    let first = input(&state, 4, epoch, PublicAction::Flag { cell: 8 });
+    state.apply(Seat::One, first.clone(), 3000);
+    assert_eq!(state.last_client_seq(Seat::One), 4);
+    state.apply(Seat::One, first, 3000);
+    let old = input(&state, 3, epoch, PublicAction::Flag { cell: 5 });
+    state.apply(Seat::One, old, 3000);
+    assert_eq!(state.last_client_seq(Seat::One), 4);
+    let mine = input(&state, 7, epoch, PublicAction::Open { cell: 5 });
+    state.apply(Seat::One, mine, 3000);
+    let stunned = input(&state, 9, epoch, PublicAction::Flag { cell: 8 });
+    assert!(matches!(
+        state.apply(Seat::One, stunned.clone(), 3001),
+        OnlinePayload::Ack {
+            error: Some(PublicError::Stunned),
+            duplicate: false,
+            ..
+        }
+    ));
+    assert_eq!(state.last_client_seq(Seat::One), 9);
+    assert!(matches!(
+        state.apply(Seat::One, stunned, 3001),
+        OnlinePayload::Ack {
+            error: Some(PublicError::Stunned),
+            duplicate: true,
+            ..
+        }
+    ));
+    state.attach(Seat::One, 3001).unwrap();
+    assert_eq!(state.last_client_seq(Seat::One), 9);
+    assert_eq!(state.last_client_seq(Seat::Two), 0);
+    let peer = input(&state, 2, 1, PublicAction::Flag { cell: 8 });
+    state.apply(Seat::Two, peer, 3001);
+    assert_eq!(state.last_client_seq(Seat::Two), 2);
+    assert_eq!(state.last_client_seq(Seat::One), 9);
+    assert!(state.view(Seat::One).own.cells[8].flagged);
+}
+
+#[test]
+fn an_internal_cursor_above_the_wire_range_projects_as_exhausted_without_wrapping() {
+    let mut rules = RulesSnapshot::bundled().rules;
+    rules.width = 3;
+    rules.height = 3;
+    rules.mines = 2;
+    let rules = RulesSnapshot::from_rules(rules).unwrap();
+    let board = Board::from_mines(rules.rules.board_spec(), &[CellId(5), CellId(7)]).unwrap();
+    let mut engine = RuleEngine::new(board, rules, 0).unwrap();
+    engine.apply(liar_core::game::Command {
+        id: 1,
+        seq: u64::from(u32::MAX) + 1,
+        epoch: 1,
+        seat: Seat::One,
+        received_at: 3000,
+        action: liar_core::game::Action::ToggleFlag(CellId(8)),
+    });
+    assert_eq!(engine.last_sequence(Seat::One), u64::from(u32::MAX) + 1);
+    let state = MatchState::new(
+        Uuid::new_v4(),
+        engine,
+        [Some(Uuid::new_v4()), None],
+        [1; 8],
+        0,
+    )
+    .unwrap();
+    assert_eq!(state.last_client_seq(Seat::One), u32::MAX);
+    assert_eq!(state.last_client_seq(Seat::Two), 0);
+}
 #[test]
 fn invalid_commands_do_not_mutate_the_board_and_future_revision_is_rejected() {
     let mut state = state();

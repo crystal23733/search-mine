@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test } from "vitest";
 import { DEFAULT_RULES, type GameView } from "@liar/protocol";
 import { decodeView, decodeLobby, decodeEvent } from "./decode";

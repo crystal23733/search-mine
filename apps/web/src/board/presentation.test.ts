@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test } from "vitest";
 import { coordinate, cellText, moveFocus } from "./presentation";
 test("public cell text cannot expose a number on a closed or mined cell", () => {

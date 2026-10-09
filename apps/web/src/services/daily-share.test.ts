@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test } from "vitest";
 import { DEFAULT_RULES, type DailyView } from "@liar/protocol";
 import { dailyShare, shareMosaic, shareText } from "./daily-share";

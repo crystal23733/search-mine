@@ -1,6 +1,12 @@
 import { dailyTestPorts } from "../../test/daily-ports";
-import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
-import { expect, test, vi } from "vitest";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/preact";
+import { beforeAll, expect, test, vi } from "vitest";
 import {
   DEFAULT_RULES,
   type GameView,
@@ -15,6 +21,14 @@ import { createNavigation } from "../services/navigation";
 import { createPreferences } from "../services/preferences";
 import { createLearning } from "../services/learning";
 import type { AppServices } from "../services/ports";
+// Keep module preparation separate from the behavior under test.
+beforeAll(async () => {
+  await Promise.all([
+    import("./MatchPage"),
+    import("./DailyPage"),
+    import("./TutorialPage"),
+  ]);
+});
 function fixture(): GameView {
   return {
     v: 1,
@@ -60,7 +74,7 @@ async function services(path: string): Promise<AppServices> {
     },
   };
 }
-test("local practice displays authoritative rejection and result, replaces difficulty sessions and frees the worker", async () => {
+async function practiceScenario() {
   const ports = await services(
     "/en/practice?difficulty=easy&code=ABCD1234#invite",
   );
@@ -101,36 +115,63 @@ test("local practice displays authoritative rejection and result, replaces diffi
       },
     };
   };
+  return { ports, cores, actions };
+}
+test("local practice displays authoritative rejection and result, then replaces the finished worker", async () => {
+  const { ports, cores, actions } = await practiceScenario();
   const mounted = render(<App services={ports} />);
-  await screen.findByRole("grid");
-  expect(ports.activity.read().busy).toBe(true);
-  expect(ports.activity.prepare("update")).toBe(false);
-  expect(cores[0].init.mock.calls[0][1]).toBe("easy");
-  fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
-  expect(
-    await screen.findByText(
-      "That action could not be applied. Try another square.",
-    ),
-  ).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Attack", exact: true }));
-  expect(await screen.findByRole("heading", { name: "Draw" })).toBeTruthy();
-  expect(actions.map((input) => input.command_id)).toEqual([1, 2]);
-  expect(
-    screen
-      .getByRole("button", { name: "Attack", exact: true })
-      .hasAttribute("disabled"),
-  ).toBe(true);
-  fireEvent.click(screen.getByRole("button", { name: "New match" }));
-  await waitFor(() => expect(cores).toHaveLength(2));
-  expect(cores[0].dispose).toHaveBeenCalledTimes(1);
-  fireEvent.change(screen.getByLabelText("Bot difficulty"), {
-    target: { value: "hard" },
-  });
-  await waitFor(() => expect(cores).toHaveLength(3));
-  expect(cores[2].init.mock.calls[0][1]).toBe("hard");
-  expect(window.location.search).toContain("code=ABCD1234");
-  expect(window.location.hash).toBe("#invite");
-  mounted.unmount();
+  try {
+    await screen.findByRole("grid");
+    expect(ports.activity.read().busy).toBe(true);
+    expect(ports.activity.prepare("update")).toBe(false);
+    expect(cores[0].init.mock.calls[0][1]).toBe("easy");
+    fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
+    expect(
+      await screen.findByText(
+        "That action could not be applied. Try another square.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Attack", exact: true }),
+    );
+    expect(await screen.findByRole("heading", { name: "Draw" })).toBeTruthy();
+    expect(actions.map((input) => input.command_id)).toEqual([1, 2]);
+    expect(
+      screen
+        .getByRole("button", { name: "Attack", exact: true })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "New match" }));
+    await waitFor(() => expect(cores).toHaveLength(2));
+    expect(cores[0].dispose).toHaveBeenCalledTimes(1);
+  } finally {
+    await act(() => {
+      mounted.unmount();
+    });
+  }
+  expect(ports.activity.read().busy).toBe(false);
+});
+test("local practice replaces difficulty sessions, preserves invitation URL and frees the worker on unmount", async () => {
+  const { ports, cores } = await practiceScenario();
+  const mounted = render(<App services={ports} />);
+  try {
+    await screen.findByRole("grid");
+    expect(cores[0].init.mock.calls[0][1]).toBe("easy");
+    fireEvent.click(screen.getByRole("button", { name: "New match" }));
+    await waitFor(() => expect(cores).toHaveLength(2));
+    expect(cores[0].dispose).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText("Bot difficulty"), {
+      target: { value: "hard" },
+    });
+    await waitFor(() => expect(cores).toHaveLength(3));
+    expect(cores[2].init.mock.calls[0][1]).toBe("hard");
+    expect(window.location.search).toContain("code=ABCD1234");
+    expect(window.location.hash).toBe("#invite");
+  } finally {
+    await act(() => {
+      mounted.unmount();
+    });
+  }
   await waitFor(() => expect(cores[2].dispose).toHaveBeenCalledTimes(1));
   expect(ports.activity.read().busy).toBe(false);
 });
@@ -196,7 +237,7 @@ test("failed local initialization stays recoverable by new match", async () => {
   expect(document.body.textContent).not.toContain("private failure");
   mounted.unmount();
 });
-test("daily keeps its date across locale and midnight, saves only the first local clear and shares no account data", async () => {
+async function dailyScenario() {
   const ports = await services("/en/daily?code=ABCD1234#invite");
   let now = Date.parse("2026-10-07T23:59:59Z");
   ports.wallClock = () => now;
@@ -263,40 +304,90 @@ test("daily keeps its date across locale and midnight, saves only the first loca
       },
     };
   };
+  return {
+    ports,
+    starts,
+    disposed,
+    setNow: (value: number) => {
+      now = value;
+    },
+  };
+}
+test("daily keeps its date across locale and midnight, shares no account data and replaces the worker for a new date", async () => {
+  const { ports, starts, disposed, setNow } = await dailyScenario();
   const mounted = render(<App services={ports} />);
-  await screen.findByRole("grid");
-  expect(starts).toEqual(["2026-10-07"]);
-  expect(screen.queryByText("BOT")).toBeNull();
-  now = Date.parse("2026-10-08T00:00:01Z");
-  fireEvent.change(screen.getByLabelText("Language"), {
-    target: { value: "ko" },
-  });
-  await waitFor(() => expect(document.documentElement.lang).toBe("ko"));
-  expect(starts).toHaveLength(1);
-  fireEvent.change(screen.getByLabelText("언어"), { target: { value: "en" } });
-  await screen.findByRole("button", { name: "New puzzle" });
-  fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
-  await screen.findByRole("heading", { name: "Puzzle complete" });
-  await waitFor(async () =>
-    expect((await ports.dailyRecords.list()).value).toHaveLength(1),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Copy result" }));
-  await waitFor(() => expect(ports.share.copy).toHaveBeenCalledTimes(1));
-  const text = (ports.share.copy as ReturnType<typeof vi.fn>).mock.calls[0][0];
-  expect(text).toContain("Unverified");
-  expect(text).not.toContain("123456789");
-  fireEvent.click(screen.getByRole("button", { name: "New puzzle" }));
-  await waitFor(() => expect(starts).toEqual(["2026-10-07", "2026-10-08"]));
-  expect(disposed[0]).toHaveBeenCalledTimes(1);
-  expect(location.search).toContain("code=ABCD1234");
-  fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
-  await screen.findByText("First local completion saved.");
-  fireEvent.click(screen.getByRole("button", { name: "New puzzle" }));
-  await waitFor(() => expect(starts).toHaveLength(3));
-  fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
-  await screen.findByText(
-    "Practice attempt: your first local record stays unchanged.",
-  );
-  expect((await ports.dailyRecords.list()).value).toHaveLength(2);
-  mounted.unmount();
+  try {
+    await screen.findByRole("grid");
+    expect(starts).toEqual(["2026-10-07"]);
+    expect(screen.queryByText("BOT")).toBeNull();
+    setNow(Date.parse("2026-10-08T00:00:01Z"));
+    fireEvent.change(screen.getByLabelText("Language"), {
+      target: { value: "ko" },
+    });
+    await waitFor(() => expect(document.documentElement.lang).toBe("ko"));
+    expect(starts).toHaveLength(1);
+    fireEvent.change(screen.getByLabelText("언어"), {
+      target: { value: "en" },
+    });
+    await screen.findByRole("button", { name: "New puzzle" });
+    fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
+    await screen.findByRole("heading", { name: "Puzzle complete" });
+    await waitFor(async () =>
+      expect((await ports.dailyRecords.list()).value).toHaveLength(1),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Copy result" }));
+    await waitFor(() => expect(ports.share.copy).toHaveBeenCalledTimes(1));
+    const text = (ports.share.copy as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
+    expect(text).toContain("Unverified");
+    expect(text).not.toContain("123456789");
+    fireEvent.click(screen.getByRole("button", { name: "New puzzle" }));
+    await waitFor(() => expect(starts).toEqual(["2026-10-07", "2026-10-08"]));
+    expect(disposed[0]).toHaveBeenCalledTimes(1);
+    expect(location.search).toContain("code=ABCD1234");
+  } finally {
+    mounted.unmount();
+  }
+});
+test("daily saves a separate first completion for each UTC date", async () => {
+  const { ports, starts, setNow } = await dailyScenario();
+  const mounted = render(<App services={ports} />);
+  try {
+    await screen.findByRole("grid");
+    fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
+    await screen.findByText("First local completion saved.");
+    setNow(Date.parse("2026-10-08T00:00:01Z"));
+    fireEvent.click(screen.getByRole("button", { name: "New puzzle" }));
+    await waitFor(() => expect(starts).toEqual(["2026-10-07", "2026-10-08"]));
+    fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
+    await screen.findByText("First local completion saved.");
+    const records = (await ports.dailyRecords.list()).value;
+    expect(records).toHaveLength(2);
+    expect(records.map((record) => record.metadata.date).sort()).toEqual([
+      "2026-10-07",
+      "2026-10-08",
+    ]);
+  } finally {
+    mounted.unmount();
+  }
+});
+test("daily repeat attempts keep the first local record unchanged", async () => {
+  const { ports, starts } = await dailyScenario();
+  const mounted = render(<App services={ports} />);
+  try {
+    await screen.findByRole("grid");
+    fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
+    await screen.findByText("First local completion saved.");
+    const first = (await ports.dailyRecords.list()).value;
+    expect(first).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "New puzzle" }));
+    await waitFor(() => expect(starts).toEqual(["2026-10-07", "2026-10-07"]));
+    fireEvent.click(screen.getByRole("gridcell", { name: "B1, closed" }));
+    await screen.findByText(
+      "Practice attempt: your first local record stays unchanged.",
+    );
+    expect((await ports.dailyRecords.list()).value).toEqual(first);
+  } finally {
+    mounted.unmount();
+  }
 });

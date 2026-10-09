@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test, vi } from "vitest";
 import { createActivity } from "./activity";
 test("active games and record writes prevent an update; prepared idle tabs cannot start another game", () => {

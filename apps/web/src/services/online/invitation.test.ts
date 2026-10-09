@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test } from "vitest";
 import { roomCode, roomInvitation } from "./invitation";
 test("normalizes only eight public ASCII code characters and builds a same-origin locale-only invitation", () => {

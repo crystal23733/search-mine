@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test, vi } from "vitest";
 import { IDBFactory } from "fake-indexeddb";
 import { record } from "../../test/daily-record";

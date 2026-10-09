@@ -11,6 +11,10 @@ flowchart TD
 
 ## 테스트 경계
 
+#84 NFR05/08·TS18/26/30: #85/PR86의 develop a7c3099 병합·종료 뒤 단위 테스트 준비와 DOM 조회를 분리 측정한다. 실제 동적 route의 cold import는 Chromium E2E에서 유지한다. 단위 테스트에서는 페이지 모듈 준비 시간을 hook에 명시할 수 있지만 실제 App→GameRoute→권한→256셀 DOM 경로를 mock하지 않는다. 긴 시나리오는 독립 행동으로 나누고 기존 단언을 보존한다. accessible role/name·노출 여부 검증을 CSS 개수나 hidden 조회로 대체하지 않는다. 테스트/제품 timeout·retry·worker 설정을 늘려 통과하지 않는다. 측정과 뒷받침되는 수정·미확인 원인은 [검증 기록](../verification/84-unit-arrangement-observation.md)에 구분한다.
+
+같은 작업의 전체180개 실행은4fail/176pass40.61초였고 jsdom32회 생성338.90초가 추적 시간의62%였다. fake port로만 검증하는 순수 서비스 테스트는 파일별 Node 환경을 명시하고 실제 DOM/브라우저 어댑터 테스트에만 jsdom과 modal/cleanup setup을 적용한다. 격리/동시성은 그대로 유지한다. 정상500ms status poll은 사용자 명령 수와 구분하고, locale 유지 검사는 정확한 초기 status·room_join·ready 명령과 그 identity가 반복되지 않음을 확인한다.
+
 #83/#85 FR10/NFR05/07·TS18/20/26: production 두 탭 업데이트의 재시도 성공에도 첫 실패 trace/진단을 업로드한다. 시험 observer는 재로드 전후 클릭·전송/응답·token 준비/해제·controllerchange·native worker 상태를 수집하고 제한 시간/추가 retry로 통과를 만들지 않는다. #74/#80 간헐 load 실패의 원인은 미확정이다. #85는 진단 보존만 먼저 병합하고 #83을 열어 둔다. [ADR0018](../adr/0018-public-offline-cache-and-safe-update.md)의 실제 반복·강제 실패·원인 분리 기준을 따른다.
 
 - 코어: cargo test + proptest. fake Clock/RNG, 작은 판 전수 검사, Board invariant, safe 추론 증명, 두 lie 조합, timeout·동시 순서, native/WASM fixture 일치.

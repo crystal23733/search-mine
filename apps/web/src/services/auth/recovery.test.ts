@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, expect, test, vi } from "vitest";
 import type { AuthBootstrap } from "@liar/protocol";
 import { createAuth } from "./session";

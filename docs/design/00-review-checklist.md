@@ -104,3 +104,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #64의 FR01/02/06/07/14/16·NFR02·TS10/12/20/21/31~36은 [ADR0030](../adr/0030-authenticated-lobby-http-runtime.md)의 닫힌 Rust→TS 로비 계약·인증 HTTP/rate/세션 generation·실제 실행 조립으로 추적한다.
 
 #66 검증에서 발견한 FR10·TS18/36의 다중 탭 업데이트 회귀는 [ADR0018](../adr/0018-public-offline-cache-and-safe-update.md)와 `tests/e2e/offline.spec.ts`의 게임 중 차단·idle 승인 뒤 실제 두 탭 reload로 추적한다. 요청 수락과 controller 변경을 분리하고 기존 lock/시간 제한을 유지한다.
+
+#68의 FR01/06/07/14·NFR01/02/05·TS10/12/15/20/31/36은 [ADR0032](../adr/0032-session-bound-web-requests.md)의 전/후 권한 확인·메모리 fresh proof·병렬 상한/전체 deadline·취소/late reply·domain 오류 보존을 실제 AuthPort 행동 검사로 추적한다. 로비/WS 화면의 실제 HTTPS 출구는 별도 #17 후속이다.

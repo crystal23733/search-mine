@@ -100,7 +100,8 @@ test("all three local bots use the real board, locale preserves progress, restar
   );
   await page.goto("/en/practice?difficulty=easy");
   await expect(page.getByRole("gridcell")).toHaveCount(256);
-  await expect(page.getByText("Starting in 3 s")).toBeVisible();
+  // The countdown continues while the DOM grid assertion is being delivered.
+  await expect(page.getByText(/Starting in [123] s/)).toBeVisible();
   let opening = parseInt(
     (await page.getByTestId("bot-progress").textContent())!,
   );

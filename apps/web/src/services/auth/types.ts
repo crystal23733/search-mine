@@ -10,6 +10,7 @@ import type {
 } from "@liar/protocol";
 import type { Locale } from "../locale";
 import type { SubmissionSession } from "../pending-submissions";
+import type { AuthenticatedRequests } from "./requests";
 export const PROVIDERS = [
   {
     id: "google",
@@ -87,7 +88,7 @@ export interface AuthTransport {
   ): Promise<AuthErasure>;
   logout(csrf: string, signal?: AbortSignal): Promise<void>;
 }
-export interface AuthPort extends SubmissionSession {
+export interface AuthPort extends SubmissionSession, AuthenticatedRequests {
   read(): AuthState;
   subscribe(listener: () => void): () => void;
   refresh(): Promise<void>;

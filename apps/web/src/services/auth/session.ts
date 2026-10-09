@@ -1,4 +1,5 @@
 import type { AuthAccount, AuthErasure, AuthExport } from "@liar/protocol";
+import { createAuthenticatedRequests } from "./requests";
 import {
   AuthError,
   PROVIDERS,
@@ -66,6 +67,7 @@ export function createAuth(
     });
   }
   function begin() {
+    requests.abortAll();
     active?.abort();
     active = new AbortController();
     generation++;
@@ -209,7 +211,24 @@ export function createAuth(
     }
     return result;
   }
+  const requests = createAuthenticatedRequests({
+    authority: () =>
+      connected() && state.account?.nickname && sessionId
+        ? {
+            accountId: state.account.id,
+            revision,
+            generation,
+            sessionId,
+          }
+        : null,
+    bootstrap: (signal) => transport.bootstrap(signal),
+    invalidated(failure) {
+      begin();
+      clear("unavailable", failure);
+    },
+  });
   return {
+    execute: requests.execute,
     read: () => ({
       ...state,
       account: state.account ? { ...state.account } : null,
@@ -319,6 +338,7 @@ export function createAuth(
       disposed = true;
       generation++;
       active?.abort();
+      requests.abortAll();
       csrf = null;
       sessionId = null;
       listeners.clear();

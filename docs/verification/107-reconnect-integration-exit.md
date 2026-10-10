@@ -55,3 +55,11 @@
 전체 suite의390/1440px 관측은 각각 accepted56/58·server_ended48/50·pending0·forced8이다. 앞선 실제OSkill 시나리오들의 forced8을 보존했고 새 양쪽 이탈 시나리오에서 증가하지 않음을 검사했다. isolated 두 시나리오의 forced0과 구분한다. actualOSkill SIGKILL/새PID/currentUTC와33초 known결과/원래anchor·result1 불변 기록은 ignored .tmp/online-layout/abandoned-*.json에 보존했다. 모바일 abandon 화면의 본인5칸·무승부·저장 상태와 넘침 없음을 직접 확인했다.
 
 pm-skills code-review correctness/changes·baseline develop1f840bf로 browser/proxy/WS함수 Drop/직렬 ingress→core→SQL→본인reader/freshcontext의 계약을 검토했다. 요청한 false와 기존규칙/실제응답 true를 반증했으며, 동시 종료·연결 객체/전역counter재사용·oldcontext 제거/새context·실제OS교체와 서로 다른 own5/4로 상관관계를 확인했다. client close를 서버EOF로 세지 않으며 오류/강제정리를 별도 수로 세는지 검토했다. 현재 근거 있는 미해결 범위 내 결함은 없다. review/2026-10-11.md와 실패trace는 ignored이며 커밋에 넣지 않는다. 최신 원격 CI/head·107병합/종료·상위18 종료는 아직 미완료다.
+
+
+## 최초 원격 CI 실패와 관측 간격 보정
+
+Product38076749329/database114285214822의 일반PG61은 통과했고 coverage 재실행은60pass/1fail/17.13초였다. 기존103 `real_main_os_kill_recovers_authenticated_ws_match_once_with_original_anchor`가 pair helper HTTP429 대200으로 실패했다. 실제 로그 .tmp/abandon107-ci-db-failure.log를 보존했다. 제품 session/account rate는20회/초인데 helper20ms는최대50회/초이므로 준비가 길어지면 한도를 넘을 수 있다. 코드 전에 ADR0049/검사 설계를 보완하고 정상 상태 poll을100ms/최대10회/초로 맞춘다. 제품 rate/capacity와 전체4초 deadline·429거절·timeout/retry는 유지한다. 새 head의관련 실제61PG/정적 검사/전체원격CI를 확인한 뒤에만병합한다. 제품 결함이나 새109작업으로 우회하지 않는다.
+
+
+준비 poll을 제품20회/초 이하100ms로 보정한 뒤 fmt/Clippy all-targets와 실제PG61개8.62초/ignored0을 통과했다. 변경은 기존 native 시험helper 한 줄과 설명뿐이며 제품source/4초기한/rate/재시도는 유지했다. 직전 전체315Rust/211unit/96browser3.3분재시도0/문서PASS의브라우저source는동일하다. 해당관측수정diff와rate경계를추가리뷰했고최신수정head전체CI를다시확인한다. 최초원격실패를숨기거나성공으로계산하지않는다.

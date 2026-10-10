@@ -23,3 +23,5 @@ probe 부재의 실제 Red부터 실행한다. 기존 timeout/retry를 유지하
 기존 [규칙04](../design/04-game-rules-spec.md)의 서버 장애/시작 전 취소만 완료 카운트 제외 계약과 `PublicEndReason.completed()`/result model의 모든 reason 분류를 확인했다. abandoned draw의 completed는 true다. 최초 검사 초안의 false 기대를 실제 결과와 기존 계약으로 반증하여 보정했으며 제품 규칙 변경은 없다.
 
 관측 순서는 현재 WS 함수 인자와 Drop 구현에서 도출한 추론이다. [Rust Reference의 함수 인자 소멸 순서](https://doc.rust-lang.org/reference/destructors.html#scopes-of-function-parameters)와 [Node net의 원격 end 의미](https://nodejs.org/api/net.html#event-end)를 확인했다. 이 시험의 정상 서버 함수 종료를 대상으로 하며 임의의 커널/네트워크 장애 전체에서 같은 순서를 보장한다는 주장은 아니다. 실제 SQL 결과가 추가 실행 근거다.
+
+PR108 최초 원격 database job의 coverage 재실행에서 기존103 actual main pair helper가 HTTP429 대200으로 실패했다. helper의20ms status poll은 초당 최대50회여서 기존 session/account20회/초를 넘을 수 있다. 정상 준비 상태 관측 간격을100ms(최대10회/초)로 맞춘다. 기존 전체4초 deadline·제품 rate/capacity·timeout·retry는 유지하며429를 성공으로 받아들이지 않는다. 실제 원격 실패는 보존하고 현재61개PG/관련 gate·수정 head 전체CI를 다시 확인한다.

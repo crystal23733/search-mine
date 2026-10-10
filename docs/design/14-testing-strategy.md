@@ -72,3 +72,5 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 
 
 #107은 [ADR0049](../adr/0049-reconnect-integration-exit.md)의 실제 upstream EOF 관측→양쪽 WS 종료→SQL abandoned/draw/true→인증쿠키만 새 browser latest를390/1440px에서 검사한다. 고정 sleep/timeout 완화 없이 기존 전체 회귀를 재검증하며 [검증107](../verification/107-reconnect-integration-exit.md)에서 상위18의 조건별 구현/실행/하위 종료 근거를 감사한다.
+
+같은107 최초CI의 기존 main 입장 관측이429로 실패하여 준비 status poll을20ms에서100ms로 맞춘다. 기존 session/account20회/초 계약 안에서 관측하고 전체4초 deadline/429거절을 유지한다. poll 간격은 정상 상태 조회 빈도이며 서버 완료를 가정하는 고정 대기가 아니다.

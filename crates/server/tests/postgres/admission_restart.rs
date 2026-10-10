@@ -96,7 +96,8 @@ async fn pair(pool: &sqlx::PgPool, client: &Client, origin: &str) -> ([User; 2],
             if state["state"]["type"] == "matched" {
                 break Uuid::parse_str(state["state"]["match_id"].as_str().unwrap()).unwrap();
             }
-            tokio::time::sleep(Duration::from_millis(20)).await;
+            // Observe preparation below the production 20 requests/second limit.
+            tokio::time::sleep(Duration::from_millis(100)).await;
         }
     })
     .await

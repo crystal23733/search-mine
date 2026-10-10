@@ -1,9 +1,10 @@
+use super::admission::{AdmissionWork, Job};
 use super::*;
 use crate::{
     auth::AuthClock,
     online::{
-        AuthorityRegistry, BotExecutor, ConnectionAuthority, MatchAdmission, MatchRegistry,
-        MatchState,
+        AdmissionJournal, AuthorityRegistry, BotExecutor, ConnectionAuthority, MatchAdmission,
+        MatchRegistry, MatchState,
     },
 };
 use liar_core::{
@@ -20,8 +21,8 @@ use tokio::sync::{Semaphore, oneshot, watch};
 use uuid::Uuid;
 
 pub struct PreparedMatch {
-    engine: PreparedEngine,
-    seed: [u8; 8],
+    pub(super) engine: PreparedEngine,
+    pub(super) seed: [u8; 8],
 }
 pub trait MatchPreparer: Send + Sync {
     fn prepare(&self, board: PreparedBoard) -> Result<PreparedMatch, OnlineError>;
@@ -58,6 +59,11 @@ pub struct LobbyLimits {
 pub struct LobbyAuthentication {
     pub authorities: Arc<AuthorityRegistry>,
     pub clock: Arc<dyn AuthClock>,
+}
+pub struct LobbyMatchServices {
+    pub registry: Arc<MatchRegistry>,
+    pub bots: Arc<BotExecutor>,
+    pub journal: Arc<dyn AdmissionJournal>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LobbyServiceError {
@@ -103,15 +109,6 @@ impl LobbyView {
         }
     }
 }
-struct Job {
-    result: oneshot::Receiver<Result<PreparedMatch, OnlineError>>,
-    cancel: watch::Sender<bool>,
-}
-impl Drop for Job {
-    fn drop(&mut self) {
-        self.cancel.send_replace(true);
-    }
-}
 struct Failure {
     error: OnlineError,
     expires: u64,
@@ -132,6 +129,7 @@ pub struct LobbyService {
     codes: Arc<dyn RoomCodeSource>,
     registry: Arc<MatchRegistry>,
     bots: Arc<BotExecutor>,
+    journal: Arc<dyn AdmissionJournal>,
     authentication: LobbyAuthentication,
 }
 impl LobbyService {
@@ -146,10 +144,14 @@ impl LobbyService {
         boards: Arc<dyn BoardSource>,
         preparer: Arc<dyn MatchPreparer>,
         codes: Arc<dyn RoomCodeSource>,
-        registry: Arc<MatchRegistry>,
-        bots: Arc<BotExecutor>,
+        matches: LobbyMatchServices,
         authentication: LobbyAuthentication,
     ) -> Result<Arc<Self>, LobbyServiceError> {
+        let LobbyMatchServices {
+            registry,
+            bots,
+            journal,
+        } = matches;
         if !(1..=4096).contains(&limits.capacity)
             || !(1..=64).contains(&limits.workers)
             || limits.workers > limits.capacity
@@ -176,6 +178,7 @@ impl LobbyService {
             codes,
             registry,
             bots,
+            journal,
             authentication,
         });
         let weak = Arc::downgrade(&service);
@@ -392,6 +395,9 @@ impl LobbyService {
                 .into_iter()
                 .find(|res| res.key == key)
             else {
+                if let Ok(ready) = result {
+                    ready.receipt.discard_later();
+                }
                 continue;
             };
             let leases = reservation
@@ -400,16 +406,36 @@ impl LobbyService {
             if leases.iter().flatten().count() != reservation.players.iter().flatten().count() {
                 return Err(OnlineError::Unauthorized.into());
             }
-            let state = result.and_then(|prepared| {
-                let engine = prepared
+            let result = match result {
+                Ok(ready) => {
+                    let original_tokens = ready
+                        .participants
+                        .each_ref()
+                        .map(|lease| lease.as_ref().map(ConnectionAuthority::token));
+                    let current_tokens = leases
+                        .each_ref()
+                        .map(|lease| lease.as_ref().map(ConnectionAuthority::token));
+                    if ready.reservation != reservation || original_tokens != current_tokens {
+                        ready.receipt.discard_later();
+                        continue;
+                    }
+                    Ok(ready)
+                }
+                Err(error) => Err(error),
+            };
+            let mut receipt = None;
+            let state = result.and_then(|ready| {
+                receipt = Some(ready.receipt);
+                let engine = ready
+                    .prepared
                     .engine
                     .start(now)
                     .map_err(|_| OnlineError::Unavailable)?;
                 MatchState::new(
-                    Uuid::new_v4(),
+                    ready.id,
                     engine,
                     reservation.players,
-                    prepared.seed,
+                    ready.prepared.seed,
                     now,
                 )
             });
@@ -442,11 +468,23 @@ impl LobbyService {
             };
             let started = match started {
                 Ok(started) => started,
-                Err(OnlineError::Unauthorized) => continue,
+                Err(OnlineError::Unauthorized) => {
+                    if let Some(receipt) = receipt {
+                        receipt.discard_later();
+                    }
+                    continue;
+                }
                 Err(error) => Err(error),
             };
             // The reservation remains live under this lock at the same captured timestamp.
             inner.policy.commit(key, now)?;
+            if let Some(receipt) = receipt {
+                if started.is_ok() {
+                    receipt.commit();
+                } else {
+                    receipt.discard_later();
+                }
+            }
             if let Err(error) = started {
                 for account in reservation.players.into_iter().flatten() {
                     self.record_failure(inner, account, error, now);
@@ -517,34 +555,25 @@ impl LobbyService {
             let Ok(permit) = self.capacity.clone().try_acquire_owned() else {
                 break;
             };
-            let (cancel, mut canceled) = watch::channel(false);
+            let participants = reservation
+                .players
+                .map(|account| account.and_then(|account| inner.leases.get(&account).cloned()));
+            if participants.iter().flatten().count() != reservation.players.iter().flatten().count()
+            {
+                continue;
+            }
+            let (cancel, canceled) = watch::channel(false);
             let (completed, result) = oneshot::channel();
             inner.jobs.insert(reservation.key, Job { result, cancel });
-            let boards = self.boards.clone();
-            let preparer = self.preparer.clone();
-            tokio::spawn(async move {
-                if *canceled.borrow() {
-                    return;
-                }
-                let taken = tokio::select! {
-                    biased;
-                    _ = canceled.changed() => return,
-                    result = tokio::time::timeout(Duration::from_secs(2), boards.take(Duration::from_secs(2))) => result.unwrap_or(Err(OnlineError::Unavailable)),
-                };
-                let ready = match taken {
-                    Ok(board) => tokio::task::spawn_blocking(move || {
-                        let _permit = permit;
-                        if *canceled.borrow() {
-                            return Err(OnlineError::Unavailable);
-                        }
-                        preparer.prepare(board)
-                    })
-                    .await
-                    .unwrap_or(Err(OnlineError::Unavailable)),
-                    Err(error) => Err(error),
-                };
-                let _ = completed.send(ready);
-            });
+            let work = AdmissionWork {
+                boards: self.boards.clone(),
+                preparer: self.preparer.clone(),
+                journal: self.journal.clone(),
+                permit,
+                reservation,
+                participants,
+            };
+            tokio::spawn(work.run(canceled, completed));
         }
     }
 }

@@ -2,6 +2,7 @@ mod board_pool;
 mod policy;
 pub use board_pool::*;
 pub use policy::*;
+mod admission;
 mod service;
 pub use service::*;
 mod config;

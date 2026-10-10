@@ -736,6 +736,18 @@
         "result-retention-anchor"
       ],
       "acceptance": "ADR0046·최소active schema/typed register-discard-strictfinal·same raw owner/startup bounded unknown abort·삭제/보존/seed/취소/부분실패·실제 PG/gates/domain95전체80·코드리뷰/CI; 공개 입장/OS restart 통합 후속"
+    },
+    {
+      "key": "durable-lobby-admission",
+      "issue": 103,
+      "milestone": "M3",
+      "title": "feat(server): 비동기 journal 입장과 실제 재시작 복구",
+      "requirements": "FR14/16, NFR01/02/05/07/08",
+      "scenarios": "TS15/16/20/21/31/35/36",
+      "deps": [
+        "active-match-journal"
+      ],
+      "acceptance": "ADR0047·필수 journal DI/bounded async ACK/원래 hash UUID lease·정상 discard/receipt fail-closed·typed main HTTPS·실제 OS kill/restart·TDD/gates/domain95전체80/리뷰CI; full reload 발견 후속"
     }
   ]
 }

@@ -31,6 +31,7 @@ pub struct ActiveMatch {
     pub players: [Option<uuid::Uuid>; 2],
 }
 pub trait AdmissionJournal: Send + Sync {
+    fn fail_closed(&self);
     fn register(&self, active: ActiveMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>>;
     fn discard(&self, id: uuid::Uuid) -> PortFuture<'_, Result<(), OnlineError>>;
 }

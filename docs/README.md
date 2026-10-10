@@ -73,3 +73,6 @@
 - [ADR0045 결과 보존 기준](adr/0045-result-retention-anchor.md) · [#99 검증](verification/99-result-retention-anchor.md)
 
 - [ADR0046 영속 active journal](adr/0046-active-match-journal.md) · [#101 검증](verification/101-active-match-journal.md)
+
+
+[#103 입장/프로세스 복구 검증](verification/103-durable-lobby-admission.md) · [ADR0047](adr/0047-durable-lobby-admission.md).

@@ -47,16 +47,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let _ = store.cleanup(clock.now()).await;
             }
         });
-        let writer = PgResultRuntime::claim(auth_pool.clone(), auth_clock.clone())
+        let writer = PgJournalRuntime::claim(auth_pool.clone(), auth_clock.clone())
             .await
             .map_err(|_| "Online storage ownership unavailable")?;
         result_owner = Some(writer.health());
+        let writer = Arc::new(writer);
         let registry = MatchRegistry::new(
             online.limits,
             clock,
             auth_clock.clone(),
             authorities.clone(),
-            Arc::new(writer),
+            writer.clone(),
         )
         .map_err(|_| "Online initialization failed")?;
         let runtime = config
@@ -88,9 +89,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ),
             Arc::new(CoreMatchPreparer),
             Arc::new(OsRoomCodeSource),
-            registry.clone(),
-            BotExecutor::new(lobby_config.bot_workers, Arc::new(CoreBotFactory))
-                .map_err(|_| "Bot initialization failed")?,
+            LobbyMatchServices {
+                registry: registry.clone(),
+                bots: BotExecutor::new(lobby_config.bot_workers, Arc::new(CoreBotFactory))
+                    .map_err(|_| "Bot initialization failed")?,
+                journal: writer.clone(),
+            },
             LobbyAuthentication {
                 authorities: lobby_authorities,
                 clock: auth_clock.clone(),

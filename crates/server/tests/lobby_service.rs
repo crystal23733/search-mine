@@ -16,7 +16,7 @@ use liar_server::{
 use std::{
     sync::{
         Arc, Condvar, Mutex,
-        atomic::{AtomicI64, AtomicU64, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicI64, AtomicU64, AtomicUsize, Ordering},
     },
     time::Duration,
 };
@@ -35,6 +35,61 @@ impl AuthClock for Clock {
 }
 #[derive(Default)]
 struct Results(Mutex<Vec<FinishedMatch>>);
+#[derive(Default)]
+struct Journal {
+    held: AtomicBool,
+    hold_first: AtomicBool,
+    registered: Mutex<Vec<ActiveMatch>>,
+    discarded: Mutex<Vec<Uuid>>,
+    wake: tokio::sync::Notify,
+    failed: AtomicUsize,
+    reject: AtomicBool,
+    discard_failure: AtomicBool,
+}
+impl Journal {
+    fn release(&self) {
+        self.held.store(false, Ordering::SeqCst);
+        self.wake.notify_waiters();
+    }
+}
+impl AdmissionJournal for Journal {
+    fn fail_closed(&self) {
+        self.failed.fetch_add(1, Ordering::SeqCst);
+    }
+    fn register(&self, active: ActiveMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>> {
+        Box::pin(async move {
+            let first = {
+                let mut registered = self.registered.lock().unwrap();
+                registered.push(active);
+                registered.len() == 1
+            };
+            loop {
+                let changed = self.wake.notified();
+                if !self.held.load(Ordering::SeqCst)
+                    || (self.hold_first.load(Ordering::SeqCst) && !first)
+                {
+                    break;
+                }
+                changed.await;
+            }
+            if self.reject.load(Ordering::SeqCst) {
+                Err(OnlineError::Unavailable)
+            } else {
+                Ok(SaveResult::Saved)
+            }
+        })
+    }
+    fn discard(&self, id: Uuid) -> PortFuture<'_, Result<(), OnlineError>> {
+        Box::pin(async move {
+            self.discarded.lock().unwrap().push(id);
+            if self.discard_failure.load(Ordering::SeqCst) {
+                Err(OnlineError::Unavailable)
+            } else {
+                Ok(())
+            }
+        })
+    }
+}
 impl ResultRepository for Results {
     fn save(&self, result: FinishedMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>> {
         Box::pin(async move {
@@ -167,6 +222,7 @@ impl LobbyHarness {
 struct Fixture {
     clock: Arc<Clock>,
     results: Arc<Results>,
+    journal: Arc<Journal>,
     authorities: Arc<AuthorityRegistry>,
     registry: Arc<MatchRegistry>,
     service: Arc<LobbyHarness>,
@@ -175,6 +231,7 @@ impl Fixture {
     fn new(gate: &Gate, capacity: usize, matches: usize, workers: usize) -> Self {
         let clock = Arc::new(Clock(AtomicU64::new(0), AtomicI64::new(18000)));
         let results = Arc::new(Results::default());
+        let journal = Arc::new(Journal::default());
         let authorities = AuthorityRegistry::new(16).unwrap();
         let registry = MatchRegistry::new(
             MatchLimits {
@@ -198,8 +255,11 @@ impl Fixture {
             boards(),
             Arc::new(Preparer(gate.0.clone())),
             Arc::new(Codes),
-            registry.clone(),
-            BotExecutor::new(2, Arc::new(CoreBotFactory)).unwrap(),
+            LobbyMatchServices {
+                registry: registry.clone(),
+                bots: BotExecutor::new(2, Arc::new(CoreBotFactory)).unwrap(),
+                journal: journal.clone(),
+            },
             authentication.clone(),
         )
         .unwrap();
@@ -210,6 +270,7 @@ impl Fixture {
         Self {
             clock,
             results,
+            journal,
             authorities,
             registry,
             service,
@@ -306,6 +367,252 @@ async fn actual_human_pair_gets_same_board_and_countdown_only_at_ready_admission
         f.service.join(a, Difficulty::Easy),
         Err(LobbyServiceError::Policy(LobbyError::Busy))
     ));
+}
+
+#[tokio::test]
+async fn durable_ack_precedes_publication_with_applied_hash_and_a_fresh_countdown() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 6, 2, 1);
+    f.journal.held.store(true, Ordering::SeqCst);
+    let a = Uuid::new_v4();
+    let b = Uuid::new_v4();
+    pair(&f, a, b);
+    eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+    let active = f.journal.registered.lock().unwrap()[0].clone();
+    assert_eq!(active.rules_hash, rules().hash);
+    assert_eq!(active.players, [Some(a), Some(b)]);
+    assert!(matches!(
+        f.service.status(a),
+        Ok(LobbyView::Waiting(LobbyStatus::Preparing { .. }))
+    ));
+    assert!(matches!(
+        f.registry.for_account(a),
+        Err(OnlineError::NotMatched)
+    ));
+    let outsider = Uuid::new_v4();
+    assert!(matches!(
+        f.service.join(outsider, Difficulty::Easy),
+        Ok(LobbyView::Waiting(_))
+    ));
+    f.clock.0.store(3500, Ordering::SeqCst);
+    f.journal.release();
+    let LobbyView::Matched { match_id, .. } = matched(&f.service, a).await else {
+        panic!("matched")
+    };
+    assert_eq!(match_id, active.id);
+    let mut connected = f.connect(a).await;
+    let event = connected.next().await.unwrap();
+    let OnlinePayload::Snapshot { view, .. } = event.payload else {
+        panic!("snapshot")
+    };
+    assert_eq!(view.countdown_ms, 3000);
+    assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn ordinary_cancel_after_register_waits_for_ack_discards_old_id_and_keeps_owner() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 6, 2, 1);
+    f.journal.held.store(true, Ordering::SeqCst);
+    let a = Uuid::new_v4();
+    let b = Uuid::new_v4();
+    pair(&f, a, b);
+    eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+    let id = f.journal.registered.lock().unwrap()[0].id;
+    let identity = f.service.status(a).unwrap().identity().unwrap();
+    f.service.cancel(a, identity).unwrap();
+    assert!(f.journal.discarded.lock().unwrap().is_empty());
+    assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
+    f.journal.release();
+    eventually(|| f.journal.discarded.lock().unwrap().contains(&id)).await;
+    assert!(matches!(
+        f.registry.for_account(a),
+        Err(OnlineError::NotMatched)
+    ));
+    assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
+    f.service.join(a, Difficulty::Hard).unwrap();
+    let LobbyView::Matched { match_id, .. } = matched(&f.service, a).await else {
+        panic!("matched")
+    };
+    assert_ne!(match_id, id);
+    assert_eq!(f.journal.discarded.lock().unwrap().as_slice(), &[id]);
+}
+
+#[tokio::test]
+async fn pending_admission_keeps_the_worker_until_cancel_cleanup_and_uses_new_uuid() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 6, 3, 1);
+    f.journal.held.store(true, Ordering::SeqCst);
+    let [a, b, c, d] = std::array::from_fn(|_| Uuid::new_v4());
+    pair(&f, a, b);
+    eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+    let old = f.journal.registered.lock().unwrap()[0].id;
+    f.service
+        .cancel(a, f.service.status(a).unwrap().identity().unwrap())
+        .unwrap();
+    pair(&f, c, d);
+    tokio::time::sleep(Duration::from_millis(30)).await;
+    assert_eq!(gate.0.calls.load(Ordering::SeqCst), 1);
+    f.journal.release();
+    eventually(|| f.journal.discarded.lock().unwrap().contains(&old)).await;
+    eventually(|| f.journal.registered.lock().unwrap().len() >= 2).await;
+    assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
+    assert!(matches!(
+        f.registry.for_account(a),
+        Err(OnlineError::NotMatched)
+    ));
+}
+
+#[tokio::test]
+async fn registration_failure_never_creates_an_actor_and_cleanup_failure_fails_closed() {
+    for reject in [true, false] {
+        let gate = Gate::new(true, false);
+        let f = Fixture::new(&gate, 4, 2, 1);
+        f.journal.reject.store(reject, Ordering::SeqCst);
+        f.journal.discard_failure.store(!reject, Ordering::SeqCst);
+        f.journal.held.store(!reject, Ordering::SeqCst);
+        let a = Uuid::new_v4();
+        let b = Uuid::new_v4();
+        pair(&f, a, b);
+        eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+        if reject {
+            eventually(|| f.service.status(a) == Ok(LobbyView::Failed(OnlineError::Unavailable)))
+                .await;
+            assert!(f.journal.discarded.lock().unwrap().is_empty());
+            assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
+        } else {
+            f.service
+                .cancel(a, f.service.status(a).unwrap().identity().unwrap())
+                .unwrap();
+            f.journal.release();
+            eventually(|| f.journal.failed.load(Ordering::SeqCst) == 1).await;
+        }
+        assert!(matches!(
+            f.registry.for_account(a),
+            Err(OnlineError::NotMatched)
+        ));
+    }
+}
+
+#[tokio::test]
+async fn service_drop_during_registration_observes_ack_and_discards_without_owner_loss() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 4, 2, 1);
+    f.journal.held.store(true, Ordering::SeqCst);
+    pair(&f, Uuid::new_v4(), Uuid::new_v4());
+    eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+    let Fixture {
+        service,
+        journal,
+        registry,
+        ..
+    } = f;
+    let weak = Arc::downgrade(&service.inner);
+    drop(service);
+    eventually(|| weak.upgrade().is_none()).await;
+    journal.release();
+    eventually(|| journal.discarded.lock().unwrap().len() == 1).await;
+    assert_eq!(journal.failed.load(Ordering::SeqCst), 0);
+    let player = journal.registered.lock().unwrap()[0].players[0].unwrap();
+    assert!(matches!(
+        registry.for_account(player),
+        Err(OnlineError::NotMatched)
+    ));
+}
+
+#[tokio::test]
+async fn expiry_and_revocation_while_registering_discard_the_original_receipt() {
+    for expiry in [false, true] {
+        let gate = Gate::new(true, false);
+        let f = Fixture::new(&gate, 4, 2, 1);
+        f.journal.held.store(true, Ordering::SeqCst);
+        let a = Uuid::new_v4();
+        let b = Uuid::new_v4();
+        pair(&f, a, b);
+        eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+        let old = f.journal.registered.lock().unwrap()[0].id;
+        if expiry {
+            f.clock.0.store(5000, Ordering::SeqCst);
+        } else {
+            drop(SessionInvalidator::account(
+                &*f.service.authentication.authorities,
+                a,
+            ));
+        }
+        // Tick observes the revoked/expired reservation before its ACK arrives.
+        eventually(|| {
+            !matches!(
+                f.service.status(b),
+                Ok(LobbyView::Waiting(LobbyStatus::Preparing { .. }))
+            )
+        })
+        .await;
+        f.journal.release();
+        eventually(|| f.journal.discarded.lock().unwrap().contains(&old)).await;
+        assert!(matches!(
+            f.registry.for_account(a),
+            Err(OnlineError::NotMatched)
+        ));
+        assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
+    }
+}
+
+#[tokio::test]
+async fn replaced_lease_cannot_promote_an_old_durable_preparation() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 4, 2, 1);
+    f.journal.held.store(true, Ordering::SeqCst);
+    let a = Uuid::new_v4();
+    let b = Uuid::new_v4();
+    pair(&f, a, b);
+    eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+    let old = f.journal.registered.lock().unwrap()[0].id;
+    let authorities = &f.service.authentication.authorities;
+    let replacement = authorities
+        .bind_shared(authorities.generation().unwrap(), a, [99; 32], 20000, 18000)
+        .unwrap();
+    f.service
+        .inner
+        .join(&replacement, Difficulty::Normal)
+        .unwrap();
+    f.journal.release();
+    eventually(|| f.journal.discarded.lock().unwrap().contains(&old)).await;
+    assert!(!matches!(f.registry.for_account(a),Ok(handle) if handle.id()==old));
+    assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn overlapping_durable_jobs_complete_out_of_order_without_crossing_match_identity() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 8, 3, 2);
+    f.journal.held.store(true, Ordering::SeqCst);
+    f.journal.hold_first.store(true, Ordering::SeqCst);
+    let [a, b, c, d] = std::array::from_fn(|_| Uuid::new_v4());
+    pair(&f, a, b);
+    eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+    let first = f.journal.registered.lock().unwrap()[0].clone();
+    pair(&f, c, d);
+    let LobbyView::Matched {
+        match_id: second, ..
+    } = matched(&f.service, c).await
+    else {
+        panic!("second matched")
+    };
+    assert_eq!(f.journal.registered.lock().unwrap()[1].id, second);
+    assert_ne!(first.id, second);
+    assert!(matches!(
+        f.registry.for_account(a),
+        Err(OnlineError::NotMatched)
+    ));
+    f.service
+        .cancel(a, f.service.status(a).unwrap().identity().unwrap())
+        .unwrap();
+    f.journal.release();
+    eventually(|| f.journal.discarded.lock().unwrap().contains(&first.id)).await;
+    assert_eq!(f.registry.for_account(c).unwrap().id(), second);
+    assert_eq!(f.registry.for_account(d).unwrap().id(), second);
+    assert_eq!(f.journal.discarded.lock().unwrap().as_slice(), &[first.id]);
+    assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
 }
 
 #[tokio::test]
@@ -610,8 +917,11 @@ fn replace_ports(f: &mut Fixture, boards: Arc<dyn BoardSource>, codes: Arc<dyn R
         boards,
         Arc::new(CoreMatchPreparer),
         codes,
-        f.registry.clone(),
-        BotExecutor::new(2, Arc::new(CoreBotFactory)).unwrap(),
+        LobbyMatchServices {
+            registry: f.registry.clone(),
+            bots: BotExecutor::new(2, Arc::new(CoreBotFactory)).unwrap(),
+            journal: f.journal.clone(),
+        },
         f.service.authentication.clone(),
     )
     .unwrap();
@@ -731,8 +1041,11 @@ async fn invalid_limits_identity_and_clock_fail_closed() {
                 BrokenBoards::new(SourceFault::Unavailable),
                 Arc::new(CoreMatchPreparer),
                 Arc::new(Codes),
-                f.registry.clone(),
-                BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+                LobbyMatchServices {
+                    registry: f.registry.clone(),
+                    bots: BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+                    journal: f.journal.clone()
+                },
                 f.service.authentication.clone(),
             ),
             Err(LobbyServiceError::Online(OnlineError::Capacity))
@@ -972,8 +1285,11 @@ async fn composition_rejects_reusing_socket_authority_for_http_lobby_requests() 
             boards(),
             Arc::new(CoreMatchPreparer),
             Arc::new(Codes),
-            f.registry.clone(),
-            BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+            LobbyMatchServices {
+                registry: f.registry.clone(),
+                bots: BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+                journal: f.journal.clone()
+            },
             LobbyAuthentication {
                 authorities: f.authorities.clone(),
                 clock: f.clock.clone()

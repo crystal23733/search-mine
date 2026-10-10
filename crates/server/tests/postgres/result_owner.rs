@@ -5,14 +5,14 @@ use liar_server::online::{PgResultRuntime, ResultRepository, SaveResult};
 use std::process::{Child, Command, Stdio};
 use std::{future::poll_fn, task::Poll};
 
-struct Server(Child);
+pub(super) struct Server(pub(super) Child);
 impl Drop for Server {
     fn drop(&mut self) {
         let _ = self.0.kill();
         let _ = self.0.wait();
     }
 }
-async fn server_command(pool: &sqlx::PgPool) -> (Command, String) {
+pub(super) async fn server_command(pool: &sqlx::PgPool) -> (Command, String) {
     let schema: String = sqlx::query_scalar("SELECT current_schema()")
         .fetch_one(pool)
         .await
@@ -37,14 +37,14 @@ async fn server_command(pool: &sqlx::PgPool) -> (Command, String) {
     }
     (command, format!("http://{address}"))
 }
-fn client() -> reqwest::Client {
+pub(super) fn client() -> reqwest::Client {
     reqwest::Client::builder()
         .no_proxy()
         .timeout(Duration::from_secs(1))
         .build()
         .unwrap()
 }
-async fn wait_ready(server: &mut Server, origin: &str) {
+pub(super) async fn wait_ready(server: &mut Server, origin: &str) {
     tokio::time::timeout(Duration::from_secs(8), async {
         loop {
             assert!(
@@ -65,7 +65,7 @@ async fn wait_ready(server: &mut Server, origin: &str) {
     .await
     .expect("Owner must become ready");
 }
-async fn wait_failed(server: &mut Server) {
+pub(super) async fn wait_failed(server: &mut Server) {
     let status = tokio::time::timeout(Duration::from_secs(4), async {
         loop {
             if let Some(status) = server.0.try_wait().unwrap() {

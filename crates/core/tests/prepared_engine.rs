@@ -28,6 +28,16 @@ fn prepared_work_starts_a_fresh_full_countdown_at_admission_time() {
 }
 
 #[test]
+fn prepared_hash_is_the_applied_snapshot_before_starting_the_clock() {
+    let applied = rules();
+    assert_ne!(applied.hash, RulesSnapshot::bundled().hash);
+    let prepared = RuleEngine::prepare(board(), applied.clone()).unwrap();
+    assert_eq!(prepared.rules_hash(), applied.hash);
+    let engine = prepared.start(9000).unwrap();
+    assert_eq!(engine.projection(Seat::One).rules.hash, applied.hash);
+}
+
+#[test]
 fn legacy_constructor_and_prepared_start_keep_the_same_projection_and_transition() {
     let mut old = RuleEngine::new(board(), rules(), 9000).unwrap();
     let mut prepared = RuleEngine::prepare(board(), rules())

@@ -37,3 +37,6 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 미니 PC 사양·OS, 전력 실측, 디스크/별도 백업 매체, 자동재시작, 유선 회선/통신사 가정용 서비스 제공 약관, 도메인/Cloudflare 계정, AdSense/H5 승인, Google 인증 CMP, 운영자 연락처, 번역 검수·미성년자 방침을 확인한다. 비밀값을 이슈나 채팅에 붙여넣지 않는다.
 
 현재는 운영 runbook 설계이며 Docker Compose·nginx·DB·Tunnel을 실행하거나 유료 서비스를 생성하지 않는다.
+
+
+#103 [ADR0047](../adr/0047-durable-lobby-admission.md): 공개 runtime은 typed journal owner를 claim하고 startup unknown abort 완료 뒤 serving한다. owner failure는 기존 serve guard로 종료하며 단일 인스턴스 교체를 유지한다. 재시작은 원래 admitted retention 기준을 유지하고 seed/통계를 복구 추측하지 않는다. 물리 삭제/백업25와 하드웨어26·새로고침 결과 발견은 별도다.

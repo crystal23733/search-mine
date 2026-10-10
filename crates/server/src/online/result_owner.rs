@@ -121,6 +121,9 @@ async fn claim_connection(pool: PgPool) -> Result<PgConnection, OnlineError> {
     .map_err(|_| OnlineError::Unavailable)
 }
 impl PgResultRuntime {
+    pub(super) fn fail_closed(&self) {
+        self.abort.abort();
+    }
     pub async fn claim(pool: PgPool, clock: Arc<dyn AuthClock>) -> Result<Self, OnlineError> {
         Ok(Self::start(
             claim_connection(pool).await?,

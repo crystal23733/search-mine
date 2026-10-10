@@ -2,7 +2,10 @@ use crate::auth::{InvalidationBarrier, SessionInvalidator};
 use liar_protocol::online::OnlineError;
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex, Weak},
+    sync::{
+        Arc, Mutex, Weak,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 use tokio::sync::watch;
 use uuid::Uuid;
@@ -35,6 +38,7 @@ struct LeaseIdentity {
     account: Uuid,
     token: Uuid,
     owner: Weak<AuthorityRegistry>,
+    released: AtomicBool,
 }
 #[derive(Clone)]
 pub struct ConnectionAuthority {
@@ -42,6 +46,9 @@ pub struct ConnectionAuthority {
     revoked: watch::Receiver<bool>,
 }
 impl ConnectionAuthority {
+    pub(super) fn was_released(&self) -> bool {
+        self.identity.released.load(Ordering::Acquire)
+    }
     pub fn account(&self) -> Uuid {
         self.identity.account
     }
@@ -163,6 +170,7 @@ impl AuthorityRegistry {
             account,
             token,
             owner: Arc::downgrade(self),
+            released: AtomicBool::new(false),
         });
         if let Some(previous) = inner.active.insert(
             account,
@@ -256,6 +264,9 @@ impl AuthorityRegistry {
                 .is_some_and(|entry| entry.token == token)
             && let Some(entry) = inner.active.remove(&account)
         {
+            if let Some(identity) = entry.identity.upgrade() {
+                identity.released.store(true, Ordering::Release);
+            }
             entry.closed.send_replace(true);
         }
     }
@@ -275,6 +286,9 @@ impl AuthorityRegistry {
         Box::new(Barrier(self.owner.clone()))
     }
 }
+#[cfg(test)]
+#[path = "../../tests/unit/authority_release.rs"]
+mod release_tests;
 impl SessionInvalidator for AuthorityRegistry {
     fn session(&self, hash: [u8; 32]) -> InvalidationBarrier {
         self.invalidate(|_, entry| entry.hash == hash)

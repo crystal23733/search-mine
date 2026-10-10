@@ -10,6 +10,7 @@ import {
   type LobbyOpponent,
   type OnlineEvent,
   type OnlineInput,
+  type PersonalResult,
 } from "@liar/protocol";
 import type { AuthPort } from "../auth/types";
 import type { RequestOwner } from "../auth/requests";
@@ -37,6 +38,8 @@ export interface OnlineState {
   roomMs: number;
   difficulty: LobbyDifficulty | null;
   reconnectMs: number | null;
+  personalResult: PersonalResult | null;
+  resultLookup: "idle" | "loading" | "not_found" | "unavailable";
 }
 export type OnlineAuth = Pick<
   AuthPort,
@@ -68,6 +71,8 @@ export class OnlineController {
     roomMs: 0,
     difficulty: null,
     reconnectMs: null,
+    personalResult: null,
+    resultLookup: "idle",
   };
   private owner: RequestOwner | null = null;
   private generation = 0;
@@ -85,6 +90,79 @@ export class OnlineController {
   private lease = 0;
   private recovery: BoundedReconnect;
   private listeners = new Set<() => void>();
+  private resultRequest: AbortController | null = null;
+  canLookupResult() {
+    return (
+      this.current(this.generation) &&
+      this.state.lobby?.state.type === "matched" &&
+      !this.state.personalResult &&
+      this.state.resultLookup !== "loading" &&
+      (this.state.status === "error" ||
+        (this.state.status === "ended" && this.state.recording !== "saved"))
+    );
+  }
+  private cancelResultRead() {
+    this.resultRequest?.abort();
+    this.resultRequest = null;
+    this.state = { ...this.state, resultLookup: "idle" };
+  }
+  async lookupResult() {
+    const match = this.state.lobby?.state;
+    if (!this.canLookupResult() || !this.owner || match?.type !== "matched")
+      return;
+    const request = new AbortController(),
+      generation = this.generation;
+    this.resultRequest = request;
+    const current = () =>
+      this.resultRequest === request &&
+      !request.signal.aborted &&
+      this.current(generation);
+    this.state = { ...this.state, resultLookup: "loading" };
+    this.publish();
+    try {
+      const result = await this.port.result(
+        this.owner,
+        match.match_id,
+        request.signal,
+      );
+      if (!current()) return;
+      if (result.match_id !== match.match_id)
+        throw new OnlineFailure("unavailable");
+      this.stop();
+      this.state = {
+        ...this.state,
+        status: "ended",
+        personalResult: result,
+        view: null,
+        opponent: null,
+        recording: "saved",
+        error: null,
+        working: false,
+      };
+      this.publish();
+    } catch (error) {
+      if (!current()) return;
+      const code =
+        error instanceof Error && "code" in error ? error.code : "unavailable";
+      if (
+        code === "unauthorized" ||
+        code === "auth_required" ||
+        code === "auth_invalid"
+      ) {
+        this.auth.invalidate();
+        return;
+      }
+      this.state = {
+        ...this.state,
+        resultLookup: code === "not_found" ? "not_found" : "unavailable",
+      };
+    } finally {
+      if (this.resultRequest === request) {
+        this.resultRequest = null;
+        this.publish();
+      }
+    }
+  }
   constructor(
     private auth: OnlineAuth,
     private port: OnlinePort,
@@ -183,6 +261,7 @@ export class OnlineController {
     this.commands.clear();
   }
   private stop() {
+    this.cancelResultRead();
     this.generation++;
     this.recovery.stop();
     this.abort.abort();
@@ -203,7 +282,13 @@ export class OnlineController {
       working: false,
       error: code,
       ...(clear
-        ? { view: null, lobby: null, recording: null, opponent: null }
+        ? {
+            view: null,
+            lobby: null,
+            recording: null,
+            opponent: null,
+            personalResult: null,
+          }
         : {}),
     };
     this.publish();
@@ -220,7 +305,10 @@ export class OnlineController {
     if (!this.unsubscribe)
       this.unsubscribe = this.auth.subscribe(() => {
         if (!this.owned()) this.fail("unauthorized", true);
-        else if (!this.auth.connected()) this.beginRecovery();
+        else if (!this.auth.connected()) {
+          if (this.state.personalResult) this.fail("disconnected", true);
+          else this.beginRecovery();
+        }
       });
     if (!this.ticker)
       this.ticker = setInterval(() => {
@@ -237,6 +325,7 @@ export class OnlineController {
       view: null,
       opponent: null,
       recording: null,
+      personalResult: null,
       difficulty: null,
       error: null,
       working: true,
@@ -453,7 +542,10 @@ export class OnlineController {
       status: view.result ? "ended" : "playing",
       ...(payload.type === "match_end" ? { recording: payload.recording } : {}),
     };
-    if (view.result) this.clearCommands();
+    if (view.result) {
+      this.cancelResultRead();
+      this.clearCommands();
+    }
     this.publish();
   }
   private beginRecovery() {
@@ -466,6 +558,7 @@ export class OnlineController {
       return;
     }
     if (this.recovery.remaining() !== null) return;
+    this.cancelResultRead();
     this.generation++;
     this.abort.abort();
     this.abort = new AbortController();
@@ -673,6 +766,7 @@ export class OnlineController {
       lobby: null,
       recording: null,
       opponent: null,
+      personalResult: null,
     };
   }
 }

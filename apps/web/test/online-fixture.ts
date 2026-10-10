@@ -1,5 +1,23 @@
-import { DEFAULT_RULES, type GameView } from "@liar/protocol";
+import {
+  DEFAULT_RULES,
+  type GameView,
+  type PersonalResult,
+} from "@liar/protocol";
 export const matchId = "11111111-1111-4111-8111-111111111111";
+export function personalResult(): PersonalResult {
+  return {
+    match_id: matchId,
+    rules_hash: "a".repeat(64),
+    end_elapsed_ms: 240000,
+    result: { reason: "timeout", outcome: "win", completed: true },
+    own: {
+      opened_safe: 8,
+      mistakes: 2,
+      accusation_attempts: 3,
+      correct_accusations: 1,
+    },
+  };
+}
 export function view(): GameView {
   return {
     v: 1,

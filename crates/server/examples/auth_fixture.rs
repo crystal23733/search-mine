@@ -1,6 +1,8 @@
 //! Loopback-only browser fixture. Production never selects these provider proofs or clock controls.
 use axum::{
     Json, Router,
+    extract::Path,
+    http::StatusCode,
     routing::{get, post},
 };
 use liar_core::{
@@ -9,6 +11,7 @@ use liar_core::{
     rules::RulesSnapshot,
 };
 use liar_server::auth::*;
+use liar_server::results::{PgResultReader, ResultAuthentication, result_router};
 use liar_server::{lobby::*, online::*};
 use sqlx::postgres::PgPoolOptions;
 use std::sync::{
@@ -103,8 +106,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vault = Arc::new(AeadVault::new(1, vec![(1, [46; 32])]).expect("test vault"));
     let sockets = AuthorityRegistry::new(32).map_err(|_| "fixture sockets")?;
     let authorities = AuthorityRegistry::new(32).map_err(|_| "fixture lobby authorities")?;
+    let result_authorities =
+        AuthorityRegistry::new(32).map_err(|_| "fixture result authorities")?;
     let store = PgAuthStore::with_vault(pool.clone(), vault.clone()).with_invalidations(Arc::new(
-        CombinedSessionInvalidator::new(sockets.clone(), authorities.clone()),
+        CombinedSessionInvalidator::new(
+            Arc::new(CombinedSessionInvalidator::new(
+                sockets.clone(),
+                authorities.clone(),
+            )),
+            result_authorities.clone(),
+        ),
     ));
     let service = AuthService::new(
         store.clone(),
@@ -126,7 +137,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         clock.clone(),
         clock.clone(),
         sockets,
-        Arc::new(PgResultRepository::new(pool, clock.clone())),
+        Arc::new(PgResultRepository::new(pool.clone(), clock.clone())),
     )
     .map_err(|_| "fixture registry")?;
     let sessions = Arc::new(PgSessionReader::new(store, clock.clone()));
@@ -166,15 +177,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .map_err(|_| "fixture lobby")?;
     let advance_clock = clock.clone();
+    let probe_registry = registry.clone();
     let router = account_auth_router(service, Providers, security.clone(), clock.clone())
         .merge(
-            lobby_router(lobby, sessions.clone(), security, 16)
+            lobby_router(lobby, sessions.clone(), security.clone(), 16)
                 .map_err(|_| "fixture lobby HTTP")?,
+        )
+        .merge(
+            result_router(
+                Arc::new(PgResultReader::new(pool, clock.clone())),
+                sessions.clone(),
+                security,
+                ResultAuthentication {
+                    authorities: result_authorities,
+                    clock: clock.clone(),
+                },
+                16,
+            )
+            .map_err(|_| "fixture result HTTP")?,
         )
         .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)
         .merge(
             Router::new()
                 .route("/__fixture/ready", get(|| async { "test-only" }))
+                .route(
+                    "/__fixture/match/{id}",
+                    get(move |Path(id): Path<String>| {
+                        let registry = probe_registry.clone();
+                        async move {
+                            let Ok(id) = uuid::Uuid::parse_str(&id) else {
+                                return StatusCode::BAD_REQUEST;
+                            };
+                            if registry.by_id(id).is_ok() {
+                                StatusCode::OK
+                            } else {
+                                StatusCode::NOT_FOUND
+                            }
+                        }
+                    }),
+                )
                 .route(
                     "/__fixture/advance",
                     post(move |Json(body): Json<Advance>| {

@@ -12,6 +12,8 @@ import { NavLink } from "../ui/molecules/NavLink";
 import { Board } from "../ui/organisms/Board";
 import { MatchSummary } from "../ui/organisms/MatchSummary";
 import { OnlineResult } from "../ui/organisms/OnlineResult";
+import { PersonalResult } from "../ui/organisms/PersonalResult";
+import { ResultLookup } from "../ui/molecules/ResultLookup";
 import { ReconnectNotice } from "../ui/organisms/ReconnectNotice";
 import { MatchLayout } from "../ui/templates/MatchLayout";
 export interface OnlinePanelProps {
@@ -149,7 +151,14 @@ function OnlineSession({
           maxMs={state.view.rules.rules.reconnect_grace_ms}
         />
       )}
-      {state.view?.result ? (
+      {state.personalResult ? (
+        <PersonalResult
+          result={state.personalResult}
+          ownName={nickname}
+          onAgain={() => void controller.start()}
+          againLabel={mode === "friends" ? t("friends.again") : undefined}
+        />
+      ) : state.view?.result ? (
         <OnlineResult
           view={state.view}
           ownName={nickname}
@@ -198,6 +207,13 @@ function OnlineSession({
           nickname={nickname}
         />
       )}
+      {(controller.canLookupResult() || state.resultLookup === "loading") &&
+        !locked && (
+          <ResultLookup
+            status={state.resultLookup}
+            onCheck={() => void controller.lookupResult()}
+          />
+        )}
       {state.status === "error" && !locked && (
         <div class="match-controls">
           <Button onClick={() => void controller.start()}>

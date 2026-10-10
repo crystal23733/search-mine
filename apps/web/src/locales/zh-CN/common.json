@@ -266,5 +266,11 @@
   "friends.again": "返回好友大厅",
   "match.opponentReconnecting": "对手正在重新连接，宽限时间还剩{{seconds}}秒。对局计时继续。",
   "match.reconnectWaiting": "正在等待服务器结果。",
-  "match.reconnecting": "正在尝试重新连接。{{seconds}}秒后停止尝试。比赛仍在服务器上继续。"
+  "match.reconnecting": "正在尝试重新连接。{{seconds}}秒后停止尝试。比赛仍在服务器上继续。",
+  "result.check": "查看已保存的结果",
+  "result.checking": "正在查看你保存的结果…",
+  "result.notFound": "此对局没有可查看的已保存结果。",
+  "result.unavailable": "无法查看结果，请重试。",
+  "result.savedTitle": "已保存的个人结果",
+  "result.openedSafe": "已打开的安全格：{{count}}"
 }

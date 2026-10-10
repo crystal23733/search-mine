@@ -266,5 +266,11 @@
   "friends.again": "友達ルームに戻る",
   "match.opponentReconnecting": "相手が再接続しています。猶予は残り{{seconds}}秒です。対戦時間は進み続けます。",
   "match.reconnectWaiting": "サーバーの結果を待っています。",
-  "match.reconnecting": "再接続しています。あと{{seconds}}秒で試行を停止します。サーバーでは対戦が進行しています。"
+  "match.reconnecting": "再接続しています。あと{{seconds}}秒で試行を停止します。サーバーでは対戦が進行しています。",
+  "result.check": "保存結果を確認",
+  "result.checking": "保存された自分の結果を確認しています…",
+  "result.notFound": "この対戦で確認できる保存結果はありません。",
+  "result.unavailable": "結果を確認できませんでした。もう一度お試しください。",
+  "result.savedTitle": "保存された自分の結果",
+  "result.openedSafe": "開いた安全マス: {{count}}"
 }

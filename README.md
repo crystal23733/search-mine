@@ -138,3 +138,5 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 [인증 로비 HTTP와 실행 구성](docs/verification/64-authenticated-lobby-http-runtime.md)은 `POST /api/v1/lobby`에 `{v:1,command:{type:"status"}}` 등 Rust→TS 계약을 제공한다. 모든 호출에 Origin·session-bound CSRF·닉네임을 요구하고 동시 read/2초 deadline·세션/계정 rate·room_join5회/분을 적용한다. main은 실제 비공개 보드/core bot과 두 권한의 합성 철회를 연결한다. OAuth 초대·8언어 로비/온라인 화면은 #66/#70/#72에서 연결했다.
 
 로비 개발 기본값은 `LIAR_LOBBY_CAPACITY=32`, `LIAR_LOBBY_WORKERS=2`, `LIAR_LOBBY_AUTHORITIES=64`, `LIAR_LOBBY_REQUESTS=16`, `LIAR_BOARD_CAPACITY=4`, `LIAR_BOARD_WORKERS=1`, `LIAR_BOT_WORKERS=2`다. 잘못된 구성은 시작을 거절한다. auth 설정이 없으면 로비는 unavailable이며 무계정 연습은 유지한다. 이 상한은 #26의 미니 PC 실측을 대신하지 않는다.
+
+[#89 저장 결과 확인](docs/verification/89-personal-result-web.md)은 연결 복구 실패/저장 알림 유실 후 현재 메모리 판의 본인 결과를 명시 조회한다. 전후 인증 proof와 최소 본인 통계·8언어 화면, 실제 actor 정리 뒤 PG/HTTPS 검증을 포함한다. 새로고침 후 판 발견과 영속 재시작 출구는 후속 #18이다.

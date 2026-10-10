@@ -57,3 +57,5 @@ lockfile·보안 감사(cargo audit/pnpm audit)·최소 CI permissions, PR에서
 ## OAuth 위협과 최소 개인정보
 
 [17 인증 설계](17-auth-privacy.md)와 TS31~35를 적용한다. provider mix-up/state replay/login CSRF → 고정 issuer/callback·브라우저/intent 바인딩·1회 소비. ID token 위조 → JWKS/signature/iss/aud/nonce/expiry 검증. 계정 연결 탈취 → 양쪽 재인증·unique constraint·이메일 자동 합치기 금지. token/과잉 claim 유출 → whitelist·로그 redact·서버 교환·Apple CredentialVault 목적 제한. 비밀번호·이메일 회원가입 경로는 만들지 않는다.
+
+#89의 정상 actor release/계정 철회 구분은 [ADR0040](../adr/0040-personal-result-web.md)을 따른다. 종료 코드1000은 재인증이나 권한 부여가 아니며 세션/계정 철회·교체·만료는 기존1008과 독립 결과 HTTP proof로 차단한다.

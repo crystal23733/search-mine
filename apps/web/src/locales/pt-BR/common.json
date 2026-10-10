@@ -266,5 +266,11 @@
   "friends.again": "Voltar às salas de amigos",
   "match.opponentReconnecting": "O adversário está se reconectando. Restam {{seconds}} s de tolerância. O tempo da partida continua correndo.",
   "match.reconnectWaiting": "Aguardando o resultado do servidor.",
-  "match.reconnecting": "Tentando reconectar. As tentativas param em {{seconds}} s. A partida continua no servidor."
+  "match.reconnecting": "Tentando reconectar. As tentativas param em {{seconds}} s. A partida continua no servidor.",
+  "result.check": "Consultar resultado salvo",
+  "result.checking": "Consultando seu resultado salvo…",
+  "result.notFound": "Não há resultado salvo disponível para esta partida.",
+  "result.unavailable": "Não foi possível consultar o resultado. Tente novamente.",
+  "result.savedTitle": "Resultado pessoal salvo",
+  "result.openedSafe": "Casas seguras abertas: {{count}}"
 }

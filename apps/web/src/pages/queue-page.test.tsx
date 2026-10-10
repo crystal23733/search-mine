@@ -8,7 +8,7 @@ import { createI18n } from "../services/i18n";
 import { createNavigation } from "../services/navigation";
 import { createPreferences } from "../services/preferences";
 import { createLearning } from "../services/learning";
-import { matchId, view } from "../../test/online-fixture";
+import { matchId, view, personalResult } from "../../test/online-fixture";
 import type { AppServices } from "../services/ports";
 import type { OnlineEvent, LobbyResponse } from "@liar/protocol";
 // Cold route loading is exercised by the production browser tests.
@@ -83,6 +83,9 @@ async function queueScenario() {
       throw Error();
     },
     online: {
+      result: vi.fn(async () => {
+        throw Error("unavailable");
+      }),
       lobby: vi.fn(async (_owner, command): Promise<LobbyResponse> => ({
         v: 1,
         server_time_ms: 0,
@@ -135,6 +138,52 @@ test("quick queue displays all public cells, holds activity until home and dispo
     expect(close).toHaveBeenCalled();
   } finally {
     dispose();
+  }
+});
+test("explicit stored result replaces the live result with personal statistics, keeps locale and leaves safely", async () => {
+  const s = await queueScenario();
+  try {
+    vi.mocked(s.services.online.result).mockResolvedValue(personalResult());
+    s.emit({
+      v: 1,
+      match_id: matchId,
+      server_seq: 2,
+      server_time_ms: 0,
+      payload: {
+        type: "match_end",
+        view: {
+          ...view(),
+          phase: "finished",
+          revision: 1,
+          result: { reason: "timeout", outcome: "win", completed: true },
+        },
+        recording: "pending",
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Check stored result" }),
+    );
+    await screen.findByTestId("personal-result");
+    expect(screen.queryByRole("grid")).toBeNull();
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.queryByText("Opponent")).toBeNull();
+    expect(screen.getByText("Safe cells opened: 8")).toBeTruthy();
+    expect(screen.getByText("Mistakes: 2")).toBeTruthy();
+    expect(screen.getByTestId("recording").textContent).toBe("Result saved.");
+    fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+      target: { value: "ko" },
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("personal-result").textContent).toContain(
+        "저장된 내 결과",
+      ),
+    );
+    expect(s.services.online.result).toHaveBeenCalledTimes(1);
+    expect(s.services.activity.read().busy).toBe(true);
+    s.services.navigation.go("/");
+    await waitFor(() => expect(s.services.activity.read().busy).toBe(false));
+  } finally {
+    s.dispose();
   }
 });
 test("suspended queue session keeps all public cells read-only until fresh authenticated recovery", async () => {

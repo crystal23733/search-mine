@@ -6,6 +6,7 @@ import { registerOnlineFriendsTests } from "./helpers/online-friends";
 import { registerOnlineReconnectTests } from "./helpers/online-reconnect";
 import { registerAuthRecoveryTests } from "./helpers/auth-recovery";
 import { registerOnlineRecoveryTests } from "./helpers/online-recovery";
+import { registerPersonalResultTests } from "./helpers/personal-result";
 const origin = "https://localhost:8443";
 const providers = ["Google", "Apple", "Kakao", "Naver"] as const;
 test.describe.configure({ mode: "serial" }); // The fixture's explicit clock control must not overlap accounts.
@@ -14,6 +15,7 @@ registerOnlineFriendsTests(approve, login);
 registerOnlineReconnectTests(approve, login);
 registerAuthRecoveryTests(approve, login);
 registerOnlineRecoveryTests(approve, login);
+registerPersonalResultTests(approve, login);
 
 const invitationLocales = [
   "en",

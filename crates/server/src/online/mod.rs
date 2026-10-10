@@ -17,5 +17,8 @@ mod postgres;
 pub use postgres::*;
 mod result_owner;
 pub use result_owner::*;
+mod journal;
+pub use journal::*;
 mod config;
+mod journal_postgres;
 pub use config::*;

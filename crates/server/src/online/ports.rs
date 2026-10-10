@@ -24,6 +24,16 @@ pub enum SaveResult {
 pub trait ResultRepository: Send + Sync {
     fn save(&self, result: FinishedMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>>;
 }
+#[derive(Clone, PartialEq, Eq)]
+pub struct ActiveMatch {
+    pub id: uuid::Uuid,
+    pub rules_hash: String,
+    pub players: [Option<uuid::Uuid>; 2],
+}
+pub trait AdmissionJournal: Send + Sync {
+    fn register(&self, active: ActiveMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>>;
+    fn discard(&self, id: uuid::Uuid) -> PortFuture<'_, Result<(), OnlineError>>;
+}
 pub trait SessionReader: Send + Sync {
     fn read(
         &self,

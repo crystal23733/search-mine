@@ -140,6 +140,8 @@ async fn invitation_transactions_preserve_canonical_codes_consume_once_and_expir
     assert_eq!(accounts, 0);
     close_auth_pool(pool).await;
 }
+#[path = "postgres/journal.rs"]
+mod journal;
 #[path = "postgres/online.rs"]
 mod online;
 #[path = "postgres/result_owner.rs"]

@@ -724,6 +724,18 @@
         "online-storage-owner"
       ],
       "acceptance": "ADR0045·forward/backfill/NULL fallback·COALESCE 정확90일·known JSON/시각 불변 duplicate·삭제/권한·실제 PG/DST·관련 gates/domain95전체80·코드리뷰/CI"
+    },
+    {
+      "key": "active-match-journal",
+      "issue": 101,
+      "milestone": "M3",
+      "title": "feat(storage): 영속 active journal과 복구 저장 경계",
+      "requirements": "FR14/16, NFR01/02/05/07/08",
+      "scenarios": "TS15/16/20/21/31/35/36",
+      "deps": [
+        "result-retention-anchor"
+      ],
+      "acceptance": "ADR0046·최소active schema/typed register-discard-strictfinal·same raw owner/startup bounded unknown abort·삭제/보존/seed/취소/부분실패·실제 PG/gates/domain95전체80·코드리뷰/CI; 공개 입장/OS restart 통합 후속"
     }
   ]
 }

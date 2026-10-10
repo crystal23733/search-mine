@@ -109,11 +109,11 @@ async fn main_rejects_a_second_storage_owner_before_serving() {
     close_auth_pool(pool).await;
 }
 
-async fn owner_pid(pool: &sqlx::PgPool) -> i32 {
+pub(super) async fn owner_pid(pool: &sqlx::PgPool) -> i32 {
     sqlx::query_scalar("SELECT pid FROM pg_locks WHERE locktype='advisory' AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND classid=1280530258::oid AND objid='online_match_results'::regclass::oid AND objsubid=1 AND granted")
         .fetch_one(pool).await.unwrap()
 }
-async fn wait_blocked(pool: &sqlx::PgPool, pid: i32) {
+pub(super) async fn wait_blocked(pool: &sqlx::PgPool, pid: i32) {
     tokio::time::timeout(Duration::from_secs(1),async {
         loop {
             let blocked: bool=sqlx::query_scalar("SELECT COALESCE((SELECT wait_event_type='Lock' FROM pg_stat_activity WHERE pid=$1),false)").bind(pid).fetch_one(pool).await.unwrap();

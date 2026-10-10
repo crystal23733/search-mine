@@ -45,3 +45,5 @@ flowchart LR
 TS protocol generator는 schema 변경 PR에서 실행하고 generated diff를 검사한다. 내부 Board/seed 타입은 생성 대상에 넣지 않는다. 버전 불일치·누락은 build fail, Rust native/WASM golden fixtures를 공통으로 읽는다. 규칙은 core 하나이며 i18n·광고·렌더링은 web adapter에 둔다.
 
 문서 원문은 docs/planning에 보존한다. 최신 사용자 지시→AGENTS/워크플로→승인 PRD/설계/ADR→원문 순으로 판단하며 오래된 HANDOFF의 커밋/브랜치 규칙은 최신 workflow가 대체한다.
+
+#101 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0046](../adr/0046-active-match-journal.md) → typed active journal/register/discard/strict final·same-owner startup unknown abort·최소 schema/FK삭제·admitted anchor/seed 상한·실제 PG/관련 gates → [검증101](../verification/101-active-match-journal.md). 공개 admission/main 전환·OS kill-restart 통합은 후속이며 storage foundation을 사용자 복구 완료로 보고하지 않는다.

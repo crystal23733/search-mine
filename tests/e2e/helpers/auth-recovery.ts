@@ -83,12 +83,36 @@ export function registerAuthRecoveryTests(approve: Approve, login: Login) {
           data: {},
         });
         expect(logout.status()).toBe(204);
-        const rejectedProof = page.waitForResponse(
-          (response) =>
-            new URL(response.url()).pathname === "/api/v1/auth/bootstrap",
+        let delivered!: () => void, failed!: (error: unknown) => void;
+        const rejectedProof = new Promise<void>((resolve, reject) => {
+          delivered = resolve;
+          failed = reject;
+        });
+        await page.route(
+          "**/api/v1/auth/bootstrap",
+          async (route) => {
+            try {
+              const response = await route.fetch({
+                maxRedirects: 0,
+                maxRetries: 0,
+                timeout: 10000,
+              });
+              expect(response.status()).toBe(200);
+              expect(response.headers()["cache-control"]).toBe("no-store");
+              const proof = await response.json();
+              expect(proof.account).toBeNull();
+              expect(proof.session_revision).toBeNull();
+              // Observe the real body before recovery discards and aborts its request.
+              await route.fulfill({ response });
+              delivered();
+            } catch (error) {
+              failed(error);
+              await route.abort();
+            }
+          },
+          { times: 1 },
         );
-        await context.setOffline(false);
-        expect((await (await rejectedProof).json()).account).toBeNull();
+        await Promise.all([context.setOffline(false), rejectedProof]);
         await expect(
           page.getByText(
             "Check the input or refresh your account status before trying again.",

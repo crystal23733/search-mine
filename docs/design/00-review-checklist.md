@@ -126,3 +126,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #80 FR14/NFR01/02/05/06 · TS15/16/20/21/26/31/36 → [ADR0038](../adr/0038-bounded-online-reconnect.md) → BoundedReconnect/OnlineController/OnlineEntry·권한 없는 후보/단조 기한/메모리 원본 명령·실제 WS/PG/HTTPS. 영속 재시작·결과 조회는 후속18이다.
 
 #89 FR11/14/16·NFR01/02/05/06/08·TS15/16/20/21/26/31/35/36 → [ADR0040](../adr/0040-personal-result-web.md) → strict 최소 decoder/인증 HTTP/OnlineController/본인 결과 Atomic UI·actual PG/HTTPS. 선행82 병합·종료, 영속 journal/재시작 후속18.
+
+#91 FR14·NFR05/08·TS15/16/20/26/31/35/36 → [ADR0041](../adr/0041-auth-recovery-response-observation.md) → production HTTPS 응답의 one-use 관측/전달·철회 후 UI/쓰기0/독립 proof·[검증91](../verification/91-auth-recovery-observation.md). timeout/retry와 제품 권한 변경 없음.

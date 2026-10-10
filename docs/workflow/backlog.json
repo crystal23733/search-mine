@@ -664,6 +664,18 @@
         "authenticated-personal-result"
       ],
       "acceptance": "ADR0040·strict 최소 DTO/동일 match·인증 전후 proof/4096byte/취소·동시1/명시 조회·WS 우선/역순/권한/후보·8언어 Atomic 본인 통계만·actual PG/HTTPS PC/mobile/actor 정리/secret0/storage0 TDD; 영속 journal 후속18"
+    },
+    {
+      "key": "auth-recovery-observation",
+      "issue": 91,
+      "milestone": "M3",
+      "title": "test(auth): 인증 철회 복구의 응답 관측 안정화",
+      "requirements": "FR14, NFR05/08",
+      "scenarios": "TS15/16/20/26/31/35/36",
+      "deps": [
+        "personal-result-web"
+      ],
+      "acceptance": "ADR0041·실제HTTPSbootstrap전달전본문관측/동일response전달·철회/권한/쓰기0/독립proof유지·CI최초Red/로컬전후PCmobile재시도0·trace보존·제품/timeout/retry/SW변경0·전체관련gate/코드리뷰/최신CI"
     }
   ]
 }

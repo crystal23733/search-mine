@@ -140,3 +140,5 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 로비 개발 기본값은 `LIAR_LOBBY_CAPACITY=32`, `LIAR_LOBBY_WORKERS=2`, `LIAR_LOBBY_AUTHORITIES=64`, `LIAR_LOBBY_REQUESTS=16`, `LIAR_BOARD_CAPACITY=4`, `LIAR_BOARD_WORKERS=1`, `LIAR_BOT_WORKERS=2`다. 잘못된 구성은 시작을 거절한다. auth 설정이 없으면 로비는 unavailable이며 무계정 연습은 유지한다. 이 상한은 #26의 미니 PC 실측을 대신하지 않는다.
 
 [#89 저장 결과 확인](docs/verification/89-personal-result-web.md)은 연결 복구 실패/저장 알림 유실 후 현재 메모리 판의 본인 결과를 명시 조회한다. 전후 인증 proof와 최소 본인 통계·8언어 화면, 실제 actor 정리 뒤 PG/HTTPS 검증을 포함한다. 새로고침 후 판 발견과 영속 재시작 출구는 후속 #18이다.
+
+[#91 인증 복구 관측](docs/verification/91-auth-recovery-observation.md)은 실제 HTTPS 철회 응답의 관측 수명을 앱의 권한 폐기와 분리해 검사한다. #89/PR90은 병합·종료했으며 CI의 기존 flaky 두 건과 로컬 재시도0 결과를 구분해 기록했다.

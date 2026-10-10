@@ -132,3 +132,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #93 FR11/14/16·NFR01/02/05/06/07/08·TS15/16/20/21/26/31/35/36 → [ADR0042](../adr/0042-unknown-result-details.md) → forward migration/reader/project·Rust→TS·strict decoder·8언어 최소 결과 UI·[실제 검증93](../verification/93-unknown-result-details.md). 선행91/PR92 병합·종료, 실제 journal/startup/processkill·새로고침 발견은 후속18이다.
 
 #95 FR11/14/16·NFR05/08·TS15/16/20/21/26/31/35/36 → [ADR0043](../adr/0043-result-response-observation.md) → one-use 실제 결과 HTTP 응답 관측/동일 전달·known/unknown PC/mobile 반복·[검증95](../verification/95-result-response-observation.md). 제품/기한/SW/timeout/retry 변경 없음.
+
+#97 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0044](../adr/0044-online-storage-owner.md) → 같은 raw 연결의 session lock/write·bounded 큐/2초 deadline·owner loss ready/프로세스 종료·실제 PG/HTTP 검증 → [검증97](../verification/97-online-storage-owner.md). 기존 인스턴스를 종료한 뒤 단일 새 인스턴스로 교체하며 journal/startup abort/OS kill-restart 결과 복구는 다음 작업이다.

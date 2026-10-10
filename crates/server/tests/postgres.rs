@@ -142,6 +142,8 @@ async fn invitation_transactions_preserve_canonical_codes_consume_once_and_expir
 }
 #[path = "postgres/online.rs"]
 mod online;
+#[path = "postgres/result_owner.rs"]
+mod result_owner;
 #[path = "postgres/results.rs"]
 mod results;
 #[path = "postgres/rights.rs"]

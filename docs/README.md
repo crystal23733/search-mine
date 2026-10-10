@@ -67,3 +67,5 @@
 - [ADR0042 미확인 통계](adr/0042-unknown-result-details.md) · [#93 검증](verification/93-unknown-result-details.md)
 
 - [ADR0043 결과 응답 관측](adr/0043-result-response-observation.md) · [#95 검증](verification/95-result-response-observation.md)
+
+- [ADR0044 온라인 저장 소유 연결](adr/0044-online-storage-owner.md) · [#97 검증](verification/97-online-storage-owner.md)

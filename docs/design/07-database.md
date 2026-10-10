@@ -137,3 +137,5 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 #13 무계정 IndexedDB 개인 기록은 공식 PostgreSQL daily_attempt와 분리한다. v1·unverified·공개 metadata·attempt UUID·개인 elapsed/stat·strict native replay만 최대30개 보관하며 첫 local clear는 원자적이다. 저장 실패는 메모리 fallback이다. [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md), [검증](../verification/13-utc-daily-records-share.md).
 
 #93의 [forward migration](../../migrations/202610100001_unknown_result_details.sql)은 end_elapsed_ms와 통계4개의 NOT NULL만 완화한다. 부모의 null elapsed는 server_failure, 자식의 null 통계는 네 필드 모두 null이며 abort일 때만 허용한다. 기존 범위 CHECK/PK/FK cascade/보존 정책과 migration checksum을 유지한다. 부모/자식 불일치는 reader/project가 거절하며 정상 writer는 unknown 결과를 덮어쓰거나 삭제 참여자를 retry로 복원하지 않는다. [ADR0042](../adr/0042-unknown-result-details.md).
+
+#97 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0044](../adr/0044-online-storage-owner.md) → 같은 raw 연결의 session lock/write·bounded 큐/2초 deadline·owner loss ready/프로세스 종료·실제 PG/HTTP 검증 → [검증97](../verification/97-online-storage-owner.md). 기존 인스턴스를 종료한 뒤 단일 새 인스턴스로 교체하며 journal/startup abort/OS kill-restart 결과 복구는 다음 작업이다.

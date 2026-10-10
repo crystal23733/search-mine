@@ -15,5 +15,7 @@ mod ws;
 pub use ws::*;
 mod postgres;
 pub use postgres::*;
+mod result_owner;
+pub use result_owner::*;
 mod config;
 pub use config::*;

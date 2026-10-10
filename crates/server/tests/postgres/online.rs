@@ -29,7 +29,7 @@ pub(super) fn finished(accounts: [Option<Uuid>; 2]) -> FinishedMatch {
         }),
     }
 }
-async fn participant(store: &PgAuthStore) -> Uuid {
+pub(super) async fn participant(store: &PgAuthStore) -> Uuid {
     let token = SecretToken::generate().unwrap();
     store
         .login(account_write(

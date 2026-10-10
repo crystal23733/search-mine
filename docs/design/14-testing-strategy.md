@@ -69,3 +69,6 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 
 
 #105는 [ADR0048](../adr/0048-latest-personal-result.md)의 최신 선택/admitted순서/90일정확경계·공유HTTP권위·웹메모리lifecycle/8언어와 실제OSkill→새browser→ID없는발견을검사한다. test-only supervisor는진짜example자식프로세스를죽이며외부wall-clock만유지하고seed/board/ID를복사하지않는다. [실행105](../verification/105-latest-personal-result.md).
+
+
+#107은 [ADR0049](../adr/0049-reconnect-integration-exit.md)의 실제 upstream EOF 관측→양쪽 WS 종료→SQL abandoned/draw/true→인증쿠키만 새 browser latest를390/1440px에서 검사한다. 고정 sleep/timeout 완화 없이 기존 전체 회귀를 재검증하며 [검증107](../verification/107-reconnect-integration-exit.md)에서 상위18의 조건별 구현/실행/하위 종료 근거를 감사한다.

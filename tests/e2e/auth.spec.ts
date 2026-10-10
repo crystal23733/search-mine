@@ -8,6 +8,7 @@ import { registerAuthRecoveryTests } from "./helpers/auth-recovery";
 import { registerOnlineRecoveryTests } from "./helpers/online-recovery";
 import { registerPersonalResultTests } from "./helpers/personal-result";
 import { registerLatestResultTests } from "./helpers/latest-result";
+import { registerOnlineAbandonTests } from "./helpers/online-abandon";
 const origin = "https://localhost:8443";
 const providers = ["Google", "Apple", "Kakao", "Naver"] as const;
 test.describe.configure({ mode: "serial" }); // The fixture's explicit clock control must not overlap accounts.
@@ -18,6 +19,7 @@ registerAuthRecoveryTests(approve, login);
 registerOnlineRecoveryTests(approve, login);
 registerPersonalResultTests(approve, login);
 registerLatestResultTests(approve, login);
+registerOnlineAbandonTests(approve, login);
 
 const invitationLocales = [
   "en",

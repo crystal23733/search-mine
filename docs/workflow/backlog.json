@@ -760,6 +760,18 @@
         "durable-lobby-admission"
       ],
       "acceptance": "ADR0048·ID없는본인최신/null·admitted순서/90일정확경계/동일시각tie/오염·공유권위deadline/rate·8언어/메모리/실제OSrestart fresh browser·TDD/gates/coverage/리뷰CI"
+    },
+    {
+      "key": "reconnect-integration-exit",
+      "issue": 107,
+      "milestone": "M3",
+      "title": "test(server): 양쪽 이탈 통합 검증과 재접속 출구 감사",
+      "requirements": "FR14/16, NFR01/02/05/06/07/08",
+      "scenarios": "TS15/16/20/21/26/31/35/36",
+      "deps": [
+        "latest-personal-result"
+      ],
+      "acceptance": "ADR0049·실제 upstream EOF/두 WS 종료→SQL abandoned/draw/true→fresh latest·known/immutable/8언어/PCmobile·상위18 모든조건/하위종료감사·실제RedGreen/회귀/docs/리뷰CI·병합후18종료"
     }
   ]
 }

@@ -100,3 +100,5 @@
 #95/PR96은 developfd29c11에 병합·종료했다. 다음 [#97](https://github.com/crystal23733/search-mine/issues/97)은 [ADR0044](../adr/0044-online-storage-owner.md)의 단일 저장 소유 연결을 구현한다. active journal/admission·startup abort/OS kill-restart·새로고침 발견은 후속 #18이다.
 
 #97/PR98은 developecb6f21에 병합·종료했다. 다음 [#99](https://github.com/crystal23733/search-mine/issues/99)는 [ADR0045](../adr/0045-result-retention-anchor.md)의 보존 기준을 분리한다. journal/admission/startup abort·실제 OS kill-restart 결과 복구·새로고침 발견은 후속 #18이다.
+
+#99/PR100은 developbd1f48fe에 병합·종료됐다. 다음 [#101](https://github.com/crystal23733/search-mine/issues/101)은 [ADR0046](../adr/0046-active-match-journal.md)의 typed 영속 active journal 저장 foundation이다. 공개 비동기 admission/main/fixture 활성화·실제 OS kill-restart 및 본인 결과 발견은 후속18이며 storage 테스트를 통합 완료로 계산하지 않는다.

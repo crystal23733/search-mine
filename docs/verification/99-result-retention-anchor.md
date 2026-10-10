@@ -30,3 +30,7 @@ nullable anchor를 recorded_at으로 backfill하고 유한 epoch0~9999년/record
 pm-ai-shipping:code-review correctness/changes, baseline ecb6f21. AuthClock→SQL anchor/recorded_at→COALESCE 조회, UUID retry→기존 시각/삭제 비복원, FK/계정별 projection→최소 공개 DTO를 함께 검토했다. 요청 저장 시각과 실제 원래 시각이 달라지는 duplicate 및 최근 저장/과거 anchor를 강제로 비교했다. 현재 변경에서 확인한 미해결 결함은 없다. 의존성/lockfile/프로토콜/TS/UI/게임 규칙은 변경하지 않았다.
 
 전체 로컬 browser90개는 이번 DB 전용 변경에서 반복하지 않았다. 선행97의90개workers2/retries0 성공과 앞선 두 지연 관측은 해당 검증 문서에 보존했으며 이번 실행으로 계산하지 않는다. 최신 전체 CI 결과는 원격 완료 뒤 기록한다. #83 원인, 실제 하드웨어26/사람27/OAuth키42는 별도다. journal/admission/startup abort·실제 OS kill-restart·새로고침 발견 및 물리 삭제25는 후속이며 상위18은 OPEN이다.
+
+## 원격 완료
+
+[PR100](https://github.com/crystal23733/search-mine/pull/100)은2026-10-10T13:53:20Z developbd1f48fe33b91f6daa6dcc16b241e08d5856efe3에 병합됐고99는13:53:21Z 종료됐다. 최신head15fa079/Ready/CLEAN·최종본문 뒤8rollup SUCCESS 확인 후 exact-head squash. Product38056987563: 실제 PG18.6 DB41ignored0(9.98초/coverage9.14초),199unit35파일·웹87.94%,90browser3.7분재시도0·서버92.81%. 로컬 전체browser를 반복한 것으로 보고하지 않는다.

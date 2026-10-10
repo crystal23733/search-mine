@@ -71,3 +71,5 @@
 - [ADR0044 온라인 저장 소유 연결](adr/0044-online-storage-owner.md) · [#97 검증](verification/97-online-storage-owner.md)
 
 - [ADR0045 결과 보존 기준](adr/0045-result-retention-anchor.md) · [#99 검증](verification/99-result-retention-anchor.md)
+
+- [ADR0046 영속 active journal](adr/0046-active-match-journal.md) · [#101 검증](verification/101-active-match-journal.md)

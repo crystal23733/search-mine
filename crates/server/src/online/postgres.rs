@@ -60,19 +60,7 @@ pub(super) async fn persist_result(
                 .bind(result.ended_ms as i64).bind(reason).bind(now)
                 .fetch_optional(&mut *tx).await.map_err(db_error)?;
     if inserted.is_none() {
-        let row = sqlx::query("SELECT rules_hash,secret_seed,end_elapsed_ms,reason FROM online_match_results WHERE id=$1")
-                    .bind(result.id).fetch_one(&mut *tx).await.map_err(db_error)?;
-        let seed: Option<Vec<u8>> = row.try_get("secret_seed").map_err(db_error)?;
-        let same = row.try_get::<String, _>("rules_hash").map_err(db_error)? == result.rules_hash
-            && seed.is_none_or(|seed| seed == result.seed)
-            && row
-                .try_get::<Option<i64>, _>("end_elapsed_ms")
-                .map_err(db_error)?
-                == Some(result.ended_ms as i64)
-            && row.try_get::<String, _>("reason").map_err(db_error)? == reason;
-        if !same {
-            return Err(OnlineError::Malformed);
-        }
+        validate_duplicate(&mut tx, &result).await?;
         tx.commit().await.map_err(db_error)?;
         return Ok(SaveResult::Duplicate);
     }
@@ -97,6 +85,31 @@ pub(super) async fn persist_result(
     }
     tx.commit().await.map_err(db_error)?;
     Ok(SaveResult::Saved)
+}
+pub(super) async fn validate_duplicate(
+    connection: &mut PgConnection,
+    result: &FinishedMatch,
+) -> Result<(), OnlineError> {
+    let reason = reason(result.reason);
+    let row = sqlx::query(
+        "SELECT rules_hash,secret_seed,end_elapsed_ms,reason FROM online_match_results WHERE id=$1",
+    )
+    .bind(result.id)
+    .fetch_one(&mut *connection)
+    .await
+    .map_err(db_error)?;
+    let seed: Option<Vec<u8>> = row.try_get("secret_seed").map_err(db_error)?;
+    let same = row.try_get::<String, _>("rules_hash").map_err(db_error)? == result.rules_hash
+        && seed.is_none_or(|seed| seed == result.seed)
+        && row
+            .try_get::<Option<i64>, _>("end_elapsed_ms")
+            .map_err(db_error)?
+            == Some(result.ended_ms as i64)
+        && row.try_get::<String, _>("reason").map_err(db_error)? == reason;
+    if !same {
+        return Err(OnlineError::Malformed);
+    }
+    Ok(())
 }
 fn db_error(_: sqlx::Error) -> OnlineError {
     OnlineError::Unavailable
@@ -124,7 +137,7 @@ impl SessionReader for PgSessionReader {
         })
     }
 }
-fn reason(value: PublicEndReason) -> &'static str {
+pub(super) fn reason(value: PublicEndReason) -> &'static str {
     match value {
         PublicEndReason::Clear => "clear",
         PublicEndReason::Timeout => "timeout",
@@ -134,7 +147,7 @@ fn reason(value: PublicEndReason) -> &'static str {
         PublicEndReason::Cancelled => "cancelled",
     }
 }
-fn outcome(value: Outcome) -> &'static str {
+pub(super) fn outcome(value: Outcome) -> &'static str {
     match value {
         Outcome::Win => "win",
         Outcome::Loss => "loss",

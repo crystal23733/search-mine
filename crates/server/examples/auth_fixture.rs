@@ -127,6 +127,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         game: AtomicU64::new(0),
     });
     let security = Arc::new(BrowserSecurity::new(ORIGIN, [48; 32]).expect("loopback origin"));
+    let writer = PgResultRuntime::claim(pool.clone(), clock.clone())
+        .await
+        .map_err(|_| "fixture storage ownership")?;
+    let owner = writer.health();
     let registry = MatchRegistry::new(
         MatchLimits {
             matches: 16,
@@ -137,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         clock.clone(),
         clock.clone(),
         sockets,
-        Arc::new(PgResultRepository::new(pool.clone(), clock.clone())),
+        Arc::new(writer),
     )
     .map_err(|_| "fixture registry")?;
     let sessions = Arc::new(PgSessionReader::new(store, clock.clone()));
@@ -254,6 +258,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
         );
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3001").await?;
-    axum::serve(listener, router).await?;
+    run_with_result_owner(
+        Some(owner),
+        async move { axum::serve(listener, router).await },
+    )
+    .await
+    .map_err(|_| "fixture storage ownership lost")??;
     Ok(())
 }

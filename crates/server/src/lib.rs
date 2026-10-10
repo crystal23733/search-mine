@@ -23,10 +23,27 @@ pub fn app(pool: Option<PgPool>) -> Router {
     )
 }
 pub fn app_with_auth(pool: Option<PgPool>, auth: Router) -> Router {
+    app_with_auth_and_owner(pool, auth, None)
+}
+#[derive(Clone)]
+struct Readiness {
+    pool: Option<PgPool>,
+    owner: Option<online::PgResultHealth>,
+}
+impl Readiness {
+    fn owns_results(&self) -> bool {
+        self.owner.as_ref().is_none_or(|owner| owner.available())
+    }
+}
+pub fn app_with_auth_and_owner(
+    pool: Option<PgPool>,
+    auth: Router,
+    owner: Option<online::PgResultHealth>,
+) -> Router {
     Router::new()
         .route("/health/live", get(live))
         .route("/health/ready", get(ready))
-        .with_state(pool)
+        .with_state(Readiness { pool, owner })
         .merge(auth)
 }
 
@@ -43,21 +60,23 @@ async fn live() -> (
 }
 
 async fn ready(
-    State(pool): State<Option<PgPool>>,
+    State(state): State<Readiness>,
 ) -> (
     StatusCode,
     [(header::HeaderName, &'static str); 1],
     Json<HealthResponse>,
 ) {
-    let available = if let Some(pool) = pool {
+    let available = if state.owns_results()
+        && let Some(pool) = &state.pool
+    {
         matches!(
             tokio::time::timeout(
                 Duration::from_secs(1),
-                sqlx::query("SELECT 1").execute(&pool)
+                sqlx::query("SELECT 1").execute(pool)
             )
             .await,
             Ok(Ok(_))
-        )
+        ) && state.owns_results()
     } else {
         false
     };

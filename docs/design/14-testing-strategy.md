@@ -57,3 +57,5 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 #93은 [ADR0042](../adr/0042-unknown-result-details.md)와 TS16을 따라 decoder/실제 DB의 unknown 양성 Red→Green, 이전 known행의 forward upgrade 보존·16개 null패턴·부분/타 reason/outcome·본인200/타인404·writer 충돌/삭제 비복원을 검사한다. PG/HTTPS PC/mobile에서는 actor 정리 후 SQL fixture의 unknown 결과를 운영 reader/router로 조회하고8언어·숫자 미생성·일반 storage0를 검증한다. 이 fixture는 실제 프로세스 재시작의 증거가 아니며 journal/startup/processkill은 후속18이다.
 
 #95 FR11/14/16·NFR05/08·TS15/16/20/21/26/31/35/36 → [ADR0043](../adr/0043-result-response-observation.md) → one-use 실제 결과 HTTP 응답 관측/동일 전달·known/unknown PC/mobile 반복·[검증95](../verification/95-result-response-observation.md). 제품/기한/SW/timeout/retry 변경 없음.
+
+#97 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0044](../adr/0044-online-storage-owner.md) → 같은 raw 연결의 session lock/write·bounded 큐/2초 deadline·owner loss ready/프로세스 종료·실제 PG/HTTP 검증 → [검증97](../verification/97-online-storage-owner.md). 기존 인스턴스를 종료한 뒤 단일 새 인스턴스로 교체하며 journal/startup abort/OS kill-restart 결과 복구는 다음 작업이다.

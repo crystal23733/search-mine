@@ -700,6 +700,18 @@
         "unknown-result-details"
       ],
       "acceptance": "ADR0043·actual HTTPS one-use 관측후동일APIResponse전달·known/unknown PCmobile 반복/원격최초Red보존·기존권한/503/404/keyboard/8locale/storage0단언유지·제품/Rust/기한/SW/timeout/retry0변경·전체browser/CI/review"
+    },
+    {
+      "key": "online-storage-owner",
+      "issue": 97,
+      "milestone": "M3",
+      "title": "feat(storage): 온라인 결과 저장의 단일 소유 연결",
+      "requirements": "FR14/16, NFR01/02/05/07/08",
+      "scenarios": "TS15/16/20/21/31/35/36",
+      "deps": [
+        "result-response-observation"
+      ],
+      "acceptance": "ADR0044·raw connection lock/save/heartbeat·bounded16/2초·monotonic failure·main/fixture 구성·실제 PG/프로세스/HTTP·취소/포화/삭제/immutable duplicate·관련 gates/domain95전체80·코드리뷰/CI"
     }
   ]
 }

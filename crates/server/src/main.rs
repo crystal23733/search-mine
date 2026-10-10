@@ -20,6 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|_| "Database configuration is invalid")?;
     let config = load_auth_config(|name| env::var(name).ok(), read_private_key)
         .map_err(|_| "Authentication configuration is invalid")?;
+    let mut result_owner = None;
     let auth = if let Some(config) = config {
         let online = load_online_config(|name| env::var(name).ok())
             .map_err(|_| "Online limits are invalid")?;
@@ -46,15 +47,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let _ = store.cleanup(clock.now()).await;
             }
         });
+        let writer = PgResultRuntime::claim(auth_pool.clone(), auth_clock.clone())
+            .await
+            .map_err(|_| "Online storage ownership unavailable")?;
+        result_owner = Some(writer.health());
         let registry = MatchRegistry::new(
             online.limits,
             clock,
             auth_clock.clone(),
             authorities.clone(),
-            Arc::new(PgResultRepository::new(
-                auth_pool.clone(),
-                auth_clock.clone(),
-            )),
+            Arc::new(writer),
         )
         .map_err(|_| "Online initialization failed")?;
         let runtime = config
@@ -126,11 +128,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = tokio::net::TcpListener::bind(bind)
         .await
         .map_err(|_| "Server bind failed")?;
-    axum::serve(listener, liar_server::app_with_auth(pool, auth))
-        .with_graceful_shutdown(async {
-            let _ = tokio::signal::ctrl_c().await;
-        })
-        .await
-        .map_err(|_| "HTTP server failed")?;
+    let app = liar_server::app_with_auth_and_owner(pool, auth, result_owner.clone());
+    run_with_result_owner(result_owner, async move {
+        axum::serve(listener, app)
+            .with_graceful_shutdown(async {
+                let _ = tokio::signal::ctrl_c().await;
+            })
+            .await
+    })
+    .await
+    .map_err(|_| "Online storage ownership lost")?
+    .map_err(|_| "HTTP server failed")?;
     Ok(())
 }

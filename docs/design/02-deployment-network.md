@@ -38,3 +38,5 @@ PostgreSQL 데이터는 전용 볼륨, 앱은 non-root/read-only rootfs, 임시 
 인터넷·전원 장애 시 새 온라인 매치를 시작하지 않는다. 이미 캐시된 클라이언트는 별도 로컬 봇/데일리 연습을 제공한다. 서버 재시작 시 진행 매치는 abort로 복구하고 승패·광고 카운트에 포함하지 않는다. 매일 pg_dump와 별도 매체 복사, 월1회 복구 검증을 수행한다. [DB](07-database.md), [운영 절차](16-observability-ops.md)를 따른다.
 
 RPO≤24시간·RTO≤2시간은 운영 목표다. 전원·회선·장비가 없으면 달성 보장하지 않는다. 초기 미니 PC OS·CPU/RAM·업로드 속도·회선 약관은 운영자 확인 사항이다.
+
+#97 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0044](../adr/0044-online-storage-owner.md) → 같은 raw 연결의 session lock/write·bounded 큐/2초 deadline·owner loss ready/프로세스 종료·실제 PG/HTTP 검증 → [검증97](../verification/97-online-storage-owner.md). 기존 인스턴스를 종료한 뒤 단일 새 인스턴스로 교체하며 journal/startup abort/OS kill-restart 결과 복구는 다음 작업이다.

@@ -273,5 +273,7 @@
   "result.unavailable": "Não foi possível consultar o resultado. Tente novamente.",
   "result.savedTitle": "Resultado pessoal salvo",
   "result.openedSafe": "Casas seguras abertas: {{count}}",
-  "result.statsUnavailable": "As estatísticas desta partida não estão disponíveis."
+  "result.statsUnavailable": "As estatísticas desta partida não estão disponíveis.",
+  "result.latest": "Resultado mais recente",
+  "result.latestEmpty": "Não há resultado recente salvo."
 }

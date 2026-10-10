@@ -66,3 +66,6 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 
 
 #103은 [ADR0047](../adr/0047-durable-lobby-admission.md)의 gated async admission/lease/정상 취소·receipt drop/cleanup failure와 실제 main HTTP·WS/OS kill/restart를 검사한다. blocking/DB 대기 경계와 원래 hash/UUID/countdown을 제어하며 backend 종료를 OS 강제 종료로 보고하지 않는다. [실행103](../verification/103-durable-lobby-admission.md).
+
+
+#105는 [ADR0048](../adr/0048-latest-personal-result.md)의 최신 선택/admitted순서/90일정확경계·공유HTTP권위·웹메모리lifecycle/8언어와 실제OSkill→새browser→ID없는발견을검사한다. test-only supervisor는진짜example자식프로세스를죽이며외부wall-clock만유지하고seed/board/ID를복사하지않는다. [실행105](../verification/105-latest-personal-result.md).

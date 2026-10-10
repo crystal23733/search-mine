@@ -28,17 +28,16 @@ pub struct ResultAuthentication {
 }
 pub fn disabled_result_router() -> Router {
     Router::new()
-        .route(
-            "/api/v1/results",
-            post(|| async {
-                (
-                    StatusCode::SERVICE_UNAVAILABLE,
-                    Json(serde_json::json!({"error":ResultError::Unavailable})),
-                )
-                    .into_response()
-            }),
-        )
+        .route("/api/v1/results", post(unavailable))
+        .route("/api/v1/results/latest", post(unavailable))
         .layer(middleware::map_response(no_store))
+}
+async fn unavailable() -> Response {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(serde_json::json!({"error":ResultError::Unavailable})),
+    )
+        .into_response()
 }
 async fn no_store(mut response: Response) -> Response {
     for (key, value) in [
@@ -103,6 +102,7 @@ pub fn result_router(
     });
     Ok(Router::new()
         .route("/api/v1/results", post(handle))
+        .route("/api/v1/results/latest", post(latest_handle))
         .layer(DefaultBodyLimit::max(MAX_RESULT_BYTES))
         .layer(middleware::map_response(no_store))
         .with_state(context))
@@ -112,6 +112,33 @@ async fn handle(
     uri: Uri,
     headers: HeaderMap,
     body: Result<Bytes, BytesRejection>,
+) -> Response {
+    respond(ctx, uri, headers, body, QueryKind::Match).await
+}
+async fn latest_handle(
+    State(ctx): State<Arc<Context>>,
+    uri: Uri,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    respond(ctx, uri, headers, body, QueryKind::Latest).await
+}
+#[derive(Clone, Copy)]
+enum QueryKind {
+    Match,
+    Latest,
+}
+#[derive(Clone, Copy)]
+enum Selection {
+    Match(Uuid),
+    Latest,
+}
+async fn respond(
+    ctx: Arc<Context>,
+    uri: Uri,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+    kind: QueryKind,
 ) -> Response {
     let result = async {
         let started = ctx.authentication.clock.now();
@@ -141,8 +168,18 @@ async fn handle(
             return Err(error(ResultError::Malformed));
         }
         let body = body.map_err(|cause| (cause.status(), ResultError::Malformed))?;
-        let input = decode_result(&body).map_err(error)?;
-        let id = Uuid::parse_str(&input.match_id).map_err(|_| error(ResultError::Malformed))?;
+        let selection = match kind {
+            QueryKind::Match => {
+                let input = decode_result(&body).map_err(error)?;
+                Selection::Match(
+                    Uuid::parse_str(&input.match_id).map_err(|_| error(ResultError::Malformed))?,
+                )
+            }
+            QueryKind::Latest => {
+                decode_latest_result(&body).map_err(error)?;
+                Selection::Latest
+            }
+        };
         let _permit = ctx
             .requests
             .clone()
@@ -186,13 +223,19 @@ async fn handle(
                 .map_err(error)?;
             let mut revoked = authority.revoked();
             let read = async {
-                let record = ctx
-                    .reader
-                    .read(session.account.id, id)
-                    .await
-                    .map_err(error)?;
+                let record = match selection {
+                    Selection::Match(id) => ctx.reader.read(session.account.id, id).await,
+                    Selection::Latest => ctx.reader.latest(session.account.id).await,
+                }
+                .map_err(error)?;
                 let projected = record
-                    .map(|row| row.project(session.account.id, id))
+                    .map(|row| {
+                        let id = match selection {
+                            Selection::Match(id) => id,
+                            Selection::Latest => row.match_id,
+                        };
+                        row.project(session.account.id, id)
+                    })
                     .transpose()
                     .map_err(error)?;
                 let last = ctx
@@ -210,8 +253,13 @@ async fn handle(
                 }
                 ctx.authentication
                     .authorities
-                    .with_authority(&authority, now, || {
-                        projected
+                    .with_authority(&authority, now, || match selection {
+                        Selection::Latest => Ok(Json(LatestResultResponse {
+                            v: PROTOCOL_VERSION,
+                            result: projected,
+                        })
+                        .into_response()),
+                        Selection::Match(_) => projected
                             .map(|result| {
                                 Json(PersonalResultResponse {
                                     v: PROTOCOL_VERSION,
@@ -219,7 +267,7 @@ async fn handle(
                                 })
                                 .into_response()
                             })
-                            .ok_or_else(|| error(ResultError::NotFound))
+                            .ok_or_else(|| error(ResultError::NotFound)),
                     })
                     .map_err(authority_error)?
             };

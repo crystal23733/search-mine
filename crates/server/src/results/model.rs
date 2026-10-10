@@ -17,6 +17,10 @@ pub struct StoredPersonalResult {
     pub own: Option<ResultStats>,
 }
 pub trait ResultReader: Send + Sync {
+    fn latest(
+        &self,
+        account: Uuid,
+    ) -> PortFuture<'_, Result<Option<StoredPersonalResult>, ResultError>>;
     fn read(
         &self,
         account: Uuid,

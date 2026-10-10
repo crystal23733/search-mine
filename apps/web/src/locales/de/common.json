@@ -273,5 +273,7 @@
   "result.unavailable": "Das Ergebnis konnte nicht geprüft werden. Versuche es erneut.",
   "result.savedTitle": "Gespeichertes persönliches Ergebnis",
   "result.openedSafe": "Geöffnete sichere Felder: {{count}}",
-  "result.statsUnavailable": "Die Statistiken für dieses Spiel sind nicht verfügbar."
+  "result.statsUnavailable": "Die Statistiken für dieses Spiel sind nicht verfügbar.",
+  "result.latest": "Letztes Spielergebnis",
+  "result.latestEmpty": "Kein kürzlich gespeichertes Ergebnis verfügbar."
 }

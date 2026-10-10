@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { Ui } from "./ui/context";
 import { AppShell } from "./ui/templates/AppShell";
 import { HomePage } from "./pages/HomePage";
+import { LatestResultPage } from "./pages/LatestResultPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { RulesPage } from "./pages/RulesPage";
 import { StatusPage } from "./pages/StatusPage";
@@ -88,6 +89,8 @@ export function App({ services }: { services: AppServices }) {
       />
     ) : route === "/" ? (
       <HomePage />
+    ) : route === "/results" ? (
+      <LatestResultPage />
     ) : route === "/settings" ? (
       <SettingsPage />
     ) : route === "/login" ? (

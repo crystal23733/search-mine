@@ -143,3 +143,6 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 #99 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0045](../adr/0045-result-retention-anchor.md) → 실제 저장 시각/90일 보존 anchor 분리·forward/NULL fallback·DST/정확 경계·known JSON/삭제 비복원 → [검증99](../verification/99-result-retention-anchor.md). 새 journal의 늦은 복구가 보존을 연장하지 않게 하며 실제 물리 정리25와 재시작 복구는 후속이다.
 
 #101 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0046](../adr/0046-active-match-journal.md) → typed active journal/register/discard/strict final·same-owner startup unknown abort·최소 schema/FK삭제·admitted anchor/seed 상한·실제 PG/관련 gates → [검증101](../verification/101-active-match-journal.md). 공개 admission/main 전환·OS kill-restart 통합은 후속이며 storage foundation을 사용자 복구 완료로 보고하지 않는다.
+
+
+#105 [ADR0048](../adr/0048-latest-personal-result.md): 본인 human 결과를 admitted/legacy anchor DESC→recorded DESC→UUID DESC로 선택한다. 정확90일/시각 제약·LIMIT2 첫ID의 중복참여자 fail-closed·최소projection/단일SQL snapshot을 유지한다. seed/상대정보나새보존필드는추가하지않는다. 실제SQL plan/상한·하드웨어한계를구분한다.

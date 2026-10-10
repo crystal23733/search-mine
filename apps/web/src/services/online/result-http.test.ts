@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { expect, test, vi } from "vitest";
-import { createResultHttp } from "./result-http";
+import { createLatestResultHttp, createResultHttp } from "./result-http";
 import { createAuth } from "../auth/session";
 import { PROVIDERS, type AuthTransport } from "../auth/types";
 import { matchId, personalResult } from "../../../test/online-fixture";
@@ -36,6 +36,64 @@ const response = (raw: unknown, status = 200) =>
     status,
     headers: { "content-type": "application/json" },
   });
+test("latest discovers one validated result or explicit null using a fixed ID-free POST and fresh proofs", async () => {
+  const s = await setup();
+  for (const result of [personalResult(), null]) {
+    const fetcher = vi.fn(async () => response({ v: 1, result }));
+    expect(
+      await createLatestResultHttp(s.auth, fetcher)(
+        s.owner,
+        new AbortController().signal,
+      ),
+    ).toEqual(result);
+    expect(fetcher.mock.calls[0]).toEqual([
+      "/api/v1/results/latest",
+      expect.objectContaining({
+        body: '{"v":1}',
+        cache: "no-store",
+        credentials: "same-origin",
+        redirect: "error",
+        headers: {
+          "content-type": "application/json",
+          "x-liar-csrf": "fresh-proof",
+        },
+      }),
+    ]);
+  }
+  expect(s.transport.bootstrap).toHaveBeenCalledTimes(4);
+  for (const r of [
+    response({ error: "unavailable" }, 503),
+    response({ error: "not_found" }, 404),
+    response({ v: 1, result: { ...personalResult(), seed: "hidden" } }),
+    response({ v: 1, result: null, account: "x" }),
+    response({ v: 1, result: { ...personalResult(), match_id: "invalid" } }),
+  ]) {
+    await expect(
+      createLatestResultHttp(
+        s.auth,
+        vi.fn(async () => r),
+      )(s.owner, new AbortController().signal),
+    ).rejects.toMatchObject({ code: "unavailable" });
+  }
+  s.auth.dispose();
+});
+test("latest body decoding stays within authenticated work and session replacement rejects even explicit null", async () => {
+  const s = await setup();
+  const fetcher = vi.fn(async () => {
+    vi.mocked(s.transport.bootstrap).mockResolvedValue(
+      bootstrap("22222222-2222-4222-8222-222222222222"),
+    );
+    return response({ v: 1, result: null });
+  });
+  await expect(
+    createLatestResultHttp(s.auth, fetcher)(
+      s.owner,
+      new AbortController().signal,
+    ),
+  ).rejects.toMatchObject({ code: "auth_invalid" });
+  expect(s.auth.connected()).toBe(false);
+  s.auth.dispose();
+});
 test("uses production auth before and after the minimal fixed POST and preserves stable authority", async () => {
   const s = await setup(),
     fetcher = vi.fn(async () => response({ v: 1, result: personalResult() }));

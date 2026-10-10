@@ -17,6 +17,32 @@ impl PgResultReader {
     }
 }
 impl ResultReader for PgResultReader {
+    fn latest(
+        &self,
+        account: Uuid,
+    ) -> PortFuture<'_, Result<Option<StoredPersonalResult>, ResultError>> {
+        Box::pin(async move {
+            let now = self.clock.now();
+            if account.is_nil() || !(0..=253402300799).contains(&now) {
+                return Err(ResultError::Unavailable);
+            }
+            // One snapshot selects the newest own human projection and detects duplicate seats.
+            let rows=sqlx::query("SELECT r.id,p.account_id,r.rules_hash,r.end_elapsed_ms,r.reason,p.outcome,p.opened_safe,p.mistakes,p.accusations,p.correct_accusations FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id WHERE p.account_id=$1 AND NOT p.is_bot AND r.recorded_at<=to_timestamp($2::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>=to_timestamp(0) AND COALESCE(r.retention_started_at,r.recorded_at)<=to_timestamp($2::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>to_timestamp($2::double precision)-interval '7776000 seconds' ORDER BY COALESCE(r.retention_started_at,r.recorded_at) DESC,r.recorded_at DESC,r.id DESC LIMIT 2")
+                .bind(account).bind(now).fetch_all(&self.pool).await.map_err(db_error)?;
+            if rows.len() == 2
+                && rows[0].try_get::<Uuid, _>("id").map_err(db_error)?
+                    == rows[1].try_get::<Uuid, _>("id").map_err(db_error)?
+            {
+                return Err(ResultError::Unavailable);
+            }
+            let Some(row) = rows.into_iter().next() else {
+                return Ok(None);
+            };
+            let result = stored(row)?;
+            result.clone().project(account, result.match_id)?;
+            Ok(Some(result))
+        })
+    }
     fn read(
         &self,
         account: Uuid,

@@ -6,8 +6,10 @@ import { NavLink } from "../ui/molecules/NavLink";
 import { ModeCard } from "../ui/molecules/ModeCard";
 import { AccountCard } from "../ui/organisms/AccountCard";
 import { DecorativeBoard } from "../ui/organisms/DecorativeBoard";
+import { useSnapshot } from "../ui/useSnapshot";
 export function HomePage() {
-  const { t, locale } = useUi();
+  const { t, locale, services } = useUi();
+  const auth = useSnapshot(services.auth);
   const minutes = new Intl.NumberFormat(locale, {
     style: "unit",
     unit: "minute",
@@ -42,6 +44,9 @@ export function HomePage() {
           <div class="desktop-account">
             <AccountCard />
           </div>
+          {services.auth.connected() && auth.account?.nickname && (
+            <NavLink path="/results">{t("result.latest")}</NavLink>
+          )}
         </div>
         <DecorativeBoard />
       </section>

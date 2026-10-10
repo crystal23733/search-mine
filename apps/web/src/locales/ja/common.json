@@ -273,5 +273,7 @@
   "result.unavailable": "結果を確認できませんでした。もう一度お試しください。",
   "result.savedTitle": "保存された自分の結果",
   "result.openedSafe": "開いた安全マス: {{count}}",
-  "result.statsUnavailable": "この対戦の統計は確認できません。"
+  "result.statsUnavailable": "この対戦の統計は確認できません。",
+  "result.latest": "最近の対戦結果",
+  "result.latestEmpty": "最近の保存された対戦結果はありません。"
 }

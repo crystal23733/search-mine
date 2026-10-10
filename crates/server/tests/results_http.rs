@@ -83,6 +83,22 @@ struct Records {
     delay: Mutex<Duration>,
 }
 impl ResultReader for Records {
+    fn latest(
+        &self,
+        account: Uuid,
+    ) -> PortFuture<'_, Result<Option<StoredPersonalResult>, ResultError>> {
+        Box::pin(async move {
+            let id = self
+                .rows
+                .lock()
+                .unwrap()
+                .keys()
+                .filter(|(owner, _)| *owner == account)
+                .map(|(_, id)| *id)
+                .max();
+            self.read(account, id.unwrap_or_else(Uuid::nil)).await
+        })
+    }
     fn read(
         &self,
         account: Uuid,
@@ -210,6 +226,159 @@ impl Fixture {
     async fn call(&self, user: &User, id: Uuid) -> (StatusCode, Value) {
         response(self.app.clone(), self.request(user, id)).await
     }
+    fn selected_request(&self, user: &User, id: Uuid, latest: bool) -> Request<Body> {
+        if latest {
+            self.latest_request(user)
+        } else {
+            self.request(user, id)
+        }
+    }
+    fn latest_request(&self, user: &User) -> Request<Body> {
+        let mut request = self.request(user, Uuid::new_v4());
+        *request.uri_mut() = "/api/v1/results/latest".parse().unwrap();
+        *request.body_mut() = Body::from(r#"{"v":1}"#);
+        request
+    }
+}
+
+#[tokio::test]
+async fn latest_result_has_no_match_input_and_returns_explicit_null_only_for_absence() {
+    let f = Fixture::new(2, 4);
+    let user = f.user(None);
+    let other = f.user(None);
+    f.save(&other);
+    let reply = f
+        .app
+        .clone()
+        .oneshot(f.latest_request(&user))
+        .await
+        .unwrap();
+    assert_eq!(reply.status(), StatusCode::OK);
+    let raw: Value =
+        serde_json::from_slice(&to_bytes(reply.into_body(), 4096).await.unwrap()).unwrap();
+    assert_eq!(raw, json!({"v":1,"result":null}));
+    let id = f.save(&user);
+    let expected = f.call(&user, id).await;
+    assert_eq!(
+        response(f.app.clone(), f.latest_request(&user)).await,
+        expected
+    );
+}
+
+#[tokio::test]
+async fn latest_disabled_configuration_returns_unavailable_without_cache() {
+    let request = Request::post("/api/v1/results/latest")
+        .body(Body::from(r#"{"v":1}"#))
+        .unwrap();
+    let reply = liar_server::app(None).oneshot(request).await.unwrap();
+    assert_eq!(reply.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(reply.headers()[header::CACHE_CONTROL], "no-store");
+}
+
+#[tokio::test]
+async fn latest_and_match_lookup_share_request_capacity_and_account_rate() {
+    let f = Fixture::new(1, 2);
+    let user = f.user(None);
+    let id = f.save(&user);
+    f.records.gate.hold.store(true, Ordering::SeqCst);
+    let held = tokio::spawn(response(f.app.clone(), f.latest_request(&user)));
+    f.records.gate.entered.notified().await;
+    assert_eq!(f.call(&user, id).await.0, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(f.records.reads.load(Ordering::SeqCst), 1);
+    held.abort();
+    assert!(held.await.unwrap_err().is_cancelled());
+    f.records.gate.release();
+    assert_eq!(f.call(&user, id).await.0, StatusCode::OK);
+    let f = Fixture::new(1, 2);
+    let user = f.user(None);
+    let id = f.save(&user);
+    for index in 0..20 {
+        assert_eq!(
+            response(f.app.clone(), f.selected_request(&user, id, index % 2 == 0))
+                .await
+                .0,
+            StatusCode::OK
+        );
+    }
+    for latest in [false, true] {
+        assert_eq!(
+            response(f.app.clone(), f.selected_request(&user, id, latest))
+                .await
+                .0,
+            StatusCode::TOO_MANY_REQUESTS
+        );
+    }
+    let rotated = f.user(Some(user.account));
+    assert_eq!(
+        response(f.app.clone(), f.latest_request(&rotated)).await.0,
+        StatusCode::TOO_MANY_REQUESTS
+    );
+    f.clock.0.store(18001, Ordering::SeqCst);
+    assert_eq!(
+        response(f.app.clone(), f.latest_request(&rotated)).await.0,
+        StatusCode::OK
+    );
+}
+
+#[tokio::test]
+async fn latest_closed_input_and_browser_proof_reject_before_any_storage_io() {
+    let f = Fixture::new(1, 1);
+    let user = f.user(None);
+    for case in 0..10 {
+        let mut req = f.latest_request(&user);
+        let expected = match case {
+            0 => {
+                *req.body_mut() = Body::from(r#"{"v":1,"match_id":"x"}"#);
+                StatusCode::BAD_REQUEST
+            }
+            1 => {
+                *req.body_mut() = Body::from(r#"{"v":1,"account_id":"x"}"#);
+                StatusCode::BAD_REQUEST
+            }
+            2 => {
+                *req.body_mut() = Body::from(r#"{"v":1,"v":1}"#);
+                StatusCode::BAD_REQUEST
+            }
+            3 => {
+                *req.body_mut() = Body::from(r#"{"v":2}"#);
+                StatusCode::BAD_REQUEST
+            }
+            4 => {
+                *req.uri_mut() = "/api/v1/results/latest?limit=1".parse().unwrap();
+                StatusCode::BAD_REQUEST
+            }
+            5 => {
+                req.headers_mut()
+                    .append(header::CONTENT_TYPE, "application/json".parse().unwrap());
+                StatusCode::BAD_REQUEST
+            }
+            6 => {
+                *req.body_mut() = Body::from(" ".repeat(MAX_RESULT_BYTES + 1));
+                StatusCode::PAYLOAD_TOO_LARGE
+            }
+            7 => {
+                req.headers_mut().remove(header::ORIGIN);
+                StatusCode::FORBIDDEN
+            }
+            8 => {
+                req.headers_mut()
+                    .insert("x-liar-csrf", "wrong".parse().unwrap());
+                StatusCode::FORBIDDEN
+            }
+            _ => {
+                req.headers_mut()
+                    .insert(header::ORIGIN, "https://other.example".parse().unwrap());
+                StatusCode::FORBIDDEN
+            }
+        };
+        assert_eq!(
+            response(f.app.clone(), req).await.0,
+            expected,
+            "case {case}"
+        );
+    }
+    assert_eq!(f.records.reads.load(Ordering::SeqCst), 0);
+    assert_eq!(f.sessions.reads.load(Ordering::SeqCst), 0);
 }
 
 async fn response(app: Router, request: Request<Body>) -> (StatusCode, Value) {
@@ -386,167 +555,180 @@ async fn request_boundaries_reject_without_reading_result_storage() {
 
 #[tokio::test]
 async fn failed_missing_incomplete_expired_or_corrupt_inputs_never_emit_result() {
-    for case in 0..7 {
-        let f = Fixture::new(1, 1);
-        let user = f.user(None);
-        let id = f.save(&user);
-        let expected = match case {
-            0 => {
-                f.sessions.fail.store(true, Ordering::SeqCst);
-                StatusCode::SERVICE_UNAVAILABLE
-            }
-            1 => {
-                f.records.fail.store(true, Ordering::SeqCst);
-                StatusCode::SERVICE_UNAVAILABLE
-            }
-            2 => {
-                f.sessions.rows.lock().unwrap().clear();
-                StatusCode::UNAUTHORIZED
-            }
-            3 => {
-                f.sessions
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&user.token.hash())
-                    .unwrap()
-                    .account
-                    .nickname = None;
-                StatusCode::UNAUTHORIZED
-            }
-            4 => {
-                f.clock.0.store(20000, Ordering::SeqCst);
-                StatusCode::UNAUTHORIZED
-            }
-            5 => {
-                f.records
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&(user.account, id))
-                    .unwrap()
-                    .account = Uuid::new_v4();
-                StatusCode::SERVICE_UNAVAILABLE
-            }
-            _ => {
-                f.sessions
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&user.token.hash())
-                    .unwrap()
-                    .authenticated_at = 18001;
-                StatusCode::UNAUTHORIZED
-            }
-        };
-        let (status, body) = f.call(&user, id).await;
-        assert_eq!(status, expected, "case {case}");
-        assert!(body.get("result").is_none());
+    for latest in [false, true] {
+        for case in 0..7 {
+            let f = Fixture::new(1, 1);
+            let user = f.user(None);
+            let id = f.save(&user);
+            let expected = match case {
+                0 => {
+                    f.sessions.fail.store(true, Ordering::SeqCst);
+                    StatusCode::SERVICE_UNAVAILABLE
+                }
+                1 => {
+                    f.records.fail.store(true, Ordering::SeqCst);
+                    StatusCode::SERVICE_UNAVAILABLE
+                }
+                2 => {
+                    f.sessions.rows.lock().unwrap().clear();
+                    StatusCode::UNAUTHORIZED
+                }
+                3 => {
+                    f.sessions
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&user.token.hash())
+                        .unwrap()
+                        .account
+                        .nickname = None;
+                    StatusCode::UNAUTHORIZED
+                }
+                4 => {
+                    f.clock.0.store(20000, Ordering::SeqCst);
+                    StatusCode::UNAUTHORIZED
+                }
+                5 => {
+                    f.records
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&(user.account, id))
+                        .unwrap()
+                        .account = Uuid::new_v4();
+                    StatusCode::SERVICE_UNAVAILABLE
+                }
+                _ => {
+                    f.sessions
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&user.token.hash())
+                        .unwrap()
+                        .authenticated_at = 18001;
+                    StatusCode::UNAUTHORIZED
+                }
+            };
+            let (status, body) =
+                response(f.app.clone(), f.selected_request(&user, id, latest)).await;
+            assert_eq!(status, expected, "case {case}");
+            assert!(body.get("result").is_none());
+        }
     }
 }
 
 #[tokio::test]
 async fn revocation_during_initial_session_read_rejects_stale_storage_reply() {
-    let f = Fixture::new(1, 1);
-    let user = f.user(None);
-    let id = f.save(&user);
-    f.sessions.gate.hold.store(true, Ordering::SeqCst);
-    let task = tokio::spawn(response(f.app.clone(), f.request(&user, id)));
-    f.sessions.gate.entered.notified().await;
-    let barrier = f.authorities.session(user.token.hash());
-    drop(barrier);
-    f.sessions.gate.release();
-    assert_eq!(task.await.unwrap().0, StatusCode::UNAUTHORIZED);
-    assert_eq!(f.records.reads.load(Ordering::SeqCst), 0);
+    for latest in [false, true] {
+        let f = Fixture::new(1, 1);
+        let user = f.user(None);
+        let id = f.save(&user);
+        f.sessions.gate.hold.store(true, Ordering::SeqCst);
+        let task = tokio::spawn(response(
+            f.app.clone(),
+            f.selected_request(&user, id, latest),
+        ));
+        f.sessions.gate.entered.notified().await;
+        let barrier = f.authorities.session(user.token.hash());
+        drop(barrier);
+        f.sessions.gate.release();
+        assert_eq!(task.await.unwrap().0, StatusCode::UNAUTHORIZED);
+        assert_eq!(f.records.reads.load(Ordering::SeqCst), 0);
+    }
 }
 
 #[tokio::test]
 async fn post_storage_session_proof_and_revocation_close_every_response() {
-    for case in 0..10 {
-        let f = Fixture::new(2, 2);
-        let user = f.user(None);
-        let id = f.save(&user);
-        f.records.gate.hold.store(true, Ordering::SeqCst);
-        let task = tokio::spawn(response(f.app.clone(), f.request(&user, id)));
-        f.records.gate.entered.notified().await;
-        let mut barrier = None;
-        match case {
-            0 => {
-                barrier = Some(f.authorities.session(user.token.hash()));
+    for latest in [false, true] {
+        for case in 0..10 {
+            let f = Fixture::new(2, 2);
+            let user = f.user(None);
+            let id = f.save(&user);
+            f.records.gate.hold.store(true, Ordering::SeqCst);
+            let task = tokio::spawn(response(
+                f.app.clone(),
+                f.selected_request(&user, id, latest),
+            ));
+            f.records.gate.entered.notified().await;
+            let mut barrier = None;
+            match case {
+                0 => {
+                    barrier = Some(f.authorities.session(user.token.hash()));
+                }
+                1 => {
+                    barrier = Some(f.authorities.account(user.account));
+                }
+                2 => {
+                    f.sessions.rows.lock().unwrap().clear();
+                }
+                3 => {
+                    f.sessions
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&user.token.hash())
+                        .unwrap()
+                        .id = Uuid::new_v4();
+                }
+                4 => {
+                    f.sessions
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&user.token.hash())
+                        .unwrap()
+                        .account
+                        .id = Uuid::new_v4();
+                }
+                5 => {
+                    f.sessions
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&user.token.hash())
+                        .unwrap()
+                        .expires_at += 1;
+                }
+                6 => {
+                    f.sessions
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&user.token.hash())
+                        .unwrap()
+                        .created_at -= 1;
+                }
+                7 => {
+                    f.sessions
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&user.token.hash())
+                        .unwrap()
+                        .authenticated_at += 1;
+                }
+                8 => {
+                    f.sessions
+                        .rows
+                        .lock()
+                        .unwrap()
+                        .get_mut(&user.token.hash())
+                        .unwrap()
+                        .account
+                        .nickname = None;
+                }
+                _ => {
+                    f.clock.0.store(20000, Ordering::SeqCst);
+                }
             }
-            1 => {
-                barrier = Some(f.authorities.account(user.account));
-            }
-            2 => {
-                f.sessions.rows.lock().unwrap().clear();
-            }
-            3 => {
-                f.sessions
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&user.token.hash())
-                    .unwrap()
-                    .id = Uuid::new_v4();
-            }
-            4 => {
-                f.sessions
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&user.token.hash())
-                    .unwrap()
-                    .account
-                    .id = Uuid::new_v4();
-            }
-            5 => {
-                f.sessions
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&user.token.hash())
-                    .unwrap()
-                    .expires_at += 1;
-            }
-            6 => {
-                f.sessions
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&user.token.hash())
-                    .unwrap()
-                    .created_at -= 1;
-            }
-            7 => {
-                f.sessions
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&user.token.hash())
-                    .unwrap()
-                    .authenticated_at += 1;
-            }
-            8 => {
-                f.sessions
-                    .rows
-                    .lock()
-                    .unwrap()
-                    .get_mut(&user.token.hash())
-                    .unwrap()
-                    .account
-                    .nickname = None;
-            }
-            _ => {
-                f.clock.0.store(20000, Ordering::SeqCst);
-            }
+            f.records.gate.release();
+            assert_eq!(
+                task.await.unwrap().0,
+                StatusCode::UNAUTHORIZED,
+                "case {case}"
+            );
+            drop(barrier);
         }
-        f.records.gate.release();
-        assert_eq!(
-            task.await.unwrap().0,
-            StatusCode::UNAUTHORIZED,
-            "case {case}"
-        );
-        drop(barrier);
     }
 }
 
@@ -569,17 +751,29 @@ async fn capacity_and_cancellation_release_the_request_and_subject_lease() {
 
 #[tokio::test(start_paused = true)]
 async fn all_three_io_phases_share_one_deadline_and_timeout_frees_capacity() {
-    let f = Fixture::new(1, 1);
-    let user = f.user(None);
-    let id = f.save(&user);
-    *f.sessions.delay.lock().unwrap() = Duration::from_millis(700);
-    *f.records.delay.lock().unwrap() = Duration::from_millis(700);
-    let start = tokio::time::Instant::now();
-    assert_eq!(f.call(&user, id).await.0, StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(start.elapsed(), Duration::from_secs(2));
-    *f.sessions.delay.lock().unwrap() = Duration::ZERO;
-    *f.records.delay.lock().unwrap() = Duration::ZERO;
-    assert_eq!(f.call(&user, id).await.0, StatusCode::OK);
+    for latest in [false, true] {
+        let f = Fixture::new(1, 1);
+        let user = f.user(None);
+        let id = f.save(&user);
+        *f.sessions.delay.lock().unwrap() = Duration::from_millis(700);
+        *f.records.delay.lock().unwrap() = Duration::from_millis(700);
+        let start = tokio::time::Instant::now();
+        assert_eq!(
+            response(f.app.clone(), f.selected_request(&user, id, latest))
+                .await
+                .0,
+            StatusCode::SERVICE_UNAVAILABLE
+        );
+        assert_eq!(start.elapsed(), Duration::from_secs(2));
+        *f.sessions.delay.lock().unwrap() = Duration::ZERO;
+        *f.records.delay.lock().unwrap() = Duration::ZERO;
+        assert_eq!(
+            response(f.app.clone(), f.selected_request(&user, id, latest))
+                .await
+                .0,
+            StatusCode::OK
+        );
+    }
 }
 
 #[tokio::test]

@@ -9,6 +9,9 @@ export function dailyTestPorts() {
   const records = createDailyRecords();
   return {
     online: {
+      latestResult: async () => {
+        throw Error("unavailable");
+      },
       result: async () => {
         throw Error("unavailable");
       },

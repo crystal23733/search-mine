@@ -20,6 +20,10 @@ export interface OnlineConnection {
   close(): void;
 }
 export interface OnlinePort {
+  latestResult(
+    owner: RequestOwner,
+    signal: AbortSignal,
+  ): Promise<PersonalResult | null>;
   result(
     owner: RequestOwner,
     matchId: string,

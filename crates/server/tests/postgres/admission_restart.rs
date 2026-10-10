@@ -151,6 +151,17 @@ async fn assert_unknown(
         body["result"],
         json!({"match_id":id.to_string(),"rules_hash":hash,"end_elapsed_ms":null,"own":null,"result":{"outcome":"abort","reason":"server_failure","completed":false}})
     );
+    let latest = client
+        .post(format!("{origin}/api/v1/results/latest"))
+        .header("origin", "https://game.example")
+        .header("cookie", &user.cookie)
+        .header("x-liar-csrf", &user.csrf)
+        .json(&json!({"v":1}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(latest.status(), StatusCode::OK);
+    assert_eq!(latest.json::<Value>().await.unwrap(), body);
     let final_row = stored(pool, id).await;
     assert!(final_row["result"]["secret_seed"].is_null());
     assert!(final_row["result"]["end_elapsed_ms"].is_null());

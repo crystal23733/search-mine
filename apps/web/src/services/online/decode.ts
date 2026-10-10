@@ -69,43 +69,52 @@ const list =
     Array.isArray(v) && v.length >= min && v.length <= max
       ? v.map(decode)
       : fail();
-const personal = struct({
-  v: one(PROTOCOL_VERSION),
+const personalValue = struct({
+  match_id: uuid,
+  rules_hash: text(/^[0-9a-f]{64}$/),
+  end_elapsed_ms: optional(int()),
   result: struct({
-    match_id: uuid,
-    rules_hash: text(/^[0-9a-f]{64}$/),
-    end_elapsed_ms: optional(int()),
-    result: struct({
-      reason: one(
-        "clear",
-        "timeout",
-        "forfeit",
-        "abandoned",
-        "server_failure",
-        "cancelled",
-      ),
-      outcome: one("win", "loss", "draw", "abort", "cancelled"),
-      completed: bool,
-    }),
-    own: optional(
-      struct({
-        opened_safe: int(256),
-        mistakes: int(4096),
-        accusation_attempts: int(4096),
-        correct_accusations: int(4096),
-      }),
+    reason: one(
+      "clear",
+      "timeout",
+      "forfeit",
+      "abandoned",
+      "server_failure",
+      "cancelled",
     ),
+    outcome: one("win", "loss", "draw", "abort", "cancelled"),
+    completed: bool,
   }),
+  own: optional(
+    struct({
+      opened_safe: int(256),
+      mistakes: int(4096),
+      accusation_attempts: int(4096),
+      correct_accusations: int(4096),
+    }),
+  ),
 });
+const personal = struct({ v: one(PROTOCOL_VERSION), result: personalValue });
+const latestPersonal = struct({
+  v: one(PROTOCOL_VERSION),
+  result: optional(personalValue),
+});
+export function decodeLatestResult(value: unknown): PersonalResult | null {
+  const { result } = latestPersonal(value);
+  return result === null ? null : validatePersonal(result);
+}
 export function decodePersonalResult(
   value: unknown,
   matchId: string,
 ): PersonalResult {
   const { result } = personal(value);
+  if (result.match_id !== matchId) fail();
+  return validatePersonal(result);
+}
+function validatePersonal(result: PersonalResult): PersonalResult {
   if (
-    result.match_id !== matchId ||
-    (result.own !== null &&
-      result.own.correct_accusations > result.own.accusation_attempts)
+    result.own !== null &&
+    result.own.correct_accusations > result.own.accusation_attempts
   )
     fail();
   if (result.own === null || result.end_elapsed_ms === null) {

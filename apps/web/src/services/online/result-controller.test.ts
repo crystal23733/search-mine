@@ -46,6 +46,7 @@ async function setup() {
     close: vi.fn(),
   };
   const port: OnlinePort = {
+    latestResult: vi.fn(),
     result: vi.fn(async () => personalResult()),
     lobby: vi.fn(
       async () =>

@@ -35,8 +35,8 @@ export default defineConfig({
     ...(authFixture
       ? [
           {
-            command: "cargo run --locked -p liar-server --example auth_fixture",
-            url: "http://127.0.0.1:3001/__fixture/ready",
+            command: "node scripts/start-auth-fixture.mjs",
+            url: "http://127.0.0.1:3002/__fixture/ready",
             reuseExistingServer: false,
             timeout: 120000,
           },

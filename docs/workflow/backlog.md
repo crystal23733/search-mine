@@ -94,3 +94,5 @@
 #91 auth-recovery-observation: 선행89/PR90병합·종료 후 실제HTTPS 철회 응답의 관측 수명을 안정화한다. [ADR0041](../adr/0041-auth-recovery-response-observation.md)/[검증91](../verification/91-auth-recovery-observation.md). 미확인 통계/journal/startup abort는 후속18,83원인미확정OPEN.
 
 #91/PR92은 develop8347efa에 병합·종료했다. 다음 [#93 미확인 통계 계약](https://github.com/crystal23733/search-mine/issues/93)은 [ADR0042](../adr/0042-unknown-result-details.md)의 명시 null·DB/HTTP/8언어 화면을 연결한다. 실제 영속 journal/startup abort·새로고침 발견과 상위18은 후속이며 #83/42/26/27 출구는 별도다.
+
+#93/PR94은 develope5493be에 병합·종료했다. CI89passed+1flaky의 기존 known 결과 본문 관측은 다음 [#95](https://github.com/crystal23733/search-mine/issues/95)가 [ADR0043](../adr/0043-result-response-observation.md)에 따라 수정한다. 제품 결과 계약은 통과했으며 실제 영속 소유 연결/journal/startup/processkill·새로고침 발견과 상위18은 후속이다.

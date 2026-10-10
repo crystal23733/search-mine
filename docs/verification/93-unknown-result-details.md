@@ -25,3 +25,7 @@ pm-ai-shipping:code-review의 correctness를 기준 develop8347efa 대비 변경
 서버 cargo llvm-cov의 실제 DB32개/ignored0(3.27초)·HTTP14개(0.94초) 포함 전체 검증 통과. Auth385/387=99.48%, Match287/289=99.31%, Lobby362/368=98.37%, Result58/58=100%, 전체6166/6646=92.78%로95/80 기준을 충족했다. 테스트/예제 경로를 제외하고 실행 entry point를 포함했다. 웹 line2277/2589=87.94%다.
 
 최종 correctness 리뷰에서 explicit null/미지정/0 구분, SQL CHECK의 null 통과 방지·부모/자식 fail-closed, immutable writer·삭제 비복원, known JSON/과거 hash 유지, 서버 completion·동일 match·전후 세션 proof, 요청 역순/폐기·WS 우선·UI 권한을 확인했다. fixture transaction의 부모/자식 원자성과 production writer 미활성 경계를 함께 검토했다. 검토 범위에서 근거가 있는 미해결 finding은 없다. #83 원인·실제 journal/startup/processkill·외부42/26/27·보안/성능 전체 감사를 완료했다고 주장하지 않는다. 원격 CI·PR/병합은 후속 기록한다.
+
+## 원격 완료
+
+[PR94](https://github.com/crystal23733/search-mine/pull/94)은 2026-10-10T12:20:25Z develope5493bea9807149c153727a7c3f773b36ad85b66에 병합됐고 #93은12:20:26Z 종료됐다. 최신headb2ec2e89/Ready/CLEAN·본문후 Repository38051546508 포함 모든checks SUCCESS 확인. Product38050829104: PG18.6 DB32ignored0(8.46초/coverage7.85초),199unit35파일16.25초·웹87.94%·Result100/서버92.78%. Browser89passed+1flaky6.5분: 기존 known1440px의 늦은 Response.json/CDP NoData가 최초 실패·재시도 성공했으며 unknown 기능 실패와 구분한다. 최초 artifact .tmp/result93-ci-failures 보존, 다음 #95가 관측 수명을 수정한다. 로컬90retry0와 구분하며 #83 원인을 해결했다고 주장하지 않는다.

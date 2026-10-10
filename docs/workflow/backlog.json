@@ -688,6 +688,18 @@
         "auth-recovery-observation"
       ],
       "acceptance": "ADR0042·Rust→TS 명시null/unknown abort·forward migration/16null패턴/known upgrade·reader/project/HTTP/strict decoder/8언어 숫자미생성·writer 충돌/삭제 비복원·actual PG/HTTPS PCmobile·RedGreen/gates/review/CI; 실제 journal/restart는 후속18"
+    },
+    {
+      "key": "result-response-observation",
+      "issue": 95,
+      "milestone": "M3",
+      "title": "test(results): 본인 저장 결과 응답의 관측 수명 안정화",
+      "requirements": "FR11/14/16, NFR05/08",
+      "scenarios": "TS15/16/20/21/26/31/35/36",
+      "deps": [
+        "unknown-result-details"
+      ],
+      "acceptance": "ADR0043·actual HTTPS one-use 관측후동일APIResponse전달·known/unknown PCmobile 반복/원격최초Red보존·기존권한/503/404/keyboard/8locale/storage0단언유지·제품/Rust/기한/SW/timeout/retry0변경·전체browser/CI/review"
     }
   ]
 }

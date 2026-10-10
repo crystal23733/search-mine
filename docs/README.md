@@ -69,3 +69,5 @@
 - [ADR0043 결과 응답 관측](adr/0043-result-response-observation.md) · [#95 검증](verification/95-result-response-observation.md)
 
 - [ADR0044 온라인 저장 소유 연결](adr/0044-online-storage-owner.md) · [#97 검증](verification/97-online-storage-owner.md)
+
+- [ADR0045 결과 보존 기준](adr/0045-result-retention-anchor.md) · [#99 검증](verification/99-result-retention-anchor.md)

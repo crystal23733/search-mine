@@ -86,18 +86,9 @@ async fn forward_migration_preserves_known_results_and_rejects_partial_nulls() {
     let clock = Arc::new(Clock(AtomicI64::new(19000)));
     let writer = PgResultRepository::new(pool.clone(), clock.clone());
     let reader = PgResultReader::new(pool.clone(), clock);
-    let finished = super::online::finished([Some(a), Some(b)]);
-    writer.save(finished.clone()).await.unwrap();
-    let before = serde_json::to_value(
-        reader
-            .read(a, finished.id)
-            .await
-            .unwrap()
-            .unwrap()
-            .project(a, finished.id)
-            .unwrap(),
-    )
-    .unwrap();
+    let finished = legacy_result([Some(a), Some(b)]);
+    seed_legacy_result(&pool, &finished, 19000).await;
+    let before = legacy_public_result();
     Migrator::new(Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../migrations"
@@ -601,4 +592,190 @@ async fn actual_http_sessions_and_delete_barrier_reject_a_result_captured_before
         StatusCode::UNAUTHORIZED
     );
     close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn retention_anchor_is_explicit_and_immutable_under_normal_and_owned_retry() {
+    use liar_server::online::PgResultRuntime;
+    let pool = auth_pool().await;
+    let (account, _) = participant(&PgAuthStore::new(pool.clone())).await;
+    let clock = Arc::new(Clock(AtomicI64::new(1_800_000_000)));
+    let writer = PgResultRepository::new(pool.clone(), clock.clone());
+    let result = super::online::finished([Some(account), None]);
+    writer.save(result.clone()).await.unwrap();
+    let snapshot=sqlx::query_as::<_,(Option<bool>,i64,i64)>("SELECT retention_started_at=recorded_at,EXTRACT(EPOCH FROM recorded_at)::bigint,EXTRACT(EPOCH FROM seed_expires_at)::bigint FROM online_match_results WHERE id=$1").bind(result.id).fetch_one(&pool).await.unwrap();
+    assert_eq!(snapshot, (Some(true), 1_800_000_000, 1_800_604_800));
+    clock.0.store(1_800_000_123, Ordering::SeqCst);
+    let owned = PgResultRuntime::claim(pool.clone(), clock.clone())
+        .await
+        .unwrap();
+    assert_eq!(owned.save(result.clone()).await, Ok(SaveResult::Duplicate));
+    let repeated=sqlx::query_as::<_,(Option<bool>,i64,i64)>("SELECT retention_started_at=recorded_at,EXTRACT(EPOCH FROM recorded_at)::bigint,EXTRACT(EPOCH FROM seed_expires_at)::bigint FROM online_match_results WHERE id=$1").bind(result.id).fetch_one(&pool).await.unwrap();
+    assert_eq!(
+        snapshot, repeated,
+        "Retry must not restart either retention clock"
+    );
+    let next = super::online::finished([Some(account), None]);
+    assert_eq!(owned.save(next.clone()).await, Ok(SaveResult::Saved));
+    let explicit: Option<bool> = sqlx::query_scalar(
+        "SELECT retention_started_at=recorded_at FROM online_match_results WHERE id=$1",
+    )
+    .bind(next.id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(explicit, Some(true));
+    let reader = PgResultReader::new(pool.clone(), clock);
+    let view = serde_json::to_value(
+        reader
+            .read(account, next.id)
+            .await
+            .unwrap()
+            .unwrap()
+            .project(account, next.id)
+            .unwrap(),
+    )
+    .unwrap();
+    assert!(view.get("recorded_at").is_none() && view.get("retention_started_at").is_none());
+    sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
+        .bind(account)
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(owned.save(next.clone()).await, Ok(SaveResult::Duplicate));
+    assert!(reader.read(account, next.id).await.unwrap().is_none());
+    drop(owned);
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn retention_anchor_expires_old_participation_despite_recent_storage_and_keeps_null_fallback()
+{
+    let pool = auth_pool().await;
+    let (account, _) = participant(&PgAuthStore::new(pool.clone())).await;
+    let clock = Arc::new(Clock(AtomicI64::new(1_800_000_000)));
+    let result = super::online::finished([Some(account), None]);
+    PgResultRepository::new(pool.clone(), clock.clone())
+        .save(result.clone())
+        .await
+        .unwrap();
+    let reader = PgResultReader::new(pool.clone(), clock.clone());
+    for age in [7775999_i64, 7776000, 7776001] {
+        sqlx::query("UPDATE online_match_results SET retention_started_at=to_timestamp($2::double precision) WHERE id=$1").bind(result.id).bind(1_800_000_000-age).execute(&pool).await.unwrap();
+        assert_eq!(
+            reader.read(account, result.id).await.unwrap().is_some(),
+            age < 7776000,
+            "Recent save must not restart an older retention anchor"
+        );
+    }
+    for statement in [
+        "UPDATE online_match_results SET retention_started_at=recorded_at+interval '1 second' WHERE id=$1",
+        "UPDATE online_match_results SET retention_started_at='-infinity'::timestamptz WHERE id=$1",
+        "UPDATE online_match_results SET retention_started_at='infinity'::timestamptz WHERE id=$1",
+        "UPDATE online_match_results SET retention_started_at=to_timestamp(-1) WHERE id=$1",
+        "UPDATE online_match_results SET retention_started_at=to_timestamp(253402300800::double precision) WHERE id=$1",
+    ] {
+        let error = sqlx::query(statement)
+            .bind(result.id)
+            .execute(&pool)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            error.as_database_error().unwrap().code().as_deref(),
+            Some("23514")
+        );
+    }
+    sqlx::query("UPDATE online_match_results SET retention_started_at=NULL WHERE id=$1")
+        .bind(result.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert!(reader.read(account, result.id).await.unwrap().is_some());
+    clock.0.store(1_800_000_000 + 7775999, Ordering::SeqCst);
+    assert!(reader.read(account, result.id).await.unwrap().is_some());
+    clock.0.store(1_800_000_000 + 7776000, Ordering::SeqCst);
+    assert!(reader.read(account, result.id).await.unwrap().is_none());
+    clock.0.store(1_800_000_000 - 1, Ordering::SeqCst);
+    assert!(
+        reader.read(account, result.id).await.unwrap().is_none(),
+        "Actual storage from the future must fail closed"
+    );
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn retention_anchor_forward_migration_backfills_and_preserves_legacy_insert_and_json() {
+    let pool = auth_pool_through(Some(202610100001)).await;
+    let store = PgAuthStore::new(pool.clone());
+    let (a, _) = participant(&store).await;
+    let (b, _) = participant(&store).await;
+    let before = legacy_public_result();
+    let result = legacy_result([Some(a), Some(b)]);
+    seed_legacy_result(&pool, &result, 19000).await;
+    Migrator::new(Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../migrations"
+    )))
+    .await
+    .unwrap()
+    .run(&pool)
+    .await
+    .unwrap();
+    let anchor:Option<i64>=sqlx::query_scalar("SELECT EXTRACT(EPOCH FROM retention_started_at)::bigint FROM online_match_results WHERE id=$1").bind(result.id).fetch_one(&pool).await.unwrap();
+    assert_eq!(anchor, Some(19000));
+    let reader = PgResultReader::new(pool.clone(), Arc::new(Clock(AtomicI64::new(19000))));
+    assert_eq!(
+        serde_json::to_value(
+            reader
+                .read(a, result.id)
+                .await
+                .unwrap()
+                .unwrap()
+                .project(a, result.id)
+                .unwrap()
+        )
+        .unwrap(),
+        before
+    );
+    let mut legacy = result.clone();
+    legacy.id = Uuid::new_v4();
+    seed_legacy_result(&pool, &legacy, 19000).await;
+    let anchor:Option<i64>=sqlx::query_scalar("SELECT EXTRACT(EPOCH FROM retention_started_at)::bigint FROM online_match_results WHERE id=$1").bind(legacy.id).fetch_one(&pool).await.unwrap();
+    assert!(
+        anchor.is_none(),
+        "Legacy INSERT must remain compatible without guessing its anchor"
+    );
+    assert!(reader.read(a, legacy.id).await.unwrap().is_some());
+    close_auth_pool(pool).await;
+}
+
+fn legacy_public_result() -> Value {
+    serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/fixtures/results/known-before-retention.json"
+    )))
+    .unwrap()
+}
+fn legacy_result(accounts: [Option<Uuid>; 2]) -> liar_server::online::FinishedMatch {
+    let before = legacy_public_result();
+    let mut result = super::online::finished(accounts);
+    result.id = Uuid::parse_str(before["match_id"].as_str().unwrap()).unwrap();
+    result.rules_hash = before["rules_hash"].as_str().unwrap().to_owned();
+    result
+}
+async fn seed_legacy_result(
+    pool: &sqlx::PgPool,
+    result: &liar_server::online::FinishedMatch,
+    now: i64,
+) {
+    // Historical SQL/JSON fixture captured from the real reader before the anchor migration.
+    let mut tx = pool.begin().await.unwrap();
+    sqlx::query("INSERT INTO online_match_results(id,rules_hash,secret_seed,end_elapsed_ms,reason,recorded_at,seed_expires_at) VALUES($1,$2,$3,$4,'timeout',to_timestamp($5::double precision),to_timestamp($5::double precision)+interval '7 days')").bind(result.id).bind(&result.rules_hash).bind(result.seed.as_slice()).bind(result.ended_ms as i64).bind(now).execute(&mut *tx).await.unwrap();
+    for (seat, player) in result.players.iter().enumerate() {
+        sqlx::query("INSERT INTO online_match_players(match_id,seat,account_id,is_bot,outcome,opened_safe,mistakes,accusations,correct_accusations) VALUES($1,$2,$3,$4,'draw',4,0,0,0)").bind(result.id).bind(seat as i16).bind(player.account).bind(player.account.is_none()).execute(&mut *tx).await.unwrap();
+    }
+    tx.commit().await.unwrap();
 }

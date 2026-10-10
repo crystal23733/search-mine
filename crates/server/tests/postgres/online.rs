@@ -125,6 +125,11 @@ async fn authenticated_lobby_http_reads_real_nickname_and_logout_cancels_an_init
     .unwrap();
     let clock = Arc::new(GameClock(AtomicU64::new(0)));
     let auth_clock = Arc::new(SystemAuthClock);
+    let writer = Arc::new(
+        PgJournalRuntime::claim(pool.clone(), auth_clock.clone())
+            .await
+            .unwrap(),
+    );
     let registry = MatchRegistry::new(
         MatchLimits {
             matches: 1,
@@ -135,7 +140,7 @@ async fn authenticated_lobby_http_reads_real_nickname_and_logout_cancels_an_init
         clock.clone(),
         auth_clock.clone(),
         sockets,
-        Arc::new(PgResultRepository::new(pool.clone(), auth_clock.clone())),
+        writer.clone(),
     )
     .unwrap();
     let mut rules = RulesSnapshot::bundled().rules;
@@ -158,8 +163,11 @@ async fn authenticated_lobby_http_reads_real_nickname_and_logout_cancels_an_init
         ),
         Arc::new(CoreMatchPreparer),
         Arc::new(OsRoomCodeSource),
-        registry.clone(),
-        BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+        LobbyMatchServices {
+            registry: registry.clone(),
+            bots: BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+            journal: writer.clone(),
+        },
         LobbyAuthentication {
             authorities: lobby,
             clock: auth_clock,

@@ -105,7 +105,7 @@ pnpm build
 pnpm exec playwright test --project auth
 ```
 
-DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속 시험을 포함한85개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md)과 [#72 친구 방 검증](docs/verification/72-friends-room-ui.md)을 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
+DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속 시험을 포함한90개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md)과 [#72 친구 방 검증](docs/verification/72-friends-room-ui.md)을 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
 
 단위 테스트는 순수 포트의 Node 환경과 실제 DOM의 jsdom 환경을 구분한다. [#84 준비·DOM 조회 검증](docs/verification/84-unit-arrangement-observation.md)은 기존 시간 제한과 접근성 단언을 유지한 실행 결과와 한계를 기록한다.
 
@@ -152,3 +152,6 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 [#99 결과 보존 기준](docs/verification/99-result-retention-anchor.md)은 실제 저장 시각과90일 보존 기준을 분리한다. 현재 정상 결과 JSON/화면은 유지하고 영속 journal 복구가 보존 기간을 다시 시작하지 않도록 준비한다. #97/PR98은 병합·종료됐다.
 
 [#101 영속 journal 저장 foundation](docs/verification/101-active-match-journal.md)은 typed 입장/종료/시작 전 unknown abort 저장 경계를 검증한다. 공개 lobby/main 구성 전환과 실제 OS 재시작 통합은 후속이다. #99/PR100은 병합·종료됐다.
+
+
+[#103 durable 입장](docs/verification/103-durable-lobby-admission.md)은 실제 lobby/main/HTTPS의 journal ACK 뒤 대전을 공개하고 정상 취소 기록을 명시 정리한다. 실제 main OS kill/restart에서 unknown abort/null 세부 수치/seed 없음·원래 보존 기준·정확히 한 번과 known 결과 불변을 검증했다. 새로고침 후 본인 결과 발견과 상위18은 후속이다.

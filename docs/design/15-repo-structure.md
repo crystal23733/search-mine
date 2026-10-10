@@ -47,3 +47,6 @@ TS protocol generator는 schema 변경 PR에서 실행하고 generated diff를 �
 문서 원문은 docs/planning에 보존한다. 최신 사용자 지시→AGENTS/워크플로→승인 PRD/설계/ADR→원문 순으로 판단하며 오래된 HANDOFF의 커밋/브랜치 규칙은 최신 workflow가 대체한다.
 
 #101 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0046](../adr/0046-active-match-journal.md) → typed active journal/register/discard/strict final·same-owner startup unknown abort·최소 schema/FK삭제·admitted anchor/seed 상한·실제 PG/관련 gates → [검증101](../verification/101-active-match-journal.md). 공개 admission/main 전환·OS kill-restart 통합은 후속이며 storage foundation을 사용자 복구 완료로 보고하지 않는다.
+
+
+#103 [ADR0047](../adr/0047-durable-lobby-admission.md): core PreparedEngine의 실제 적용 hash getter, lobby의 명시 LobbyMatchServices/필수 AdmissionJournal 및 receipt 수명을 분리한다. main/HTTPS의 동일 PgJournalRuntime과 실프로세스 복구 검사는 [검증103](../verification/103-durable-lobby-admission.md)을 따른다.

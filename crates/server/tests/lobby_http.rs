@@ -85,6 +85,20 @@ impl BoardSource for Supply {
     }
 }
 struct Results;
+impl AdmissionJournal for Results {
+    fn fail_closed(&self) {
+        panic!("unexpected admission owner loss");
+    }
+    fn register(
+        &self,
+        _: ActiveMatch,
+    ) -> PortFuture<'_, Result<SaveResult, liar_protocol::online::OnlineError>> {
+        Box::pin(async { Ok(SaveResult::Saved) })
+    }
+    fn discard(&self, _: Uuid) -> PortFuture<'_, Result<(), liar_protocol::online::OnlineError>> {
+        Box::pin(async { Ok(()) })
+    }
+}
 impl ResultRepository for Results {
     fn save(
         &self,
@@ -159,8 +173,11 @@ impl Fixture {
             supply,
             Arc::new(CoreMatchPreparer),
             Arc::new(OsRoomCodeSource),
-            registry.clone(),
-            BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+            LobbyMatchServices {
+                registry: registry.clone(),
+                bots: BotExecutor::new(1, Arc::new(CoreBotFactory)).unwrap(),
+                journal: Arc::new(Results),
+            },
             LobbyAuthentication {
                 authorities: lobby.clone(),
                 clock: clock.clone(),

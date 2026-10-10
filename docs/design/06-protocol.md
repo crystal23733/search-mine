@@ -179,3 +179,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 #89 웹 소비는 [ADR0040](../adr/0040-personal-result-web.md)의 최소4096byte 응답/closed decoder·동일 match 상관관계와 전후 인증 HTTP를 따른다. 완료/승패는 Rust 응답이며 과거 hash에 현재 rules를 결합하지 않는다.
 
 #93은 [ADR0042](../adr/0042-unknown-result-details.md)의 Rust 원천 PersonalResult를 사용한다. 기존 다섯 키를 유지하며 end_elapsed_ms:number|null, own:ResultStats|null이다. 둘 다 null이면 server_failure/abort/completed:false만 허용한다. 부분 null·누락·오염은 fail-closed다. known JSON·WS/version1은 유지하고 완료를 웹에서 재계산하지 않는다. forward migration→신 웹→후속 recovery writer 순서로 배포한다.
+
+
+#103 [ADR0047](../adr/0047-durable-lobby-admission.md): matched와 최초 WS snapshot은 journal ACK 및 원래 예약/lease 검증 후 공개한다. 대기 중 기존 preparing 계약과 최종 최소 본인 결과 DTO를 유지한다. 프로세스 재시작의 unknown abort는 ADR0042 계약을 사용한다. 새로고침 결과 발견은 별도 후속이다.

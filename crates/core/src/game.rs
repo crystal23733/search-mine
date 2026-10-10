@@ -172,6 +172,10 @@ pub struct PreparedEngine {
     players: [Player; 2],
 }
 impl PreparedEngine {
+    pub fn rules_hash(&self) -> &str {
+        &self.rules.hash
+    }
+
     pub fn start(self, now: u64) -> Result<RuleEngine, Rejection> {
         let start = now
             .checked_add(u64::from(self.rules.rules.countdown_ms))

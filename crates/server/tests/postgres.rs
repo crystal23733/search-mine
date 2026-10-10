@@ -14,6 +14,8 @@ use uuid::Uuid;
 use zeroize::Zeroizing;
 
 struct HttpClock;
+#[path = "postgres/admission_restart.rs"]
+mod admission_restart;
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn invitation_transactions_preserve_canonical_codes_consume_once_and_expire_without_accounts()

@@ -16,6 +16,9 @@ impl PgJournalRuntime {
     }
 }
 impl AdmissionJournal for PgJournalRuntime {
+    fn fail_closed(&self) {
+        self.0.fail_closed();
+    }
     fn register(&self, active: ActiveMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>> {
         self.0.register(active)
     }

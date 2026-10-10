@@ -127,10 +127,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         game: AtomicU64::new(0),
     });
     let security = Arc::new(BrowserSecurity::new(ORIGIN, [48; 32]).expect("loopback origin"));
-    let writer = PgResultRuntime::claim(pool.clone(), clock.clone())
+    let writer = PgJournalRuntime::claim(pool.clone(), clock.clone())
         .await
         .map_err(|_| "fixture storage ownership")?;
     let owner = writer.health();
+    let writer = Arc::new(writer);
     let registry = MatchRegistry::new(
         MatchLimits {
             matches: 16,
@@ -141,7 +142,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         clock.clone(),
         clock.clone(),
         sockets,
-        Arc::new(writer),
+        writer.clone(),
     )
     .map_err(|_| "fixture registry")?;
     let sessions = Arc::new(PgSessionReader::new(store, clock.clone()));
@@ -172,8 +173,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ),
         Arc::new(CoreMatchPreparer),
         Arc::new(OsRoomCodeSource),
-        registry.clone(),
-        BotExecutor::new(2, Arc::new(CoreBotFactory)).map_err(|_| "fixture bots")?,
+        LobbyMatchServices {
+            registry: registry.clone(),
+            bots: BotExecutor::new(2, Arc::new(CoreBotFactory)).map_err(|_| "fixture bots")?,
+            journal: writer.clone(),
+        },
         LobbyAuthentication {
             authorities,
             clock: clock.clone(),

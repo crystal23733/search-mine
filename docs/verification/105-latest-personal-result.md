@@ -35,3 +35,8 @@ pm-skills code-review의 correctness/changes·baseline develop9eeb36c로 writer�
 새 독립 CARGO_TARGET_DIR의 실제 DB 포함 서버 coverage도 Exit0이다. 실제PG61개7.66초/ignored0, Auth385/387=99.48%·Match287/289=99.31%·Lobby362/368=98.37%·Result58/58=100%·전체 서버6824/7340=92.97%로 각domain95%/전체80%를 통과했다. 결과 HTTP241/247=97.57%, PG reader99/103=96.12%다. 이전 작업의 coverage object를 재사용하지 않았다.
 
 최신 CI/head·PR 병합/종료는 제출 뒤 확인한다. 상위18은 전체 통합 출구 감사 전 OPEN이며 원인 미확정83·실계정42/하드웨어26/사람27·물리삭제/백업25는 별도다.
+
+
+## 원격 CI와 완료
+
+PR106 head40a1ea5/base9eeb36c의 Product38075053329/Repository38075053321 SUCCESS와 본문 갱신 뒤 최신8checks SUCCESS/CLEAN을 확인했다. 실제PG18.6 DB61/19.71초·coverage61/17.83초/ignored0·211unit/웹88.25%·94browser3.6분재시도0·서버92.97%/각domain95이상·core95gate PASS. PR106은2026-10-10T18:23:04Z에 develop1f840bf299501281f02db5154df4cbcefa580b4c로 squash 병합됐고105CLOSED18:23:06Z를 별도 확인했다. 상위18 통합 출구는 #107에서 감사한다.

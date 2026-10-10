@@ -20,4 +20,6 @@ NFR05/08 · TS18/26/30 · [테스트 설계](../design/14-testing-strategy.md). 
 - 친구방의 초기 status1회는 유지하고 정상 poll과 room_join/ready를 구분해 정확한 사용자 명령을 비교한다. ready 때 AbortSignal이 locale 변경 후에도 철회되지 않음을 확인해 controller 재생성도 탐지한다. 입력/공유의 공개 locale·code와 정확한 취소 identity 검증은 유지한다.
 - 21개 Node 분리 뒤 전체180개는179pass/연습5000ms1fail29.41초였다. 연습 분리 뒤181개는180pass/1fail24.67초: 새 정리 단언이 unmount 직후 effect 해제보다 빨랐다. 설치된 renderer의 unmount는 act를 감싸지 않아 연습 정리를 명시적 act로 완료했다. 제품 수명 코드는 변경하지 않았다.
 
-최종 전체181개/32파일이23.48초에 통과했다. 웹 line2203/2517=87.52%, statements2349/2747=85.51%로 기존80% gate를 유지했다. 이 관측 한 번을 영구적인 무실패나 OS 지연 원인 해결로 일반화하지 않는다. 정리 콜백의 void 반환 타입 보정 뒤 최종 format/lint/typecheck·fresh build/PG17.4 실제 HTTPS 포함 전체85browser(2.4분)/재시도0·docs135/Mermaid34 실패0을 확인했다. Rust/native/WASM/type/fixture 검사는 앞의 전체gate에서 통과한 범위와 구분한다. CI/PR·병합 결과는 대기 중이다.
+최종 전체181개/32파일이23.48초에 통과했다. 웹 line2203/2517=87.52%, statements2349/2747=85.51%로 기존80% gate를 유지했다. 이 관측 한 번을 영구적인 무실패나 OS 지연 원인 해결로 일반화하지 않는다. 정리 콜백의 void 반환 타입 보정 뒤 최종 format/lint/typecheck·fresh build/PG17.4 실제 HTTPS 포함 전체85browser(2.4분)/재시도0·docs135/Mermaid34 실패0을 확인했다. Rust/native/WASM/type/fixture 검사는 앞의 전체gate에서 통과한 범위와 구분한다.
+
+PR87 head9f4750d의 Product37948238867/Repository37949351458 최신6checks SUCCESS. 실제CI181unit15.37초/line87.52%·85browser4.9분/재시도0·PG18.6 DB26/7.52초·Auth99.48/Match99.31/Lobby98.37/whole92.69/core95 gate를 확인했다. PR87은2026-10-09T15:08:45Z squash merge/develop2db4ac7, #84 CLOSED15:08:46Z를 조회했다. #83 원인은 미확정 OPEN이다.

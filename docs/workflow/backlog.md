@@ -86,3 +86,5 @@
 #80/PR81은 developc0fa4875에 병합·종료했다. CI PG18.6 DB26·176unit·browser84pass+기존offline1flaky와 최신6checks SUCCESS를 확인했다. [#85 업데이트 진단 보존](https://github.com/crystal23733/search-mine/issues/85) → [#84 로컬 단위 테스트 준비/DOM 조회](https://github.com/crystal23733/search-mine/issues/84) → [#82 인증된 개인 결과 조회](https://github.com/crystal23733/search-mine/issues/82) 순으로 진행한다. 원인 미확정 #83은 OPEN이며 #85의 CI 자료로 분석한다. #84/#82는 원인 분석과 독립적이다. timeout/retry를 완화하지 않는다. 상위18과 영속 재시작 출구는 아직 OPEN이다.
 
 #85/PR86은 developa7c3099에 병합·종료했다. 최종 CI PG18.6 DB26·176unit/85browser 재시도0·최신6checks 통과와 실패/성공 artifact의 실제 보존을 확인했다. #84는 [테스트 설계](../design/14-testing-strategy.md)의 순수 port Node/DOM jsdom 분리·독립 행동/정상 poll 관측으로 진행한다. 로컬 실제 결과와 미확인 환경 원인은 [검증84](../verification/84-unit-arrangement-observation.md)에 구분한다. #82는 #84 병합·종료 후 시작하며 #83은 열어 둔다.
+
+#84/PR87은 develop2db4ac7에 병합·종료했다. 최종CI181unit15.37초/line87.52%·85browser4.9분/재시도0·PG18.6 DB26·최신6checks를 확인했다. #82는 [ADR0039](../adr/0039-authenticated-personal-result-read.md)의 actor 독립 본인 최소 결과·저장 hash·90일 조회·별도 철회 권위·단일2초/동시/rate를 구현한다. 실행 근거는 [검증82](../verification/82-authenticated-personal-result-read.md)에 기록한다. 웹 소비/영속 journal/재시작은 후속18이며 #83 원인은 미확정이다.

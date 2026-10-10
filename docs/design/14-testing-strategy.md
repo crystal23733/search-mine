@@ -11,6 +11,10 @@ flowchart TD
 
 ## 테스트 경계
 
+#82는 [ADR0039](../adr/0039-authenticated-personal-result-read.md)의 요청·투영 Red, HTTP Origin/CSRF·3단계 단일 기한·역순 세션·공유 취소·별도 WS/로비 권위·실제PG 양 좌석/봇/삭제·90일 경계를 검증한다. `scripts/check_auth_coverage.py`에 results/model.rs의95% line gate를 추가하고 누락된 도메인을 성공으로 세지 않는다.
+
+새 결과 단위 테스트 본문은 `crates/server/tests/unit/result_*.rs`에 두고 cfg(test)의 path module로 실행한다. 기존 coverage의 tests/examples 제외 패턴이 테스트 자체를 분모에서 제외하며 제품 도메인만 측정한다.
+
 #84 NFR05/08·TS18/26/30: #85/PR86의 develop a7c3099 병합·종료 뒤 단위 테스트 준비와 DOM 조회를 분리 측정한다. 실제 동적 route의 cold import는 Chromium E2E에서 유지한다. 단위 테스트에서는 페이지 모듈 준비 시간을 hook에 명시할 수 있지만 실제 App→GameRoute→권한→256셀 DOM 경로를 mock하지 않는다. 긴 시나리오는 독립 행동으로 나누고 기존 단언을 보존한다. accessible role/name·노출 여부 검증을 CSS 개수나 hidden 조회로 대체하지 않는다. 테스트/제품 timeout·retry·worker 설정을 늘려 통과하지 않는다. 측정과 뒷받침되는 수정·미확인 원인은 [검증 기록](../verification/84-unit-arrangement-observation.md)에 구분한다.
 
 같은 작업의 전체180개 실행은4fail/176pass40.61초였고 jsdom32회 생성338.90초가 추적 시간의62%였다. fake port로만 검증하는 순수 서비스 테스트는 파일별 Node 환경을 명시하고 실제 DOM/브라우저 어댑터 테스트에만 jsdom과 modal/cleanup setup을 적용한다. 격리/동시성은 그대로 유지한다. 정상500ms status poll은 사용자 명령 수와 구분하고, locale 유지 검사는 정확한 초기 status·room_join·ready 명령과 그 identity가 반복되지 않음을 확인한다.

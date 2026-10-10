@@ -55,3 +55,5 @@
 [#85 두 탭 업데이트 진단 보존](verification/85-offline-update-observation.md)은 기존 CI 간헐 load 실패의 artifact·native lifecycle과 탭 이벤트 관측을 기록한다. 제품 조사 #83의 원인은 미확정이며 열어 둔다.
 
 [#84 단위 테스트 준비·DOM 조회](verification/84-unit-arrangement-observation.md)는 실제 App/권한/256셀·접근성 단언을 유지한 페이지 준비와 독립 시나리오 경계를 기록한다. cold route는 실제 브라우저에서 검증한다.
+
+[ADR0039](adr/0039-authenticated-personal-result-read.md)와 [#82 본인 결과 조회 검증](verification/82-authenticated-personal-result-read.md)은 actor 독립·본인 최소 DTO·90일 조회·전후 세션/철회·실DB 삭제와 저장 retry 경계를 기록한다. 웹 소비·재시작 복구는 후속18이다.

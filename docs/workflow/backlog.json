@@ -639,7 +639,7 @@
         "bounded-online-reconnect",
         "unit-arrangement-observation"
       ],
-      "acceptance": "actor 독립 ResultReader/Pg·Rust→TS 본인 최소 DTO·인증/Origin/CSRF/전후 철회·uniform notfound/동시 상한/deadline/rate·실제 PG/HTTP·secret0; 웹/영속 journal 후속"
+      "acceptance": "ADR0039·actor 독립 ResultReader/Pg·Rust→TS 본인 최소 DTO/저장 hash·90일 조회·인증/Origin/CSRF/전후 철회/별도 권위·uniform404/동시16/전체2초/session-account20회·실제 PG/HTTP 양 seat/bot/삭제/retry·secret0/도메인95; 웹/영속 journal 후속"
     },
     {
       "key": "offline-update-observation",

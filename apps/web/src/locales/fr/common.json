@@ -273,5 +273,7 @@
   "result.unavailable": "Le résultat n’a pas pu être consulté. Réessayez.",
   "result.savedTitle": "Résultat personnel enregistré",
   "result.openedSafe": "Cases sûres ouvertes : {{count}}",
-  "result.statsUnavailable": "Les statistiques de cette partie sont indisponibles."
+  "result.statsUnavailable": "Les statistiques de cette partie sont indisponibles.",
+  "result.latest": "Dernier résultat",
+  "result.latestEmpty": "Aucun résultat récent enregistré."
 }

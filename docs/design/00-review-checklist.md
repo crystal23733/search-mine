@@ -141,3 +141,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #103 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0047](../adr/0047-durable-lobby-admission.md) → 실제 적용 hash/UUID·bounded async register/receipt·원래 lease/fresh authority·typed main/HTTPS·실제 OS kill/restart → [검증103](../verification/103-durable-lobby-admission.md). 새로고침 발견/상위18은 후속이다.
+
+
+#105 FR01/11/14/16·NFR01/02/05/06/07/08·TS15/16/20/21/26/31/35/36 → [ADR0048](../adr/0048-latest-personal-result.md) → closed latest DTO/동일 권한·deadline/본인SQL·admitted순서/고정8언어결과화면·실제OSrestart fresh browser → [검증105](../verification/105-latest-personal-result.md). 상위18은 전체출구감사 전 OPEN이다.

@@ -186,6 +186,7 @@ function setup() {
     close: vi.fn(),
   };
   const port: OnlinePort = {
+    latestResult: vi.fn(),
     result: vi.fn(async () => {
       throw new OnlineFailure("unavailable");
     }),

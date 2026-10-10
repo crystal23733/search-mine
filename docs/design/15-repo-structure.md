@@ -50,3 +50,5 @@ TS protocol generator는 schema 변경 PR에서 실행하고 generated diff를 �
 
 
 #103 [ADR0047](../adr/0047-durable-lobby-admission.md): core PreparedEngine의 실제 적용 hash getter, lobby의 명시 LobbyMatchServices/필수 AdmissionJournal 및 receipt 수명을 분리한다. main/HTTPS의 동일 PgJournalRuntime과 실프로세스 복구 검사는 [검증103](../verification/103-durable-lobby-admission.md)을 따른다.
+
+#105 [ADR0048](../adr/0048-latest-personal-result.md): ResultReader/latest와 공통 HTTP 경계, Rust 원천 생성 DTO, web LatestResultController/LatestResultPage를 분리한다. 실제 프로세스 재시작은 시험 전용 `scripts/start-auth-fixture.mjs`와 고정 loopback control이 담당하며 운영 서버에는 이 control이 없다. [검증105](../verification/105-latest-personal-result.md).

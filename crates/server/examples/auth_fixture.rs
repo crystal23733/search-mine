@@ -3,6 +3,7 @@ use axum::{
     Json, Router,
     extract::Path,
     http::StatusCode,
+    response::IntoResponse,
     routing::{get, post},
 };
 use liar_core::{
@@ -122,8 +123,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         vault,
         DigestKeys::new(1, vec![(1, [47; 32])]).expect("test digests"),
     );
+    let initial_utc: i64 = std::env::var("LIAR_FIXTURE_UTC")
+        .unwrap_or_else(|_| "1800000000".into())
+        .parse()?;
+    if !(0..=253402300799).contains(&initial_utc) {
+        return Err("fixture UTC out of range".into());
+    }
     let clock = Arc::new(Clock {
-        auth: AtomicI64::new(1_800_000_000),
+        auth: AtomicI64::new(initial_utc),
         game: AtomicU64::new(0),
     });
     let security = Arc::new(BrowserSecurity::new(ORIGIN, [48; 32]).expect("loopback origin"));
@@ -187,6 +194,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let advance_clock = clock.clone();
     let probe_registry = registry.clone();
     let result_fixture_pool = pool.clone();
+    let persisted_fixture_pool = pool.clone();
+    let clock_probe = clock.clone();
     let router = account_auth_router(service, Providers, security.clone(), clock.clone())
         .merge(
             lobby_router(lobby, sessions.clone(), security.clone(), 16)
@@ -209,6 +218,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(
             Router::new()
                 .route("/__fixture/ready", get(|| async { "test-only" }))
+                .route("/__fixture/clock",get(move || {let clock=clock_probe.clone();async move {Json(serde_json::json!({"utc":clock.now()}))}}))
+                .route("/__fixture/persisted/{id}",get(move |Path(id):Path<String>| {
+                    let pool=persisted_fixture_pool.clone();
+                    async move {
+                        let Ok(id)=uuid::Uuid::parse_str(&id) else {return StatusCode::BAD_REQUEST.into_response();};
+                        let result=sqlx::query_scalar::<_,String>("SELECT jsonb_build_object('active_count',(SELECT count(*) FROM online_active_matches WHERE id=$1),'result_count',(SELECT count(*) FROM online_match_results WHERE id=$1),'retention_started_at',extract(epoch FROM r.retention_started_at)::bigint,'recorded_at',extract(epoch FROM r.recorded_at)::bigint,'seed_absent',r.secret_seed IS NULL,'end_elapsed_ms',r.end_elapsed_ms,'reason',r.reason,'unknown_players',(SELECT count(*) FROM online_match_players WHERE match_id=$1 AND opened_safe IS NULL AND mistakes IS NULL AND accusations IS NULL AND correct_accusations IS NULL))::text FROM online_match_results r WHERE r.id=$1")
+                            .bind(id).fetch_optional(&pool).await;
+                        match result {Ok(Some(row))=>match serde_json::from_str::<serde_json::Value>(&row) {Ok(value)=>Json(value).into_response(),Err(_)=>StatusCode::SERVICE_UNAVAILABLE.into_response()},Ok(None)=>StatusCode::NOT_FOUND.into_response(),Err(_)=>StatusCode::SERVICE_UNAVAILABLE.into_response()}
+                    }
+                }))
                 .route(
                     "/__fixture/result/{id}/unknown",
                     post(move |Path(id): Path<String>| {

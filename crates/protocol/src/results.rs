@@ -20,6 +20,11 @@ pub struct PersonalResultInput {
     pub v: u16,
     pub match_id: String,
 }
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct LatestResultInput {
+    pub v: u16,
+}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct ResultStats {
     pub opened_safe: u16,
@@ -40,6 +45,23 @@ pub struct PersonalResult {
 pub struct PersonalResultResponse {
     pub v: u16,
     pub result: PersonalResult,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct LatestResultResponse {
+    pub v: u16,
+    pub result: Option<PersonalResult>,
+}
+
+pub fn decode_latest_result(source: &[u8]) -> Result<LatestResultInput, ResultError> {
+    if source.len() > MAX_RESULT_BYTES {
+        return Err(ResultError::Malformed);
+    }
+    let input: LatestResultInput =
+        serde_json::from_slice(source).map_err(|_| ResultError::Malformed)?;
+    if input.v != crate::game::PROTOCOL_VERSION {
+        return Err(ResultError::UnsupportedVersion);
+    }
+    Ok(input)
 }
 
 pub fn decode_result(source: &[u8]) -> Result<PersonalResultInput, ResultError> {
@@ -62,15 +84,47 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
     vec![
         ResultError::decl(config),
         PersonalResultInput::decl(config),
+        LatestResultInput::decl(config),
         ResultStats::decl(config),
         PersonalResult::decl(config),
         PersonalResultResponse::decl(config),
+        LatestResultResponse::decl(config),
     ]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn latest_accepts_only_a_closed_versioned_request_without_selection_fields() {
+        assert_eq!(
+            decode_latest_result(br#"{"v":1}"#),
+            Ok(LatestResultInput { v: 1 })
+        );
+        assert_eq!(
+            decode_latest_result(br#"{"v":2}"#),
+            Err(ResultError::UnsupportedVersion)
+        );
+        for source in [
+            "{}",
+            r#"{"v":1,"v":1}"#,
+            r#"{"v":1.0}"#,
+            r#"{"v":1,"match_id":"x"}"#,
+            r#"{"v":1,"account_id":"x"}"#,
+            r#"{"v":1,"limit":1}"#,
+            r#"{"v":1,"cursor":"x"}"#,
+            r#"{"v":1}{}"#,
+        ] {
+            assert_eq!(
+                decode_latest_result(source.as_bytes()),
+                Err(ResultError::Malformed)
+            );
+        }
+        assert_eq!(
+            decode_latest_result(&[b' '; MAX_RESULT_BYTES + 1]),
+            Err(ResultError::Malformed)
+        );
+    }
     #[test]
     fn only_versioned_closed_canonical_non_nil_match_requests_pass() {
         let id = "12345678-1234-4234-9234-123456789abc";

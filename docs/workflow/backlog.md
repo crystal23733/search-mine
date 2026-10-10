@@ -105,3 +105,6 @@
 
 
 #101/PR102는 develop e5b3062에 병합·종료했다. 다음 [#103](https://github.com/crystal23733/search-mine/issues/103)은 [ADR0047](../adr/0047-durable-lobby-admission.md)의 실제 async admission/receipt·동일 typed main/HTTPS·OS kill/restart를 연결한다. full reload 결과 발견과 상위18은 후속이다.
+
+
+#103/PR104는 develop9eeb36c에병합·종료됐다. 다음 [#105](https://github.com/crystal23733/search-mine/issues/105)는 [ADR0048](../adr/0048-latest-personal-result.md)의 ID없는본인최신결과조회/고정8언어화면·실제OSrestart fresh browser를연결한다. 상위18은통합출구감사전OPEN이다.

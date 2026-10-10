@@ -273,5 +273,7 @@
   "result.unavailable": "The result could not be checked. Try again.",
   "result.savedTitle": "Stored personal result",
   "result.openedSafe": "Safe cells opened: {{count}}",
-  "result.statsUnavailable": "Statistics for this match are unavailable."
+  "result.statsUnavailable": "Statistics for this match are unavailable.",
+  "result.latest": "Latest match result",
+  "result.latestEmpty": "No recent saved result is available."
 }

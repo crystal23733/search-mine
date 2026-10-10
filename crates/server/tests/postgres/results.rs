@@ -404,6 +404,11 @@ async fn ambiguous_subject_and_corrupt_reason_outcome_fail_closed() {
 #[tokio::test]
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn actual_http_sessions_and_delete_barrier_reject_a_result_captured_before_deletion() {
+    for latest in [false, true] {
+        actual_delete_barrier(latest).await;
+    }
+}
+async fn actual_delete_barrier(latest: bool) {
     use liar_server::online::AuthorityRegistry;
     use tokio::sync::Notify;
     struct Held {
@@ -412,6 +417,17 @@ async fn actual_http_sessions_and_delete_barrier_reject_a_result_captured_before
         released: Notify,
     }
     impl ResultReader for Held {
+        fn latest(
+            &self,
+            a: Uuid,
+        ) -> PortFuture<'_, Result<Option<StoredPersonalResult>, ResultError>> {
+            Box::pin(async move {
+                let row = self.reader.latest(a).await?;
+                self.entered.notify_one();
+                self.released.notified().await;
+                Ok(row)
+            })
+        }
         fn read(
             &self,
             a: Uuid,
@@ -464,25 +480,34 @@ async fn actual_http_sessions_and_delete_barrier_reject_a_result_captured_before
     });
     let browser = SecretToken::generate().unwrap();
     let request = |token: &SecretToken, match_id: Uuid| {
-        Request::post("/api/v1/results")
-            .header("origin", "https://game.example")
-            .header("content-type", "application/json")
-            .header(
-                "cookie",
-                format!(
-                    "{BROWSER_COOKIE}={}; {SESSION_COOKIE}={}",
-                    browser.expose().as_str(),
-                    token.expose().as_str()
-                ),
-            )
-            .header(
-                "x-liar-csrf",
-                runtime.security.csrf(&browser, Some(token), 19000).unwrap(),
-            )
-            .body(Body::from(
-                json!({"v":1,"match_id":match_id.to_string()}).to_string(),
-            ))
-            .unwrap()
+        Request::post(if latest {
+            "/api/v1/results/latest"
+        } else {
+            "/api/v1/results"
+        })
+        .header("origin", "https://game.example")
+        .header("content-type", "application/json")
+        .header(
+            "cookie",
+            format!(
+                "{BROWSER_COOKIE}={}; {SESSION_COOKIE}={}",
+                browser.expose().as_str(),
+                token.expose().as_str()
+            ),
+        )
+        .header(
+            "x-liar-csrf",
+            runtime.security.csrf(&browser, Some(token), 19000).unwrap(),
+        )
+        .body(Body::from(
+            if latest {
+                json!({"v":1})
+            } else {
+                json!({"v":1,"match_id":match_id.to_string()})
+            }
+            .to_string(),
+        ))
+        .unwrap()
     };
     let auth = ResultAuthentication {
         clock: clock.clone(),
@@ -526,10 +551,24 @@ async fn actual_http_sessions_and_delete_barrier_reject_a_result_captured_before
             .oneshot(request(&token_other, id))
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(
+            response.status(),
+            if latest {
+                StatusCode::OK
+            } else {
+                StatusCode::NOT_FOUND
+            }
+        );
         let body: Value =
             serde_json::from_slice(&to_bytes(response.into_body(), 4096).await.unwrap()).unwrap();
-        assert_eq!(body, json!({"error":"not_found"}));
+        assert_eq!(
+            body,
+            if latest {
+                json!({"v":1,"result":null})
+            } else {
+                json!({"error":"not_found"})
+            }
+        );
     }
     let bot = super::online::finished([None, Some(a)]);
     writer.save(bot.clone()).await.unwrap();

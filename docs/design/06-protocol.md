@@ -182,3 +182,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 
 #103 [ADR0047](../adr/0047-durable-lobby-admission.md): matched와 최초 WS snapshot은 journal ACK 및 원래 예약/lease 검증 후 공개한다. 대기 중 기존 preparing 계약과 최종 최소 본인 결과 DTO를 유지한다. 프로세스 재시작의 unknown abort는 ADR0042 계약을 사용한다. 새로고침 결과 발견은 별도 후속이다.
+
+
+#105 [ADR0048](../adr/0048-latest-personal-result.md): POST /api/v1/results/latest `{v:1}`→`{v:1,result:PersonalResult|null}`. 실제 무결과만200/null이며 오류를 null로 바꾸지 않는다. 기존 ID 조회404는 보존한다. 두 API는 동일 Context/CSRF/철회·전체2초/동시/rate를 공유한다. Rust 원천→TS 생성.

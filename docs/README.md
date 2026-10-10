@@ -76,3 +76,6 @@
 
 
 [#103 입장/프로세스 복구 검증](verification/103-durable-lobby-admission.md) · [ADR0047](adr/0047-durable-lobby-admission.md).
+
+
+[#105 최신 본인 결과 발견](verification/105-latest-personal-result.md) · [ADR0048](adr/0048-latest-personal-result.md).

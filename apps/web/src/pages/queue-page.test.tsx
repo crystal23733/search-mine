@@ -83,6 +83,7 @@ async function queueScenario() {
       throw Error();
     },
     online: {
+      latestResult: vi.fn(),
       result: vi.fn(async () => {
         throw Error("unavailable");
       }),

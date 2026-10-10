@@ -16,6 +16,8 @@ use zeroize::Zeroizing;
 struct HttpClock;
 #[path = "postgres/admission_restart.rs"]
 mod admission_restart;
+#[path = "postgres/latest_results.rs"]
+mod latest_results;
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn invitation_transactions_preserve_canonical_codes_consume_once_and_expire_without_accounts()

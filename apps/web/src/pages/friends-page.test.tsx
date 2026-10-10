@@ -81,6 +81,7 @@ async function setup(account: AuthAccount | null) {
       throw Error();
     },
     online: {
+      latestResult: vi.fn(),
       result: vi.fn(async () => {
         throw Error("unavailable");
       }),

@@ -273,5 +273,7 @@
   "result.unavailable": "无法查看结果，请重试。",
   "result.savedTitle": "已保存的个人结果",
   "result.openedSafe": "已打开的安全格：{{count}}",
-  "result.statsUnavailable": "无法获取这场对局的统计数据。"
+  "result.statsUnavailable": "无法获取这场对局的统计数据。",
+  "result.latest": "最近对局结果",
+  "result.latestEmpty": "暂无最近保存的对局结果。"
 }

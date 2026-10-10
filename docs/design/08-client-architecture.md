@@ -97,3 +97,6 @@ design-tokens 원천에 semantic color(background/surface/text/danger/flag/lieFe
 #13의 UTC 솔로 데일리·개인 미검증 기록·공유 allowlist와 IndexedDB 경계는 [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md)를 따른다. #14 캐시/제출 대기와 #19 공식 검증을 구분한다.
 
 service worker는 versioned shell/locale/core 정적 asset만 캐시하고 공개 데일리는 캐시한 Rust/RNG/rules로 유도한다. API 응답/쓰기·세션·광고는 캐시하지 않는다. IndexedDB는 개인 기록·대기 replay, 필수 localStorage는 locale·튜토리얼·cache-disabled 설정을 저장한다. 저장 용량·private mode 실패 시 메모리 fallback과 기록 유실을 안내한다. 결과 화면도 activity lease를 유지하고 모든 탭이 홈으로 이동한 뒤 사용자 버튼으로 업데이트한다. 최초 미캐시 offline 접속은 브라우저 네트워크 실패이며 별도 정적 점검 안내도 네트워크 도달이 필요하다.
+
+
+#105 [ADR0048](../adr/0048-latest-personal-result.md): online latest port/별도 결과 controller는 fresh proof·bounded body·generation/abort/전후 subject를 검증한다. 홈 명시 링크→고정 /results, 기존 PersonalResult Atomic UI, ID/결과는 메모리만이며 logout/erasure/offline 즉시 숨김이다.

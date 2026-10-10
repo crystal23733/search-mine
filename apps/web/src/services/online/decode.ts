@@ -74,7 +74,7 @@ const personal = struct({
   result: struct({
     match_id: uuid,
     rules_hash: text(/^[0-9a-f]{64}$/),
-    end_elapsed_ms: int(),
+    end_elapsed_ms: optional(int()),
     result: struct({
       reason: one(
         "clear",
@@ -87,12 +87,14 @@ const personal = struct({
       outcome: one("win", "loss", "draw", "abort", "cancelled"),
       completed: bool,
     }),
-    own: struct({
-      opened_safe: int(256),
-      mistakes: int(4096),
-      accusation_attempts: int(4096),
-      correct_accusations: int(4096),
-    }),
+    own: optional(
+      struct({
+        opened_safe: int(256),
+        mistakes: int(4096),
+        accusation_attempts: int(4096),
+        correct_accusations: int(4096),
+      }),
+    ),
   }),
 });
 export function decodePersonalResult(
@@ -102,9 +104,20 @@ export function decodePersonalResult(
   const { result } = personal(value);
   if (
     result.match_id !== matchId ||
-    result.own.correct_accusations > result.own.accusation_attempts
+    (result.own !== null &&
+      result.own.correct_accusations > result.own.accusation_attempts)
   )
     fail();
+  if (result.own === null || result.end_elapsed_ms === null) {
+    if (
+      result.own !== null ||
+      result.end_elapsed_ms !== null ||
+      result.result.reason !== "server_failure" ||
+      result.result.outcome !== "abort" ||
+      result.result.completed
+    )
+      fail();
+  }
   return result;
 }
 export const decodeResultFailure = struct({

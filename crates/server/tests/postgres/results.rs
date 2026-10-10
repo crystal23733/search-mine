@@ -19,6 +19,181 @@ impl AuthClock for Clock {
 }
 
 #[tokio::test]
+#[ignore = "requires PostgreSQL and DATABASE_URL"]
+async fn unknown_abort_details_are_explicit_and_do_not_restore_deleted_players() {
+    let pool = auth_pool().await;
+    let clock = Arc::new(Clock(AtomicI64::new(1_800_000_000)));
+    let (account, _) = participant(&PgAuthStore::new(pool.clone())).await;
+    let writer = PgResultRepository::new(pool.clone(), clock.clone());
+    let reader = PgResultReader::new(pool.clone(), clock);
+    let finished = super::online::finished([Some(account), None]);
+    writer.save(finished.clone()).await.unwrap();
+    sqlx::query("UPDATE online_match_results SET end_elapsed_ms=NULL,reason='server_failure',secret_seed=NULL WHERE id=$1")
+        .bind(finished.id).execute(&pool).await.unwrap();
+    sqlx::query("UPDATE online_match_players SET outcome='abort',opened_safe=NULL,mistakes=NULL,accusations=NULL,correct_accusations=NULL WHERE match_id=$1")
+        .bind(finished.id).execute(&pool).await.unwrap();
+    let view = reader
+        .read(account, finished.id)
+        .await
+        .unwrap()
+        .unwrap()
+        .project(account, finished.id)
+        .unwrap();
+    let json = serde_json::to_value(view).unwrap();
+    assert_eq!(
+        json,
+        json!({"match_id":finished.id.to_string(),"rules_hash":finished.rules_hash,"end_elapsed_ms":null,"own":null,"result":{"reason":"server_failure","outcome":"abort","completed":false}})
+    );
+    assert!(
+        reader
+            .read(Uuid::new_v4(), finished.id)
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(
+        writer.save(finished.clone()).await,
+        Err(liar_protocol::online::OnlineError::Malformed)
+    );
+    sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
+        .bind(account)
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        writer.save(finished.clone()).await,
+        Err(liar_protocol::online::OnlineError::Malformed)
+    );
+    assert!(reader.read(account, finished.id).await.unwrap().is_none());
+    let count: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM online_match_players WHERE match_id=$1 AND NOT is_bot",
+    )
+    .bind(finished.id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(count, 0);
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires PostgreSQL and DATABASE_URL"]
+async fn forward_migration_preserves_known_results_and_rejects_partial_nulls() {
+    let pool = auth_pool_through(Some(202610090002)).await;
+    let store = PgAuthStore::new(pool.clone());
+    let (a, _) = participant(&store).await;
+    let (b, _) = participant(&store).await;
+    let clock = Arc::new(Clock(AtomicI64::new(19000)));
+    let writer = PgResultRepository::new(pool.clone(), clock.clone());
+    let reader = PgResultReader::new(pool.clone(), clock);
+    let finished = super::online::finished([Some(a), Some(b)]);
+    writer.save(finished.clone()).await.unwrap();
+    let before = serde_json::to_value(
+        reader
+            .read(a, finished.id)
+            .await
+            .unwrap()
+            .unwrap()
+            .project(a, finished.id)
+            .unwrap(),
+    )
+    .unwrap();
+    Migrator::new(Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../migrations"
+    )))
+    .await
+    .unwrap()
+    .run(&pool)
+    .await
+    .unwrap();
+    let after = serde_json::to_value(
+        reader
+            .read(a, finished.id)
+            .await
+            .unwrap()
+            .unwrap()
+            .project(a, finished.id)
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(before, after);
+    assert!(before["own"].is_object());
+    assert!(before["end_elapsed_ms"].is_number());
+    sqlx::query("UPDATE online_match_results SET reason='server_failure' WHERE id=$1")
+        .bind(finished.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    for mask in 0..16 {
+        let values: [Option<i16>; 4] =
+            std::array::from_fn(|i| if mask & (1 << i) == 0 { Some(1) } else { None });
+        let change = sqlx::query("UPDATE online_match_players SET outcome='abort',opened_safe=$2,mistakes=$3,accusations=$4,correct_accusations=$5 WHERE match_id=$1 AND seat=0")
+            .bind(finished.id).bind(values[0]).bind(values[1]).bind(values[2]).bind(values[3]).execute(&pool).await;
+        if mask == 0 || mask == 15 {
+            change.unwrap();
+        } else {
+            assert_eq!(
+                change
+                    .unwrap_err()
+                    .as_database_error()
+                    .unwrap()
+                    .code()
+                    .as_deref(),
+                Some("23514")
+            );
+        }
+    }
+    assert!(
+        matches!(
+            reader.read(a, finished.id).await,
+            Err(ResultError::Unavailable)
+        ),
+        "null own with known elapsed must not project"
+    );
+    sqlx::query("UPDATE online_match_results SET end_elapsed_ms=NULL WHERE id=$1")
+        .bind(finished.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert!(reader.read(a, finished.id).await.unwrap().is_some());
+    assert!(
+        matches!(
+            reader.read(b, finished.id).await,
+            Err(ResultError::Unavailable)
+        ),
+        "known own with null elapsed must not project"
+    );
+    for reason in ["clear", "timeout", "forfeit", "abandoned", "cancelled"] {
+        assert!(
+            sqlx::query("UPDATE online_match_results SET reason=$2 WHERE id=$1")
+                .bind(finished.id)
+                .bind(reason)
+                .execute(&pool)
+                .await
+                .is_err()
+        );
+    }
+    for outcome in ["win", "loss", "draw", "cancelled"] {
+        assert!(
+            sqlx::query("UPDATE online_match_players SET outcome=$2 WHERE match_id=$1 AND seat=0")
+                .bind(finished.id)
+                .bind(outcome)
+                .execute(&pool)
+                .await
+                .is_err()
+        );
+    }
+    sqlx::query("UPDATE online_match_players SET outcome='abort',opened_safe=NULL,mistakes=NULL,accusations=NULL,correct_accusations=NULL WHERE match_id=$1 AND seat=1").bind(finished.id).execute(&pool).await.unwrap();
+    assert!(reader.read(b, finished.id).await.unwrap().is_some());
+    assert_eq!(
+        writer.save(finished).await,
+        Err(liar_protocol::online::OnlineError::Malformed)
+    );
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn ninety_day_retention_is_elapsed_seconds_even_across_database_dst() {
     let pool = auth_pool().await;
@@ -102,7 +277,7 @@ async fn persisted_results_are_self_only_historical_bounded_and_never_restored_b
             .unwrap();
         assert_eq!(view.rules_hash, "a".repeat(64));
         assert_eq!(view.result.outcome, outcome);
-        assert_eq!(view.own.opened_safe, opened);
+        assert_eq!(view.own.as_ref().unwrap().opened_safe, opened);
         assert_eq!(
             serde_json::to_value(view)
                 .unwrap()

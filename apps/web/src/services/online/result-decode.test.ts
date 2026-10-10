@@ -10,6 +10,28 @@ test("accepts only the requested historical result without attaching current rul
     expect(decodePersonalResult({ v: 1, result }, matchId)).toEqual(result);
   }
 });
+test("accepts explicit unknown details only for an incomplete server failure abort", () => {
+  const result = {
+    ...personalResult(),
+    end_elapsed_ms: null,
+    own: null,
+    result: { reason: "server_failure", outcome: "abort", completed: false },
+  };
+  expect(decodePersonalResult({ v: 1, result }, matchId)).toEqual(result);
+  for (const invalid of [
+    { ...result, end_elapsed_ms: 0 },
+    { ...result, own: personalResult().own },
+    { ...result, end_elapsed_ms: undefined },
+    { ...result, own: undefined },
+    { ...result, result: { ...result.result, completed: true } },
+    { ...result, result: { ...result.result, reason: "timeout" } },
+    { ...result, result: { ...result.result, outcome: "draw" } },
+    { ...result, seed: "hidden" },
+  ])
+    expect(() =>
+      decodePersonalResult({ v: 1, result: invalid }, matchId),
+    ).toThrow();
+});
 test("rejects extra fields at every depth, wrong match/version, unsafe and inconsistent statistics", () => {
   const source = { v: 1, result: personalResult() };
   const corrupt = [

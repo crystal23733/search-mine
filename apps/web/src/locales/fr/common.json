@@ -272,5 +272,6 @@
   "result.notFound": "Aucun résultat enregistré n’est disponible pour cette partie.",
   "result.unavailable": "Le résultat n’a pas pu être consulté. Réessayez.",
   "result.savedTitle": "Résultat personnel enregistré",
-  "result.openedSafe": "Cases sûres ouvertes : {{count}}"
+  "result.openedSafe": "Cases sûres ouvertes : {{count}}",
+  "result.statsUnavailable": "Les statistiques de cette partie sont indisponibles."
 }

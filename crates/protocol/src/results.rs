@@ -31,10 +31,10 @@ pub struct ResultStats {
 pub struct PersonalResult {
     pub match_id: String,
     pub rules_hash: String,
-    #[ts(type = "number")]
-    pub end_elapsed_ms: u64,
+    #[ts(type = "number | null")]
+    pub end_elapsed_ms: Option<u64>,
     pub result: GameResult,
-    pub own: ResultStats,
+    pub own: Option<ResultStats>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct PersonalResultResponse {

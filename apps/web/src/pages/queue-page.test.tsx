@@ -186,6 +186,53 @@ test("explicit stored result replaces the live result with personal statistics, 
     s.dispose();
   }
 });
+test("an unknown abort shows no fabricated statistics and retains safe exit", async () => {
+  const s = await queueScenario();
+  try {
+    vi.mocked(s.services.online.result).mockResolvedValue({
+      ...personalResult(),
+      own: null,
+      end_elapsed_ms: null,
+      result: { reason: "server_failure", outcome: "abort", completed: false },
+    });
+    s.emit({
+      v: 1,
+      match_id: matchId,
+      server_seq: 2,
+      server_time_ms: 0,
+      payload: {
+        type: "match_end",
+        view: {
+          ...view(),
+          phase: "finished",
+          revision: 1,
+          result: { reason: "timeout", outcome: "win", completed: true },
+        },
+        recording: "pending",
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Check stored result" }),
+    );
+    const result = await screen.findByTestId("personal-result");
+    expect(result.textContent).toContain(
+      "Statistics for this match are unavailable.",
+    );
+    expect(result.textContent).not.toMatch(/Safe cells opened:|Mistakes:|\d/);
+    expect(screen.queryByRole("grid")).toBeNull();
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.getByTestId("recording").textContent).toBe("Result saved.");
+    expect(s.services.activity.read().busy).toBe(true);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Find a new opponent" }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByTestId("personal-result")).toBeNull(),
+    );
+  } finally {
+    s.dispose();
+  }
+});
 test("suspended queue session keeps all public cells read-only until fresh authenticated recovery", async () => {
   const { services, auth, connect, dispose } = await queueScenario();
   try {

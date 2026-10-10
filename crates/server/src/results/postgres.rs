@@ -46,25 +46,40 @@ fn db_error(_: sqlx::Error) -> ResultError {
     ResultError::Unavailable
 }
 fn stored(row: PgRow) -> Result<StoredPersonalResult, ResultError> {
-    let number = |key| {
-        u16::try_from(row.try_get::<i16, _>(key).map_err(db_error)?)
-            .map_err(|_| ResultError::Unavailable)
-    };
     Ok(StoredPersonalResult {
         account: row.try_get("account_id").map_err(db_error)?,
         match_id: row.try_get("id").map_err(db_error)?,
         rules_hash: row.try_get("rules_hash").map_err(db_error)?,
-        end_elapsed_ms: u64::try_from(row.try_get::<i64, _>("end_elapsed_ms").map_err(db_error)?)
+        end_elapsed_ms: row
+            .try_get::<Option<i64>, _>("end_elapsed_ms")
+            .map_err(db_error)?
+            .map(u64::try_from)
+            .transpose()
             .map_err(|_| ResultError::Unavailable)?,
         reason: reason(&row.try_get::<String, _>("reason").map_err(db_error)?)?,
         outcome: outcome(&row.try_get::<String, _>("outcome").map_err(db_error)?)?,
-        own: ResultStats {
-            opened_safe: number("opened_safe")?,
-            mistakes: number("mistakes")?,
-            accusation_attempts: number("accusations")?,
-            correct_accusations: number("correct_accusations")?,
-        },
+        own: statistics([
+            row.try_get("opened_safe").map_err(db_error)?,
+            row.try_get("mistakes").map_err(db_error)?,
+            row.try_get("accusations").map_err(db_error)?,
+            row.try_get("correct_accusations").map_err(db_error)?,
+        ])?,
     })
+}
+fn statistics(values: [Option<i16>; 4]) -> Result<Option<ResultStats>, ResultError> {
+    match values {
+        [None, None, None, None] => Ok(None),
+        [Some(opened), Some(mistakes), Some(attempts), Some(correct)] => {
+            let number = |value| u16::try_from(value).map_err(|_| ResultError::Unavailable);
+            Ok(Some(ResultStats {
+                opened_safe: number(opened)?,
+                mistakes: number(mistakes)?,
+                accusation_attempts: number(attempts)?,
+                correct_accusations: number(correct)?,
+            }))
+        }
+        _ => Err(ResultError::Unavailable),
+    }
 }
 fn reason(value: &str) -> Result<PublicEndReason, ResultError> {
     Ok(match value {

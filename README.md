@@ -142,3 +142,5 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 [#89 저장 결과 확인](docs/verification/89-personal-result-web.md)은 연결 복구 실패/저장 알림 유실 후 현재 메모리 판의 본인 결과를 명시 조회한다. 전후 인증 proof와 최소 본인 통계·8언어 화면, 실제 actor 정리 뒤 PG/HTTPS 검증을 포함한다. 새로고침 후 판 발견과 영속 재시작 출구는 후속 #18이다.
 
 [#91 인증 복구 관측](docs/verification/91-auth-recovery-observation.md)은 실제 HTTPS 철회 응답의 관측 수명을 앱의 권한 폐기와 분리해 검사한다. #89/PR90은 병합·종료했으며 CI의 기존 flaky 두 건과 로컬 재시도0 결과를 구분해 기록했다.
+
+[#93 미확인 결과 계약](docs/verification/93-unknown-result-details.md)은 비정상 종료로 최종 수치를 알 수 없을 때 elapsed/본인 통계를 null로 표현한다. 숫자를 추측하지 않으며 실제 재시작 복구는 후속18이다.

@@ -63,3 +63,5 @@
 - [#89 본인 저장 결과 웹 확인 검증](verification/89-personal-result-web.md)
 
 [#91 인증 복구 응답 관측](verification/91-auth-recovery-observation.md)과 [ADR0041](adr/0041-auth-recovery-response-observation.md)은 실제 철회 proof를 브라우저 전달 전에 확인하고 기존 권한/쓰기0 행동 검증을 보존한다.
+
+- [ADR0042 미확인 통계](adr/0042-unknown-result-details.md) · [#93 검증](verification/93-unknown-result-details.md)

@@ -272,5 +272,6 @@
   "result.notFound": "Für diese Partie ist kein gespeichertes Ergebnis verfügbar.",
   "result.unavailable": "Das Ergebnis konnte nicht geprüft werden. Versuche es erneut.",
   "result.savedTitle": "Gespeichertes persönliches Ergebnis",
-  "result.openedSafe": "Geöffnete sichere Felder: {{count}}"
+  "result.openedSafe": "Geöffnete sichere Felder: {{count}}",
+  "result.statsUnavailable": "Die Statistiken für dieses Spiel sind nicht verfügbar."
 }

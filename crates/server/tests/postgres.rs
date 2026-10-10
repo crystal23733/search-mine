@@ -345,6 +345,9 @@ fn isolated_schema_sql(
     sqlx::AssertSqlSafe(format!("{prefix} {schema} {suffix}"))
 }
 async fn auth_pool() -> sqlx::PgPool {
+    auth_pool_through(None).await
+}
+async fn auth_pool_through(last: Option<i64>) -> sqlx::PgPool {
     let url = env::var("DATABASE_URL").expect("DATABASE_URL is required");
     let admin = PgPoolOptions::new().connect(&url).await.unwrap();
     let schema = format!("auth_test_{}", Uuid::new_v4().simple());
@@ -368,12 +371,19 @@ async fn auth_pool() -> sqlx::PgPool {
         .connect(&url)
         .await
         .unwrap();
-    Migrator::new(Path::new(concat!(
+    let migrations = Migrator::new(Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../migrations"
     )))
     .await
-    .unwrap()
+    .unwrap();
+    Migrator::with_migrations(
+        migrations
+            .iter()
+            .filter(|m| last.is_none_or(|v| m.version <= v))
+            .cloned()
+            .collect(),
+    )
     .run(&pool)
     .await
     .unwrap();

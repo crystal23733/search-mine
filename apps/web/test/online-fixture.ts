@@ -4,7 +4,10 @@ import {
   type PersonalResult,
 } from "@liar/protocol";
 export const matchId = "11111111-1111-4111-8111-111111111111";
-export function personalResult(): PersonalResult {
+export function personalResult(): PersonalResult & {
+  end_elapsed_ms: number;
+  own: NonNullable<PersonalResult["own"]>;
+} {
   return {
     match_id: matchId,
     rules_hash: "a".repeat(64),

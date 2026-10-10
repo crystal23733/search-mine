@@ -53,3 +53,5 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 #89 → [ADR0040](../adr/0040-personal-result-web.md): 최소 DTO/인증 전후 proof/취소·역순·WS 우선·권한/후보·8언어와 실제 PostgreSQL/HTTPS PC/mobile의 최종 알림 유실·actor 정리 후 조회를 TDD로 검증한다.
 
 #91 → [ADR0041](../adr/0041-auth-recovery-response-observation.md): 철회 뒤 실제 HTTPS bootstrap 응답을 브라우저 전달 전에 관측하고 동일 응답을 전달한다. 앱의 null proof 이후 signal 취소와 늦은 CDP body 조회의 수명 차이를 분리하며 기존 offline 쓰기0·권한 제거·후속 독립 proof를 유지한다.
+
+#93은 [ADR0042](../adr/0042-unknown-result-details.md)와 TS16을 따라 decoder/실제 DB의 unknown 양성 Red→Green, 이전 known행의 forward upgrade 보존·16개 null패턴·부분/타 reason/outcome·본인200/타인404·writer 충돌/삭제 비복원을 검사한다. PG/HTTPS PC/mobile에서는 actor 정리 후 SQL fixture의 unknown 결과를 운영 reader/router로 조회하고8언어·숫자 미생성·일반 storage0를 검증한다. 이 fixture는 실제 프로세스 재시작의 증거가 아니며 journal/startup/processkill은 후속18이다.

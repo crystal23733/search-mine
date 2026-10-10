@@ -177,3 +177,5 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 #13 public DailyMetadata/View/Step/Replay와 strict 입력·로그 경계는 [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md)를 따른다. 공개 UTC seed와 online 비밀 seed를 구분하며 로컬 replay는 서버 검증 전 unverified다. [실제 native/WASM 재현](../verification/13-utc-daily-records-share.md).
 
 #89 웹 소비는 [ADR0040](../adr/0040-personal-result-web.md)의 최소4096byte 응답/closed decoder·동일 match 상관관계와 전후 인증 HTTP를 따른다. 완료/승패는 Rust 응답이며 과거 hash에 현재 rules를 결합하지 않는다.
+
+#93은 [ADR0042](../adr/0042-unknown-result-details.md)의 Rust 원천 PersonalResult를 사용한다. 기존 다섯 키를 유지하며 end_elapsed_ms:number|null, own:ResultStats|null이다. 둘 다 null이면 server_failure/abort/completed:false만 허용한다. 부분 null·누락·오염은 fail-closed다. known JSON·WS/version1은 유지하고 완료를 웹에서 재계산하지 않는다. forward migration→신 웹→후속 recovery writer 순서로 배포한다.

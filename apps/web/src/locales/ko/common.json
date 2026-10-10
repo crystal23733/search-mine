@@ -272,5 +272,6 @@
   "result.notFound": "이 판에서 확인할 수 있는 저장 결과가 없습니다.",
   "result.unavailable": "결과를 확인하지 못했습니다. 다시 시도해 주세요.",
   "result.savedTitle": "저장된 내 결과",
-  "result.openedSafe": "열린 안전칸: {{count}}"
+  "result.openedSafe": "열린 안전칸: {{count}}",
+  "result.statsUnavailable": "이 대전의 통계를 확인할 수 없습니다."
 }

@@ -135,3 +135,5 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 필수 개인정보 목적·최소 scope·삭제 tombstone·계정 연결은 [17 인증/개인정보](17-auth-privacy.md)에 정의한다. 무계정 로컬 연습은 DB에 계정을 만들지 않는다. 약관 수락 버전과 광고/분석 동의는 별도 목적 필드로 기록한다. 보존 기간은 제품 정책 제안이며 법정 의무 기간이라고 표현하지 않는다.
 
 #13 무계정 IndexedDB 개인 기록은 공식 PostgreSQL daily_attempt와 분리한다. v1·unverified·공개 metadata·attempt UUID·개인 elapsed/stat·strict native replay만 최대30개 보관하며 첫 local clear는 원자적이다. 저장 실패는 메모리 fallback이다. [ADR0017](../adr/0017-deterministic-solo-daily-and-local-records.md), [검증](../verification/13-utc-daily-records-share.md).
+
+#93의 [forward migration](../../migrations/202610100001_unknown_result_details.sql)은 end_elapsed_ms와 통계4개의 NOT NULL만 완화한다. 부모의 null elapsed는 server_failure, 자식의 null 통계는 네 필드 모두 null이며 abort일 때만 허용한다. 기존 범위 CHECK/PK/FK cascade/보존 정책과 migration checksum을 유지한다. 부모/자식 불일치는 reader/project가 거절하며 정상 writer는 unknown 결과를 덮어쓰거나 삭제 참여자를 retry로 복원하지 않는다. [ADR0042](../adr/0042-unknown-result-details.md).

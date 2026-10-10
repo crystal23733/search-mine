@@ -171,15 +171,15 @@ impl Fixture {
                 account: user.account,
                 match_id: id,
                 rules_hash: "a".repeat(64),
-                end_elapsed_ms: 123,
+                end_elapsed_ms: Some(123),
                 reason: PublicEndReason::Forfeit,
                 outcome: Outcome::Loss,
-                own: ResultStats {
+                own: Some(ResultStats {
                     opened_safe: 17,
                     mistakes: 2,
                     accusation_attempts: 3,
                     correct_accusations: 1,
-                },
+                }),
             },
         );
         id
@@ -263,6 +263,50 @@ async fn own_minimal_result_is_actor_independent_and_absence_is_uniform() {
             (StatusCode::NOT_FOUND, json!({"error":"not_found"}))
         );
     }
+}
+
+#[tokio::test]
+async fn unknown_abort_is_self_only_and_partial_details_fail_closed() {
+    let f = Fixture::new(2, 2);
+    let a = f.user(None);
+    let b = f.user(None);
+    let id = f.save(&a);
+    {
+        let mut rows = f.records.rows.lock().unwrap();
+        let r = rows.get_mut(&(a.account, id)).unwrap();
+        r.reason = PublicEndReason::ServerFailure;
+        r.outcome = Outcome::Abort;
+        r.end_elapsed_ms = None;
+        r.own = None;
+    }
+    assert_eq!(
+        f.call(&a, id).await,
+        (
+            StatusCode::OK,
+            json!({"v":1,"result":{
+                "match_id":id.to_string(),"rules_hash":"a".repeat(64),"end_elapsed_ms":null,"own":null,
+                "result":{"reason":"server_failure","outcome":"abort","completed":false}
+            }})
+        )
+    );
+    assert_eq!(
+        f.call(&b, id).await,
+        (StatusCode::NOT_FOUND, json!({"error":"not_found"}))
+    );
+    f.records
+        .rows
+        .lock()
+        .unwrap()
+        .get_mut(&(a.account, id))
+        .unwrap()
+        .end_elapsed_ms = Some(0);
+    assert_eq!(
+        f.call(&a, id).await,
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            json!({"error":"unavailable"})
+        )
+    );
 }
 
 #[tokio::test]

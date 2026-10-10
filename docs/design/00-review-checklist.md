@@ -130,3 +130,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #91 FR14·NFR05/08·TS15/16/20/26/31/35/36 → [ADR0041](../adr/0041-auth-recovery-response-observation.md) → production HTTPS 응답의 one-use 관측/전달·철회 후 UI/쓰기0/독립 proof·[검증91](../verification/91-auth-recovery-observation.md). timeout/retry와 제품 권한 변경 없음.
 
 #93 FR11/14/16·NFR01/02/05/06/07/08·TS15/16/20/21/26/31/35/36 → [ADR0042](../adr/0042-unknown-result-details.md) → forward migration/reader/project·Rust→TS·strict decoder·8언어 최소 결과 UI·[실제 검증93](../verification/93-unknown-result-details.md). 선행91/PR92 병합·종료, 실제 journal/startup/processkill·새로고침 발견은 후속18이다.
+
+#95 FR11/14/16·NFR05/08·TS15/16/20/21/26/31/35/36 → [ADR0043](../adr/0043-result-response-observation.md) → one-use 실제 결과 HTTP 응답 관측/동일 전달·known/unknown PC/mobile 반복·[검증95](../verification/95-result-response-observation.md). 제품/기한/SW/timeout/retry 변경 없음.

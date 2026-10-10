@@ -144,3 +144,5 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 [#91 인증 복구 관측](docs/verification/91-auth-recovery-observation.md)은 실제 HTTPS 철회 응답의 관측 수명을 앱의 권한 폐기와 분리해 검사한다. #89/PR90은 병합·종료했으며 CI의 기존 flaky 두 건과 로컬 재시도0 결과를 구분해 기록했다.
 
 [#93 미확인 결과 계약](docs/verification/93-unknown-result-details.md)은 비정상 종료로 최종 수치를 알 수 없을 때 elapsed/본인 통계를 null로 표현한다. 숫자를 추측하지 않으며 실제 재시작 복구는 후속18이다.
+
+[#95 결과 응답 관측](docs/verification/95-result-response-observation.md)은 실제 서버 본문을 앱에 전달하기 전에 관측하여 늦은 CDP 본문 조회 의존을 제거한다. #93/PR94은 병합·종료됐고 최초 CI flaky 기록을 보존했다.

@@ -121,52 +121,78 @@ export function registerPersonalResultTests(approve: Approve, login: Login) {
           ).toBeVisible();
           await expect(one.getByTestId("personal-result")).toHaveCount(0);
           await one.unroute("**/api/v1/results");
-          const read = one.waitForResponse(
-            (r) => r.url().endsWith("/api/v1/results") && r.status() === 200,
+          let delivered!: (body: PersonalResultResponse) => void;
+          let failed!: (error: unknown) => void;
+          const observed = new Promise<PersonalResultResponse>(
+            (resolve, reject) => {
+              delivered = resolve;
+              failed = reject;
+            },
+          );
+          await one.route(
+            "**/api/v1/results",
+            async (route) => {
+              try {
+                const response = await route.fetch({
+                  maxRedirects: 0,
+                  maxRetries: 0,
+                  timeout: 10000,
+                });
+                expect(response.status()).toBe(200);
+                expect(response.headers()["cache-control"]).toBe("no-store");
+                const body: PersonalResultResponse = await response.json();
+                expect(Object.keys(body.result).sort()).toEqual(
+                  [
+                    "match_id",
+                    "rules_hash",
+                    "end_elapsed_ms",
+                    "result",
+                    "own",
+                  ].sort(),
+                );
+                if (unknown) {
+                  expect(body.result.own).toBeNull();
+                  expect(body.result.end_elapsed_ms).toBeNull();
+                  expect(body.result.result).toEqual({
+                    reason: "server_failure",
+                    outcome: "abort",
+                    completed: false,
+                  });
+                } else {
+                  expect(body.result.own).not.toBeNull();
+                  expect(Object.keys(body.result.own!).sort()).toEqual(
+                    [
+                      "opened_safe",
+                      "mistakes",
+                      "accusation_attempts",
+                      "correct_accusations",
+                    ].sort(),
+                  );
+                }
+                expect(body.result.match_id).toBe(matchId);
+                expect(body.result.rules_hash).toBe(
+                  peer.lastView()!.rules.hash,
+                );
+                expect(body.result.result.reason).toBe(
+                  unknown ? "server_failure" : "timeout",
+                );
+                expect(JSON.stringify(body)).not.toMatch(
+                  /"seed"|"board"|"account"|"provider"|"session"|"opponent"|"csrf"/,
+                );
+                // Observe the actual body before the controller disposes its completed request.
+                await route.fulfill({ response });
+                delivered(body);
+              } catch (error) {
+                failed(error);
+                await route.abort();
+              }
+            },
+            { times: 1 },
           );
           await one
             .getByRole("button", { name: "Check stored result" })
             .focus();
-          await one.keyboard.press("Enter");
-          const response = await read;
-          expect(response.headers()["cache-control"]).toBe("no-store");
-          const body: PersonalResultResponse = await response.json();
-          expect(Object.keys(body.result).sort()).toEqual(
-            [
-              "match_id",
-              "rules_hash",
-              "end_elapsed_ms",
-              "result",
-              "own",
-            ].sort(),
-          );
-          if (unknown) {
-            expect(body.result.own).toBeNull();
-            expect(body.result.end_elapsed_ms).toBeNull();
-            expect(body.result.result).toEqual({
-              reason: "server_failure",
-              outcome: "abort",
-              completed: false,
-            });
-          } else {
-            expect(body.result.own).not.toBeNull();
-            expect(Object.keys(body.result.own!).sort()).toEqual(
-              [
-                "opened_safe",
-                "mistakes",
-                "accusation_attempts",
-                "correct_accusations",
-              ].sort(),
-            );
-          }
-          expect(body.result.match_id).toBe(matchId);
-          expect(body.result.rules_hash).toBe(peer.lastView()!.rules.hash);
-          expect(body.result.result.reason).toBe(
-            unknown ? "server_failure" : "timeout",
-          );
-          expect(JSON.stringify(body)).not.toMatch(
-            /"seed"|"board"|"account"|"provider"|"session"|"opponent"|"csrf"/,
-          );
+          await Promise.all([one.keyboard.press("Enter"), observed]);
           const result = one.getByTestId("personal-result");
           await expect(result).toBeVisible();
           await expect(result.getByTestId("recording")).toHaveText(

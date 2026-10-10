@@ -51,3 +51,5 @@ M0의 docs/contribution-gate에 이어 #4에서 Rust·웹·실제 PostgreSQL·WA
 CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존성 추가와 lockfile 재현 설치과 무료 실행량을 확인한다. Mermaid는 GitHub 지원 chart 문법만 사용해 실제 parse 검사한다.
 
 #89 → [ADR0040](../adr/0040-personal-result-web.md): 최소 DTO/인증 전후 proof/취소·역순·WS 우선·권한/후보·8언어와 실제 PostgreSQL/HTTPS PC/mobile의 최종 알림 유실·actor 정리 후 조회를 TDD로 검증한다.
+
+#91 → [ADR0041](../adr/0041-auth-recovery-response-observation.md): 철회 뒤 실제 HTTPS bootstrap 응답을 브라우저 전달 전에 관측하고 동일 응답을 전달한다. 앱의 null proof 이후 signal 취소와 늦은 CDP body 조회의 수명 차이를 분리하며 기존 offline 쓰기0·권한 제거·후속 독립 proof를 유지한다.

@@ -27,4 +27,6 @@ correctness 최종 검토 범위는 cdd700e 대비 변경과 연결된 actor/aut
 
 ## 한계
 
+PR90은 최신 head0b4b597/Ready/CLEAN·본문 변경 뒤 Repository38024502216까지 SUCCESS 확인 후2026-10-10T04:34:42Z squash 병합/develop c36a4fe, #89 CLOSED04:34:44Z. Product38023948678 실제 PG18.6 DB30개/ignored0(5.66초,coverage5.65초),197unit/35파일14.52초·line87.89%·서버92.77%. 브라우저는86pass+2flaky/6.0분이며 신규 결과3개는 실패 목록에 없다. 기존 offline-mobile load 실패는83, auth-recovery390px Response.json/CDP body unavailable은 후속91로 추적한다. 최초 trace를 .tmp/result89-ci-failures에 실제 보존했다. CI를 재시도0으로 보고하지 않는다.
+
 일반 저장소에 match를 보관하지 않으므로 새로고침 후 ID 발견은 제공하지 않는다. 영속 active journal/재시작 abort는 후속18, 실제 OAuth42·장비26·사람27은 별도이며83 원인은 미확정 OPEN이다. 버그 없음·운영 성능·법적 준수·전체 개발 완료를 주장하지 않는다.

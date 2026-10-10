@@ -52,8 +52,10 @@ impl ResultRepository for PgResultRepository {
                 let same = row.try_get::<String, _>("rules_hash").map_err(db_error)?
                     == result.rules_hash
                     && seed.is_none_or(|seed| seed == result.seed)
-                    && row.try_get::<i64, _>("end_elapsed_ms").map_err(db_error)?
-                        == result.ended_ms as i64
+                    && row
+                        .try_get::<Option<i64>, _>("end_elapsed_ms")
+                        .map_err(db_error)?
+                        == Some(result.ended_ms as i64)
                     && row.try_get::<String, _>("reason").map_err(db_error)? == reason;
                 if !same {
                     return Err(OnlineError::Malformed);

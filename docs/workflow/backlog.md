@@ -92,3 +92,5 @@
 #82/PR88은 develop cdd700e에 병합·종료했다. CI PG18.6 DB30·181unit/85browser 재시도0·Result100%/전체92.77%를 확인했다. 다음 [#89 본인 저장 결과 웹 확인](https://github.com/crystal23733/search-mine/issues/89)은 [ADR0040](../adr/0040-personal-result-web.md)의 현재 메모리 match/strict 최소 DTO·전후 인증·취소/WS 우선·8언어와 actual PG/HTTPS를 구현한다. 영속 journal/재시작 복구18과 원인 미확정83은 별도다.
 
 #91 auth-recovery-observation: 선행89/PR90병합·종료 후 실제HTTPS 철회 응답의 관측 수명을 안정화한다. [ADR0041](../adr/0041-auth-recovery-response-observation.md)/[검증91](../verification/91-auth-recovery-observation.md). 미확인 통계/journal/startup abort는 후속18,83원인미확정OPEN.
+
+#91/PR92은 develop8347efa에 병합·종료했다. 다음 [#93 미확인 통계 계약](https://github.com/crystal23733/search-mine/issues/93)은 [ADR0042](../adr/0042-unknown-result-details.md)의 명시 null·DB/HTTP/8언어 화면을 연결한다. 실제 영속 journal/startup abort·새로고침 발견과 상위18은 후속이며 #83/42/26/27 출구는 별도다.

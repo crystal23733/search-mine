@@ -11,10 +11,10 @@ pub struct StoredPersonalResult {
     pub account: Uuid,
     pub match_id: Uuid,
     pub rules_hash: String,
-    pub end_elapsed_ms: u64,
+    pub end_elapsed_ms: Option<u64>,
     pub reason: PublicEndReason,
     pub outcome: Outcome,
-    pub own: ResultStats,
+    pub own: Option<ResultStats>,
 }
 pub trait ResultReader: Send + Sync {
     fn read(
@@ -30,6 +30,19 @@ impl StoredPersonalResult {
             PublicEndReason::Cancelled => self.outcome == Outcome::Cancelled,
             _ => matches!(self.outcome, Outcome::Win | Outcome::Loss | Outcome::Draw),
         };
+        let details_valid = match (&self.end_elapsed_ms, &self.own) {
+            (Some(elapsed), Some(own)) => {
+                *elapsed <= 9007199254740991
+                    && own.opened_safe <= 256
+                    && own.mistakes <= 4096
+                    && own.accusation_attempts <= 4096
+                    && own.correct_accusations <= own.accusation_attempts
+            }
+            (None, None) => {
+                self.reason == PublicEndReason::ServerFailure && self.outcome == Outcome::Abort
+            }
+            _ => false,
+        };
         if self.account.is_nil()
             || self.match_id.is_nil()
             || self.account != account
@@ -39,11 +52,7 @@ impl StoredPersonalResult {
                 .rules_hash
                 .bytes()
                 .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-            || self.end_elapsed_ms > 9007199254740991
-            || self.own.opened_safe > 256
-            || self.own.mistakes > 4096
-            || self.own.accusation_attempts > 4096
-            || self.own.correct_accusations > self.own.accusation_attempts
+            || !details_valid
             || !compatible
         {
             return Err(ResultError::Unavailable);

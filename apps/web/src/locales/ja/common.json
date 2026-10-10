@@ -272,5 +272,6 @@
   "result.notFound": "この対戦で確認できる保存結果はありません。",
   "result.unavailable": "結果を確認できませんでした。もう一度お試しください。",
   "result.savedTitle": "保存された自分の結果",
-  "result.openedSafe": "開いた安全マス: {{count}}"
+  "result.openedSafe": "開いた安全マス: {{count}}",
+  "result.statsUnavailable": "この対戦の統計は確認できません。"
 }

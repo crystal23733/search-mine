@@ -272,5 +272,6 @@
   "result.notFound": "No stored result is available for this match.",
   "result.unavailable": "The result could not be checked. Try again.",
   "result.savedTitle": "Stored personal result",
-  "result.openedSafe": "Safe cells opened: {{count}}"
+  "result.openedSafe": "Safe cells opened: {{count}}",
+  "result.statsUnavailable": "Statistics for this match are unavailable."
 }

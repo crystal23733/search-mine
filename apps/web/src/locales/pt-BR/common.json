@@ -272,5 +272,6 @@
   "result.notFound": "Não há resultado salvo disponível para esta partida.",
   "result.unavailable": "Não foi possível consultar o resultado. Tente novamente.",
   "result.savedTitle": "Resultado pessoal salvo",
-  "result.openedSafe": "Casas seguras abertas: {{count}}"
+  "result.openedSafe": "Casas seguras abertas: {{count}}",
+  "result.statsUnavailable": "As estatísticas desta partida não estão disponíveis."
 }

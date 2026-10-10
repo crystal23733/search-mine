@@ -15,3 +15,7 @@ correctness 리뷰는 develop c36a4fe 대비 테스트 변경과 production Sess
 ## 범위와 남은 일
 
 실제 backend response 관측/전달과 기존 권한 행동 단언을 함께 유지하는 테스트 경계다. #83 두 탭 load 원인·영속 journal/startup abort·미확인 통계·새로고침 결과 발견·외부 OAuth42/장비26/사람27은 미해결 별도 출구다.
+
+## 원격 완료
+
+[PR92](https://github.com/crystal23733/search-mine/pull/92)은 2026-10-10T04:52:32Z develop8347efaf764b4bb221770595c9e6308543a93f43에 병합됐고 #91은04:52:33Z 종료됐다. Product38025093554·최신 Repository38025516857 포함 전체 checks SUCCESS/Ready/CLEAN/head812ce332985cb13b7582b0a3b3487761eb17070c 확인. CI 실제 PG18.6 DB30/ignored0(6.30초/coverage7.80초),197unit35파일11.54초·웹87.89%·서버92.77%,88browser4.1분·재시도0. #83 원인 미확정은 종료하지 않는다.

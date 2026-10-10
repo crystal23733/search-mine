@@ -23,16 +23,24 @@ export function PersonalResult({
       <p>{t(`match.reason.${result.result.reason}`)}</p>
       <Card>
         <h3>{ownName}</h3>
-        <p>
-          {t("result.openedSafe", { count: number(result.own.opened_safe) })}
-        </p>
-        <p>{t("match.mistakes", { count: number(result.own.mistakes) })}</p>
-        <p>
-          {t("match.accusations", {
-            correct: number(result.own.correct_accusations),
-            total: number(result.own.accusation_attempts),
-          })}
-        </p>
+        {result.own === null ? (
+          <p>{t("result.statsUnavailable")}</p>
+        ) : (
+          <>
+            <p>
+              {t("result.openedSafe", {
+                count: number(result.own.opened_safe),
+              })}
+            </p>
+            <p>{t("match.mistakes", { count: number(result.own.mistakes) })}</p>
+            <p>
+              {t("match.accusations", {
+                correct: number(result.own.correct_accusations),
+                total: number(result.own.accusation_attempts),
+              })}
+            </p>
+          </>
+        )}
         <output data-testid="recording">{t("queue.recording.saved")}</output>
       </Card>
       <div class="result-actions">

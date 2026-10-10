@@ -178,6 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .map_err(|_| "fixture lobby")?;
     let advance_clock = clock.clone();
     let probe_registry = registry.clone();
+    let result_fixture_pool = pool.clone();
     let router = account_auth_router(service, Providers, security.clone(), clock.clone())
         .merge(
             lobby_router(lobby, sessions.clone(), security.clone(), 16)
@@ -200,6 +201,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(
             Router::new()
                 .route("/__fixture/ready", get(|| async { "test-only" }))
+                .route(
+                    "/__fixture/result/{id}/unknown",
+                    post(move |Path(id): Path<String>| {
+                        let pool = result_fixture_pool.clone();
+                        async move {
+                            let Ok(id) = uuid::Uuid::parse_str(&id) else { return StatusCode::BAD_REQUEST; };
+                            // Contract fixture only: this does not simulate a process restart.
+                            let seeded = async {
+                                let mut tx = pool.begin().await?;
+                                let changed = sqlx::query("UPDATE online_match_results SET reason='server_failure',end_elapsed_ms=NULL,secret_seed=NULL WHERE id=$1").bind(id).execute(&mut *tx).await?;
+                                if changed.rows_affected() == 0 { return Ok::<_,sqlx::Error>(false); }
+                                sqlx::query("UPDATE online_match_players SET outcome='abort',opened_safe=NULL,mistakes=NULL,accusations=NULL,correct_accusations=NULL WHERE match_id=$1").bind(id).execute(&mut *tx).await?;
+                                tx.commit().await?;
+                                Ok(true)
+                            }.await;
+                            match seeded { Ok(true) => StatusCode::OK, Ok(false) => StatusCode::NOT_FOUND, Err(_) => StatusCode::SERVICE_UNAVAILABLE }
+                        }
+                    }),
+                )
                 .route(
                     "/__fixture/match/{id}",
                     get(move |Path(id): Path<String>| {

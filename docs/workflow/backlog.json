@@ -676,6 +676,18 @@
         "personal-result-web"
       ],
       "acceptance": "ADR0041·실제HTTPSbootstrap전달전본문관측/동일response전달·철회/권한/쓰기0/독립proof유지·CI최초Red/로컬전후PCmobile재시도0·trace보존·제품/timeout/retry/SW변경0·전체관련gate/코드리뷰/최신CI"
+    },
+    {
+      "key": "unknown-result-details",
+      "issue": 93,
+      "milestone": "M3",
+      "title": "feat(results): 장애 중단 결과의 미확인 통계 계약",
+      "requirements": "FR11/14/16, NFR01/02/05/06/07/08",
+      "scenarios": "TS15/16/20/21/26/31/35/36",
+      "deps": [
+        "auth-recovery-observation"
+      ],
+      "acceptance": "ADR0042·Rust→TS 명시null/unknown abort·forward migration/16null패턴/known upgrade·reader/project/HTTP/strict decoder/8언어 숫자미생성·writer 충돌/삭제 비복원·actual PG/HTTPS PCmobile·RedGreen/gates/review/CI; 실제 journal/restart는 후속18"
     }
   ]
 }

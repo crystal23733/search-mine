@@ -266,5 +266,11 @@
   "friends.again": "친구 대전 대기로",
   "match.opponentReconnecting": "상대가 다시 연결하고 있습니다. 남은 유예 {{seconds}}초. 대전 시간은 계속 흐릅니다.",
   "match.reconnectWaiting": "서버 결과를 기다리고 있습니다.",
-  "match.reconnecting": "다시 연결하고 있습니다. {{seconds}}초 후 시도를 멈춥니다. 서버에서는 경기가 계속 진행됩니다."
+  "match.reconnecting": "다시 연결하고 있습니다. {{seconds}}초 후 시도를 멈춥니다. 서버에서는 경기가 계속 진행됩니다.",
+  "result.check": "저장 결과 확인",
+  "result.checking": "저장된 내 결과를 확인하고 있습니다…",
+  "result.notFound": "이 판에서 확인할 수 있는 저장 결과가 없습니다.",
+  "result.unavailable": "결과를 확인하지 못했습니다. 다시 시도해 주세요.",
+  "result.savedTitle": "저장된 내 결과",
+  "result.openedSafe": "열린 안전칸: {{count}}"
 }

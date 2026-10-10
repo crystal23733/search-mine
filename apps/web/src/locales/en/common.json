@@ -266,5 +266,11 @@
   "friends.again": "Back to friends lobby",
   "match.opponentReconnecting": "Opponent is reconnecting. {{seconds}} s left. Match time keeps running.",
   "match.reconnectWaiting": "Waiting for the server result.",
-  "match.reconnecting": "Trying to reconnect. Attempts stop in {{seconds}} s. The match keeps running on the server."
+  "match.reconnecting": "Trying to reconnect. Attempts stop in {{seconds}} s. The match keeps running on the server.",
+  "result.check": "Check stored result",
+  "result.checking": "Checking your stored result…",
+  "result.notFound": "No stored result is available for this match.",
+  "result.unavailable": "The result could not be checked. Try again.",
+  "result.savedTitle": "Stored personal result",
+  "result.openedSafe": "Safe cells opened: {{count}}"
 }

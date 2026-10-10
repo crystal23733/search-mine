@@ -148,7 +148,12 @@ async fn run(
     loop {
         tokio::select! {
             biased;
-            changed = revoked.changed() => { if changed.is_err() || *revoked.borrow() { close_code = 1008; break; } }
+            changed = revoked.changed() => {
+                if changed.is_err() || *revoked.borrow() {
+                    if !connection.authority().was_released() { close_code = 1008; }
+                    break;
+                }
+            }
             outgoing = connection.next() => {
                 let Some(event) = outgoing else { break; };
                 if context.registry.authorities.with_authority(connection.authority(), context.registry.auth_clock.now(), || ()).is_err() { break; }
@@ -197,6 +202,7 @@ async fn run(
             || (),
         )
         .is_err()
+        && !connection.authority().was_released()
     {
         close_code = 1008;
     }

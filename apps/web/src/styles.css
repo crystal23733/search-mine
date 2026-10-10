@@ -1225,6 +1225,13 @@ input[type="checkbox"]:checked::before {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
 }
+.result-lookup {
+  margin-block: 1rem;
+}
+.result-lookup .button {
+  max-width: 100%;
+  white-space: normal;
+}
 @media (max-width: 600px) {
   .identity-row > .button,
   .account-profile > .button {

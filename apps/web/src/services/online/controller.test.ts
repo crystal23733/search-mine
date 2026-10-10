@@ -186,6 +186,9 @@ function setup() {
     close: vi.fn(),
   };
   const port: OnlinePort = {
+    result: vi.fn(async () => {
+      throw new OnlineFailure("unavailable");
+    }),
     lobby: vi.fn(async () => idle),
     connect: vi.fn(async (owner, _match, signal) =>
       auth.execute(owner, async () => connection, signal),

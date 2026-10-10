@@ -63,6 +63,11 @@ render(
     services={{
       auth: account.auth,
       online: {
+        result: async (...args) =>
+          (await import("./services/online/result-http")).createResultHttp(
+            account.auth,
+            window.fetch.bind(window),
+          )(...args),
         lobby: async (...args) =>
           (await import("./services/online/http")).createLobbyHttp(
             account.auth,

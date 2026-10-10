@@ -29,3 +29,5 @@ pm-ai-shipping:code-review의 correctness를 기준 develop2db4ac7 대비 순차
 새 결과 단위 테스트5개의 본문은 `tests/unit/result_*.rs`로 옮겨 source coverage의 분모에서 제외했다. 이동 전후 본문 동일을 비교했고 실행/격리/단언을 유지했다. 최신 fmt/all-target Clippy·전체 서버 `cargo llvm-cov --tests -- --include-ignored`/실제PG30개8.21초/HTTP13개0.91초와 gate exit0. 최종 제품 코드 line 기준 Auth385/387=99.48%, Match287/289=99.31%, Lobby362/368=98.37%, Result53/53=100%, 전체6137/6615=92.77%다. 처음 inline 테스트가 섞인 Result116/116·전체6266/6744 수치는 최종 분모로 사용하지 않는다. 계측 산출물 `.profraw/.profdata`도 gitignore에 추가했다.
 
 새 조회 경로는 실제DB+Axum HTTP 통합으로 검증했다.85개 HTTPS 브라우저는 기존 사용자 흐름의 회귀 검사이며 새 조회의 웹 소비/HTTPS 시나리오는 후속 작업이다. CI PostgreSQL18/PR/병합 결과는 PR 본문과 일별 로컬 리뷰에 확인 후 기록한다.
+
+최종 PR88은2026-10-10T02:29:45Z/develop cdd700e로 병합했고82 CLOSED를 확인했다. CI PG18.6 실제 DB30개/181unit·85browser 재시도0, Result53/53=100%/전체6137/6615=92.77%·최신 checks 통과. 웹 소비는 후속89이며 영속 재시작 출구18은 별도다.

@@ -524,6 +524,43 @@ async fn session_revocation_closes_the_actual_socket() {
 }
 
 #[tokio::test]
+async fn normal_finished_actor_retirement_closes_without_revoking_the_cookie_session() {
+    let f = fixture().await;
+    let (mut socket, _) = connect_async(request(&f, Some("https://liar.example"), true))
+        .await
+        .unwrap();
+    socket.next().await.unwrap().unwrap();
+    f.clock.0.store(243001, Ordering::SeqCst);
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let message = socket.next().await.unwrap().unwrap();
+            if let Message::Text(text) = message {
+                let event: serde_json::Value = serde_json::from_str(&text).unwrap();
+                if event["payload"]["recording"] == "saved" {
+                    break;
+                }
+            }
+        }
+    })
+    .await
+    .unwrap();
+    f.clock.0.store(273001, Ordering::SeqCst);
+    let close = tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            if let Message::Close(Some(frame)) = socket.next().await.unwrap().unwrap() {
+                break frame;
+            }
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        close.code,
+        tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode::Normal
+    );
+}
+
+#[tokio::test]
 async fn malformed_input_error_uses_the_generated_sequenced_wire_envelope() {
     let f = fixture().await;
     let (mut socket, _) = connect_async(request(&f, Some("https://liar.example"), true))

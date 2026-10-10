@@ -266,5 +266,11 @@
   "friends.again": "Zurück zur Freundeslobby",
   "match.opponentReconnecting": "Die andere Person verbindet sich erneut. Noch {{seconds}} s Zeit. Die Spielzeit läuft weiter.",
   "match.reconnectWaiting": "Warten auf das Serverergebnis.",
-  "match.reconnecting": "Verbindung wird wiederhergestellt. Versuche enden in {{seconds}} s. Das Spiel läuft auf dem Server weiter."
+  "match.reconnecting": "Verbindung wird wiederhergestellt. Versuche enden in {{seconds}} s. Das Spiel läuft auf dem Server weiter.",
+  "result.check": "Gespeichertes Ergebnis prüfen",
+  "result.checking": "Dein gespeichertes Ergebnis wird geprüft…",
+  "result.notFound": "Für diese Partie ist kein gespeichertes Ergebnis verfügbar.",
+  "result.unavailable": "Das Ergebnis konnte nicht geprüft werden. Versuche es erneut.",
+  "result.savedTitle": "Gespeichertes persönliches Ergebnis",
+  "result.openedSafe": "Geöffnete sichere Felder: {{count}}"
 }

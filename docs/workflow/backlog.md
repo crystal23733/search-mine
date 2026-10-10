@@ -88,3 +88,5 @@
 #85/PR86은 developa7c3099에 병합·종료했다. 최종 CI PG18.6 DB26·176unit/85browser 재시도0·최신6checks 통과와 실패/성공 artifact의 실제 보존을 확인했다. #84는 [테스트 설계](../design/14-testing-strategy.md)의 순수 port Node/DOM jsdom 분리·독립 행동/정상 poll 관측으로 진행한다. 로컬 실제 결과와 미확인 환경 원인은 [검증84](../verification/84-unit-arrangement-observation.md)에 구분한다. #82는 #84 병합·종료 후 시작하며 #83은 열어 둔다.
 
 #84/PR87은 develop2db4ac7에 병합·종료했다. 최종CI181unit15.37초/line87.52%·85browser4.9분/재시도0·PG18.6 DB26·최신6checks를 확인했다. #82는 [ADR0039](../adr/0039-authenticated-personal-result-read.md)의 actor 독립 본인 최소 결과·저장 hash·90일 조회·별도 철회 권위·단일2초/동시/rate를 구현한다. 실행 근거는 [검증82](../verification/82-authenticated-personal-result-read.md)에 기록한다. 웹 소비/영속 journal/재시작은 후속18이며 #83 원인은 미확정이다.
+
+#82/PR88은 develop cdd700e에 병합·종료했다. CI PG18.6 DB30·181unit/85browser 재시도0·Result100%/전체92.77%를 확인했다. 다음 [#89 본인 저장 결과 웹 확인](https://github.com/crystal23733/search-mine/issues/89)은 [ADR0040](../adr/0040-personal-result-web.md)의 현재 메모리 match/strict 최소 DTO·전후 인증·취소/WS 우선·8언어와 actual PG/HTTPS를 구현한다. 영속 journal/재시작 복구18과 원인 미확정83은 별도다.

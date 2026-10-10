@@ -3,6 +3,7 @@ import type {
   LobbyResponse,
   OnlineEvent,
   OnlineInput,
+  PersonalResult,
 } from "@liar/protocol";
 import type { RequestOwner } from "../auth/requests";
 export class OnlineFailure extends Error {
@@ -19,6 +20,11 @@ export interface OnlineConnection {
   close(): void;
 }
 export interface OnlinePort {
+  result(
+    owner: RequestOwner,
+    matchId: string,
+    signal: AbortSignal,
+  ): Promise<PersonalResult>;
   lobby(
     owner: RequestOwner,
     command: LobbyCommand,

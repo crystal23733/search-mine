@@ -652,6 +652,18 @@
         "bounded-online-reconnect"
       ],
       "acceptance": "항상 CI 최초 실패 trace·재로드 전후 runner/JSON·native lifecycle·제품/timeout/retry 변경 없음·PC/mobile 반복/검사/CI·83 원인 미확정 OPEN"
+    },
+    {
+      "key": "personal-result-web",
+      "issue": 89,
+      "milestone": "M3",
+      "title": "feat(web): 인증된 본인 저장 결과 확인 화면",
+      "requirements": "FR11/14/16, NFR01/02/05/06/08",
+      "scenarios": "TS15/16/20/21/26/31/35/36",
+      "deps": [
+        "authenticated-personal-result"
+      ],
+      "acceptance": "ADR0040·strict 최소 DTO/동일 match·인증 전후 proof/4096byte/취소·동시1/명시 조회·WS 우선/역순/권한/후보·8언어 Atomic 본인 통계만·actual PG/HTTPS PC/mobile/actor 정리/secret0/storage0 TDD; 영속 journal 후속18"
     }
   ]
 }

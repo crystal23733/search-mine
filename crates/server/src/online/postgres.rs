@@ -55,7 +55,7 @@ pub(super) async fn persist_result(
 ) -> Result<SaveResult, OnlineError> {
     let reason = reason(result.reason);
     let mut tx = connection.begin().await.map_err(db_error)?;
-    let inserted: Option<Uuid> = sqlx::query_scalar("INSERT INTO online_match_results(id,rules_hash,secret_seed,end_elapsed_ms,reason,recorded_at,seed_expires_at) VALUES($1,$2,$3,$4,$5,to_timestamp($6::double precision),to_timestamp($6::double precision)+interval '7 days') ON CONFLICT(id) DO NOTHING RETURNING id")
+    let inserted: Option<Uuid> = sqlx::query_scalar("INSERT INTO online_match_results(id,rules_hash,secret_seed,end_elapsed_ms,reason,recorded_at,seed_expires_at,retention_started_at) VALUES($1,$2,$3,$4,$5,to_timestamp($6::double precision),to_timestamp($6::double precision)+interval '7 days',to_timestamp($6::double precision)) ON CONFLICT(id) DO NOTHING RETURNING id")
                 .bind(result.id).bind(&result.rules_hash).bind(result.seed.as_slice())
                 .bind(result.ended_ms as i64).bind(reason).bind(now)
                 .fetch_optional(&mut *tx).await.map_err(db_error)?;

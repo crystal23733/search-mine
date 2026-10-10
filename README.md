@@ -148,3 +148,5 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 [#95 결과 응답 관측](docs/verification/95-result-response-observation.md)은 실제 서버 본문을 앱에 전달하기 전에 관측하여 늦은 CDP 본문 조회 의존을 제거한다. #93/PR94은 병합·종료됐고 최초 CI flaky 기록을 보존했다.
 
 [#97 온라인 저장 소유 연결](docs/verification/97-online-storage-owner.md)은 전용 DB 연결의 소유 lock과 결과 write를 함께 관리하고 소유권 상실 시 서비스를 종료한다. 기존 단일 인스턴스를 종료한 뒤 교체하며 실제 journal/재시작 결과 복구는 후속이다. #95/PR96은 병합·종료됐다.
+
+[#99 결과 보존 기준](docs/verification/99-result-retention-anchor.md)은 실제 저장 시각과90일 보존 기준을 분리한다. 현재 정상 결과 JSON/화면은 유지하고 영속 journal 복구가 보존 기간을 다시 시작하지 않도록 준비한다. #97/PR98은 병합·종료됐다.

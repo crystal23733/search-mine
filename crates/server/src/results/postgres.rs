@@ -28,7 +28,7 @@ impl ResultReader for PgResultReader {
                 return Err(ResultError::Unavailable);
             }
             // Select only the authorized participant projection; never select board truth.
-            let mut rows=sqlx::query("SELECT r.id,p.account_id,r.rules_hash,r.end_elapsed_ms,r.reason,p.outcome,p.opened_safe,p.mistakes,p.accusations,p.correct_accusations FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id WHERE r.id=$1 AND p.account_id=$2 AND NOT p.is_bot AND r.recorded_at<=to_timestamp($3::double precision) AND r.recorded_at>to_timestamp($3::double precision)-interval '7776000 seconds' LIMIT 2")
+            let mut rows=sqlx::query("SELECT r.id,p.account_id,r.rules_hash,r.end_elapsed_ms,r.reason,p.outcome,p.opened_safe,p.mistakes,p.accusations,p.correct_accusations FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id WHERE r.id=$1 AND p.account_id=$2 AND NOT p.is_bot AND r.recorded_at<=to_timestamp($3::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>=to_timestamp(0) AND COALESCE(r.retention_started_at,r.recorded_at)<=to_timestamp($3::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>to_timestamp($3::double precision)-interval '7776000 seconds' LIMIT 2")
                 .bind(match_id).bind(account).bind(now).fetch_all(&self.pool).await.map_err(db_error)?;
             if rows.len() > 1 {
                 return Err(ResultError::Unavailable);

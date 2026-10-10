@@ -34,3 +34,7 @@ scripts/check.ps1은 Rustfmt/Clippy/workspace/WASM/types/fixtures/tokens/format/
 두 번째 전체 browser는87통과1실패2미실행6.4분이었다. 계정/결과 검사는 모두 통과했고 기존 offline-chromium의 초기 캐시 준비 문구5초 대기가 실패했다. 자료는 .tmp/result97-full-recheck에 보존했다. 2-worker 조건에서 전체 비교 검증하며 제품/Playwright config/timeout/retry는 변경하지 않았다. 이 조건은 CI와 같으며 기존 테스트 안의 실제 동시 탭/WS 행동을 유지한다. 소유 연결 자체 line coverage는133/136·97.79%다.
 
 최종 실제 PG17.4/HTTPS 전체 browser는 `pnpm exec playwright test --workers 2 --retries 0 --output .tmp/result97-full-workers2`로90개8.0분·재시도0 통과했다. CI와 같은2-worker 조건이며 제품/Playwright config/timeout/retry는 변경하지 않았다. 이전 두 전체 실패와 별도로 기록하며 원인을 해결했다고 주장하지 않는다. docs147/Mermaid34실패0·최종 코드 리뷰·staged diff/비밀·원문/ignored review 제외 확인. 원격 CI/PR 병합은 완료 후 기록한다.
+
+## 원격 완료
+
+[PR98](https://github.com/crystal23733/search-mine/pull/98)은2026-10-10T13:28:21Z developecb6f21c98ee368bc3ef58723c4b1ae2ef261358에 병합됐고97은13:28:22Z 종료됐다. 최신head667e9a3/Ready/CLEAN·본문 후 Repository 검사까지8개 rollup SUCCESS 확인 후 exact-head squash. Product38055227162: PG18.6 DB38ignored0(8.53초/coverage9.58초),199unit35파일·웹87.94%,90browser5.4분재시도0·Auth99.48/Match99.31/Lobby98.37/Result100%·서버6324/681492.81%. 로컬 두 지연과90개8.0분workers2retry0 결과를 구분한다. 원인 미확정 자료를 보존하며 journal/OS kill-restart 복구는 후속이다.

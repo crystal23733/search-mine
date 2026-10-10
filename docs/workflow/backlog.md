@@ -98,3 +98,5 @@
 #93/PR94은 develope5493be에 병합·종료했다. CI89passed+1flaky의 기존 known 결과 본문 관측은 다음 [#95](https://github.com/crystal23733/search-mine/issues/95)가 [ADR0043](../adr/0043-result-response-observation.md)에 따라 수정한다. 제품 결과 계약은 통과했으며 실제 영속 소유 연결/journal/startup/processkill·새로고침 발견과 상위18은 후속이다.
 
 #95/PR96은 developfd29c11에 병합·종료했다. 다음 [#97](https://github.com/crystal23733/search-mine/issues/97)은 [ADR0044](../adr/0044-online-storage-owner.md)의 단일 저장 소유 연결을 구현한다. active journal/admission·startup abort/OS kill-restart·새로고침 발견은 후속 #18이다.
+
+#97/PR98은 developecb6f21에 병합·종료했다. 다음 [#99](https://github.com/crystal23733/search-mine/issues/99)는 [ADR0045](../adr/0045-result-retention-anchor.md)의 보존 기준을 분리한다. journal/admission/startup abort·실제 OS kill-restart 결과 복구·새로고침 발견은 후속 #18이다.

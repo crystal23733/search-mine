@@ -1,6 +1,7 @@
 use liar_server::auth::*;
 use liar_server::lobby::*;
 use liar_server::online::*;
+use liar_server::results::*;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use std::{env, time::Duration};
@@ -24,6 +25,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map_err(|_| "Online limits are invalid")?;
         let lobby_config = load_lobby_config(|name| env::var(name).ok())
             .map_err(|_| "Lobby limits are invalid")?;
+        let result_config = load_result_config(|name| env::var(name).ok())
+            .map_err(|_| "Result limits are invalid")?;
+        let result_authorities = AuthorityRegistry::new(result_config.authorities)
+            .map_err(|_| "Result capacity is invalid")?;
         let authorities =
             AuthorityRegistry::new(online.connections).map_err(|_| "Online capacity is invalid")?;
         let lobby_authorities = AuthorityRegistry::new(lobby_config.authorities)
@@ -54,10 +59,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|_| "Online initialization failed")?;
         let runtime = config
             .initialize_with_invalidations(
-                auth_pool,
+                auth_pool.clone(),
                 Arc::new(CombinedSessionInvalidator::new(
-                    authorities,
-                    lobby_authorities.clone(),
+                    Arc::new(CombinedSessionInvalidator::new(
+                        authorities,
+                        lobby_authorities.clone(),
+                    )),
+                    result_authorities.clone(),
                 )),
             )
             .map_err(|_| "Authentication initialization failed")?;
@@ -83,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map_err(|_| "Bot initialization failed")?,
             LobbyAuthentication {
                 authorities: lobby_authorities,
-                clock: auth_clock,
+                clock: auth_clock.clone(),
             },
         )
         .map_err(|_| "Lobby initialization failed")?;
@@ -94,12 +102,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             lobby_config.requests,
         )
         .map_err(|_| "Lobby HTTP initialization failed")?;
+        let results = result_router(
+            Arc::new(PgResultReader::new(auth_pool, auth_clock.clone())),
+            sessions.clone(),
+            runtime.security.clone(),
+            ResultAuthentication {
+                authorities: result_authorities,
+                clock: auth_clock,
+            },
+            result_config.requests,
+        )
+        .map_err(|_| "Result HTTP initialization failed")?;
         let ws = websocket_router(&origin, sessions, registry, online.connections)
             .map_err(|_| "WebSocket initialization failed")?;
         tokio::spawn(runtime.maintenance);
-        runtime.router.merge(ws).merge(lobby)
+        runtime.router.merge(ws).merge(lobby).merge(results)
     } else {
-        disabled_auth_router().merge(disabled_lobby_router())
+        disabled_auth_router()
+            .merge(disabled_lobby_router())
+            .merge(disabled_result_router())
     };
     let bind = env::var("LIAR_BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());
     let listener = tokio::net::TcpListener::bind(bind)

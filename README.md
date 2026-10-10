@@ -117,6 +117,8 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 
 ## 권위 서버와 WebSocket
 
+[#82 본인 완료 결과 조회](docs/verification/82-authenticated-personal-result-read.md)는 `POST /api/v1/results`에 `{v:1,match_id}`를 보내 저장된 본인 결과만 조회한다. 인증 쿠키·Origin·CSRF·닉네임이 필요하며 90일 미만의 본인 참여 결과만 반환한다. 상대 식별자/통계·seed·보드·현재 rules는 없다. 조회 전후 세션을 확인하고 철회 중 응답을 차단한다. 없는/타 계정/삭제/만료 결과의 같은404를 진행 상태나 승패로 추정하지 않는다. 웹 소비·서버 재시작 복구는 후속 #18이다. `LIAR_RESULT_AUTHORITIES=64`, `LIAR_RESULT_REQUESTS=16`은 개발 기본값이고 각각1..20000/1..256만 허용한다. 전체 IO2초·session/account 초당20회 상한은 #26의 실측을 대신하지 않는다.
+
 [#80 제한된 자동 재연결](docs/verification/80-bounded-online-reconnect.md)은 끊김 동안 읽기 전용 보드를 유지하고 최대30초 자동 복구를 시도한다. 같은 세션의 새 snapshot 뒤 메모리 미확인 명령을 같은 UUID로 재전송한다. 서버 재시작 복구·결과 조회는 후속 #18이다.
 
 [#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. `POST /api/v1/lobby`의 인증 큐/친구방에서 배정된 계정이 게임 WS를 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다. 웹의 로비/온라인 화면은 #70/#72에서 연결했고 자동 재접속은 #18의 후속 작업이다.

@@ -1,5 +1,7 @@
 # 06. HTTP·WebSocket 프로토콜
 
+#82의 [ADR0039](../adr/0039-authenticated-personal-result-read.md)은 `POST /api/v1/results`의 strict256byte `{v:1,match_id}`와 본인 최소 결과 DTO를 정의한다. actor와 독립된 저장 결과 조회이며 uniform404를 진행/승패로 해석하지 않는다. 저장 hash에 현재 rules를 붙이지 않는다.
+
 #80의 [ADR0038](../adr/0038-bounded-online-reconnect.md)은 진행 중 연결 상실의 단조30초 backoff·새 connection lease/epoch/snapshot과 메모리 원본 UUID/seq/action/known revision 재전송을 정의한다. 권위 결과는 서버만 결정하며 로컬 예산을 grace/승패로 해석하지 않는다.
 
 #78의 [ADR0037](../adr/0037-session-recovery-candidate.md)은 인증 전송 실패와 수신한 잘못된 proof를 분리한다. 복구 후보에는 요청 권한이 없으며 bootstrap→identities→bootstrap에서 원래 account/session을 재확인한다. WS나 Rust 공개 DTO·서버 유예 규칙은 변경하지 않는다.
@@ -12,6 +14,7 @@
 
 | 경로 | 계약 |
 |---|---|
+| POST /api/v1/results | `{v:1,match_id}` strict256byte·본인90일 미만 결과·전후 인증/철회·uniform404·no-store; ADR0039 |
 | GET /api/v1/auth/providers | 필수4개 provider 가용 상태, secret/endpoint 없음; 실제 검수 #42 |
 | GET /api/v1/auth/bootstrap | 최소 계정·메모리 CSRF·5분 browser cookie·provider 상태, no-store; 계정 생성 없음 |
 | POST /api/v1/auth/{provider}/start | CSRF/Origin, login intent, one-use state·nonce·browser binding; authorize URL |

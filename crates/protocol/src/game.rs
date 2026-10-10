@@ -122,6 +122,11 @@ pub enum PublicEndReason {
     ServerFailure,
     Cancelled,
 }
+impl PublicEndReason {
+    pub fn completed(self) -> bool {
+        !matches!(self, Self::ServerFailure | Self::Cancelled)
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "snake_case")]
 pub enum Outcome {
@@ -199,7 +204,7 @@ pub fn from_projection(projection: &Projection, viewer: Seat) -> GameView {
         GameResult {
             reason,
             outcome,
-            completed: !matches!(end.reason, EndReason::ServerFailure | EndReason::Cancelled),
+            completed: reason.completed(),
         }
     });
     let phase = match result.as_ref().map(|r| r.outcome) {

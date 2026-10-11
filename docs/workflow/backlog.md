@@ -120,3 +120,6 @@
 
 
 #114 FR01/09/10/16·NFR01/02/05/07·TS17/18/20/29/31/34/35/36 → [ADR0053](../adr/0053-personal-game-data-export.md) → 본인 game export bounded pages/raw·기존 auth transaction/fresh proof·삭제/만료/CPU 수명·명시 다운로드 → [검증114](../verification/114-personal-game-data-export.md). 공식 데일리 수집/timing/순위는 다음 하위다.
+
+
+#114/PR115는 develop04fe9d1에 병합·114 CLOSED를 확인했다. 실제 CI PG18.6 83/26.69초·instrumented83/25.82초·Privacy100%/서버93.31%·220unit/98browser(6.1분/재시도0)다. 다음 [#116 인증 데일리 HTTP](https://github.com/crystal23733/search-mine/issues/116)는 ADR0054의 definition/submit/own·verified_completion·현재 세션 장벽을 구현한다. ticket/heartbeat/두 순위/명시 UI는 다음19 하위이며 상위는 OPEN이다.

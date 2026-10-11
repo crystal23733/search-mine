@@ -22,7 +22,8 @@ pub fn app(pool: Option<PgPool>) -> Router {
         auth::disabled_auth_router()
             .merge(lobby::disabled_lobby_router())
             .merge(results::disabled_result_router())
-            .merge(privacy::disabled_privacy_router()),
+            .merge(privacy::disabled_privacy_router())
+            .merge(daily::disabled_daily_router()),
     )
 }
 pub fn app_with_auth(pool: Option<PgPool>, auth: Router) -> Router {

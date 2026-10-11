@@ -1,4 +1,5 @@
 use liar_server::auth::*;
+use liar_server::daily::*;
 use liar_server::lobby::*;
 use liar_server::online::*;
 use liar_server::privacy::*;
@@ -50,6 +51,10 @@ async fn serve() -> ServerResult {
             .map_err(|_| "Result limits are invalid")?;
         let privacy_config = load_privacy_config(|name| env::var(name).ok())
             .map_err(|_| "Privacy limits are invalid")?;
+        let daily_config = load_daily_config(|name| env::var(name).ok())
+            .map_err(|_| "Daily limits are invalid")?;
+        let daily_authorities = AuthorityRegistry::new(daily_config.authorities)
+            .map_err(|_| "Daily capacity is invalid")?;
         let privacy_authorities = AuthorityRegistry::new(privacy_config.authorities)
             .map_err(|_| "Privacy capacity is invalid")?;
         let export_workers = ExportWorkers::default();
@@ -95,7 +100,10 @@ async fn serve() -> ServerResult {
                     )),
                     Arc::new(CombinedSessionInvalidator::new(
                         result_authorities.clone(),
-                        privacy_authorities.clone(),
+                        Arc::new(CombinedSessionInvalidator::new(
+                            privacy_authorities.clone(),
+                            daily_authorities.clone(),
+                        )),
                     )),
                 )),
             )
@@ -149,7 +157,7 @@ async fn serve() -> ServerResult {
         .map_err(|_| "Result HTTP initialization failed")?;
         let privacy = privacy_router(
             Arc::new(PgGameExportReader::with_workers(
-                auth_pool,
+                auth_pool.clone(),
                 auth_clock.clone(),
                 export_workers.clone(),
             )),
@@ -157,12 +165,24 @@ async fn serve() -> ServerResult {
             runtime.security.clone(),
             PrivacyAuthentication {
                 authorities: privacy_authorities,
-                clock: auth_clock,
+                clock: auth_clock.clone(),
                 workers: export_workers,
             },
             privacy_config.requests,
         )
         .map_err(|_| "Privacy HTTP initialization failed")?;
+        let daily = daily_router(
+            Arc::new(PgDailyRepository::new(auth_pool, auth_clock.clone())),
+            BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
+            sessions.clone(),
+            runtime.security.clone(),
+            DailyAuthentication {
+                authorities: daily_authorities,
+                clock: auth_clock,
+            },
+            daily_config.requests,
+        )
+        .map_err(|_| "Daily HTTP initialization failed")?;
         let ws = websocket_router(&origin, sessions, registry, online.connections)
             .map_err(|_| "WebSocket initialization failed")?;
         tokio::spawn(runtime.maintenance);
@@ -172,11 +192,13 @@ async fn serve() -> ServerResult {
             .merge(lobby)
             .merge(results)
             .merge(privacy)
+            .merge(daily)
     } else {
         disabled_auth_router()
             .merge(disabled_lobby_router())
             .merge(disabled_result_router())
             .merge(disabled_privacy_router())
+            .merge(disabled_daily_router())
     };
     let bind = env::var("LIAR_BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());
     let listener = tokio::net::TcpListener::bind(bind)

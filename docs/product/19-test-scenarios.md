@@ -315,3 +315,8 @@ TS17/18의 #109 foundation은 [ADR0050](../adr/0050-bounded-native-daily-replay.
 
 
 TS35 확장(#114): 본인에 속한51개 이상 online/daily 기록과 타인/만료/손상 기록을 실제PG에 준비한다. nickname 없는 최근 인증도 페이지/내보내기를 허용하며 다른 account/session revision·300초 경계·동시 삭제/철회는 거절한다. record UUID tie/커서 진행·raw exact7일/NULL/metadata-digest 결합과 record90일을 검사한다. HTTP가 데이터를 얻은 뒤 실제 session이 바뀌거나 barrier가 철회되면 응답을 commit하지 않는다. 실제 HTTPS 설정 버튼으로 PC/mobile·8언어에서 파일의 본인 기록/비밀 제외를 검사하고, 중간 page/raw 실패·반복 cursor·상한 초과·응답 직전 계정 전환은 파일이 생기지 않는지 확인한다. 정상 빈 목록과 upstream/DB 실패를 구분한다.
+
+
+#116 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0054](../adr/0054-authenticated-daily-submission-http.md) → closed 인증 Daily definition/submit/own·accepted snapshot/공유 bounded CPU·첫 완료/Practice·현재 세션 응답 장벽 → [검증116](../verification/116-authenticated-daily-http.md). trust는 verified_completion이며 ticket/heartbeat/순위/명시 UI는 후속19다.
+
+TS17/18 확장(#116): 고정 POST와 실제 현재 세션/닉네임·CSRF로 accepted definition→공유 replay→첫 완료/같은 attempt/다른 attempt Practice→own/rights export를 연결한다. malformed/추가 필드/2MiB/버전/metadata·타인/revision/철회/삭제·CPU/SQL/기한/rate·최종 proof와 clock 역행을 검사한다. 원래 attempt와 receipt attempt를 구분하고 client elapsed를 verified_time으로 사용하지 않는다. 정상 own:null과 실패를 구분하며 실제PG/HTTPS로 같은 production 구성을 실행한다.

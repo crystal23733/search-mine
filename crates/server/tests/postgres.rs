@@ -18,6 +18,8 @@ struct HttpClock;
 mod admission_restart;
 #[path = "postgres/daily.rs"]
 mod daily;
+#[path = "postgres/daily_http.rs"]
+mod daily_http;
 #[path = "postgres/latest_results.rs"]
 mod latest_results;
 #[path = "postgres/privacy.rs"]

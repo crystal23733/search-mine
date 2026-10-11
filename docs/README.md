@@ -87,3 +87,6 @@
 - [ADR0050 · bounded native daily replay](adr/0050-bounded-native-daily-replay.md) / [검증109](verification/109-bounded-native-daily-replay.md)
 
 - [ADR0051 · 치명 오류 runtime 종료](adr/0051-fatal-runtime-shutdown.md)
+
+
+- [ADR0052 · 데일리 첫 완료 영속화](adr/0052-daily-first-completion-store.md) / [검증112](verification/112-daily-first-completion-store.md)

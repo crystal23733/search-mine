@@ -84,3 +84,6 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 109 첫CI의 기존 owner-loss 종료 실패를 따라 [ADR0051](../adr/0051-fatal-runtime-shutdown.md)의 actual BoardPool blocking 진입→fatal 반환→gate 해제 전 실행 진입점 반환을 Red/Green으로 확인한다. 실제 PG main/HTTP/WS 종료도 재검증하며 기존4초 deadline/retry는 유지한다. 이 독립 경계의 재현으로 원격 실패의 내부 원인을 단정하지 않는다.
 
 109 첫CI의 이탈 fresh/reload UI 실패는 [ADR0049](../adr/0049-reconnect-integration-exit.md)의 페이지 수명 관측기로 보정한다. 서버200/body/fulfill과 후속 proof 완료를 구분하고, 페이지별 한 route/직렬 관측 slot과 실제 화면·8언어·SQL·OS restart를 재시도0으로 검사한다. 제품 기한/재시도/SW 변경 없이 기존 원격 실패와 후속 실행을 함께 기록한다.
+
+
+#112 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0052](../adr/0052-daily-first-completion-store.md) → immutable accepted publication/worker payload binding·실제PG 첫 완료/attempt·권한/삭제·7일/90일/동시성 → [검증112](../verification/112-daily-first-completion-store.md). HTTP/timing/순위/rights export/UI는 다음 필수 하위다.

@@ -167,7 +167,7 @@ pub(super) async fn lock_account(
 ) -> Result<PgRow, AuthError> {
     sqlx::query("SELECT id,nickname,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM last_seen_at)::bigint AS last_seen_at FROM auth_accounts WHERE id=$1 FOR UPDATE").bind(id).fetch_optional(&mut **tx).await.map_err(database_error)?.ok_or(AuthError::Unauthenticated)
 }
-pub(super) async fn authorize(
+pub(crate) async fn authorize(
     tx: &mut Transaction<'_, Postgres>,
     auth: SessionAuthority,
     fresh: bool,

@@ -306,3 +306,6 @@ TS16 확장(#107): [ADR0049](../adr/0049-reconnect-integration-exit.md)의 두 �
 
 
 TS17/18의 #109 foundation은 [ADR0050](../adr/0050-bounded-native-daily-replay.md)에 따라 server published snapshot과 기존 native/WASM golden을 같은 Rust로 재생한다. metadata/identity/time 불일치·미완료는 거절하고 정상 rejected 클릭/정확한 중복은 core 계약을 유지한다. caller timeout/cancel 뒤 actual worker permit을 유지하며 첫 유효 완료/공식 시간/DB/웹 제출은 후속19에서 통합 검증한다. [실행109](../verification/109-bounded-native-daily-replay.md).
+
+
+#112 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0052](../adr/0052-daily-first-completion-store.md) → immutable accepted publication/worker payload binding·실제PG 첫 완료/attempt·권한/삭제·7일/90일/동시성 → [검증112](../verification/112-daily-first-completion-store.md). HTTP/timing/순위/rights export/UI는 다음 필수 하위다.

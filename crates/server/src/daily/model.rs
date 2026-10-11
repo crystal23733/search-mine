@@ -3,6 +3,8 @@ use liar_core::{
     rules::RulesSnapshot,
 };
 use liar_protocol::{daily::DailyReplay, game::PublicAction};
+use sha2::{Digest, Sha256};
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct PublishedDaily {
@@ -53,36 +55,66 @@ impl PublishedDaily {
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ReplayEvidence {
+pub struct ReplayOutcome {
     pub(super) metadata: DailyMetadata,
     pub(super) opened_safe: usize,
     pub(super) mistakes: u16,
     pub(super) replayed_elapsed_ms: u32,
 }
+#[derive(Clone, PartialEq, Eq)]
+pub struct ReplayEvidence {
+    outcome: ReplayOutcome,
+    canonical_replay: Arc<str>,
+    fingerprint: [u8; 32],
+}
+impl std::fmt::Debug for ReplayEvidence {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ReplayEvidence")
+            .field("outcome", &self.outcome)
+            .field("fingerprint", &self.fingerprint)
+            .finish_non_exhaustive()
+    }
+}
 impl ReplayEvidence {
-    pub(super) fn from_puzzle(puzzle: &DailyPuzzle) -> Result<Self, ReplayError> {
+    pub(super) fn from_puzzle(
+        puzzle: &DailyPuzzle,
+        canonical: String,
+    ) -> Result<Self, ReplayError> {
         if !puzzle.complete() {
             return Err(ReplayError::Incomplete);
         }
         let view = puzzle.projection();
         Ok(Self {
-            metadata: puzzle.metadata().clone(),
-            opened_safe: view.own.cells.opened_safe(),
-            mistakes: view.own.stats.mistakes,
-            replayed_elapsed_ms: puzzle.elapsed_ms(),
+            outcome: ReplayOutcome {
+                metadata: puzzle.metadata().clone(),
+                opened_safe: view.own.cells.opened_safe(),
+                mistakes: view.own.stats.mistakes,
+                replayed_elapsed_ms: puzzle.elapsed_ms(),
+            },
+            fingerprint: Sha256::digest(canonical.as_bytes()).into(),
+            canonical_replay: canonical.into(),
         })
     }
+    pub fn outcome(&self) -> &ReplayOutcome {
+        &self.outcome
+    }
     pub fn metadata(&self) -> &DailyMetadata {
-        &self.metadata
+        &self.outcome.metadata
     }
     pub fn opened_safe(&self) -> usize {
-        self.opened_safe
+        self.outcome.opened_safe
     }
     pub fn mistakes(&self) -> u16 {
-        self.mistakes
+        self.outcome.mistakes
     }
     pub fn replayed_elapsed_ms(&self) -> u32 {
-        self.replayed_elapsed_ms
+        self.outcome.replayed_elapsed_ms
+    }
+    pub(crate) fn canonical_replay(&self) -> &str {
+        &self.canonical_replay
+    }
+    pub(crate) fn fingerprint(&self) -> [u8; 32] {
+        self.fingerprint
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

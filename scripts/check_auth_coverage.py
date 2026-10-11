@@ -9,8 +9,8 @@ domain = [f for f in server if f["filename"].replace("\\", "/").endswith(("/auth
 match_domain = [f for f in server if f["filename"].replace("\\", "/").endswith("/online/state.rs")]
 lobby_domain = [f for f in server if f["filename"].replace("\\", "/").endswith("/lobby/policy.rs")]
 result_domain = [f for f in server if f["filename"].replace("\\", "/").endswith("/results/model.rs")]
-daily_domain = [f for f in server if f["filename"].replace("\\", "/").endswith("/daily/model.rs")]
-if len(domain) != 2 or len(match_domain) != 1 or len(lobby_domain) != 1 or len(result_domain) != 1 or len(daily_domain) != 1 or not any(f["filename"].endswith("main.rs") for f in server) or not any(f["filename"].endswith("migrate.rs") for f in server):
+daily_domain = [f for f in server if f["filename"].replace("\\", "/").endswith(("/daily/model.rs", "/daily/records.rs"))]
+if len(domain) != 2 or len(match_domain) != 1 or len(lobby_domain) != 1 or len(result_domain) != 1 or len(daily_domain) != 2 or not any(f["filename"].endswith("main.rs") for f in server) or not any(f["filename"].endswith("migrate.rs") for f in server):
     raise SystemExit("Coverage is missing domain or executable entry points")
 failed = False
 for name, files, minimum in [("Auth domain", domain, 95), ("Match domain", match_domain, 95), ("Lobby domain", lobby_domain, 95), ("Result domain", result_domain, 95), ("Daily domain", daily_domain, 95), ("Whole server", server, 80)]:

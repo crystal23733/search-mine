@@ -16,6 +16,8 @@ use zeroize::Zeroizing;
 struct HttpClock;
 #[path = "postgres/admission_restart.rs"]
 mod admission_restart;
+#[path = "postgres/daily.rs"]
+mod daily;
 #[path = "postgres/latest_results.rs"]
 mod latest_results;
 #[tokio::test]

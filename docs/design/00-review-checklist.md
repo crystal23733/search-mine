@@ -152,3 +152,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #109 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0050](../adr/0050-bounded-native-daily-replay.md) → published snapshot/전체 metadata·공유Rust 완료 evidence·strict replay/정상 거부·actual bounded worker 수명 → [검증109](../verification/109-bounded-native-daily-replay.md). 공식 첫 완료/PG/HTTP/시간신뢰/순위/UI는 후속19이며 foundation을 통합 완료로 계산하지 않는다.
+
+
+#112 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0052](../adr/0052-daily-first-completion-store.md) → immutable accepted publication/worker payload binding·실제PG 첫 완료/attempt·권한/삭제·7일/90일/동시성 → [검증112](../verification/112-daily-first-completion-store.md). HTTP/timing/순위/rights export/UI는 다음 필수 하위다.

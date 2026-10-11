@@ -77,3 +77,10 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 
 
 107 수정CI에서 latest의 실제200 뒤 CDP body 조회가 신규 이탈과 기존105 OS restart에서 실패했다. ADR0043/0049에 따라 두 흐름의 latest 관측을 공통 one-use 실제 route.fetch/동일 response fulfill로 옮긴다. 전달 전에 본문을 읽고 trigger와 관측을 함께 기다려 backend/body/fulfill 오류를 실패로 드러낸다. 제품/화면/권한·SQL·OS kill·본인 통계 단언, 기존 timeout/retry는 유지한다. 원격 Red와 보정 후 실제 검증을 구분하고83의 offline flake는 별도로 보존한다.
+
+
+#109는 [ADR0050](../adr/0050-bounded-native-daily-replay.md)의 실제 native/WASM golden replay·metadata/shape/size/count/time/identity·정상 거부/중복·retained snapshot과 blocking worker timeout/cancel/late/panic 수명을 검사한다. Daily model95% gate를 추가하되 기존 도메인/entry point/서버80%와 tests/examples 제외만 유지한다. fake worker는 gate release를 보장하고 실제 capacity를 관측한다. [실행109](../verification/109-bounded-native-daily-replay.md).
+
+109 첫CI의 기존 owner-loss 종료 실패를 따라 [ADR0051](../adr/0051-fatal-runtime-shutdown.md)의 actual BoardPool blocking 진입→fatal 반환→gate 해제 전 실행 진입점 반환을 Red/Green으로 확인한다. 실제 PG main/HTTP/WS 종료도 재검증하며 기존4초 deadline/retry는 유지한다. 이 독립 경계의 재현으로 원격 실패의 내부 원인을 단정하지 않는다.
+
+109 첫CI의 이탈 fresh/reload UI 실패는 [ADR0049](../adr/0049-reconnect-integration-exit.md)의 페이지 수명 관측기로 보정한다. 서버200/body/fulfill과 후속 proof 완료를 구분하고, 페이지별 한 route/직렬 관측 slot과 실제 화면·8언어·SQL·OS restart를 재시도0으로 검사한다. 제품 기한/재시도/SW 변경 없이 기존 원격 실패와 후속 실행을 함께 기록한다.

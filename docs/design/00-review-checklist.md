@@ -17,6 +17,8 @@
 
 ## 요구사항 → 설계 → 시나리오 추적
 
+#109 CI 종료 경계 보정: NFR01/02/05/07/08·TS20/21/31/35/36 → [ADR0051](../adr/0051-fatal-runtime-shutdown.md) → actual BoardPool blocking 중 fatal 진입점 반환과 실제 PG owner-loss HTTP/WS 종료 → [검증109](../verification/109-bounded-native-daily-replay.md). 원격 관측과 deterministic 재현을 구분한다.
+
 #82: FR14/16·NFR01/02/05/07 → 설계06/07/12·[ADR0039](../adr/0039-authenticated-personal-result-read.md) → TS15/16/20/21/31/35/36 → [검증82](../verification/82-authenticated-personal-result-read.md). 최소 결과·본인 참여·전후 철회·uniform404·90일 조회·실DB/HTTP를 확인한다.
 
 #84 NFR05/08·TS18/26/30 → [테스트 경계](14-testing-strategy.md) → 실제 App/권한/256셀을 유지한 준비·조회 시간 관측과 단위 시나리오 분리 → [검증 기록](../verification/84-unit-arrangement-observation.md). 제품 lazy route/cold browser 계약과 테스트 상한은 유지한다.
@@ -147,3 +149,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #107: [ADR0049](../adr/0049-reconnect-integration-exit.md)의 관측 전용 EOF/실제 두 명 이탈·본인 결과·상위18 추적과 [검증107](../verification/107-reconnect-integration-exit.md)을 확인한다. 규칙/공개 DTO/schema 변경은 없다.
+
+
+#109 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0050](../adr/0050-bounded-native-daily-replay.md) → published snapshot/전체 metadata·공유Rust 완료 evidence·strict replay/정상 거부·actual bounded worker 수명 → [검증109](../verification/109-bounded-native-daily-replay.md). 공식 첫 완료/PG/HTTP/시간신뢰/순위/UI는 후속19이며 foundation을 통합 완료로 계산하지 않는다.

@@ -772,6 +772,18 @@
         "latest-personal-result"
       ],
       "acceptance": "ADR0049·실제 upstream EOF/두 WS 종료→SQL abandoned/draw/true→fresh latest·known/immutable/8언어/PCmobile·상위18 모든조건/하위종료감사·실제RedGreen/회귀/docs/리뷰CI·병합후18종료"
+    },
+    {
+      "key": "bounded-daily-replay",
+      "issue": 109,
+      "milestone": "M3",
+      "title": "feat(server): bounded native 데일리 replay 검증 기반",
+      "requirements": "FR09/10, NFR01/02/05/07/08",
+      "scenarios": "TS17/18/20/21/31/35/36",
+      "deps": [
+        "resume"
+      ],
+      "acceptance": "ADR0050·server published snapshot/strict metadata·shared Rust replay/완료 evidence·정상 rejected/duplicate·2MiB/count/CPU2/2초/actual permit 수명·TDD/fresh Daily95/server80/회귀/docs/리뷰CI·병합종료뒤다음19하위"
     }
   ]
 }

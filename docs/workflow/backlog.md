@@ -111,3 +111,6 @@
 
 
 #105/PR106은 develop1f840bf에 병합·종료했다. 다음 [#107](https://github.com/crystal23733/search-mine/issues/107)은 [ADR0049](../adr/0049-reconnect-integration-exit.md)의 양쪽 실제 WS 종료/SQL/fresh latest 출구와 상위18 조건/하위종료를 감사한다. 병합·종료 후 충족된18만 종료하며83/외부42·26·27/물리삭제25는 별도다.
+
+
+#107/PR108 develop6a2be6d(2026-10-11T04:21:38Z) 병합·107 CLOSED04:21:40Z·상위18 CLOSED04:21:56Z를 확인했다. 최신head2beb0e3 CI96browser6.0분재시도0·211unit/PG18.6 61/서버92.97%·최신6checks PASS. 다음 [#109](https://github.com/crystal23733/search-mine/issues/109)는 [ADR0050](../adr/0050-bounded-native-daily-replay.md)의 native bounded daily verifier다. 실제PG 첫 유효 완료→HTTP timing/순위→명시 제출/8언어 UI를 순차 연결하고 상위19는 전체출구 전 OPEN이다.83/외부42·26·27/물리삭제25별도.

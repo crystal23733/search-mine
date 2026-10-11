@@ -303,3 +303,6 @@ TS16 확장(#93): [ADR0042](../adr/0042-unknown-result-details.md)의 unknown ab
 
 
 TS16 확장(#107): [ADR0049](../adr/0049-reconnect-integration-exit.md)의 두 실제 WS upstream EOF 이후에 clock을 진행하고 abandoned/draw/completed:true·known own/elapsed·active0/final1/anchor를 검증한다. 쿠키만 새 context의 ID없는 최신 조회·8언어/모바일·추가 clock/OS restart 불변과 상위18 출구를 [검증107](../verification/107-reconnect-integration-exit.md)에 연결한다.
+
+
+TS17/18의 #109 foundation은 [ADR0050](../adr/0050-bounded-native-daily-replay.md)에 따라 server published snapshot과 기존 native/WASM golden을 같은 Rust로 재생한다. metadata/identity/time 불일치·미완료는 거절하고 정상 rejected 클릭/정확한 중복은 core 계약을 유지한다. caller timeout/cancel 뒤 actual worker permit을 유지하며 첫 유효 완료/공식 시간/DB/웹 제출은 후속19에서 통합 검증한다. [실행109](../verification/109-bounded-native-daily-replay.md).

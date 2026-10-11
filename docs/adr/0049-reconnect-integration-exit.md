@@ -34,3 +34,13 @@ PR108 최초 원격 database job의 coverage 재실행에서 기존103 actual ma
 [ADR0043](0043-result-response-observation.md)의 실제 전달 전 관측을 latest에도 적용한다. 신규107과 기존105의 fresh/reload/empty 조회는 one-use route.fetch로 원래 HTTPS POST를 전달하고 실제200/no-store/JSON을 읽은 뒤 같은 APIResponse를 fulfill한다. 별도 공통 시험 helper가 이를 소유하며 fake body·DB 우회·추가 앱 요청·UUID 입력을 만들지 않는다. maxRedirects0/maxRetries0/기존 관측10000ms, 실패의 reject/abort와 trigger/관측 Promise.all을 유지한다. 앱의 decoder/전후 권한 proof와 화면·SQL·OS 재시작·서로 다른 본인 통계 단언도 그대로 검사한다. 제품 source/기한/재시도/SW 설정은 변경하지 않는다.
 
 이미 실행된 원격 실패를 Red로 보존하고 보정 후 두 이탈·네 OS restart 검사를 재시도0으로 실행한 뒤 전체 browser/정적 검사/최신 head CI를 확인한다. APIResponse의 본문은 [Playwright route.fetch](https://playwright.dev/docs/api/class-route#route-fetch)·[APIResponse.body](https://playwright.dev/docs/api/class-apiresponse#api-response-body)의 공개 계약으로 읽으며, 브라우저 응답의 내부 수명 원인을 해결했다고 주장하지 않는다.
+
+## #109 CI에서 관측기의 페이지 수명 보정
+
+Product38112810532의 web은78pass/1flaky/1fail/16미실행이다. 이탈 검사의 restart 뒤 latest는 실제200/동일body/fulfill까지 성공했지만390px reload와1440px fresh에서 checking 화면에 머물렀다. 실패 trace의 후속 auth/bootstrap은 완료 응답이 없는 상태이며 UI 단언은5초 뒤 실패했다. 첫 원격 run을 반복 성공으로 덮지 않는다.
+
+설치된 Playwright1.63의 Page._onRoute는 times:1 마지막 handler 완료 뒤 interception patterns를 비동기로 갱신한다. 앱의 다음 proof 요청과 같은 페이지의 새 관측기 설치가 이 수명 변경과 겹칠 수 있다. trace만으로 Chromium 내부 경합을 확정하지 않는다. 공통 latest 관측기는 페이지마다 한 번만 설치하고 페이지가 닫힐 때까지 pattern을 유지한다. WeakMap으로 페이지 수명에 묶고 호출마다 한 관측 slot을 직렬로 사용한다. 같은 페이지의 동시 호출은 거절하고 각 handler가 캡처한 slot에만 결과를 전달한다. fresh→reload→후속 proof 사이에 interception을 없앴다 다시 만드는 일을 제거한다. 임의 응답/추가 요청/기한·재시도/제품 코드는 바꾸지 않는다.
+
+실제 HTTPS·PG의 PC/mobile 이탈 두 개와 기존 OS restart 네 개를 재시도0으로 반복하고 관련 전체 gate/CI를 실행한다. 결과 수신은 앱 표시 완료를 대신하지 않으며 전후 권한 proof·개인별 통계·SQL 불변·실제 OS restart와 화면 단언을 유지한다. 별도83은 OPEN이다.
+
+명시 관측을 요청하지 않은 일반 latest 탐색은 route.continue로 원래 요청을 그대로 통과시킨다. 기존 OS restart 검사의 마지막 일반 재탐색도 이 경로이며, 관측 slot이 없다는 이유로 정상 앱 요청을 실패시키지 않는다. 설치 후 실제 호출 계약 검사에서 이 조건을 확인했다.

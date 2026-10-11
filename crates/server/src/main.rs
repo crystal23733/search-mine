@@ -6,8 +6,27 @@ use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use std::{env, time::Duration};
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+type ServerResult = Result<(), Box<dyn std::error::Error>>;
+
+fn main() -> ServerResult {
+    run(serve())
+}
+
+fn run(server: impl std::future::Future<Output = ServerResult>) -> ServerResult {
+    let runtime = tokio::runtime::Runtime::new()?;
+    let result = runtime.block_on(server);
+    if result.is_err() {
+        // Fatal process exit must not wait for already started CPU work.
+        runtime.shutdown_background();
+    }
+    result
+}
+
+#[cfg(test)]
+#[path = "../tests/unit/server_runtime.rs"]
+mod tests;
+
+async fn serve() -> ServerResult {
     let pool = env::var("DATABASE_URL")
         .ok()
         .map(|url| {

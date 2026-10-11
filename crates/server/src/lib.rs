@@ -1,5 +1,6 @@
 //! HTTP composition root. Domain logic is owned by liar-core.
 pub mod auth;
+pub mod daily;
 pub mod lobby;
 pub mod online;
 pub mod results;

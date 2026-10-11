@@ -82,3 +82,8 @@
 
 
 - [ADR0049 · 양쪽 이탈 종료 관측](adr/0049-reconnect-integration-exit.md) / [검증107 · 재접속 통합 출구](verification/107-reconnect-integration-exit.md)
+
+
+- [ADR0050 · bounded native daily replay](adr/0050-bounded-native-daily-replay.md) / [검증109](verification/109-bounded-native-daily-replay.md)
+
+- [ADR0051 · 치명 오류 runtime 종료](adr/0051-fatal-runtime-shutdown.md)

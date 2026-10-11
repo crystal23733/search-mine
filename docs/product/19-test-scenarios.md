@@ -320,3 +320,8 @@ TS35 확장(#114): 본인에 속한51개 이상 online/daily 기록과 타인/�
 #116 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0054](../adr/0054-authenticated-daily-submission-http.md) → closed 인증 Daily definition/submit/own·accepted snapshot/공유 bounded CPU·첫 완료/Practice·현재 세션 응답 장벽 → [검증116](../verification/116-authenticated-daily-http.md). trust는 verified_completion이며 ticket/heartbeat/순위/명시 UI는 후속19다.
 
 TS17/18 확장(#116): 고정 POST와 실제 현재 세션/닉네임·CSRF로 accepted definition→공유 replay→첫 완료/같은 attempt/다른 attempt Practice→own/rights export를 연결한다. malformed/추가 필드/2MiB/버전/metadata·타인/revision/철회/삭제·CPU/SQL/기한/rate·최종 proof와 clock 역행을 검사한다. 원래 attempt와 receipt attempt를 구분하고 client elapsed를 verified_time으로 사용하지 않는다. 정상 own:null과 실패를 구분하며 실제PG/HTTPS로 같은 production 구성을 실행한다.
+
+
+#118 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0055](../adr/0055-bounded-daily-time-authority.md) → pure time policy/bounded authority·actual native evidence/45초/TTL/immutable retry·철회/재시작 → [검증118](../verification/118-daily-time-authority.md). 이 단계는 공개 수집·DB·HTTP·UI를 활성화하지 않으며 후속 rights export 확장 뒤 순차 연결한다.
+
+TS17/18 확장(#118): 단조 fake Clock과 actual native golden 완료를 사용해 ticket 시작/동일 재시도/교체·계정당1개/전체capacity·heartbeat15초/45초 정확 경계·중복 ack가 시각을 연장하지 않음·고정 countdown/duration TTL·elapsed 최소와 immutable finish digest를 확인한다. 동시 finish, revoked/다른 registry lease, 실제 invalidation barrier 동안 late bind, clock 역행/overflow·새 registry no-proof를 검증한다. 공개 시간이 수집되지 않는 foundation과 이후 실PG/HTTP 시간 기능을 구분한다.

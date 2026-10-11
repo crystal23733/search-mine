@@ -51,3 +51,6 @@ classDiagram
 Clock, RandomSource, MatchRepository, AccountRepository, AuthIdentityRepository, SessionRepository, OAuthProvider, CredentialVault, DailyRepository, Transport는 애플리케이션 포트다. SystemClock, SeededRng, SqlxRepositories, WsTransport는 인프라 어댑터다. 보드 생성의 난수와 계정 토큰 생성의 암호학적 난수는 별도 구현체로 분리한다.
 
 온라인 SnapshotProjection은 애플리케이션에서 비밀 필드를 제거한다. 인증·DB 저장·매칭·광고는 RuleEngine 책임 밖이다. Player/Match에 네트워크 핸들이나 sqlx 타입을 넣지 않는다.
+
+
+#118 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0055](../adr/0055-bounded-daily-time-authority.md) → pure time policy/bounded authority·actual native evidence/45초/TTL/immutable retry·철회/재시작 → [검증118](../verification/118-daily-time-authority.md). 이 단계는 공개 수집·DB·HTTP·UI를 활성화하지 않으며 후속 rights export 확장 뒤 순차 연결한다.

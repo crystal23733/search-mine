@@ -95,3 +95,5 @@
 - [ADR0053 본인 게임기록 내보내기](adr/0053-personal-game-data-export.md) · [#114 실행](verification/114-personal-game-data-export.md)
 
 - [ADR0054 인증 데일리 HTTP](adr/0054-authenticated-daily-submission-http.md) · [#116 검증](verification/116-authenticated-daily-http.md)
+
+- [ADR0055 데일리 시간 권위](adr/0055-bounded-daily-time-authority.md) · [#118 실행](verification/118-daily-time-authority.md)

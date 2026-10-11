@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114 본인 게임기록 내보내기를 병합·종료했고 #116 인증 데일리 제출 API를 구현했으며 PR 검증·병합을 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114 본인 게임기록 내보내기를 병합·종료했고 #116 인증 데일리 제출 API를 병합·종료했고 #118 시간 티켓/하트비트 권위 기반의 로컬 검증을 완료하고 PR 검증·병합을 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -107,7 +107,7 @@ pnpm build
 pnpm exec playwright test --project auth
 ```
 
-DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속·OS 재시작 후 새 브라우저 결과 발견·양쪽 이탈 시험을 포함한96개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md), [#72 친구 방](docs/verification/72-friends-room-ui.md), [#105 최신 결과 검증](docs/verification/105-latest-personal-result.md), [#107 통합 출구](docs/verification/107-reconnect-integration-exit.md)를 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
+DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속·OS 재시작 후 새 브라우저 결과 발견·양쪽 이탈 시험을 포함한100개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md), [#72 친구 방](docs/verification/72-friends-room-ui.md), [#105 최신 결과 검증](docs/verification/105-latest-personal-result.md), [#107 통합 출구](docs/verification/107-reconnect-integration-exit.md)를 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
 
 단위 테스트는 순수 포트의 Node 환경과 실제 DOM의 jsdom 환경을 구분한다. [#84 준비·DOM 조회 검증](docs/verification/84-unit-arrangement-observation.md)은 기존 시간 제한과 접근성 단언을 유지한 실행 결과와 한계를 기록한다.
 

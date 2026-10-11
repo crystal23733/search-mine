@@ -161,3 +161,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #116 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0054](../adr/0054-authenticated-daily-submission-http.md) → closed 인증 Daily definition/submit/own·accepted snapshot/공유 bounded CPU·첫 완료/Practice·현재 세션 응답 장벽 → [검증116](../verification/116-authenticated-daily-http.md). trust는 verified_completion이며 ticket/heartbeat/순위/명시 UI는 후속19다.
+
+
+#118 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0055](../adr/0055-bounded-daily-time-authority.md) → pure time policy/bounded authority·actual native evidence/45초/TTL/immutable retry·철회/재시작 → [검증118](../verification/118-daily-time-authority.md). 이 단계는 공개 수집·DB·HTTP·UI를 활성화하지 않으며 후속 rights export 확장 뒤 순차 연결한다.

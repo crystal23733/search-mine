@@ -123,3 +123,6 @@
 
 
 #114/PR115는 develop04fe9d1에 병합·114 CLOSED를 확인했다. 실제 CI PG18.6 83/26.69초·instrumented83/25.82초·Privacy100%/서버93.31%·220unit/98browser(6.1분/재시도0)다. 다음 [#116 인증 데일리 HTTP](https://github.com/crystal23733/search-mine/issues/116)는 ADR0054의 definition/submit/own·verified_completion·현재 세션 장벽을 구현한다. ticket/heartbeat/두 순위/명시 UI는 다음19 하위이며 상위는 OPEN이다.
+
+
+#116/PR117 developc56832b 병합·116 CLOSED(2026-10-11T11:40:13Z) 확인. CI PG18.6 85/25.06초·instrumented85/26.92초·Daily99.16%/서버93.33%·220unit, browser98첫통과+기존83PC/mobile2flaky(6.4분)이며 trace/probes 보존·83 OPEN이다. 다음 [#118](https://github.com/crystal23733/search-mine/issues/118)은 [ADR0055](../adr/0055-bounded-daily-time-authority.md)의 bounded ticket/heartbeat 시간 권위 foundation이다. 공개 수집 전에 rights export/영속화/인증 HTTP를 후속 순차 연결하며 두 순위·8언어 명시 UI/대기·상위19는 OPEN이다.

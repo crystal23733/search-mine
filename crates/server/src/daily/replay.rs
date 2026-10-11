@@ -22,6 +22,7 @@ impl ReplayVerifier for NativeReplayVerifier {
             _ => ReplayError::Malformed,
         })?;
         definition.validate(&replay)?;
+        let canonical = serde_json::to_string(&replay).map_err(|_| ReplayError::Malformed)?;
         let mut puzzle = DailyPuzzle::with_rules(
             &definition.metadata.date,
             definition.metadata.seed_version,
@@ -65,7 +66,7 @@ impl ReplayVerifier for NativeReplayVerifier {
         puzzle
             .advance(u64::from(replay.final_time_ms))
             .map_err(|_| ReplayError::InvalidReplay)?;
-        ReplayEvidence::from_puzzle(&puzzle)
+        ReplayEvidence::from_puzzle(&puzzle, canonical)
     }
 }
 

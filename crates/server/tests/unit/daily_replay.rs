@@ -15,6 +15,34 @@ fn definition() -> PublishedDaily {
     PublishedDaily::new("2026-10-07", 1, RulesSnapshot::bundled()).unwrap()
 }
 #[test]
+fn verified_evidence_binds_the_canonical_payload_that_was_actually_replayed() {
+    use sha2::Digest;
+    let mut source = golden()["replay"].clone();
+    let replay: DailyReplay = serde_json::from_value(source.clone()).unwrap();
+    let canonical = serde_json::to_string(&replay).unwrap();
+    let evidence = NativeReplayVerifier
+        .verify(
+            &definition(),
+            &serde_json::to_string_pretty(&source).unwrap(),
+        )
+        .unwrap();
+    assert_eq!(evidence.canonical_replay(), canonical);
+    let digest: [u8; 32] = sha2::Sha256::digest(canonical.as_bytes()).into();
+    assert_eq!(evidence.fingerprint(), digest);
+    let same = NativeReplayVerifier
+        .verify(&definition(), &source.to_string())
+        .unwrap();
+    assert_eq!(same, evidence);
+    source["final_time_ms"] = serde_json::json!(u32::MAX);
+    let changed = NativeReplayVerifier
+        .verify(&definition(), &source.to_string())
+        .unwrap();
+    assert_ne!(changed.fingerprint(), evidence.fingerprint());
+    assert_eq!(changed.outcome(), evidence.outcome());
+    assert_eq!(evidence.canonical_replay(), canonical);
+    assert!(!format!("{evidence:?}").contains("inputs"));
+}
+#[test]
 fn native_replay_matches_the_actual_native_wasm_golden_completion() {
     let fixture = golden();
     let replay: DailyReplay = serde_json::from_value(fixture["replay"].clone()).unwrap();
@@ -164,8 +192,10 @@ fn exact_duplicate_nonconsecutive_sequence_and_post_finish_time_preserve_evidenc
     replay.inputs.insert(1, replay.inputs[0].clone());
     replay.final_time_ms = u32::MAX;
     assert_eq!(
-        NativeReplayVerifier.verify(&definition(), &serde_json::to_string(&replay).unwrap()),
-        Ok(expected)
+        NativeReplayVerifier
+            .verify(&definition(), &serde_json::to_string(&replay).unwrap())
+            .map(|verified| verified.outcome().clone()),
+        Ok(expected.outcome().clone())
     );
 }
 
@@ -216,8 +246,10 @@ fn legitimate_rejected_clicks_are_replayed_without_fabricating_mistakes() {
     replay.inputs = prefix;
     replay.final_time_ms = 6300;
     assert_eq!(
-        NativeReplayVerifier.verify(&definition(), &serde_json::to_string(&replay).unwrap()),
-        Ok(expected)
+        NativeReplayVerifier
+            .verify(&definition(), &serde_json::to_string(&replay).unwrap())
+            .map(|verified| verified.outcome().clone()),
+        Ok(expected.outcome().clone())
     );
 }
 

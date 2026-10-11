@@ -23,6 +23,7 @@ pub use accounts::*;
 mod apple;
 mod postgres_accounts;
 pub use apple::*;
+pub(crate) use postgres_accounts::authorize as authorize_account_transaction;
 mod account_http;
 mod apple_registry;
 mod postgres_apple;

@@ -114,3 +114,6 @@
 
 
 #107/PR108 develop6a2be6d(2026-10-11T04:21:38Z) 병합·107 CLOSED04:21:40Z·상위18 CLOSED04:21:56Z를 확인했다. 최신head2beb0e3 CI96browser6.0분재시도0·211unit/PG18.6 61/서버92.97%·최신6checks PASS. 다음 [#109](https://github.com/crystal23733/search-mine/issues/109)는 [ADR0050](../adr/0050-bounded-native-daily-replay.md)의 native bounded daily verifier다. 실제PG 첫 유효 완료→HTTP timing/순위→명시 제출/8언어 UI를 순차 연결하고 상위19는 전체출구 전 OPEN이다.83/외부42·26·27/물리삭제25별도.
+
+
+#112 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0052](../adr/0052-daily-first-completion-store.md) → immutable accepted publication/worker payload binding·실제PG 첫 완료/attempt·권한/삭제·7일/90일/동시성 → [검증112](../verification/112-daily-first-completion-store.md). HTTP/timing/순위/rights export/UI는 다음 필수 하위다.

@@ -189,6 +189,7 @@ pub(super) fn completion(
         opened_safe: receipt.opened_safe,
         mistakes: receipt.mistakes,
         replayed_elapsed_ms: receipt.replayed_elapsed_ms,
+        verified_elapsed_ms: receipt.verified_elapsed_ms,
         completed_at: receipt.completed_at,
     })
 }

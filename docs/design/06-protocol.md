@@ -193,3 +193,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 
 #116 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0054](../adr/0054-authenticated-daily-submission-http.md) → closed 인증 Daily definition/submit/own·accepted snapshot/공유 bounded CPU·첫 완료/Practice·현재 세션 응답 장벽 → [검증116](../verification/116-authenticated-daily-http.md). trust는 verified_completion이며 ticket/heartbeat/순위/명시 UI는 후속19다.
+
+
+#120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). Rust ExportRecord::Daily/DailyCompletion의 필수 nullable verified_elapsed_ms와 DailyTrust verified_time을 원천으로 생성한다. None은 verified_completion, 검증된 저장 Some만 verified_time. 누락/범위/최소 native elapsed 오류는 strict fail closed이며 plain submit 경로는 유지한다.

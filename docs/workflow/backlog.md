@@ -126,3 +126,6 @@
 
 
 #116/PR117 developc56832b 병합·116 CLOSED(2026-10-11T11:40:13Z) 확인. CI PG18.6 85/25.06초·instrumented85/26.92초·Daily99.16%/서버93.33%·220unit, browser98첫통과+기존83PC/mobile2flaky(6.4분)이며 trace/probes 보존·83 OPEN이다. 다음 [#118](https://github.com/crystal23733/search-mine/issues/118)은 [ADR0055](../adr/0055-bounded-daily-time-authority.md)의 bounded ticket/heartbeat 시간 권위 foundation이다. 공개 수집 전에 rights export/영속화/인증 HTTP를 후속 순차 연결하며 두 순위·8언어 명시 UI/대기·상위19는 OPEN이다.
+
+
+#120 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0056](../adr/0056-daily-time-persistence-and-export.md) → rights-first nullable time/실PG sealed first completion·불변/본인export → [검증120](../verification/120-daily-time-persistence-and-export.md). 공개 시간HTTP·두 순위/UI·상위19는 후속이다.

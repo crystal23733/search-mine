@@ -317,7 +317,7 @@ async fn dst_and_immutable_rows_allow_only_replay_erasure_and_reject_invalid_sto
         (vec![1u8; 32], 216, "{}".to_owned(), 0.25),
     ] {
         let other = participant(&pool, now).await;
-        let error=sqlx::query("INSERT INTO daily_completions SELECT $1,$2,daily_id,$3,$4,$5,mistakes,replayed_elapsed_ms,completed_at+($7*interval '1 second'),$6::text::jsonb,replay_expires_at+($7*interval '1 second'),record_expires_at+($7*interval '1 second') FROM daily_completions LIMIT 1")
+        let error=sqlx::query("INSERT INTO daily_completions(id,account_id,daily_id,attempt_id,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,completed_at,replay_json,replay_expires_at,record_expires_at) SELECT $1,$2,daily_id,$3,$4,$5,mistakes,replayed_elapsed_ms,completed_at+($7*interval '1 second'),$6::text::jsonb,replay_expires_at+($7*interval '1 second'),record_expires_at+($7*interval '1 second') FROM daily_completions LIMIT 1")
             .bind(Uuid::new_v4()).bind(other.account).bind(Uuid::new_v4()).bind(digest).bind(opened).bind(raw).bind(offset).execute(&single).await.unwrap_err();
         assert_eq!(
             error.as_database_error().unwrap().code().as_deref(),

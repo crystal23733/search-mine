@@ -19,6 +19,7 @@ pub struct DailyReceipt {
     pub opened_safe: u32,
     pub mistakes: u16,
     pub replayed_elapsed_ms: u32,
+    pub verified_elapsed_ms: Option<u32>,
     pub completed_at: i64,
 }
 impl DailyReceipt {
@@ -33,6 +34,9 @@ impl DailyReceipt {
             || self.metadata != *definition.metadata()
             || self.opened_safe as usize != rules.board_spec().area() - usize::from(rules.mines)
             || self.mistakes > rules.max_commands_per_seat
+            || self.verified_elapsed_ms.is_some_and(|elapsed| {
+                elapsed < self.replayed_elapsed_ms || elapsed >= rules.duration_ms
+            })
             || self.completed_at <= 0
             || self.completed_at > now
         {
@@ -74,6 +78,15 @@ pub trait DailyRepository: Send + Sync {
         attempt: Uuid,
         evidence: &'a ReplayEvidence,
     ) -> DailyFuture<'a, Result<DailySubmission, DailyStoreError>>;
+    fn submit_timed<'a>(
+        &'a self,
+        _session: DailySession,
+        _attempt: Uuid,
+        _evidence: &'a ReplayEvidence,
+        _time: &'a super::VerifiedDailyTime,
+    ) -> DailyFuture<'a, Result<DailySubmission, DailyStoreError>> {
+        Box::pin(async { Err(DailyStoreError::Unavailable) })
+    }
     fn own<'a>(
         &'a self,
         session: DailySession,

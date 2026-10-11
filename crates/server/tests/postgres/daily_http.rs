@@ -109,6 +109,114 @@ async fn response(app: axum::Router, request: Request<Body>) -> (StatusCode, Val
         .unwrap(),
     )
 }
+
+#[tokio::test]
+#[ignore = "requires actual PostgreSQL; executed in database CI"]
+async fn stored_sealed_time_is_projected_by_real_own_retry_practice_and_owner_export_http() {
+    let pool = auth_pool().await;
+    let clock = Arc::new(Clock(AtomicI64::new(NOW)));
+    let auth = PgAuthStore::new(pool.clone());
+    let client = participant(&auth).await;
+    let other = participant(&auth).await;
+    let daily = Arc::new(PgDailyRepository::new(pool.clone(), clock.clone()));
+    let definition =
+        PublishedDaily::new("2026-10-07", 1, liar_core::rules::RulesSnapshot::bundled()).unwrap();
+    daily.publish(definition.clone()).await.unwrap();
+    let evidence = NativeReplayVerifier
+        .verify(&definition, &replay().to_string())
+        .unwrap();
+    let session = DailySession {
+        account: client.account,
+        hash: client.token.hash(),
+    };
+    let attempt = Uuid::new_v4();
+    let time = super::daily::timing::sealed(session, attempt, &evidence, 9000);
+    daily
+        .submit_timed(session, attempt, &evidence, &time)
+        .await
+        .unwrap();
+    let security = Arc::new(BrowserSecurity::new("https://game.example", [120; 32]).unwrap());
+    let sessions = Arc::new(PgSessionReader::new(auth, clock.clone()));
+    let app = daily_router(
+        daily,
+        BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
+        sessions.clone(),
+        security.clone(),
+        DailyAuthentication {
+            authorities: AuthorityRegistry::new(64).unwrap(),
+            clock: clock.clone(),
+        },
+        4,
+    )
+    .unwrap()
+    .merge(
+        privacy_router(
+            Arc::new(PgGameExportReader::new(pool.clone(), clock.clone())),
+            sessions,
+            security.clone(),
+            PrivacyAuthentication {
+                authorities: AuthorityRegistry::new(64).unwrap(),
+                clock: clock.clone(),
+                workers: ExportWorkers::default(),
+            },
+            4,
+        )
+        .unwrap(),
+    );
+    for operation in ["own", "submit"] {
+        let mut input = body(&client, operation);
+        if operation == "submit" {
+            input["attempt_id"] = json!(attempt.to_string());
+        }
+        let (status, value) = response(
+            app.clone(),
+            request(
+                &client,
+                &security,
+                &format!("/api/v1/daily/{operation}"),
+                input,
+                NOW,
+            ),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(value["trust"], "verified_time");
+        assert_eq!(value["receipt"]["verified_elapsed_ms"], 9000);
+    }
+    let (status, practice) = response(
+        app.clone(),
+        request(
+            &client,
+            &security,
+            "/api/v1/daily/submit",
+            body(&client, "submit"),
+            NOW,
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(practice["disposition"], "practice");
+    assert_eq!(practice["trust"], "verified_time");
+    for (owner, expected) in [(&client, 1), (&other, 0)] {
+        let (status, page) = response(
+            app.clone(),
+            request(
+                owner,
+                &security,
+                "/api/v1/me/games/export",
+                body(owner, "export"),
+                NOW,
+            ),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(page["records"].as_array().unwrap().len(), expected);
+        if expected == 1 {
+            assert_eq!(page["records"][0]["verified_elapsed_ms"], 9000);
+        }
+    }
+    close_auth_pool(pool).await;
+}
 #[tokio::test]
 #[ignore = "requires actual PostgreSQL; executed in database CI"]
 async fn production_http_native_verifier_pg_first_retry_practice_export_and_erasure_are_connected()

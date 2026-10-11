@@ -6,6 +6,8 @@ use std::sync::atomic::{AtomicI64, Ordering};
 const START: i64 = 1_791_331_200;
 #[path = "daily_storage.rs"]
 mod storage;
+#[path = "daily_time_storage.rs"]
+pub(super) mod timing;
 struct Clock(AtomicI64);
 impl AuthClock for Clock {
     fn now(&self) -> i64 {
@@ -562,7 +564,7 @@ async fn a_completion_before_publication_is_not_a_valid_own_receipt() {
             .unwrap(),
     );
     let other = participant(&pool, START + 60).await;
-    sqlx::query("INSERT INTO daily_completions SELECT $1,$2,daily_id,$3,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,to_timestamp($4::double precision),replay_json,to_timestamp(($4+604800)::double precision),to_timestamp(($4+7776000)::double precision) FROM daily_completions WHERE id=$5")
+    sqlx::query("INSERT INTO daily_completions(id,account_id,daily_id,attempt_id,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,completed_at,replay_json,replay_expires_at,record_expires_at) SELECT $1,$2,daily_id,$3,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,to_timestamp($4::double precision),replay_json,to_timestamp(($4+604800)::double precision),to_timestamp(($4+7776000)::double precision) FROM daily_completions WHERE id=$5")
         .bind(Uuid::new_v4()).bind(other.account).bind(Uuid::new_v4()).bind(START+59).bind(original.id).execute(&pool).await.unwrap();
     assert_eq!(
         store.own(other, definition().metadata()).await,

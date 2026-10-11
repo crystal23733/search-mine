@@ -133,6 +133,7 @@ impl DailyRepository for Records {
                         opened_safe: evidence.opened_safe() as u32,
                         mistakes: evidence.mistakes(),
                         replayed_elapsed_ms: evidence.replayed_elapsed_ms(),
+                        verified_elapsed_ms: None,
                         completed_at: NOW,
                     }
                 })
@@ -362,6 +363,41 @@ async fn authenticated_completion_retry_practice_and_own_preserve_original_recei
     ] {
         assert!(!text.contains(secret));
     }
+}
+
+#[tokio::test]
+async fn stored_time_controls_retry_practice_and_own_trust_and_corruption_never_downgrades() {
+    let f = Fixture::new(4);
+    let body = f.body("submit");
+    assert_eq!(f.call("submit", body.clone()).await.0, StatusCode::OK);
+    f.records
+        .saved
+        .lock()
+        .unwrap()
+        .as_mut()
+        .unwrap()
+        .verified_elapsed_ms = Some(9000);
+    for (operation, input) in [
+        ("submit", body),
+        ("submit", f.body("submit")),
+        ("own", f.body("own")),
+    ] {
+        let (status, value) = f.call(operation, input).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(value["trust"], "verified_time");
+        assert_eq!(value["receipt"]["verified_elapsed_ms"], 9000);
+    }
+    f.records
+        .saved
+        .lock()
+        .unwrap()
+        .as_mut()
+        .unwrap()
+        .verified_elapsed_ms = Some(3199);
+    assert_eq!(
+        f.call("own", f.body("own")).await.0,
+        StatusCode::SERVICE_UNAVAILABLE
+    );
 }
 #[tokio::test]
 async fn strict_headers_closed_body_identity_metadata_and_incomplete_replay_never_write() {

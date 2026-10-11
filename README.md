@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114 본인 게임기록 내보내기를 병합·종료했고 #116 인증 데일리 제출 API를 병합·종료했고 #118 시간 티켓/하트비트 권위 기반의 로컬 검증을 완료하고 PR 검증·병합을 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114 본인 게임기록 내보내기를 병합·종료했고 #116 인증 데일리 제출 API를 병합·종료했고 #118 시간 티켓/하트비트 기반을 병합·종료했고 #120 본인 export·서버 시간 영속화의 로컬 검증을 완료하여 PR 검증·병합을 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -162,3 +162,6 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 [#105 최신 본인 결과 발견](docs/verification/105-latest-personal-result.md)은 홈의 최근 결과 링크나 `/{locale}/results`에서 ID 없이 인증된 최신 결과를 찾는다. `POST /api/v1/results/latest`의 입력은 `{v:1}`이며 실제 없는 경우만200/null이다. 기존 ID 조회와 같은 권한·상한을 적용하고 일반 브라우저 저장소에 대전ID를 보관하지 않는다. 실제 OS 재시작 뒤 새 브라우저와8언어·PC/mobile을 검증했다. 실행 근거와 외부/운영 출구는 별도 기록한다.
 
 [#107 양쪽 이탈 통합 검증](docs/verification/107-reconnect-integration-exit.md)은 실제 서버 EOF 둘을 관측한 뒤 abandoned 무승부를 SQL에 저장하고, 인증 쿠키만 받은 새 브라우저에서 본인 최신 결과를 찾는다. abandon은 기존 completed:true, 서버 장애 abort는 false다. 추가 clock·실제 OS 재시작 후에도 결과/시각/본인 통계가 유지되는지 검사하며, 상위18은 해당 PR 병합·이슈 종료 후 최종 종료한다. 원인 미확정83과 외부OAuth42/장비26/사람27·물리삭제/백업25는 별도다.
+
+
+[#120 서버 시간 영속화·본인 export](docs/verification/120-daily-time-persistence-and-export.md)는 sealed proof의 첫 서버 시간을 불변 저장하고 본인 nullable verified_elapsed_ms를 내보낸다. 기존 completion-only 기록은 NULL로 유지하며 새 time으로 승격하지 않는다. 공개 시간 start/heartbeat/timed-submit·두 순위/명시 웹 제출은 후속이다.

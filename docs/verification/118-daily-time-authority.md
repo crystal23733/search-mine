@@ -38,3 +38,8 @@ correctness/changes baselinec56832b로 producer/consumer·수명·실제 authori
 ## 실제 전체 검사
 
 scripts/check.ps1 실제Exit0: Rust380·web220/38files/Lines88.83%·browser100/3.5m/재시도0, fmt/Clippy/WASM/types/fixtures/tokens/format/lint/typecheck/build·문서168/추적36/Mermaid34실패0 통과. 측정 이후 Rust source/test 변경은 없고 두 신규 domain 파일을 포함한 gate95/80을 유지했다. 원격 CI/PR·exact-head 병합/118 CLOSED는 다음 절차다.
+
+
+## 원격 CI·병합 종료
+
+[PR119](https://github.com/crystal23733/search-mine/pull/119) sourcef847db1의 Product38139196561/Repository38139196683 및본문갱신최신검사 SUCCESS. 실제PG18.6 85/27.27초·instrumented85/26.98초·Daily99.56%/서버93.57%·web220/38files/Lines88.87%·browser100/6.2분(실패·재시도 관측0). 최신8rollup/6필수·3run·정확head/clean 확인후 2026-10-11T15:01:57Z squash 병합 develop307a58d, #118 CLOSED15:01:58Z 별도확인. 최초로컬resource실패/미확정83을해결완료로표현하지않는다. 다음 #120은 rights-first nullable time/실PG 영속화이며 공개 시간HTTP·두 순위/UI·상위19는 후속이다.

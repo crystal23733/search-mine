@@ -164,3 +164,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #118 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0055](../adr/0055-bounded-daily-time-authority.md) → pure time policy/bounded authority·actual native evidence/45초/TTL/immutable retry·철회/재시작 → [검증118](../verification/118-daily-time-authority.md). 이 단계는 공개 수집·DB·HTTP·UI를 활성화하지 않으며 후속 rights export 확장 뒤 순차 연결한다.
+
+
+#120 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0056](../adr/0056-daily-time-persistence-and-export.md) → rights-first nullable time/실PG sealed first completion·불변/본인export → [검증120](../verification/120-daily-time-persistence-and-export.md). 공개 시간HTTP·두 순위/UI·상위19는 후속이다.

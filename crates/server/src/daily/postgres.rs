@@ -85,7 +85,7 @@ async fn completion(
     attempt: Option<Uuid>,
     daily: &str,
 ) -> Result<Option<PgRow>, DailyStoreError> {
-    sqlx::query("SELECT id,daily_id,attempt_id,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,EXTRACT(EPOCH FROM completed_at)::bigint AS completed_at,EXTRACT(EPOCH FROM replay_expires_at)::bigint AS replay_expires_at,EXTRACT(EPOCH FROM record_expires_at)::bigint AS record_expires_at FROM daily_completions WHERE account_id=$1 AND (($2::uuid IS NOT NULL AND attempt_id=$2) OR ($2::uuid IS NULL AND daily_id=$3))")
+    sqlx::query("SELECT id,daily_id,attempt_id,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,verified_elapsed_ms,EXTRACT(EPOCH FROM completed_at)::bigint AS completed_at,EXTRACT(EPOCH FROM replay_expires_at)::bigint AS replay_expires_at,EXTRACT(EPOCH FROM record_expires_at)::bigint AS record_expires_at FROM daily_completions WHERE account_id=$1 AND (($2::uuid IS NOT NULL AND attempt_id=$2) OR ($2::uuid IS NULL AND daily_id=$3))")
         .bind(account).bind(attempt).bind(daily).fetch_optional(connection).await.map_err(unavailable)
 }
 fn receipt(
@@ -112,6 +112,12 @@ fn receipt(
             .try_get::<i64, _>("replayed_elapsed_ms")
             .map_err(unavailable)?
             .try_into()
+            .map_err(|_| DailyStoreError::Unavailable)?,
+        verified_elapsed_ms: row
+            .try_get::<Option<i64>, _>("verified_elapsed_ms")
+            .map_err(unavailable)?
+            .map(u32::try_from)
+            .transpose()
             .map_err(|_| DailyStoreError::Unavailable)?,
         completed_at: row.try_get("completed_at").map_err(unavailable)?,
     };
@@ -149,6 +155,79 @@ pub struct PgDailyRepository {
 impl PgDailyRepository {
     pub fn new(pool: PgPool, clock: Arc<dyn AuthClock>) -> Self {
         Self { pool, clock }
+    }
+    fn submit_completion<'a>(
+        &'a self,
+        session: DailySession,
+        attempt: Uuid,
+        evidence: &'a ReplayEvidence,
+        time: Option<&'a VerifiedDailyTime>,
+    ) -> DailyFuture<'a, Result<DailySubmission, DailyStoreError>> {
+        Box::pin(bounded(async move {
+            if attempt.is_nil() {
+                return Err(DailyStoreError::Invalid);
+            }
+            if time.is_some_and(|time| !time.matches(session.account, attempt, evidence)) {
+                return Err(DailyStoreError::Unavailable);
+            }
+            let mut tx = self.pool.begin().await.map_err(unavailable)?;
+            let now = self.authorize(&mut tx, session).await?;
+            let metadata = evidence.metadata();
+            let published = by_date(&mut tx, &metadata.date, metadata.seed_version, now)
+                .await?
+                .ok_or(DailyStoreError::Invalid)?;
+            if published.definition.metadata() != metadata {
+                return Err(DailyStoreError::Invalid);
+            }
+            let daily = metadata.id();
+            if let Some(row) = completion(&mut tx, session.account, Some(attempt), &daily).await? {
+                let saved_daily: String = row.try_get("daily_id").map_err(unavailable)?;
+                let saved_digest: Vec<u8> = row.try_get("replay_digest").map_err(unavailable)?;
+                if saved_daily != daily || saved_digest != evidence.fingerprint() {
+                    return Err(DailyStoreError::Conflict);
+                }
+                let saved = receipt(&row, &published, now)?;
+                if saved.expired(now) {
+                    return Err(DailyStoreError::Expired);
+                }
+                if saved.opened_safe as usize != evidence.opened_safe()
+                    || saved.mistakes != evidence.mistakes()
+                    || saved.replayed_elapsed_ms != evidence.replayed_elapsed_ms()
+                {
+                    return Err(DailyStoreError::Unavailable);
+                }
+                tx.commit().await.map_err(unavailable)?;
+                return Ok(DailySubmission::Official(saved));
+            }
+            if now >= published.expires_at {
+                return Err(DailyStoreError::Expired);
+            }
+            if let Some(row) = completion(&mut tx, session.account, None, &daily).await? {
+                let saved = receipt(&row, &published, now)?;
+                tx.commit().await.map_err(unavailable)?;
+                return Ok(DailySubmission::Practice(saved));
+            }
+            let saved = DailyReceipt {
+                id: Uuid::new_v4(),
+                attempt,
+                metadata: metadata.clone(),
+                opened_safe: evidence
+                    .opened_safe()
+                    .try_into()
+                    .map_err(|_| DailyStoreError::Invalid)?,
+                mistakes: evidence.mistakes(),
+                replayed_elapsed_ms: evidence.replayed_elapsed_ms(),
+                verified_elapsed_ms: time.map(VerifiedDailyTime::elapsed_ms),
+                completed_at: now,
+            };
+            saved.validate(&published.definition, now)?;
+            let replay_expiry = now.checked_add(604800).ok_or(DailyStoreError::Invalid)?;
+            let record_expiry = now.checked_add(7776000).ok_or(DailyStoreError::Invalid)?;
+            sqlx::query("INSERT INTO daily_completions(id,account_id,daily_id,attempt_id,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,completed_at,replay_json,replay_expires_at,record_expires_at,verified_elapsed_ms) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9::double precision),$10::text::jsonb,to_timestamp($11::double precision),to_timestamp($12::double precision),$13)")
+                .bind(saved.id).bind(session.account).bind(daily).bind(attempt).bind(evidence.fingerprint().as_slice()).bind(i32::try_from(saved.opened_safe).map_err(|_| DailyStoreError::Invalid)?).bind(i32::from(saved.mistakes)).bind(i64::from(saved.replayed_elapsed_ms)).bind(now).bind(evidence.canonical_replay()).bind(replay_expiry).bind(record_expiry).bind(saved.verified_elapsed_ms.map(i64::from)).execute(&mut *tx).await.map_err(unavailable)?;
+            tx.commit().await.map_err(unavailable)?;
+            Ok(DailySubmission::Official(saved))
+        }))
     }
     async fn authorize(
         &self,
@@ -248,67 +327,16 @@ impl DailyRepository for PgDailyRepository {
         attempt: Uuid,
         evidence: &'a ReplayEvidence,
     ) -> DailyFuture<'a, Result<DailySubmission, DailyStoreError>> {
-        Box::pin(bounded(async move {
-            if attempt.is_nil() {
-                return Err(DailyStoreError::Invalid);
-            }
-            let mut tx = self.pool.begin().await.map_err(unavailable)?;
-            let now = self.authorize(&mut tx, session).await?;
-            let metadata = evidence.metadata();
-            let published = by_date(&mut tx, &metadata.date, metadata.seed_version, now)
-                .await?
-                .ok_or(DailyStoreError::Invalid)?;
-            if published.definition.metadata() != metadata {
-                return Err(DailyStoreError::Invalid);
-            }
-            let daily = metadata.id();
-            if let Some(row) = completion(&mut tx, session.account, Some(attempt), &daily).await? {
-                let saved_daily: String = row.try_get("daily_id").map_err(unavailable)?;
-                let saved_digest: Vec<u8> = row.try_get("replay_digest").map_err(unavailable)?;
-                if saved_daily != daily || saved_digest != evidence.fingerprint() {
-                    return Err(DailyStoreError::Conflict);
-                }
-                let saved = receipt(&row, &published, now)?;
-                if saved.expired(now) {
-                    return Err(DailyStoreError::Expired);
-                }
-                if saved.opened_safe as usize != evidence.opened_safe()
-                    || saved.mistakes != evidence.mistakes()
-                    || saved.replayed_elapsed_ms != evidence.replayed_elapsed_ms()
-                {
-                    return Err(DailyStoreError::Unavailable);
-                }
-                tx.commit().await.map_err(unavailable)?;
-                return Ok(DailySubmission::Official(saved));
-            }
-            if now >= published.expires_at {
-                return Err(DailyStoreError::Expired);
-            }
-            if let Some(row) = completion(&mut tx, session.account, None, &daily).await? {
-                let saved = receipt(&row, &published, now)?;
-                tx.commit().await.map_err(unavailable)?;
-                return Ok(DailySubmission::Practice(saved));
-            }
-            let saved = DailyReceipt {
-                id: Uuid::new_v4(),
-                attempt,
-                metadata: metadata.clone(),
-                opened_safe: evidence
-                    .opened_safe()
-                    .try_into()
-                    .map_err(|_| DailyStoreError::Invalid)?,
-                mistakes: evidence.mistakes(),
-                replayed_elapsed_ms: evidence.replayed_elapsed_ms(),
-                completed_at: now,
-            };
-            saved.validate(&published.definition, now)?;
-            let replay_expiry = now.checked_add(604800).ok_or(DailyStoreError::Invalid)?;
-            let record_expiry = now.checked_add(7776000).ok_or(DailyStoreError::Invalid)?;
-            sqlx::query("INSERT INTO daily_completions(id,account_id,daily_id,attempt_id,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,completed_at,replay_json,replay_expires_at,record_expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9::double precision),$10::text::jsonb,to_timestamp($11::double precision),to_timestamp($12::double precision))")
-                .bind(saved.id).bind(session.account).bind(daily).bind(attempt).bind(evidence.fingerprint().as_slice()).bind(i32::try_from(saved.opened_safe).map_err(|_| DailyStoreError::Invalid)?).bind(i32::from(saved.mistakes)).bind(i64::from(saved.replayed_elapsed_ms)).bind(now).bind(evidence.canonical_replay()).bind(replay_expiry).bind(record_expiry).execute(&mut *tx).await.map_err(unavailable)?;
-            tx.commit().await.map_err(unavailable)?;
-            Ok(DailySubmission::Official(saved))
-        }))
+        self.submit_completion(session, attempt, evidence, None)
+    }
+    fn submit_timed<'a>(
+        &'a self,
+        session: DailySession,
+        attempt: Uuid,
+        evidence: &'a ReplayEvidence,
+        time: &'a VerifiedDailyTime,
+    ) -> DailyFuture<'a, Result<DailySubmission, DailyStoreError>> {
+        self.submit_completion(session, attempt, evidence, Some(time))
     }
     fn own<'a>(
         &'a self,

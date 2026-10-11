@@ -84,6 +84,7 @@ pub struct DailyDefinition {
 #[serde(rename_all = "snake_case")]
 pub enum DailyTrust {
     VerifiedCompletion,
+    VerifiedTime,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "snake_case")]
@@ -99,6 +100,7 @@ pub struct DailyCompletion {
     pub opened_safe: u32,
     pub mistakes: u16,
     pub replayed_elapsed_ms: u32,
+    pub verified_elapsed_ms: Option<u32>,
     #[ts(type = "number")]
     pub completed_at: i64,
 }

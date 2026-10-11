@@ -99,6 +99,13 @@ pub(super) enum Reply {
         saved: Option<DailyReceipt>,
     },
 }
+fn trust(receipt: Option<&DailyReceipt>) -> DailyTrust {
+    if receipt.is_some_and(|receipt| receipt.verified_elapsed_ms.is_some()) {
+        DailyTrust::VerifiedTime
+    } else {
+        DailyTrust::VerifiedCompletion
+    }
+}
 impl Reply {
     pub fn encode(self, expected: &Expected, now: i64) -> Result<Vec<u8>, Failure> {
         match (self, &expected.input) {
@@ -139,14 +146,14 @@ impl Reply {
                     account_id: expected.account.to_string(),
                     attempt_id: attempt.to_string(),
                     disposition,
-                    trust: DailyTrust::VerifiedCompletion,
+                    trust: trust(Some(&receipt)),
                     receipt: completion(&receipt, &definition, now)?,
                 })
             }
             (Self::Own { definition, saved }, Input::Own(_)) => bytes(&DailyOwnResponse {
                 v: 1,
                 account_id: expected.account.to_string(),
-                trust: DailyTrust::VerifiedCompletion,
+                trust: trust(saved.as_ref()),
                 receipt: saved
                     .map(|r| completion(&r, &definition, now))
                     .transpose()?,

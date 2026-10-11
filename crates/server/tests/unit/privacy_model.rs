@@ -62,9 +62,32 @@ fn daily(n: u128) -> ExportRecord {
         opened_safe: 216,
         mistakes: 0,
         replayed_elapsed_ms: 3200,
+        verified_elapsed_ms: None,
         completed_at: 100,
         replay_available: true,
     }
+}
+#[test]
+fn owner_export_rejects_a_time_shorter_than_native_completion() {
+    let mut value = daily(1);
+    for time in [None, Some(3200), Some(u32::MAX)] {
+        if let ExportRecord::Daily {
+            verified_elapsed_ms,
+            ..
+        } = &mut value
+        {
+            *verified_elapsed_ms = time;
+        }
+        assert!(record_id(&value, ExportStream::Daily, 100).is_ok());
+    }
+    if let ExportRecord::Daily {
+        verified_elapsed_ms,
+        ..
+    } = &mut value
+    {
+        *verified_elapsed_ms = Some(3199);
+    }
+    assert!(record_id(&value, ExportStream::Daily, 100).is_err());
 }
 #[test]
 fn proof_has_no_nickname_gate_and_rejects_identity_time_and_freshness_changes() {

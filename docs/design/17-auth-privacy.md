@@ -128,3 +128,6 @@ TS31~36은 4개 어댑터의 최소 권한·추가 claim 제거·state/nonce/JWK
 
 
 #118 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0055](../adr/0055-bounded-daily-time-authority.md) → pure time policy/bounded authority·actual native evidence/45초/TTL/immutable retry·철회/재시작 → [검증118](../verification/118-daily-time-authority.md). 이 단계는 공개 수집·DB·HTTP·UI를 활성화하지 않으며 후속 rights export 확장 뒤 순차 연결한다.
+
+
+#120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). 공식 시간 수집 전 본인 export nullable 서버 시간을 먼저 제공한다. 새 PII 없이 기존 최근 인증/current revision/권리/철회·raw7일/record90일/cascade 삭제를 유지하며 sealed proof 계정 결합을 실제 PG transaction과 함께 검사한다.

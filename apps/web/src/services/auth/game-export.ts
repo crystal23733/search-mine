@@ -176,6 +176,7 @@ export function decodeGameRecord(value: unknown): ExportRecord {
     "opened_safe",
     "mistakes",
     "replayed_elapsed_ms",
+    "verified_elapsed_ms",
     "completed_at",
     "replay_available",
   ]);
@@ -185,6 +186,11 @@ export function decodeGameRecord(value: unknown): ExportRecord {
     timestamp(v.completed_at) === 0
   )
     return invalid();
+  const replayedElapsed = uint(v.replayed_elapsed_ms);
+  const verifiedElapsed =
+    v.verified_elapsed_ms === null ? null : uint(v.verified_elapsed_ms);
+  if (verifiedElapsed !== null && verifiedElapsed < replayedElapsed)
+    return invalid();
   return {
     kind,
     completion_id: exportId(v.completion_id),
@@ -192,7 +198,8 @@ export function decodeGameRecord(value: unknown): ExportRecord {
     metadata: metadata(v.metadata),
     opened_safe: uint(v.opened_safe, 65535),
     mistakes: uint(v.mistakes, 65535),
-    replayed_elapsed_ms: uint(v.replayed_elapsed_ms),
+    replayed_elapsed_ms: replayedElapsed,
+    verified_elapsed_ms: verifiedElapsed,
     completed_at: timestamp(v.completed_at),
     replay_available: v.replay_available,
   };

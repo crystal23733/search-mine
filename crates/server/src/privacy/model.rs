@@ -98,7 +98,8 @@ pub(crate) fn record_id(
                 mistakes,
                 completed_at,
                 replay_available,
-                ..
+                replayed_elapsed_ms,
+                verified_elapsed_ms,
             },
         ) => {
             let completion = id(completion_id).map_err(|_| ExportError::Unavailable)?;
@@ -127,6 +128,7 @@ pub(crate) fn record_id(
                 || *opened_safe == 0
                 || *opened_safe > 65535
                 || *mistakes > wire_rules.rules.max_commands_per_seat
+                || verified_elapsed_ms.is_some_and(|elapsed| elapsed < *replayed_elapsed_ms)
                 || *completed_at <= 0
                 || *completed_at > now
                 || now.saturating_sub(*completed_at) >= 7776000

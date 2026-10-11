@@ -145,6 +145,7 @@ fn receipt_projection_checks_original_identity_metadata_and_exact_retention() {
         opened_safe: 216,
         mistakes: 1,
         replayed_elapsed_ms: 3200,
+        verified_elapsed_ms: None,
         completed_at: NOW,
     };
     assert_eq!(

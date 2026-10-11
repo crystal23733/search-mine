@@ -161,3 +161,6 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 
 
 #116 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0054](../adr/0054-authenticated-daily-submission-http.md) → closed 인증 Daily definition/submit/own·accepted snapshot/공유 bounded CPU·첫 완료/Practice·현재 세션 응답 장벽 → [검증116](../verification/116-authenticated-daily-http.md). trust는 verified_completion이며 ticket/heartbeat/순위/명시 UI는 후속19다.
+
+
+#120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). forward nullable bigint verified_elapsed_ms 및 u32 CHECK, 기존 migration checksum/첫 완료 불변/권한 transaction·7일raw/90일record 유지. sealed account/attempt/metadata/digest 일치만 저장하고 NULL 사후 승격·retry/Practice 개선을 금지한다.

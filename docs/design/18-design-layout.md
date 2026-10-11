@@ -82,3 +82,6 @@ PC 대전 우측은 상대 진행 요약만 공개한다. sheet/dialog는 초점
 
 
 #118은 제공11 공식 시작/연습·12 서버 검증/시간 순위를 검토하여 [ADR0055](../adr/0055-bounded-daily-time-authority.md)의 시간 권위 기반을 만든다. 화면/공식 시간 표시는 후속이며 지금의 verified_completion을 승격하지 않는다. 공개 seed 사전 계산과 네트워크 지연의 한계를 유지한다.
+
+
+#120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). 제공 디자인11/12의 공식/연습 경계에 따라 저장된 Some만 verified_time이며 기존 NULL 기록은 승격하지 않는다. 설정의 명시 내보내기는 nullable 서버 시간을 포함한다. 공식 시작/heartbeat/두 순위/8언어 데일리 UI는 후속이다.

@@ -98,6 +98,7 @@ const daily = (n: number): Extract<ExportRecord, { kind: "daily" }> => ({
   opened_safe: 216,
   mistakes: 0,
   replayed_elapsed_ms: 3200,
+  verified_elapsed_ms: null,
   completed_at: 100,
   replay_available: true,
 });
@@ -122,6 +123,18 @@ const page = (
   records: ExportRecord[] = [],
   next: string | null = null,
 ) => ({ v: 1, account_id: account.id, stream, records, next });
+test("daily export preserves a required nullable server time and rejects missing or corrupt time", () => {
+  for (const elapsed of [null, 3200, 4000, 0xffffffff]) {
+    const raw = Object.assign(daily(1), { verified_elapsed_ms: elapsed });
+    expect(decodeGamePage(page("daily", [raw])).records[0]).toEqual(raw);
+  }
+  for (const elapsed of [undefined, -1, 1.5, 3199, 0x100000000, "4000", NaN]) {
+    const raw = Object.assign(daily(1), { verified_elapsed_ms: elapsed });
+    if (elapsed === undefined)
+      Reflect.deleteProperty(raw, "verified_elapsed_ms");
+    expect(() => decodeGamePage(page("daily", [raw]))).toThrow(AuthError);
+  }
+});
 test("all pages and live replay references are collected in order with one immutable proof", async () => {
   const { t, auth } = fixture();
   await auth.refresh();

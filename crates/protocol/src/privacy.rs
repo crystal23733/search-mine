@@ -44,6 +44,7 @@ pub enum ExportRecord {
         opened_safe: u32,
         mistakes: u16,
         replayed_elapsed_ms: u32,
+        verified_elapsed_ms: Option<u32>,
         #[ts(type = "number")]
         completed_at: i64,
         replay_available: bool,

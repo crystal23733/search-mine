@@ -1,5 +1,6 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { advance } from "./online-quick";
 import type {
   AuthBootstrap,
   DailyReplay,
@@ -153,23 +154,51 @@ export function registerDailyHttpTests(approve: Approve, login: Login) {
         expect(JSON.stringify(result.first.body)).not.toMatch(
           /subject|credential|nickname|email|verified_time|official_elapsed_ms/,
         );
-        const download = page.waitForEvent("download");
-        await page.getByRole("button", { name: "Download my data" }).click();
-        const saved = await download;
-        const path = await saved.path();
-        expect(path).not.toBeNull();
-        const exported = JSON.parse(
-          await readFile(path!, "utf8"),
-        ) as PersonalDataExport;
-        expect(exported.games).toHaveLength(1);
-        expect(exported.games[0]).toMatchObject({
-          kind: "daily",
-          completion_id: result.first.body.receipt.completion_id,
-          metadata: replay.metadata,
-          replayed_elapsed_ms: result.first.body.receipt.replayed_elapsed_ms,
-        });
-        expect(exported.replays).toHaveLength(1);
-        expect(exported.replays[0].replay).toEqual(replay);
+        for (const locale of [
+          "en",
+          "ko",
+          "ja",
+          "zh-CN",
+          "es",
+          "pt-BR",
+          "de",
+          "fr",
+        ]) {
+          await advance(page, 4);
+          const messages = JSON.parse(
+            await readFile(
+              new URL(
+                `../../../apps/web/src/locales/${locale}/common.json`,
+                import.meta.url,
+              ),
+              "utf8",
+            ),
+          ) as Record<string, string>;
+          await page.goto(`/${locale}/settings`);
+          const button = page.getByRole("button", {
+            name: messages["auth.export"],
+            exact: true,
+          });
+          await expect(button).toBeEnabled();
+          const download = page.waitForEvent("download");
+          await button.click();
+          const saved = await download;
+          const path = await saved.path();
+          expect(path).not.toBeNull();
+          const exported = JSON.parse(
+            await readFile(path!, "utf8"),
+          ) as PersonalDataExport;
+          expect(exported.games).toHaveLength(1);
+          expect(exported.games[0]).toMatchObject({
+            kind: "daily",
+            completion_id: result.first.body.receipt.completion_id,
+            metadata: replay.metadata,
+            replayed_elapsed_ms: result.first.body.receipt.replayed_elapsed_ms,
+            verified_elapsed_ms: null,
+          });
+          expect(exported.replays).toHaveLength(1);
+          expect(exported.replays[0].replay).toEqual(replay);
+        }
       } finally {
         await context.close();
       }

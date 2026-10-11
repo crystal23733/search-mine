@@ -832,6 +832,18 @@
         "daily-submission-http"
       ],
       "acceptance": "ADR0055·pure timing/bounded memory·current lease/session revision·15s/45s/countdown/duration TTL·sealed evidence/time/immutable retry·revocation/restart/concurrency/overflow·TDD/fresh95/80/full/리뷰CI·병합CLOSED 뒤 rights/export/PG/HTTP 활성화"
+    },
+    {
+      "key": "daily-time-persistence",
+      "issue": 120,
+      "milestone": "M3",
+      "title": "feat(server): 본인 내보내기와 검증된 데일리 시간 영속화",
+      "requirements": "FR01/09/10/16, NFR01/02/05/07/08",
+      "scenarios": "TS17/18/20/21/31/35/36",
+      "deps": [
+        "daily-time-authority"
+      ],
+      "acceptance": "ADR0056·rights-first nullable export/TS/strict download·forward migration/u32/accepted time bounds·sealed account/attempt/meta/digest·immutable first retry/Practice/NULL·actualPG/HTTP/HTTPS/full/fresh95/80/리뷰CI·병합CLOSED 뒤 시간HTTP/순위/UI"
     }
   ]
 }

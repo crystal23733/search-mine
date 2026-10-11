@@ -100,3 +100,6 @@ service worker는 versioned shell/locale/core 정적 asset만 캐시하고 공�
 
 
 #105 [ADR0048](../adr/0048-latest-personal-result.md): online latest port/별도 결과 controller는 fresh proof·bounded body·generation/abort/전후 subject를 검증한다. 홈 명시 링크→고정 /results, 기존 PersonalResult Atomic UI, ID/결과는 메모리만이며 logout/erasure/offline 즉시 숨김이다.
+
+
+#120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). 서버 시간 수집 전에 strict 본인 export decoder·생성 TS·설정의 명시 JSON 다운로드에 nullable verified_elapsed_ms를 제공한다. 누락을 null로 추정하지 않고 u32/semantic 하한을 검사하며 accepted duration 규칙은 Rust/DB가 담당한다.

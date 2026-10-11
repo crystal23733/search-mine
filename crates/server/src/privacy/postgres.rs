@@ -4,7 +4,7 @@ use liar_protocol::game::PROTOCOL_VERSION;
 use sqlx::{PgPool, Postgres, Row, Transaction, postgres::PgRow};
 use std::{sync::Arc, time::Duration};
 
-const DAILY: &str = "SELECT c.id,c.daily_id,c.attempt_id,c.replay_digest,c.opened_safe,c.mistakes,c.replayed_elapsed_ms,EXTRACT(EPOCH FROM c.completed_at)::bigint AS completed_at,EXTRACT(EPOCH FROM c.replay_expires_at)::bigint AS replay_expires_at,EXTRACT(EPOCH FROM c.record_expires_at)::bigint AS record_expires_at,d.id AS definition_id,to_char(d.utc_date,'YYYY-MM-DD') AS utc_date,d.seed_version,d.rules_snapshot::text AS rules_snapshot,EXTRACT(EPOCH FROM d.published_at)::bigint AS published_at,EXTRACT(EPOCH FROM d.verification_expires_at)::bigint AS verification_expires_at,EXTRACT(EPOCH FROM (d.utc_date::timestamp AT TIME ZONE 'UTC'))::bigint AS starts_at,";
+const DAILY: &str = "SELECT c.id,c.daily_id,c.attempt_id,c.replay_digest,c.opened_safe,c.mistakes,c.replayed_elapsed_ms,c.verified_elapsed_ms,EXTRACT(EPOCH FROM c.completed_at)::bigint AS completed_at,EXTRACT(EPOCH FROM c.replay_expires_at)::bigint AS replay_expires_at,EXTRACT(EPOCH FROM c.record_expires_at)::bigint AS record_expires_at,d.id AS definition_id,to_char(d.utc_date,'YYYY-MM-DD') AS utc_date,d.seed_version,d.rules_snapshot::text AS rules_snapshot,EXTRACT(EPOCH FROM d.published_at)::bigint AS published_at,EXTRACT(EPOCH FROM d.verification_expires_at)::bigint AS verification_expires_at,EXTRACT(EPOCH FROM (d.utc_date::timestamp AT TIME ZONE 'UTC'))::bigint AS starts_at,";
 #[derive(Clone)]
 pub struct PgGameExportReader {
     pool: PgPool,
@@ -89,6 +89,7 @@ fn daily_record(row: &PgRow, now: i64) -> Result<ExportRecord, ExportError> {
         opened_safe: receipt.opened_safe,
         mistakes: receipt.mistakes,
         replayed_elapsed_ms: receipt.replayed_elapsed_ms,
+        verified_elapsed_ms: receipt.verified_elapsed_ms,
         completed_at: receipt.completed_at,
         replay_available: row.try_get("replay_available").map_err(db)?,
     })

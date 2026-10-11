@@ -325,3 +325,6 @@ TS17/18 확장(#116): 고정 POST와 실제 현재 세션/닉네임·CSRF로 acc
 #118 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0055](../adr/0055-bounded-daily-time-authority.md) → pure time policy/bounded authority·actual native evidence/45초/TTL/immutable retry·철회/재시작 → [검증118](../verification/118-daily-time-authority.md). 이 단계는 공개 수집·DB·HTTP·UI를 활성화하지 않으며 후속 rights export 확장 뒤 순차 연결한다.
 
 TS17/18 확장(#118): 단조 fake Clock과 actual native golden 완료를 사용해 ticket 시작/동일 재시도/교체·계정당1개/전체capacity·heartbeat15초/45초 정확 경계·중복 ack가 시각을 연장하지 않음·고정 countdown/duration TTL·elapsed 최소와 immutable finish digest를 확인한다. 동시 finish, revoked/다른 registry lease, 실제 invalidation barrier 동안 late bind, clock 역행/overflow·새 registry no-proof를 검증한다. 공개 시간이 수집되지 않는 foundation과 이후 실PG/HTTP 시간 기능을 구분한다.
+
+
+#120 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0056](../adr/0056-daily-time-persistence-and-export.md) → rights-first nullable time/실PG sealed first completion·불변/본인export → [검증120](../verification/120-daily-time-persistence-and-export.md). 공개 시간HTTP·두 순위/UI·상위19는 후속이다.

@@ -97,3 +97,6 @@
 - [ADR0054 인증 데일리 HTTP](adr/0054-authenticated-daily-submission-http.md) · [#116 검증](verification/116-authenticated-daily-http.md)
 
 - [ADR0055 데일리 시간 권위](adr/0055-bounded-daily-time-authority.md) · [#118 실행](verification/118-daily-time-authority.md)
+
+
+- [ADR0056 서버 시간 영속화·본인 export](adr/0056-daily-time-persistence-and-export.md) · [검증120](verification/120-daily-time-persistence-and-export.md).

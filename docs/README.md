@@ -90,3 +90,6 @@
 
 
 - [ADR0052 · 데일리 첫 완료 영속화](adr/0052-daily-first-completion-store.md) / [검증112](verification/112-daily-first-completion-store.md)
+
+
+- [ADR0053 본인 게임기록 내보내기](adr/0053-personal-game-data-export.md) · [#114 실행](verification/114-personal-game-data-export.md)

@@ -34,6 +34,19 @@ export function authTestPorts(
       account = { ...account, nickname: value.normalize("NFC") };
       return account;
     }),
+    gameExport: async (input) => ({
+      v: 1,
+      account_id: input.account_id,
+      stream: input.stream,
+      records: [],
+      next: null,
+    }),
+    replayExport: async (input) => ({
+      v: 1,
+      account_id: input.account_id,
+      completion_id: input.completion_id,
+      replay: null,
+    }),
     export: vi.fn(async () => {
       if (!account) throw new AuthError("auth_required");
       return { account, identities, created_at: 1, last_seen_at: 2 };

@@ -20,6 +20,8 @@ mod admission_restart;
 mod daily;
 #[path = "postgres/latest_results.rs"]
 mod latest_results;
+#[path = "postgres/privacy.rs"]
+mod privacy;
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn invitation_transactions_preserve_canonical_codes_consume_once_and_expire_without_accounts()

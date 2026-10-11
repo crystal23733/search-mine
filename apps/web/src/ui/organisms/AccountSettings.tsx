@@ -111,15 +111,13 @@ export function AccountSettings() {
                 const owner = account.id;
                 setDownload("idle");
                 void services.auth
-                  .export(owner)
-                  .then(async (result) => {
-                    if (
-                      result.ok &&
-                      services.auth.read().account?.id === owner
-                    ) {
-                      await services.authEffects.download(result.value);
-                      setDownload("ready");
-                    }
+                  .exportTo(owner, (value) =>
+                    services.authEffects.download(value),
+                  )
+                  .then((result) => {
+                    if (result.ok) setDownload("ready");
+                    else if (result.code === "auth_unavailable")
+                      setDownload("error");
                   })
                   .catch(() => setDownload("error"));
               }}

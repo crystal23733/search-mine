@@ -12,6 +12,7 @@ use liar_core::{
     rules::RulesSnapshot,
 };
 use liar_server::auth::*;
+use liar_server::privacy::*;
 use liar_server::results::{PgResultReader, ResultAuthentication, result_router};
 use liar_server::{lobby::*, online::*};
 use sqlx::postgres::PgPoolOptions;
@@ -109,13 +110,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let authorities = AuthorityRegistry::new(32).map_err(|_| "fixture lobby authorities")?;
     let result_authorities =
         AuthorityRegistry::new(32).map_err(|_| "fixture result authorities")?;
+    let privacy_authorities =
+        AuthorityRegistry::new(32).map_err(|_| "fixture privacy authorities")?;
+    let export_workers = ExportWorkers::default();
     let store = PgAuthStore::with_vault(pool.clone(), vault.clone()).with_invalidations(Arc::new(
         CombinedSessionInvalidator::new(
             Arc::new(CombinedSessionInvalidator::new(
                 sockets.clone(),
                 authorities.clone(),
             )),
-            result_authorities.clone(),
+            Arc::new(CombinedSessionInvalidator::new(
+                result_authorities.clone(),
+                privacy_authorities.clone(),
+            )),
         ),
     ));
     let service = AuthService::new(
@@ -203,9 +210,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .merge(
             result_router(
-                Arc::new(PgResultReader::new(pool, clock.clone())),
+                Arc::new(PgResultReader::new(pool.clone(), clock.clone())),
                 sessions.clone(),
-                security,
+                security.clone(),
                 ResultAuthentication {
                     authorities: result_authorities,
                     clock: clock.clone(),
@@ -214,6 +221,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .map_err(|_| "fixture result HTTP")?,
         )
+        .merge(privacy_router(Arc::new(PgGameExportReader::with_workers(pool,clock.clone(),export_workers.clone())),sessions.clone(),security,PrivacyAuthentication {authorities:privacy_authorities,clock:clock.clone(),workers:export_workers},4).map_err(|_| "fixture privacy HTTP")?)
         .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)
         .merge(
             Router::new()

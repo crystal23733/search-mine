@@ -1,6 +1,7 @@
-import type { AuthExport } from "@liar/protocol";
+import type { PersonalDataExport } from "@liar/protocol";
 import { createAuth } from "./session";
-import { decodeExport, decodeStart } from "./decode";
+import { decodeStart } from "./decode";
+import { decodePersonalDataExport } from "./game-export";
 import {
   AuthError,
   PROVIDERS,
@@ -9,7 +10,7 @@ import {
 } from "./types";
 export interface AuthEffects {
   redirect(url: string): void;
-  download(data: AuthExport): Promise<void>;
+  download(data: PersonalDataExport): Promise<void>;
 }
 export type AuthChannel = Pick<
   BroadcastChannel,
@@ -66,7 +67,7 @@ export function createBrowserAuth(
       );
     },
     async download(data) {
-      const minimal = decodeExport(data);
+      const minimal = decodePersonalDataExport(data);
       const url = URL.createObjectURL(
         new Blob([JSON.stringify(minimal, null, 2)], {
           type: "application/json",

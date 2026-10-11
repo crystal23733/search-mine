@@ -85,6 +85,19 @@ function transport(): AuthTransport {
       authorize_url: "https://accounts.google.com/o/oauth2/v2/auth",
     }),
     nickname: vi.fn().mockResolvedValue({ ...a, nickname: "é探偵" }),
+    gameExport: async (input) => ({
+      v: 1,
+      account_id: input.account_id,
+      stream: input.stream,
+      records: [],
+      next: null,
+    }),
+    replayExport: async (input) => ({
+      v: 1,
+      account_id: input.account_id,
+      completion_id: input.completion_id,
+      replay: null,
+    }),
     export: vi.fn().mockResolvedValue({
       account: a,
       created_at: 1,

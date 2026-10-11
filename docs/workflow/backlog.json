@@ -796,6 +796,18 @@
         "bounded-daily-replay"
       ],
       "acceptance": "ADR0052·immutable accepted publication·sealed canonical payload·actual PG first-valid/attempt idempotency·auth transaction/erasure·7d/90d/DST·TDD/fresh coverage/회귀/docs/리뷰CI·병합/CLOSED 뒤 HTTP/timing/rights"
+    },
+    {
+      "key": "personal-game-export",
+      "issue": 114,
+      "milestone": "M3",
+      "title": "feat(privacy): 본인 게임 기록 내보내기와 세션 proof",
+      "requirements": "FR01/09/10/16, NFR01/02/05/07",
+      "scenarios": "TS17/18/20/29/31/34/35/36",
+      "deps": [
+        "daily-completion-store"
+      ],
+      "acceptance": "ADR0053·본인 bounded game pages/raw·실제 auth/fresh session/응답 barrier·7d/90d·타인/삭제/손상/CPU·명시 complete JSON download/8언어·TDD/실PG/fullcheck/fresh coverage/리뷰CI·병합/CLOSED 뒤 공식 수집"
     }
   ]
 }

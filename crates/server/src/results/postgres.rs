@@ -71,7 +71,7 @@ impl ResultReader for PgResultReader {
 fn db_error(_: sqlx::Error) -> ResultError {
     ResultError::Unavailable
 }
-fn stored(row: PgRow) -> Result<StoredPersonalResult, ResultError> {
+pub(crate) fn stored(row: PgRow) -> Result<StoredPersonalResult, ResultError> {
     Ok(StoredPersonalResult {
         account: row.try_get("account_id").map_err(db_error)?,
         match_id: row.try_get("id").map_err(db_error)?,

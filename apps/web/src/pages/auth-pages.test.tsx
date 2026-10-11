@@ -227,10 +227,15 @@ test("settings downloads a minimal export, changes the canonical nickname and ex
   );
   await waitFor(() =>
     expect(ports.authEffects.download).toHaveBeenCalledWith({
-      account: TEST_ACCOUNT,
-      created_at: 1,
-      last_seen_at: 2,
-      identities: [{ provider: "google", linked_at: 1 }],
+      v: 1,
+      account: {
+        account: TEST_ACCOUNT,
+        created_at: 1,
+        last_seen_at: 2,
+        identities: [{ provider: "google", linked_at: 1 }],
+      },
+      games: [],
+      replays: [],
     }),
   );
   fireEvent.click(screen.getByRole("button", { name: "Change nickname" }));

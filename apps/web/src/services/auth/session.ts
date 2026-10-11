@@ -1,4 +1,9 @@
-import type { AuthAccount, AuthErasure, AuthExport } from "@liar/protocol";
+import type {
+  AuthAccount,
+  AuthErasure,
+  PersonalDataExport,
+} from "@liar/protocol";
+import { collectGameExport } from "./game-export";
 import { createAuthenticatedRequests } from "./requests";
 import { SessionRecovery } from "./recovery";
 import {
@@ -280,6 +285,36 @@ export function createAuth(
     begin(true);
     clear("unavailable", "auth_unavailable");
   }
+  async function exportData(
+    expected: string,
+  ): Promise<Completion<PersonalDataExport>> {
+    return await operate<PersonalDataExport>(
+      expected,
+      async (proof, signal) => {
+        const revision = sessionId;
+        if (!revision) throw new OwnershipChanged();
+        const value = await transport.export(proof, signal);
+        requireOwner(value.account, expected);
+        const collected = await collectGameExport(
+          transport,
+          value,
+          revision,
+          proof,
+          signal,
+        );
+        const final = await transport.bootstrap(signal);
+        if (
+          final.account?.id !== expected ||
+          final.session_revision !== revision ||
+          !final.csrf ||
+          signal.aborted
+        )
+          throw new OwnershipChanged();
+        csrf = final.csrf;
+        return collected;
+      },
+    );
+  }
   return {
     execute: requests.execute,
     read: () => ({
@@ -354,14 +389,18 @@ export function createAuth(
       }
       return result;
     },
-    export: async (expected) =>
-      checked(
-        await operate<AuthExport>(expected, async (proof, signal) => {
-          const value = await transport.export(proof, signal);
-          requireOwner(value.account, expected);
-          return value;
-        }),
-      ),
+    export: async (expected) => checked(await exportData(expected)),
+    async exportTo(expected, sink) {
+      const completion = await exportData(expected);
+      const result = checked(completion);
+      if (!result.ok) return result;
+      try {
+        await sink(result.value);
+      } catch {
+        return { ok: false, code: "auth_unavailable" };
+      }
+      return checked(completion);
+    },
     erase: async (expected) =>
       erased(
         await operate(expected, (proof, signal) =>

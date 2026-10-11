@@ -14,6 +14,7 @@ import {
   decodeStart,
   object,
 } from "./decode";
+import { decodeGamePage, decodeReplayExport } from "./game-export";
 export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
   async function request<T>(
     path: string,
@@ -22,6 +23,7 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
     body?: unknown,
     signal?: AbortSignal,
     method = "POST",
+    maxBytes = 65536,
   ): Promise<T> {
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -65,7 +67,7 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
           });
           if (part.done) break;
           size += part.value.byteLength;
-          if (size > 65536) {
+          if (size > maxBytes) {
             await reader.cancel();
             throw new AuthError("auth_unavailable");
           }
@@ -169,6 +171,18 @@ export function createAuthHttp(fetcher: typeof fetch): AuthTransport {
       request("/api/v1/me", decodeAccount, csrf, { nickname }, signal, "PATCH"),
     export: (csrf, signal) =>
       request("/api/v1/me/export", decodeExport, csrf, {}, signal),
+    gameExport: (input, csrf, signal) =>
+      request("/api/v1/me/games/export", decodeGamePage, csrf, input, signal),
+    replayExport: (input, csrf, signal) =>
+      request(
+        "/api/v1/me/games/replay",
+        decodeReplayExport,
+        csrf,
+        input,
+        signal,
+        "POST",
+        2 * 1024 * 1024 + 4096,
+      ),
     erase: (csrf, signal) =>
       request("/api/v1/me", decodeErasure, csrf, {}, signal, "DELETE"),
     unlink: (provider, csrf, signal) =>

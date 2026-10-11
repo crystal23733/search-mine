@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·실제 WS 보드/결과를 연결했고 #18 재접속·장애 복구를 순차 구현합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과를 연결했고 #107에서 상위 #18의 통합 출구를 최종 검증합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -48,7 +48,7 @@ pnpm dev
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·장애 복구와 정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·영속 장애 복구·고정 결과 조회를 제공하며 공식 데일리 제출/순위와 정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
 
 ## 오프라인 확인
 
@@ -105,7 +105,7 @@ pnpm build
 pnpm exec playwright test --project auth
 ```
 
-DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속·OS 재시작 후 새 브라우저 결과 발견 시험을 포함한94개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md), [#72 친구 방](docs/verification/72-friends-room-ui.md), [#105 최신 결과 검증](docs/verification/105-latest-personal-result.md)을 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
+DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속·OS 재시작 후 새 브라우저 결과 발견·양쪽 이탈 시험을 포함한96개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md), [#72 친구 방](docs/verification/72-friends-room-ui.md), [#105 최신 결과 검증](docs/verification/105-latest-personal-result.md), [#107 통합 출구](docs/verification/107-reconnect-integration-exit.md)를 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
 
 단위 테스트는 순수 포트의 Node 환경과 실제 DOM의 jsdom 환경을 구분한다. [#84 준비·DOM 조회 검증](docs/verification/84-unit-arrangement-observation.md)은 기존 시간 제한과 접근성 단언을 유지한 실행 결과와 한계를 기록한다.
 
@@ -121,7 +121,7 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 
 [#80 제한된 자동 재연결](docs/verification/80-bounded-online-reconnect.md)은 끊김 동안 읽기 전용 보드를 유지하고 최대30초 자동 복구를 시도한다. 같은 세션의 새 snapshot 뒤 메모리 미확인 명령을 같은 UUID로 재전송한다. 서버 재시작 복구·결과 조회는 후속 #18이다.
 
-[#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. `POST /api/v1/lobby`의 인증 큐/친구방에서 배정된 계정이 게임 WS를 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다. 웹의 로비/온라인 화면은 #70/#72에서 연결했고 자동 재접속은 #18의 후속 작업이다.
+[#16 검증과 제한](docs/verification/16-authoritative-match-actor.md)을 확인한다. 인증 설정을 갖춘 서버는 `/api/v1/ws`에 정확한 Origin·서비스 쿠키·닉네임이 있는 계정만 허용한다. `POST /api/v1/lobby`의 인증 큐/친구방에서 배정된 계정이 게임 WS를 연결한다. 서버가 seed/정답을 소유하며 클라이언트에 공개 projection만 보낸다. 웹의 로비/온라인 화면은 #70/#72에서 연결했고 자동 재접속은 [#80 검증](docs/verification/80-bounded-online-reconnect.md)에 연결했다.
 
 개발 제한의 기본값은 매치16/mailbox64/송신16/proof2/물리 연결32이며 `LIAR_ONLINE_MATCHES`, `LIAR_ONLINE_MAILBOX`, `LIAR_ONLINE_OUTGOING`, `LIAR_ONLINE_PROOF_WORKERS`, `LIAR_ONLINE_CONNECTIONS`로 설정한다. 잘못된 값은 시작을 거절한다. 이 값은 미니 PC 출시 성능의 실측 결과가 아니며 #26에서 admission을 결정한다. 최종 결과는 새 migration으로 저장하고 닉네임·세션을 복사하지 않는다. 계정 삭제는 참여 기록을 제거하며 retry로 복원하지 않는다.
 
@@ -139,11 +139,11 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 
 로비 개발 기본값은 `LIAR_LOBBY_CAPACITY=32`, `LIAR_LOBBY_WORKERS=2`, `LIAR_LOBBY_AUTHORITIES=64`, `LIAR_LOBBY_REQUESTS=16`, `LIAR_BOARD_CAPACITY=4`, `LIAR_BOARD_WORKERS=1`, `LIAR_BOT_WORKERS=2`다. 잘못된 구성은 시작을 거절한다. auth 설정이 없으면 로비는 unavailable이며 무계정 연습은 유지한다. 이 상한은 #26의 미니 PC 실측을 대신하지 않는다.
 
-[#89 저장 결과 확인](docs/verification/89-personal-result-web.md)은 연결 복구 실패/저장 알림 유실 후 현재 메모리 판의 본인 결과를 명시 조회한다. 전후 인증 proof와 최소 본인 통계·8언어 화면, 실제 actor 정리 뒤 PG/HTTPS 검증을 포함한다. 새로고침 후 판 발견과 영속 재시작 출구는 후속 #18이다.
+[#89 저장 결과 확인](docs/verification/89-personal-result-web.md)은 연결 복구 실패/저장 알림 유실 후 현재 메모리 판의 본인 결과를 명시 조회한다. 전후 인증 proof와 최소 본인 통계·8언어 화면, 실제 actor 정리 뒤 PG/HTTPS 검증을 포함한다. 새로고침 후 판 발견과 영속 재시작은 #103/#105에 연결했고 #107에서 상위18 통합 출구를 감사한다.
 
 [#91 인증 복구 관측](docs/verification/91-auth-recovery-observation.md)은 실제 HTTPS 철회 응답의 관측 수명을 앱의 권한 폐기와 분리해 검사한다. #89/PR90은 병합·종료했으며 CI의 기존 flaky 두 건과 로컬 재시도0 결과를 구분해 기록했다.
 
-[#93 미확인 결과 계약](docs/verification/93-unknown-result-details.md)은 비정상 종료로 최종 수치를 알 수 없을 때 elapsed/본인 통계를 null로 표현한다. 숫자를 추측하지 않으며 실제 재시작 복구는 후속18이다.
+[#93 미확인 결과 계약](docs/verification/93-unknown-result-details.md)은 비정상 종료로 최종 수치를 알 수 없을 때 elapsed/본인 통계를 null로 표현한다. 숫자를 추측하지 않으며 실제 재시작 복구는 #103/#105에서 검증했다.
 
 [#95 결과 응답 관측](docs/verification/95-result-response-observation.md)은 실제 서버 본문을 앱에 전달하기 전에 관측하여 늦은 CDP 본문 조회 의존을 제거한다. #93/PR94은 병합·종료됐고 최초 CI flaky 기록을 보존했다.
 
@@ -154,7 +154,9 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 [#101 영속 journal 저장 foundation](docs/verification/101-active-match-journal.md)은 typed 입장/종료/시작 전 unknown abort 저장 경계를 검증한다. 공개 lobby/main 구성 전환과 실제 OS 재시작 통합은 후속이다. #99/PR100은 병합·종료됐다.
 
 
-[#103 durable 입장](docs/verification/103-durable-lobby-admission.md)은 실제 lobby/main/HTTPS의 journal ACK 뒤 대전을 공개하고 정상 취소 기록을 명시 정리한다. 실제 main OS kill/restart에서 unknown abort/null 세부 수치/seed 없음·원래 보존 기준·정확히 한 번과 known 결과 불변을 검증했다. 새로고침 후 본인 결과 발견과 상위18은 후속이다.
+[#103 durable 입장](docs/verification/103-durable-lobby-admission.md)은 실제 lobby/main/HTTPS의 journal ACK 뒤 대전을 공개하고 정상 취소 기록을 명시 정리한다. 실제 main OS kill/restart에서 unknown abort/null 세부 수치/seed 없음·원래 보존 기준·정확히 한 번과 known 결과 불변을 검증했다. 새로고침 후 본인 결과 발견은 #105에서 연결했고 상위18 출구 감사는 #107에서 진행한다.
 
 
 [#105 최신 본인 결과 발견](docs/verification/105-latest-personal-result.md)은 홈의 최근 결과 링크나 `/{locale}/results`에서 ID 없이 인증된 최신 결과를 찾는다. `POST /api/v1/results/latest`의 입력은 `{v:1}`이며 실제 없는 경우만200/null이다. 기존 ID 조회와 같은 권한·상한을 적용하고 일반 브라우저 저장소에 대전ID를 보관하지 않는다. 실제 OS 재시작 뒤 새 브라우저와8언어·PC/mobile을 검증했다. 실행 근거와 외부/운영 출구는 별도 기록한다.
+
+[#107 양쪽 이탈 통합 검증](docs/verification/107-reconnect-integration-exit.md)은 실제 서버 EOF 둘을 관측한 뒤 abandoned 무승부를 SQL에 저장하고, 인증 쿠키만 받은 새 브라우저에서 본인 최신 결과를 찾는다. abandon은 기존 completed:true, 서버 장애 abort는 false다. 추가 clock·실제 OS 재시작 후에도 결과/시각/본인 통계가 유지되는지 검사하며, 상위18은 해당 PR 병합·이슈 종료 후 최종 종료한다. 원인 미확정83과 외부OAuth42/장비26/사람27·물리삭제/백업25는 별도다.

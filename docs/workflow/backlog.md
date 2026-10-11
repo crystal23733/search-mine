@@ -108,3 +108,6 @@
 
 
 #103/PR104는 develop9eeb36c에병합·종료됐다. 다음 [#105](https://github.com/crystal23733/search-mine/issues/105)는 [ADR0048](../adr/0048-latest-personal-result.md)의 ID없는본인최신결과조회/고정8언어화면·실제OSrestart fresh browser를연결한다. 상위18은통합출구감사전OPEN이다.
+
+
+#105/PR106은 develop1f840bf에 병합·종료했다. 다음 [#107](https://github.com/crystal23733/search-mine/issues/107)은 [ADR0049](../adr/0049-reconnect-integration-exit.md)의 양쪽 실제 WS 종료/SQL/fresh latest 출구와 상위18 조건/하위종료를 감사한다. 병합·종료 후 충족된18만 종료하며83/외부42·26·27/물리삭제25는 별도다.

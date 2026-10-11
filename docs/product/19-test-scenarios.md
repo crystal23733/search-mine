@@ -300,3 +300,6 @@ TS01~36을 백로그 이슈와 PR 검증 근거에 연결한다. fake는 도메�
 실제 저사양 모바일 모델, 미니 PC 사양, 외국어 검수자와 CMP 테스트 계정이 필요하다. 준비되지 않은 환경의 테스트는 통과로 기록하지 않는다.
 
 TS16 확장(#93): [ADR0042](../adr/0042-unknown-result-details.md)의 unknown abort는 elapsed/own 모두 null·server_failure/abort/false다. 부분 null/타 reason/outcome/true·오염은 fail-closed. 이전 migration known행 보존·16개 통계 null패턴·writer 충돌·삭제 비복원·본인200/타인404·8언어 숫자 미생성·actual PG/HTTPS PC/mobile를 검사한다. SQL fixture는 계약 검증이며 실제 프로세스 재시작의 증거가 아니다.
+
+
+TS16 확장(#107): [ADR0049](../adr/0049-reconnect-integration-exit.md)의 두 실제 WS upstream EOF 이후에 clock을 진행하고 abandoned/draw/completed:true·known own/elapsed·active0/final1/anchor를 검증한다. 쿠키만 새 context의 ID없는 최신 조회·8언어/모바일·추가 clock/OS restart 불변과 상위18 출구를 [검증107](../verification/107-reconnect-integration-exit.md)에 연결한다.

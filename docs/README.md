@@ -79,3 +79,6 @@
 
 
 [#105 최신 본인 결과 발견](verification/105-latest-personal-result.md) · [ADR0048](adr/0048-latest-personal-result.md).
+
+
+- [ADR0049 · 양쪽 이탈 종료 관측](adr/0049-reconnect-integration-exit.md) / [검증107 · 재접속 통합 출구](verification/107-reconnect-integration-exit.md)

@@ -31,3 +31,5 @@ WASM은 거부된 클릭도 replay에 기록한다. NotStarted/Stunned/AlreadyOp
 다음 #19 하위는 실제PG published snapshot/첫 유효 완료/attempt idempotency·삭제/보존 → 인증 HTTP/서버 timing/leaderboard → 명시 로그인 제출/8언어 UI·실제 HTTPS 출구다. 사용자 위임 범위의 구현 분할이며 새 외부 계정이나 키를 요구하지 않는다. 상위19와 M3 전체는 이 foundation으로 닫지 않는다.
 
 Tokio의 [spawn_blocking 계약](https://docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html)은 시작한 blocking 작업을 abort로 중단할 수 없으며 CPU 동시 실행 제한을 별도로 두도록 설명한다. [owned semaphore](https://docs.rs/tokio/latest/tokio/sync/struct.Semaphore.html#method.try_acquire_owned)와 [timeout](https://docs.rs/tokio/latest/tokio/time/fn.timeout.html)의 수명에 맞춰 실제 permit을 closure 안에 둔다. 동시 두 definition의 완료 순서를 반대로 제어하고 각 caller가 자신의 결과만 받는 시나리오도 검증한다. 임의 OS 스케줄링/미니PC 성능 달성 주장은 아니다.
+
+첫 CI의 기존 owner-loss 프로세스 종료 검사 실패를 따라 [ADR0051](0051-fatal-runtime-shutdown.md)의 fatal runtime 수명 경계를 별도로 검증한다. 이 보정은 caller timeout에 CPU permit을 반환하는 것이 아니다. 실제 프로세스의 치명 오류 반환만 blocking 작업 완료를 기다리지 않도록 하며 정상 graceful 경로는 유지한다. 원격 실패 원인은 추가 관측 전 확정하지 않는다.

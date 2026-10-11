@@ -85,3 +85,5 @@
 
 
 - [ADR0050 · bounded native daily replay](adr/0050-bounded-native-daily-replay.md) / [검증109](verification/109-bounded-native-daily-replay.md)
+
+- [ADR0051 · 치명 오류 runtime 종료](adr/0051-fatal-runtime-shutdown.md)

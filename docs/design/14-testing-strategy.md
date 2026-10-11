@@ -74,3 +74,6 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 #107은 [ADR0049](../adr/0049-reconnect-integration-exit.md)의 실제 upstream EOF 관측→양쪽 WS 종료→SQL abandoned/draw/true→인증쿠키만 새 browser latest를390/1440px에서 검사한다. 고정 sleep/timeout 완화 없이 기존 전체 회귀를 재검증하며 [검증107](../verification/107-reconnect-integration-exit.md)에서 상위18의 조건별 구현/실행/하위 종료 근거를 감사한다.
 
 같은107 최초CI의 기존 main 입장 관측이429로 실패하여 준비 status poll을20ms에서100ms로 맞춘다. 기존 session/account20회/초 계약 안에서 관측하고 전체4초 deadline/429거절을 유지한다. poll 간격은 정상 상태 조회 빈도이며 서버 완료를 가정하는 고정 대기가 아니다.
+
+
+107 수정CI에서 latest의 실제200 뒤 CDP body 조회가 신규 이탈과 기존105 OS restart에서 실패했다. ADR0043/0049에 따라 두 흐름의 latest 관측을 공통 one-use 실제 route.fetch/동일 response fulfill로 옮긴다. 전달 전에 본문을 읽고 trigger와 관측을 함께 기다려 backend/body/fulfill 오류를 실패로 드러낸다. 제품/화면/권한·SQL·OS kill·본인 통계 단언, 기존 timeout/retry는 유지한다. 원격 Red와 보정 후 실제 검증을 구분하고83의 offline flake는 별도로 보존한다.

@@ -2,6 +2,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import type { LatestResultResponse } from "../../../packages/protocol/src/index";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { advance, stream } from "./online-quick";
+import { observeLatestResult } from "./latest-result-observation";
 
 const origin = "https://localhost:8443";
 type Approve = (context: BrowserContext) => Promise<void>;
@@ -127,15 +128,9 @@ export function registerOnlineAbandonTests(approve: Approve, login: Login) {
             if (new URL(r.url()).pathname === "/api/v1/results/latest")
               expect(r.postDataJSON()).toEqual({ v: 1 });
           });
-          const response = page.waitForResponse(
-            (r) =>
-              new URL(r.url()).pathname === "/api/v1/results/latest" &&
-              r.status() === 200,
+          const body = await observeLatestResult(page, () =>
+            page.goto("/en/results"),
           );
-          await page.goto("/en/results");
-          const reply = await response;
-          expect(reply.headers()["cache-control"]).toBe("no-store");
-          const body: LatestResultResponse = await reply.json();
           expect(body.result).toEqual({
             match_id: id,
             rules_hash: hash,
@@ -248,21 +243,13 @@ export function registerOnlineAbandonTests(approve: Approve, login: Login) {
           const fresh = await context();
           await fresh.addCookies(saved);
           const page = await fresh.newPage();
-          const response = page.waitForResponse(
-            (r) =>
-              new URL(r.url()).pathname === "/api/v1/results/latest" &&
-              r.status() === 200,
-          );
-          await page.goto("/en/results");
-          expect(await (await response).json()).toEqual(bodies[index]);
+          expect(
+            await observeLatestResult(page, () => page.goto("/en/results")),
+          ).toEqual(bodies[index]);
           await expect(page.getByTestId("personal-result")).toBeVisible();
-          const retry = page.waitForResponse(
-            (r) =>
-              new URL(r.url()).pathname === "/api/v1/results/latest" &&
-              r.status() === 200,
+          expect(await observeLatestResult(page, () => page.reload())).toEqual(
+            bodies[index],
           );
-          await page.reload();
-          expect(await (await retry).json()).toEqual(bodies[index]);
           await expect(page.getByTestId("personal-result")).toBeVisible();
         }
         expect(await metadata()).toEqual(before);

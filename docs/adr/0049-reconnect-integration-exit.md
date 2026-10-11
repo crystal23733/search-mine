@@ -25,3 +25,12 @@ probe 부재의 실제 Red부터 실행한다. 기존 timeout/retry를 유지하
 관측 순서는 현재 WS 함수 인자와 Drop 구현에서 도출한 추론이다. [Rust Reference의 함수 인자 소멸 순서](https://doc.rust-lang.org/reference/destructors.html#scopes-of-function-parameters)와 [Node net의 원격 end 의미](https://nodejs.org/api/net.html#event-end)를 확인했다. 이 시험의 정상 서버 함수 종료를 대상으로 하며 임의의 커널/네트워크 장애 전체에서 같은 순서를 보장한다는 주장은 아니다. 실제 SQL 결과가 추가 실행 근거다.
 
 PR108 최초 원격 database job의 coverage 재실행에서 기존103 actual main pair helper가 HTTP429 대200으로 실패했다. helper의20ms status poll은 초당 최대50회여서 기존 session/account20회/초를 넘을 수 있다. 정상 준비 상태 관측 간격을100ms(최대10회/초)로 맞춘다. 기존 전체4초 deadline·제품 rate/capacity·timeout·retry는 유지하며429를 성공으로 받아들이지 않는다. 실제 원격 실패는 보존하고 현재61개PG/관련 gate·수정 head 전체CI를 다시 확인한다.
+
+
+## 최신 결과 본문의 관측 수명 보정
+
+수정 head12d0188의 Product38077155154는 Rust/core coverage/실DB를 통과했지만 web에서 신규390px 이탈 검사의 Response.json이 실패했다. 기존105의1440px unknown 검사도 같은 오류로 재시도됐다. 두 trace의 실제 latest는200이지만 body resource가 없고 CDP Network.getResponseBody가 실패했다. 신규 응답 시작274926.984ms/소요10.674ms 뒤 body 조회274940.304ms, 기존 응답386626.738ms/소요15.205ms 뒤 조회386650.576ms다. 각각 마지막 goto 뒤 추가 탐색은 관측되지 않았다. 일반 오류 문구로 실제 탐색이나 Chromium 내부 원인을 확정하지 않는다. 최초 결과는76passed/2flaky/1failed/17미실행이며96개 통과로 계산하지 않는다. 별도83 offline-mobile load 실패와 진단8pass도 보존한다.
+
+[ADR0043](0043-result-response-observation.md)의 실제 전달 전 관측을 latest에도 적용한다. 신규107과 기존105의 fresh/reload/empty 조회는 one-use route.fetch로 원래 HTTPS POST를 전달하고 실제200/no-store/JSON을 읽은 뒤 같은 APIResponse를 fulfill한다. 별도 공통 시험 helper가 이를 소유하며 fake body·DB 우회·추가 앱 요청·UUID 입력을 만들지 않는다. maxRedirects0/maxRetries0/기존 관측10000ms, 실패의 reject/abort와 trigger/관측 Promise.all을 유지한다. 앱의 decoder/전후 권한 proof와 화면·SQL·OS 재시작·서로 다른 본인 통계 단언도 그대로 검사한다. 제품 source/기한/재시도/SW 설정은 변경하지 않는다.
+
+이미 실행된 원격 실패를 Red로 보존하고 보정 후 두 이탈·네 OS restart 검사를 재시도0으로 실행한 뒤 전체 browser/정적 검사/최신 head CI를 확인한다. APIResponse의 본문은 [Playwright route.fetch](https://playwright.dev/docs/api/class-route#route-fetch)·[APIResponse.body](https://playwright.dev/docs/api/class-apiresponse#api-response-body)의 공개 계약으로 읽으며, 브라우저 응답의 내부 수명 원인을 해결했다고 주장하지 않는다.

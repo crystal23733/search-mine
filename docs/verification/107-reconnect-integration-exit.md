@@ -63,3 +63,24 @@ Product38076749329/database114285214822의 일반PG61은 통과했고 coverage �
 
 
 준비 poll을 제품20회/초 이하100ms로 보정한 뒤 fmt/Clippy all-targets와 실제PG61개8.62초/ignored0을 통과했다. 변경은 기존 native 시험helper 한 줄과 설명뿐이며 제품source/4초기한/rate/재시도는 유지했다. 직전 전체315Rust/211unit/96browser3.3분재시도0/문서PASS의브라우저source는동일하다. 해당관측수정diff와rate경계를추가리뷰했고최신수정head전체CI를다시확인한다. 최초원격실패를숨기거나성공으로계산하지않는다.
+
+
+## 최신 결과 본문의 관측 수명 보정
+
+수정 head12d0188의 Product38077155154는 Rust/core coverage/실DB를 통과했지만 web에서 신규390px 이탈 검사의 Response.json이 실패했다. 기존105의1440px unknown 검사도 같은 오류로 재시도됐다. 두 trace의 실제 latest는200이지만 body resource가 없고 CDP Network.getResponseBody가 실패했다. 신규 응답 시작274926.984ms/소요10.674ms 뒤 body 조회274940.304ms, 기존 응답386626.738ms/소요15.205ms 뒤 조회386650.576ms다. 각각 마지막 goto 뒤 추가 탐색은 관측되지 않았다. 일반 오류 문구로 실제 탐색이나 Chromium 내부 원인을 확정하지 않는다. 최초 결과는76passed/2flaky/1failed/17미실행이며96개 통과로 계산하지 않는다. 별도83 offline-mobile load 실패와 진단8pass도 보존한다.
+
+[ADR0043](../adr/0043-result-response-observation.md)의 실제 전달 전 관측을 latest에도 적용한다. 신규107과 기존105의 fresh/reload/empty 조회는 one-use route.fetch로 원래 HTTPS POST를 전달하고 실제200/no-store/JSON을 읽은 뒤 같은 APIResponse를 fulfill한다. 별도 공통 시험 helper가 이를 소유하며 fake body·DB 우회·추가 앱 요청·UUID 입력을 만들지 않는다. maxRedirects0/maxRetries0/기존 관측10000ms, 실패의 reject/abort와 trigger/관측 Promise.all을 유지한다. 앱의 decoder/전후 권한 proof와 화면·SQL·OS 재시작·서로 다른 본인 통계 단언도 그대로 검사한다. 제품 source/기한/재시도/SW 설정은 변경하지 않는다.
+
+이미 실행된 원격 실패를 Red로 보존하고 보정 후 두 이탈·네 OS restart 검사를 재시도0으로 실행한 뒤 전체 browser/정적 검사/최신 head CI를 확인한다. APIResponse의 본문은 [Playwright route.fetch](https://playwright.dev/docs/api/class-route#route-fetch)·[APIResponse.body](https://playwright.dev/docs/api/class-apiresponse#api-response-body)의 공개 계약으로 읽으며, 브라우저 응답의 내부 수명 원인을 해결했다고 주장하지 않는다.
+
+
+### 실제 관측 보정 검사
+
+원격 web의 Red 로그/두 auth trace/별도 offline trace를 ignored .tmp/abandon107-ci-failure-artifact에 보존했다. 첫 helper는 전달 직후 명시 unroute를 추가했는데 실제 로컬 관련 검사가2pass/1fail/3미실행44.2초였다. latest200 본문 검증 뒤1440px unknown 화면이 checking 상태에 머물고 후속 bootstrap은trace상 미완료였다. 이 실패도 .tmp/abandon107-body-green에 보존했다. one-use handler는 times1로 자동 소모되므로 중복 unroute를 제거하고 기존 ADR0043의 전달 방식을 그대로 따른다. 변경 후 관련6개37.5초/재시도0 PASS. unroute와 Chromium 내부 실패의 인과관계를 확정한 것으로 보고하지 않는다. 전체 브라우저/최신CI는 아직 검증 중이다. format/lint/typecheck·docs157/Mermaid34 PASS, 제품 source/timeout/retry/룰/DTO/schema/locks 변경 없음.
+
+코드 리뷰 추가: latest POST는 원래 request의 body·Origin/CSRF/cookies를 route.fetch로 보내고 maxRedirects0/maxRetries0을 고정한다. strict200/no-store/JSON 뒤 동일 APIResponse를 fulfill하고 Promise.all이 trigger와 전달 오류를 관측한다. 예상 UUID/own 통계/nullable 응답은 원래 시나리오가 검사하고 화면 단언은 실제 앱의 decoder/후속 proof를 거친 뒤에만 통과한다. observer는 한 번 사용하며 context cleanup이 남은 수명을 소유한다. 실제 backend/body/fulfill 실패를 성공으로 바꾸거나 임의 JSON·추가 앱 요청을 만들지 않는다. 새 근거 있는 미해결 범위 내 제품 결함은 확인되지 않았으며 브라우저 내부 원인은 미확정이다.
+
+
+### latest 관측 보정 후 전체 회귀
+
+관련6개37.5초/재시도0에 이어 실제PG17.4를 사용한 전체96browser가3.1분/재시도0으로 통과했다. .tmp/abandon107-body-full.log와 .tmp/abandon107-body-full에 실제 결과를 보존했다. 새 두 이탈/기존 네 OS restart뿐 아니라 전체 인증·권한·친구/빠른/봇·재접속/미확인입력·오프라인·8언어·측정을 포함한다. format/lint/typecheck PASS. 기존 원격의 실패와83 미확정은 유지하며 새 CI/head·병합/107·18 종료는 아직 미완료다. 최종 observer/test diff를 다시 리뷰했고 원래 request/동일 response·실제 UI/본인 통계·실패 전파·one-use 수명이 유지됨을 확인했다. 현재 검토 범위에서 근거 있는 미해결 제품 결함을 확인하지 못했다.

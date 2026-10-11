@@ -147,3 +147,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #107: [ADR0049](../adr/0049-reconnect-integration-exit.md)의 관측 전용 EOF/실제 두 명 이탈·본인 결과·상위18 추적과 [검증107](../verification/107-reconnect-integration-exit.md)을 확인한다. 규칙/공개 DTO/schema 변경은 없다.
+
+
+#109 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0050](../adr/0050-bounded-native-daily-replay.md) → published snapshot/전체 metadata·공유Rust 완료 evidence·strict replay/정상 거부·actual bounded worker 수명 → [검증109](../verification/109-bounded-native-daily-replay.md). 공식 첫 완료/PG/HTTP/시간신뢰/순위/UI는 후속19이며 foundation을 통합 완료로 계산하지 않는다.

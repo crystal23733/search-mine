@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114에서 본인 게임기록 내보내기를 구현했으며 PR 검증·병합을 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114 본인 게임기록 내보내기를 병합·종료했고 #116 인증 데일리 제출 API를 구현했으며 PR 검증·병합을 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -48,7 +48,7 @@ pnpm dev
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·영속 장애 복구·고정 결과 조회를 제공하며 공식 데일리 제출/순위와 정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·영속 장애 복구·고정 결과 조회를 제공하며 공식 데일리 API는 준비됐으며 명시적 웹 제출/시간 순위와 정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
 
 ## 오프라인 확인
 

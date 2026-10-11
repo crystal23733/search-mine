@@ -48,6 +48,76 @@ pub struct DailyReplay {
     pub inputs: Vec<DailyTimedInput>,
     pub final_time_ms: u32,
 }
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct DailyDefinitionInput {
+    pub v: u16,
+    pub account_id: String,
+    pub session_revision: String,
+    pub date: String,
+    pub seed_version: u16,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct DailySubmitInput {
+    pub v: u16,
+    pub account_id: String,
+    pub session_revision: String,
+    pub attempt_id: String,
+    pub replay: DailyReplay,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct DailyOwnInput {
+    pub v: u16,
+    pub account_id: String,
+    pub session_revision: String,
+    pub metadata: DailyMetadata,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyDefinition {
+    pub v: u16,
+    pub metadata: DailyMetadata,
+    pub rules: RulesSnapshot,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum DailyTrust {
+    VerifiedCompletion,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum DailyDisposition {
+    Official,
+    Practice,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyCompletion {
+    pub completion_id: String,
+    pub attempt_id: String,
+    pub metadata: DailyMetadata,
+    pub opened_safe: u32,
+    pub mistakes: u16,
+    pub replayed_elapsed_ms: u32,
+    #[ts(type = "number")]
+    pub completed_at: i64,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailySubmitResponse {
+    pub v: u16,
+    pub account_id: String,
+    pub attempt_id: String,
+    pub disposition: DailyDisposition,
+    pub trust: DailyTrust,
+    pub receipt: DailyCompletion,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyOwnResponse {
+    pub v: u16,
+    pub account_id: String,
+    pub trust: DailyTrust,
+    pub receipt: Option<DailyCompletion>,
+}
 pub fn from_daily(puzzle: &DailyPuzzle) -> DailyView {
     let view = crate::game::from_projection(&puzzle.projection(), Seat::One);
     DailyView {
@@ -95,5 +165,14 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         DailyStep::decl(config),
         DailyTimedInput::decl(config),
         DailyReplay::decl(config),
+        DailyDefinitionInput::decl(config),
+        DailySubmitInput::decl(config),
+        DailyOwnInput::decl(config),
+        DailyDefinition::decl(config),
+        DailyTrust::decl(config),
+        DailyDisposition::decl(config),
+        DailyCompletion::decl(config),
+        DailySubmitResponse::decl(config),
+        DailyOwnResponse::decl(config),
     ]
 }

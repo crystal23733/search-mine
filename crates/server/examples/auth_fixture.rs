@@ -12,6 +12,7 @@ use liar_core::{
     rules::RulesSnapshot,
 };
 use liar_server::auth::*;
+use liar_server::daily::*;
 use liar_server::privacy::*;
 use liar_server::results::{PgResultReader, ResultAuthentication, result_router};
 use liar_server::{lobby::*, online::*};
@@ -113,6 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let privacy_authorities =
         AuthorityRegistry::new(32).map_err(|_| "fixture privacy authorities")?;
     let export_workers = ExportWorkers::default();
+    let daily_authorities = AuthorityRegistry::new(32).map_err(|_| "fixture daily authorities")?;
     let store = PgAuthStore::with_vault(pool.clone(), vault.clone()).with_invalidations(Arc::new(
         CombinedSessionInvalidator::new(
             Arc::new(CombinedSessionInvalidator::new(
@@ -121,7 +123,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )),
             Arc::new(CombinedSessionInvalidator::new(
                 result_authorities.clone(),
-                privacy_authorities.clone(),
+                Arc::new(CombinedSessionInvalidator::new(
+                    privacy_authorities.clone(),
+                    daily_authorities.clone(),
+                )),
             )),
         ),
     ));
@@ -221,7 +226,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .map_err(|_| "fixture result HTTP")?,
         )
-        .merge(privacy_router(Arc::new(PgGameExportReader::with_workers(pool,clock.clone(),export_workers.clone())),sessions.clone(),security,PrivacyAuthentication {authorities:privacy_authorities,clock:clock.clone(),workers:export_workers},4).map_err(|_| "fixture privacy HTTP")?)
+        .merge(privacy_router(Arc::new(PgGameExportReader::with_workers(pool.clone(),clock.clone(),export_workers.clone())),sessions.clone(),security.clone(),PrivacyAuthentication {authorities:privacy_authorities,clock:clock.clone(),workers:export_workers},4).map_err(|_| "fixture privacy HTTP")?)
+        .merge(daily_router(Arc::new(PgDailyRepository::new(pool,clock.clone())),BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),sessions.clone(),security,DailyAuthentication {authorities:daily_authorities,clock:clock.clone()},4).map_err(|_| "fixture daily HTTP")?)
         .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)
         .merge(
             Router::new()

@@ -808,6 +808,18 @@
         "daily-completion-store"
       ],
       "acceptance": "ADR0053·본인 bounded game pages/raw·실제 auth/fresh session/응답 barrier·7d/90d·타인/삭제/손상/CPU·명시 complete JSON download/8언어·TDD/실PG/fullcheck/fresh coverage/리뷰CI·병합/CLOSED 뒤 공식 수집"
+    },
+    {
+      "key": "daily-submission-http",
+      "issue": 116,
+      "milestone": "M3",
+      "title": "feat(server): 인증 데일리 완료 제출 HTTP와 세션 권위",
+      "requirements": "FR01/09/10/16, NFR01/02/05/07/08",
+      "scenarios": "TS17/18/20/21/31/35/36",
+      "deps": [
+        "personal-game-export"
+      ],
+      "acceptance": "ADR0054·closed Rust→TS/definition-submit-own·실제 현재 세션/accepted snapshot·shared CPU2/2초/전체HTTP2초·first-valid/Practice/own/null오류·실PG/HTTPS/full/freshcoverage/리뷰CI·병합CLOSED 뒤 ticket/heartbeat/순위/UI"
     }
   ]
 }

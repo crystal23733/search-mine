@@ -85,12 +85,12 @@ fn start(
     verifier: &BoundedReplayVerifier,
 ) -> tokio::task::JoinHandle<Result<ReplayEvidence, ReplayError>> {
     let verifier = verifier.clone();
-    tokio::spawn(async move { verifier.verify(definition(), "{}").await })
+    tokio::spawn(async move { verifier.verify(definition(), &golden()).await })
 }
 async fn succeeds_after_workers_exit(verifier: &BoundedReplayVerifier) {
     tokio::time::timeout(std::time::Duration::from_secs(1), async {
         loop {
-            match verifier.verify(definition(), "{}").await {
+            match verifier.verify(definition(), &golden()).await {
                 Err(ReplayError::Busy) => tokio::task::yield_now().await,
                 value => {
                     assert!(value.is_ok());
@@ -111,14 +111,14 @@ async fn caller_timeout_does_not_release_live_worker_permits_or_publish_late_suc
     let b = start(&verifier);
     gate.wait_for_two_workers().await;
     assert_eq!(
-        verifier.verify(definition(), "{}").await,
+        verifier.verify(definition(), &golden()).await,
         Err(ReplayError::Busy)
     );
     let (a, b) = tokio::join!(a, b);
     assert_eq!(a.unwrap(), Err(ReplayError::Timeout));
     assert_eq!(b.unwrap(), Err(ReplayError::Timeout));
     assert_eq!(
-        verifier.verify(definition(), "{}").await,
+        verifier.verify(definition(), &golden()).await,
         Err(ReplayError::Busy)
     );
     assert_eq!(gate.calls.load(Ordering::SeqCst), 2);
@@ -138,7 +138,7 @@ async fn cancelling_callers_keeps_capacity_until_actual_blocking_exit() {
     assert!(a.await.unwrap_err().is_cancelled());
     assert!(b.await.unwrap_err().is_cancelled());
     assert_eq!(
-        verifier.verify(definition(), "{}").await,
+        verifier.verify(definition(), &golden()).await,
         Err(ReplayError::Busy)
     );
     gate.release();
@@ -181,10 +181,10 @@ async fn panic_is_unavailable_and_releases_worker_capacity() {
         output: evidence(),
     }));
     assert_eq!(
-        verifier.verify(definition(), "{}").await,
+        verifier.verify(definition(), &golden()).await,
         Err(ReplayError::Unavailable)
     );
-    assert!(verifier.verify(definition(), "{}").await.is_ok());
+    assert!(verifier.verify(definition(), &golden()).await.is_ok());
 }
 struct Reject;
 impl ReplayVerifier for Reject {
@@ -196,7 +196,7 @@ impl ReplayVerifier for Reject {
 async fn worker_validation_errors_are_preserved() {
     let verifier = BoundedReplayVerifier::new(Arc::new(Reject));
     assert_eq!(
-        verifier.verify(definition(), "{}").await,
+        verifier.verify(definition(), &golden()).await,
         Err(ReplayError::MetadataMismatch)
     );
 }

@@ -6,7 +6,7 @@ struct Entry {
     count: u8,
     seen: i64,
 }
-pub(super) struct ResultRate {
+pub(crate) struct ResultRate {
     sessions: HashMap<[u8; 32], Entry>,
     accounts: HashMap<Uuid, Entry>,
     capacity: usize,

@@ -1,6 +1,7 @@
 use liar_server::auth::*;
 use liar_server::lobby::*;
 use liar_server::online::*;
+use liar_server::privacy::*;
 use liar_server::results::*;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
@@ -47,6 +48,11 @@ async fn serve() -> ServerResult {
             .map_err(|_| "Lobby limits are invalid")?;
         let result_config = load_result_config(|name| env::var(name).ok())
             .map_err(|_| "Result limits are invalid")?;
+        let privacy_config = load_privacy_config(|name| env::var(name).ok())
+            .map_err(|_| "Privacy limits are invalid")?;
+        let privacy_authorities = AuthorityRegistry::new(privacy_config.authorities)
+            .map_err(|_| "Privacy capacity is invalid")?;
+        let export_workers = ExportWorkers::default();
         let result_authorities = AuthorityRegistry::new(result_config.authorities)
             .map_err(|_| "Result capacity is invalid")?;
         let authorities =
@@ -87,7 +93,10 @@ async fn serve() -> ServerResult {
                         authorities,
                         lobby_authorities.clone(),
                     )),
-                    result_authorities.clone(),
+                    Arc::new(CombinedSessionInvalidator::new(
+                        result_authorities.clone(),
+                        privacy_authorities.clone(),
+                    )),
                 )),
             )
             .map_err(|_| "Authentication initialization failed")?;
@@ -128,24 +137,46 @@ async fn serve() -> ServerResult {
         )
         .map_err(|_| "Lobby HTTP initialization failed")?;
         let results = result_router(
-            Arc::new(PgResultReader::new(auth_pool, auth_clock.clone())),
+            Arc::new(PgResultReader::new(auth_pool.clone(), auth_clock.clone())),
             sessions.clone(),
             runtime.security.clone(),
             ResultAuthentication {
                 authorities: result_authorities,
-                clock: auth_clock,
+                clock: auth_clock.clone(),
             },
             result_config.requests,
         )
         .map_err(|_| "Result HTTP initialization failed")?;
+        let privacy = privacy_router(
+            Arc::new(PgGameExportReader::with_workers(
+                auth_pool,
+                auth_clock.clone(),
+                export_workers.clone(),
+            )),
+            sessions.clone(),
+            runtime.security.clone(),
+            PrivacyAuthentication {
+                authorities: privacy_authorities,
+                clock: auth_clock,
+                workers: export_workers,
+            },
+            privacy_config.requests,
+        )
+        .map_err(|_| "Privacy HTTP initialization failed")?;
         let ws = websocket_router(&origin, sessions, registry, online.connections)
             .map_err(|_| "WebSocket initialization failed")?;
         tokio::spawn(runtime.maintenance);
-        runtime.router.merge(ws).merge(lobby).merge(results)
+        runtime
+            .router
+            .merge(ws)
+            .merge(lobby)
+            .merge(results)
+            .merge(privacy)
     } else {
         disabled_auth_router()
             .merge(disabled_lobby_router())
             .merge(disabled_result_router())
+            .merge(disabled_privacy_router())
     };
     let bind = env::var("LIAR_BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());
     let listener = tokio::net::TcpListener::bind(bind)

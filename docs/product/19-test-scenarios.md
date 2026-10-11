@@ -309,3 +309,9 @@ TS17/18의 #109 foundation은 [ADR0050](../adr/0050-bounded-native-daily-replay.
 
 
 #112 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0052](../adr/0052-daily-first-completion-store.md) → immutable accepted publication/worker payload binding·실제PG 첫 완료/attempt·권한/삭제·7일/90일/동시성 → [검증112](../verification/112-daily-first-completion-store.md). HTTP/timing/순위/rights export/UI는 다음 필수 하위다.
+
+
+#114 FR01/09/10/16·NFR01/02/05/07·TS17/18/20/29/31/34/35/36 → [ADR0053](../adr/0053-personal-game-data-export.md) → 본인 game export bounded pages/raw·기존 auth transaction/fresh proof·삭제/만료/CPU 수명·명시 다운로드 → [검증114](../verification/114-personal-game-data-export.md). 공식 데일리 수집/timing/순위는 다음 하위다.
+
+
+TS35 확장(#114): 본인에 속한51개 이상 online/daily 기록과 타인/만료/손상 기록을 실제PG에 준비한다. nickname 없는 최근 인증도 페이지/내보내기를 허용하며 다른 account/session revision·300초 경계·동시 삭제/철회는 거절한다. record UUID tie/커서 진행·raw exact7일/NULL/metadata-digest 결합과 record90일을 검사한다. HTTP가 데이터를 얻은 뒤 실제 session이 바뀌거나 barrier가 철회되면 응답을 commit하지 않는다. 실제 HTTPS 설정 버튼으로 PC/mobile·8언어에서 파일의 본인 기록/비밀 제외를 검사하고, 중간 page/raw 실패·반복 cursor·상한 초과·응답 직전 계정 전환은 파일이 생기지 않는지 확인한다. 정상 빈 목록과 upstream/DB 실패를 구분한다.

@@ -9,6 +9,7 @@ import { registerOnlineRecoveryTests } from "./helpers/online-recovery";
 import { registerPersonalResultTests } from "./helpers/personal-result";
 import { registerLatestResultTests } from "./helpers/latest-result";
 import { registerOnlineAbandonTests } from "./helpers/online-abandon";
+import { registerPersonalExportTests } from "./helpers/personal-export";
 const origin = "https://localhost:8443";
 const providers = ["Google", "Apple", "Kakao", "Naver"] as const;
 test.describe.configure({ mode: "serial" }); // The fixture's explicit clock control must not overlap accounts.
@@ -20,6 +21,7 @@ registerOnlineRecoveryTests(approve, login);
 registerPersonalResultTests(approve, login);
 registerLatestResultTests(approve, login);
 registerOnlineAbandonTests(approve, login);
+registerPersonalExportTests(approve, login);
 
 const invitationLocales = [
   "en",
@@ -307,11 +309,14 @@ test("export, linking, last-provider guard and unlink session revocation use pro
   const exported = JSON.parse(Buffer.concat(chunks).toString("utf8"));
   expect(Object.keys(exported).sort()).toEqual([
     "account",
-    "created_at",
-    "identities",
-    "last_seen_at",
+    "games",
+    "replays",
+    "v",
   ]);
-  expect(exported.account.nickname).toBe("é探偵");
+  expect(exported.v).toBe(1);
+  expect(exported.games).toEqual([]);
+  expect(exported.replays).toEqual([]);
+  expect(exported.account.account.nickname).toBe("é探偵");
   expect(JSON.stringify(exported)).not.toMatch(
     /subject|digest|credential|csrf|password|email/,
   );

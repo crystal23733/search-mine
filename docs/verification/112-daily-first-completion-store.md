@@ -41,3 +41,8 @@ raw replay의7일 물리 삭제·backup/definition FK 수명 관리는25의 출�
 scripts/check.ps1 실제 프로세스 Exit0(null ExitCode 거부) 확인: fmt/Clippy all-targets·335Rust·WASM 컴파일/생성 types·fixture·token freshness·format/lint/typecheck·211unit37파일/web line88.25%·production build·96browser3.3m/재시도0·docs162/Mermaid34실패0 PASS다(.tmp/daily112-full-check.stdout.log/stderr.log). fresh coverage의 실제PG75개10.75초/ignored0도 확인했다. code와 test는 검사 중 수정하지 않았다.
 
 최종 diff를 baseline developcbd3541과 다시 검토했다. canonical artifact·PG first completion/권한·불변 migration/도메인 gate와 행동 검사, 설계/추적 및109 실제 종료 기록만 포함한다. main/HTTP/웹·규칙·의존성/lockfile·보존 원문·design_layout은 변경하지 않았다. review/.tmp는 ignored이며 커밋하지 않는다. PR 제출/최신 head의 필수 CI·squash merge/112 CLOSED는 아직 미완료다. 상위19는 OPEN이다.
+
+
+## 최종 CI·병합과 후속
+
+sourcee23ef65의 Product38117036665·Repository38117036613와 최종 본문 Repository38117443071이 SUCCESS였다. PG18.6 일반75개22.94초/coverage75개23.84초·Daily104/104=100%/서버7313/7836=93.33%,211web unit37파일/88.25%·96browser4.0분retry0를 확인했다. exact head의8rollup·필수6종류 SUCCESS/MERGEABLE/CLEAN 뒤 PR113을2026-10-11T06:16:13Z에 develop311ab660c861f31e36f11e8422e795020a3287d8로 squash 병합했다.112 CLOSED06:16:14Z를 별도 확인했다. 다음 [#114](https://github.com/crystal23733/search-mine/issues/114)는 공식 수집 전 필수 본인 게임기록 export/응답 proof다. 상위19는 OPEN이며 물리cleanup/backup25·미해결83·외부42/26/27을 완료로 계산하지 않는다.

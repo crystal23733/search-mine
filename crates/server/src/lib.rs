@@ -3,6 +3,7 @@ pub mod auth;
 pub mod daily;
 pub mod lobby;
 pub mod online;
+pub mod privacy;
 pub mod results;
 pub mod room_code;
 use axum::{
@@ -20,7 +21,8 @@ pub fn app(pool: Option<PgPool>) -> Router {
         pool,
         auth::disabled_auth_router()
             .merge(lobby::disabled_lobby_router())
-            .merge(results::disabled_result_router()),
+            .merge(results::disabled_result_router())
+            .merge(privacy::disabled_privacy_router()),
     )
 }
 pub fn app_with_auth(pool: Option<PgPool>, auth: Router) -> Router {

@@ -7,6 +7,11 @@ import type {
   AuthLoginRequest,
   AuthProviderStatus,
   AuthStart,
+  GameExportInput,
+  GameExportPage,
+  ReplayExportInput,
+  ReplayExport,
+  PersonalDataExport,
 } from "@liar/protocol";
 import type { Locale } from "../locale";
 import type { SubmissionSession } from "../pending-submissions";
@@ -85,6 +90,16 @@ export interface AuthTransport {
     signal?: AbortSignal,
   ): Promise<AuthAccount>;
   export(csrf: string, signal?: AbortSignal): Promise<AuthExport>;
+  gameExport(
+    input: GameExportInput,
+    csrf: string,
+    signal?: AbortSignal,
+  ): Promise<GameExportPage>;
+  replayExport(
+    input: ReplayExportInput,
+    csrf: string,
+    signal?: AbortSignal,
+  ): Promise<ReplayExport>;
   erase(csrf: string, signal?: AbortSignal): Promise<AuthErasure>;
   unlink(
     provider: AuthProvider,
@@ -112,7 +127,11 @@ export interface AuthPort extends SubmissionSession, AuthenticatedRequests {
     value: string,
     expectedAccount: string,
   ): Promise<AuthResult<AuthAccount>>;
-  export(expectedAccount: string): Promise<AuthResult<AuthExport>>;
+  export(expectedAccount: string): Promise<AuthResult<PersonalDataExport>>;
+  exportTo(
+    expectedAccount: string,
+    sink: (data: PersonalDataExport) => Promise<void>,
+  ): Promise<AuthResult<PersonalDataExport>>;
   erase(expectedAccount: string): Promise<AuthResult<AuthErasure>>;
   unlink(
     provider: AuthProvider,

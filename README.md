@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 서버 replay 검증을 완료하고 #112에서 데일리 첫 완료의 PostgreSQL 저장을 구현합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114에서 본인 게임기록 내보내기를 구현했으며 PR 검증·병합을 진행합니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -94,6 +94,8 @@ cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](test
 [#66 OAuth 초대 복귀](docs/verification/66-oauth-invitation-return.md)는 `/{locale}/login?return_path=friends&code=ABCD2345`의 canonical 초대를 서버5분 인증 거래에 보존한다. callback·nickname·tutorial 뒤 같은 code로 friends에 돌아가고, 소비된 취소/실패에서도 안전한 새 로그인 재시도를 제공한다. 실제 로비/온라인 화면은 #70/#72에서 연결했다.
 
 `/{locale}/login`, `/onboarding`, `/settings`에서 네 제공자·닉네임·연결/해제·내보내기·로그아웃·삭제를 제공한다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 #19이며 친구 초대의 실제 OAuth 왕복은 #66/#72에서 검증했다.
+
+설정의 명시적 내보내기는 최근 재인증 뒤 최소 계정 정보와 본인 온라인·데일리 기록, 보관 중인 본인 daily replay를 `liar-account.json`으로 내려받는다. 닉네임이 없어도 가능하다. 서버는50개 페이지·2초 요청·raw7일/기록90일·매 요청 현재 세션을 적용한다. 브라우저는2048페이지/32MiB 안에서 수집하며 오류·취소·계정 전환 시 완성 파일을 만들지 않는다. 여러 페이지를 단일 DB snapshot으로 보장하지 않는다. [ADR0053](docs/adr/0053-personal-game-data-export.md)·[실행 근거](docs/verification/114-personal-game-data-export.md)를 확인한다.
 
 위의 격리된 PostgreSQL 테스트 DB가 실행되고 `DATABASE_URL`이 설정된 환경에서 아래를 실행한다. 실제 제품 router와 DB를 사용하고 외부 제공자 proof만 시험 port로 대체한다. 저장소의 HTTPS 키는 공개된 loopback 시험 전용이며 운영 키로 사용하지 않는다.
 

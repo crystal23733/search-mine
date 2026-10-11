@@ -7,5 +7,6 @@ mod replay;
 pub use bounded::BoundedReplayVerifier;
 pub use model::{PublishedDaily, ReplayError, ReplayEvidence, ReplayOutcome, ReplayVerifier};
 pub use postgres::PgDailyRepository;
+pub(crate) use postgres::export_receipt;
 pub use records::*;
 pub use replay::NativeReplayVerifier;

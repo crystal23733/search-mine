@@ -27,6 +27,8 @@
 | POST /api/v1/auth/{provider}/reauth | 현재 계정에 이미 연결된 제공자로 명시적 재인증 |
 | DELETE /api/v1/me/identities/{provider} | 최근 재인증·CSRF, 마지막 로그인 수단은 해제 불가 |
 | POST /api/v1/me/export | 최근 재인증·CSRF, 본인 최소 데이터, token/subject 제외 |
+| POST /api/v1/me/games/export | v1·account/session revision·online/daily·after UUID, 본인50개+next·최근 인증·no-store |
+| POST /api/v1/me/games/replay | v1·account/session revision·completion UUID, 본인 살아 있는 raw 또는 null·최근 인증·no-store |
 | DELETE /api/v1/me | 최근 재인증·CSRF, 전 세션 철회·개인정보 삭제·제공자 token 철회 |
 | POST /api/v1/auth/apple/notifications | Apple 서버 알림 서명/iss/aud 검증, 사용자 브라우저 API와 별도 |
 | POST /api/v1/lobby | versioned status/queue_join/room_create/room_join/ready/cancel, 모든 호출 Origin·session-bound CSRF·nickname·bounded read/rate; 본인 상태만, no-store; [ADR0030](../adr/0030-authenticated-lobby-http-runtime.md) |
@@ -185,3 +187,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 
 #105 [ADR0048](../adr/0048-latest-personal-result.md): POST /api/v1/results/latest `{v:1}`→`{v:1,result:PersonalResult|null}`. 실제 무결과만200/null이며 오류를 null로 바꾸지 않는다. 기존 ID 조회404는 보존한다. 두 API는 동일 Context/CSRF/철회·전체2초/동시/rate를 공유한다. Rust 원천→TS 생성.
+
+
+#114 FR01/09/10/16·NFR01/02/05/07·TS17/18/20/29/31/34/35/36 → [ADR0053](../adr/0053-personal-game-data-export.md) → 본인 game export bounded pages/raw·기존 auth transaction/fresh proof·삭제/만료/CPU 수명·명시 다운로드 → [검증114](../verification/114-personal-game-data-export.md). 공식 데일리 수집/timing/순위는 다음 하위다.

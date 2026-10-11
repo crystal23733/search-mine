@@ -119,3 +119,6 @@ Apple 토큰은 비밀번호가 아니다. [TN3194](https://developer.apple.com/
 - [Naver API](https://developers.naver.com/docs/login/api/api.md), [사전 검수](https://developers.naver.com/docs/login/verify/verify.md): code/state와 기본 이용자 식별자, 추가 제공 정보는 선택 안 함.
 
 TS31~36은 4개 어댑터의 최소 권한·추가 claim 제거·state/nonce/JWKS 공격·연결·삭제/철회·로컬 무계정 동작을 검증한다. 실제 제공자 승인/키/도메인과 상호운용 테스트 완료 전 OAuth 기능 완성으로 보고하지 않는다.
+
+
+#114 FR01/09/10/16·NFR01/02/05/07·TS17/18/20/29/31/34/35/36 → [ADR0053](../adr/0053-personal-game-data-export.md) → 본인 game export bounded pages/raw·기존 auth transaction/fresh proof·삭제/만료/CPU 수명·명시 다운로드 → [검증114](../verification/114-personal-game-data-export.md). 공식 데일리 수집/timing/순위는 다음 하위다.

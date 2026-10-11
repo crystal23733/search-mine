@@ -16,6 +16,8 @@ export function guestAuthPorts() {
       start: unavailable,
       nickname: unavailable,
       export: unavailable,
+      gameExport: unavailable,
+      replayExport: unavailable,
       erase: unavailable,
       unlink: unavailable,
       logout: unavailable,

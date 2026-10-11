@@ -132,6 +132,15 @@ fn receipt(
     Ok(value)
 }
 
+pub(crate) fn export_receipt(
+    row: &PgRow,
+    now: i64,
+) -> Result<(PublishedDaily, DailyReceipt), DailyStoreError> {
+    let accepted = publication(row, now)?;
+    let saved = receipt(row, &accepted, now)?;
+    Ok((accepted.definition, saved))
+}
+
 #[derive(Clone)]
 pub struct PgDailyRepository {
     pool: PgPool,

@@ -117,3 +117,6 @@
 
 
 #112 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0052](../adr/0052-daily-first-completion-store.md) → immutable accepted publication/worker payload binding·실제PG 첫 완료/attempt·권한/삭제·7일/90일/동시성 → [검증112](../verification/112-daily-first-completion-store.md). HTTP/timing/순위/rights export/UI는 다음 필수 하위다.
+
+
+#114 FR01/09/10/16·NFR01/02/05/07·TS17/18/20/29/31/34/35/36 → [ADR0053](../adr/0053-personal-game-data-export.md) → 본인 game export bounded pages/raw·기존 auth transaction/fresh proof·삭제/만료/CPU 수명·명시 다운로드 → [검증114](../verification/114-personal-game-data-export.md). 공식 데일리 수집/timing/순위는 다음 하위다.

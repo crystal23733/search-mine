@@ -16,7 +16,7 @@
 
 ## 전체 검사·리뷰
 
-새 로컬 PostgreSQL17.4 DB liar_daily130fullb, 기존 migration, CARGO_INCREMENTAL=0으로 scripts/check.ps1을 실행 중이다. 최종 전체/coverage와 최신 원격CI·정확head 병합·CLOSED 결과는 이어서 기록한다.
+최종 scripts/check.ps1 실제exit0: Rust399·웹244개/42파일/줄2750/3072=89.51%·새 순위 controller46/47=97.87%·새 page/table100%·Chromium111개/4.1분/재시도0·문서180/Mermaid34 실패0. 새 로컬 PostgreSQL17.4 DB liar_daily130fullb, 기존 migration, CARGO_INCREMENTAL=0의 실제HTTPS/DB 검증이다. 별도 PostgreSQL18.6 회귀/계측·최신head CI와 정상 squash merge·CLOSED 결과는 PR 및 로컬 일별 리뷰에서 최종 확인한다.
 
 correctness/changes/develop652e6c8 순차 코드 리뷰에서 shared lazy API의 수명/공개2slot·10초 경계와 기존 pending 전후 proof, UTC 갱신/이전 rows 폐기·identity/abort/dispose/offline, locale 상태 유지와 game core 비호출, strict server position/nickname/시간·두 신뢰 수준/secret 미출력, 접근성/8언어를 확인했다. 추가 재현 가능한 결함은 확인하지 못했다. 독립 보안감사·실계정·실기기·사람 관찰을 수행한 것은 아니다.
 

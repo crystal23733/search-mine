@@ -5,8 +5,45 @@ import { advance } from "./online-quick";
 import { createAuth } from "../../../apps/web/src/services/auth/session";
 import { createAuthHttp } from "../../../apps/web/src/services/auth/http";
 import { createDailyHttp } from "../../../apps/web/src/services/daily/http";
+import type { DailySubmitResponse } from "../../../packages/protocol/src/index";
 type Approve = (context: BrowserContext) => Promise<void>;
 type Login = (page: Page) => Promise<void>;
+
+async function observeSubmission(
+  page: Page,
+  trigger: () => Promise<unknown>,
+): Promise<DailySubmitResponse> {
+  let delivered!: (body: DailySubmitResponse) => void;
+  let failed!: (error: unknown) => void;
+  const observed = new Promise<DailySubmitResponse>((resolve, reject) => {
+    delivered = resolve;
+    failed = reject;
+  });
+  await page.route(
+    "**/api/v1/daily/submit-timed",
+    async (route) => {
+      try {
+        const response = await route.fetch({
+          maxRedirects: 0,
+          maxRetries: 0,
+          timeout: 10000,
+        });
+        expect(response.status()).toBe(200);
+        expect(response.headers()["cache-control"]).toBe("no-store");
+        const body: DailySubmitResponse = await response.json();
+        // Observe the actual server body before handing that same response to the app.
+        await route.fulfill({ response });
+        delivered(body);
+      } catch (error) {
+        failed(error);
+        await route.abort();
+      }
+    },
+    { times: 1 },
+  );
+  const [, body] = await Promise.all([trigger(), observed]);
+  return body;
+}
 export function registerDailyClientTests(approve: Approve, login: Login) {
   test("typed daily client reads start heartbeat completion own and anonymous rankings over real HTTPS", async ({
     browser,
@@ -276,20 +313,16 @@ export function registerDailyClientTests(approve: Approve, login: Login) {
             await expect(submit).toBeEnabled();
             await submit.click();
           }
-          const response = page.waitForResponse(
-            (r) =>
-              r.url().endsWith("/api/v1/daily/submit-timed") &&
-              r.status() === 200,
+          const saved = await observeSubmission(page, () =>
+            dialog
+              .getByRole("button", {
+                name:
+                  messages["offline.submitConfirm"] ?? "Submit to this account",
+                exact: true,
+              })
+              .click(),
           );
-          await dialog
-            .getByRole("button", {
-              name:
-                messages["offline.submitConfirm"] ?? "Submit to this account",
-              exact: true,
-            })
-            .click();
           await expect.poll(pending).toEqual({ pending: 0, records: 1 });
-          const saved = await (await response).json();
           expect(saved.trust).toBe("verified_completion");
           expect(saved.receipt.verified_elapsed_ms).toBeNull();
           expect(saved.disposition).toBe(

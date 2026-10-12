@@ -18,3 +18,7 @@ Rust 생성 DTO의 start/heartbeat/definition/submit-timed/own/rankings를 typed
 실제 설정의 누락된 제출 진입점을 HTTPS 행동 Red로 확인한 뒤 실제 WASM 완료 후보/8언어/PC·mobile·현재 계정 확인/PG·own/재제출·개인 기록 보존을 검사한다. fake fetch/stream/clock/session으로 strict DTO·상한·취소·계정 변경과 종료 결과의 post-proof를 검사한다. 명시적 공식 시작/controller/heartbeat·순위 화면과 상위 #19 전체는 다음 하위다. OAuth #42, 운영 #25/26, 사람 #27, 원인 미확정 #83은 별도다.
 
 공통 wire/RulesSnapshot decoder와 bounded JSON reader를 추출해 온라인/daily가 재사용한다. 기존 온라인 오류 adapter의 코드/기본128KiB 계약은 유지하고 daily는64KiB를 명시한다.
+
+## PR129 응답 관측 보정
+
+최초 CI38273165548의 모바일 명시 제출 시험은 pending0/개인기록1 확인 뒤 브라우저 Response.json의 Network.getResponseBody:No data found로 실패하고 재시도됐다. 실제 navigation이나 제품 제출 실패로 단정하지 않는다. [ADR0043](0043-result-response-observation.md)의 실제 HTTP 전달 전 관측을 제출 경계에도 적용한다. 최종 성공 요청만 one-use route.fetch(maxRedirects0/maxRetries0/10000ms)로 전달해 실제200/no-store 본문을 읽고 같은 APIResponse를 fulfill한다. 클릭과 관측 promise를 함께 기다리고 fetch/body/fulfill 오류는 reject·abort로 드러낸다. 기존503 보존/명시 계정 확인·8언어·PC/mobile·DB 첫 완료/Practice/개인 기록 단언, 제품 코드와 timeout/retry는 유지한다. 최초 실패 artifact와 수정 후 재시도0 반복·전체 실행을 구분해 기록한다.

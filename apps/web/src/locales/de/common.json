@@ -154,7 +154,7 @@
   "offline.cached": "Die öffentlichen Dateien für lokales Spielen sind auf diesem Gerät zwischengespeichert.",
   "offline.notCached": "Der Cache ist noch nicht bereit. Verbinde dich zur Vorbereitung.",
   "offline.pending": "Ausstehende lokale Ergebnisse: {{count}}",
-  "offline.pendingHint": "Die offizielle Übermittlung lokaler Ergebnisse wird vorbereitet. Die Anmeldung sendet sie nicht automatisch; ausstehende Ergebnisse bleiben auf diesem Gerät.",
+  "offline.pendingHint": "Die Anmeldung sendet nichts automatisch. Bestätige das aktuelle Konto zum Senden. Lokale Aufzeichnungen bleiben auf diesem Gerät.",
   "offline.clearCache": "Offlinecache löschen",
   "offline.enableCache": "Offlinecache vorbereiten",
   "offline.clearRecords": "Lokale Ergebnisse löschen",
@@ -214,7 +214,7 @@
   "auth.error.reauth_required": "Bestätige deine Anmeldung erneut vor dieser Aktion.",
   "auth.error.auth_rate_limited": "Zu viele Anfragen. Warte einige Minuten und versuche es erneut.",
   "auth.exported": "Dein Daten-Download ist bereit.",
-  "auth.pendingHint": "Die offizielle Übermittlung lokaler Ergebnisse wird vorbereitet. Die Anmeldung sendet sie nicht automatisch; ausstehende Ergebnisse bleiben auf diesem Gerät.",
+  "auth.pendingHint": "Die Anmeldung sendet nichts automatisch. Bestätige das aktuelle Konto zum Senden. Lokale Aufzeichnungen bleiben auf diesem Gerät.",
   "auth.step": "Schritt {{step}} von 2",
   "auth.provider.google": "Google",
   "auth.provider.apple": "Apple",
@@ -275,5 +275,10 @@
   "result.openedSafe": "Geöffnete sichere Felder: {{count}}",
   "result.statsUnavailable": "Die Statistiken für dieses Spiel sind nicht verfügbar.",
   "result.latest": "Letztes Spielergebnis",
-  "result.latestEmpty": "Kein kürzlich gespeichertes Ergebnis verfügbar."
+  "result.latestEmpty": "Kein kürzlich gespeichertes Ergebnis verfügbar.",
+  "offline.submit": "Ausstehende Ergebnisse senden",
+  "offline.submitConfirm": "An dieses Konto senden",
+  "offline.submitAccount": "Ungeprüfte Ergebnisse an {{name}} senden? Der Server prüft den Abschluss; die lokale Zeit ist keine offizielle Zeit.",
+  "offline.submitDone": "{{sent}} gesendet, {{removed}} aus der Warteliste entfernt. Lokale Aufzeichnungen bleiben erhalten.",
+  "offline.submitRetained": "Einige Ergebnisse stehen noch aus. Verbindung und Konto prüfen und erneut versuchen."
 }

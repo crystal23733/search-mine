@@ -49,8 +49,16 @@ const account = createBrowserAuth(
 );
 const records = createDailyRecords(database);
 const pendingSubmissions = createPendingSubmissions(records, account.auth, {
-  submit: async () => {
-    throw Error("official_submission_unavailable");
+  submit: async (record, accountId, signal) => {
+    const { createDailyHttp } = await import("./services/daily/http");
+    return createDailyHttp(
+      account.auth,
+      window.fetch.bind(window),
+    ).submitPending(
+      { accountId, revision: account.auth.revision() },
+      record,
+      signal,
+    );
   },
 });
 const offline = createOffline(activity, {

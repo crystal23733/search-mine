@@ -79,3 +79,6 @@ PC: 클릭 open, 우클릭 flag, 열린 숫자의 메뉴에서 accuse, A로 지�
 ## 제공된 디자인 적용
 
 [18 화면별 기준](18-design-layout.md)에 design_layout 원본 18개와 상태·반응형·토큰·차이를 연결했다. 로그인 기본 영역에 Google·Apple·카카오·네이버를 제공한다. 이미지의 Discord 기본 버튼은 확장 영역 후보로 이동한다. 로그인 없이 즉시 가능한 기능은 로컬 연습이며 온라인 대전은 OAuth가 필요하다. 닉네임은 제공자 실명 대신 직접 정한다.
+
+
+#128 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/29/31/35/36 → [ADR0060](../adr/0060-daily-client-and-explicit-pending.md): strict generated daily client·메모리 revision/전후 proof·공개 무쿠키 순위·설정의 현재 계정 명시 제출/terminal post-proof·pending만 제거. 실제 검증은 [검증128](../verification/128-daily-client-and-explicit-pending.md). 공식 시작/controller·순위 화면/상위19는 후속이다.

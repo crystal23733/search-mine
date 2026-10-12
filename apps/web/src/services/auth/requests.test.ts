@@ -85,6 +85,7 @@ test("parallel requests refresh proof and verify replies without changing stable
   two.resolve("second");
   expect(await second).toBe("second");
   expect(targetA.mock.calls[0]![0].signal.aborted).toBe(false);
+  expect(targetA.mock.calls[0]![0].sessionRevision).toBe(sessionA);
   one.resolve("first");
   expect(await first).toBe("first");
   expect(t.bootstrap).toHaveBeenCalledTimes(4);

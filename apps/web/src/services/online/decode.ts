@@ -9,66 +9,21 @@ import {
   type OnlinePayload,
   type PersonalResult,
 } from "@liar/protocol";
-type Decode<T> = (value: unknown) => T;
-function fail(): never {
-  throw Error("malformed");
-}
-function object(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) fail();
-  return value as Record<string, unknown>;
-}
-function struct<S extends Record<string, Decode<unknown>>>(
-  shape: S,
-): Decode<{ [K in keyof S]: ReturnType<S[K]> }> {
-  return (value) => {
-    const source = object(value),
-      keys = Object.keys(shape);
-    if (
-      Object.keys(source).length !== keys.length ||
-      keys.some((k) => !Object.hasOwn(source, k))
-    )
-      fail();
-    // Each field is decoded before this generic mapped object is returned.
-    return Object.fromEntries(keys.map((k) => [k, shape[k](source[k])])) as {
-      [K in keyof S]: ReturnType<S[K]>;
-    };
-  };
-}
-const int =
-  (max = Number.MAX_SAFE_INTEGER, min = 0): Decode<number> =>
-  (value) =>
-    typeof value === "number" &&
-    Number.isSafeInteger(value) &&
-    value >= min &&
-    value <= max
-      ? value
-      : fail();
+import {
+  type Decode,
+  fail,
+  object,
+  struct,
+  int,
+  bool,
+  text,
+  uuid,
+  one,
+  optional,
+  list,
+} from "../wire-decode";
 const u32 = int(4294967295),
   u16 = int(65535);
-const bool: Decode<boolean> = (v) => (typeof v === "boolean" ? v : fail());
-const text =
-  (pattern: RegExp): Decode<string> =>
-  (v) =>
-    typeof v === "string" && pattern.test(v) ? v : fail();
-const uuid = text(
-  /^(?!00000000-0000-0000-0000-000000000000$)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-);
-const one =
-  <const T extends readonly (string | number)[]>(
-    ...values: T
-  ): Decode<T[number]> =>
-  (v) =>
-    values.find((x) => x === v) ?? fail();
-const optional =
-  <T>(decode: Decode<T>): Decode<T | null> =>
-  (v) =>
-    v === null ? null : decode(v);
-const list =
-  <T>(decode: Decode<T>, max: number, min = 0): Decode<T[]> =>
-  (v) =>
-    Array.isArray(v) && v.length >= min && v.length <= max
-      ? v.map(decode)
-      : fail();
 const personalValue = struct({
   match_id: uuid,
   rules_hash: text(/^[0-9a-f]{64}$/),
@@ -139,33 +94,7 @@ export const decodeResultFailure = struct({
     "not_found",
   ),
 });
-const bot = struct({
-  decision_ms: u32,
-  accusation_ms: u32,
-  max_nodes: int(),
-  max_component_cells: int(),
-  max_constraints: int(),
-});
-const rules = struct({
-  version: u16,
-  width: int(16, 1),
-  height: int(16, 1),
-  mines: u16,
-  opening: u16,
-  duration_ms: u32,
-  countdown_ms: u32,
-  mine_stun_ms: u32,
-  wrong_accuse_stun_ms: u32,
-  reflect_stun_ms: u32,
-  gauge_capacity: u16,
-  safe_gain: u16,
-  max_lies: int(255),
-  reconnect_grace_ms: u32,
-  room_expiry_ms: u32,
-  max_commands_per_seat: u32,
-  attack_strategy: text(/^[a-z0-9-]{1,64}$/),
-  bots: struct({ easy: bot, normal: bot, hard: bot }),
-});
+import { decodeRulesSnapshot } from "../rules-decode";
 const cell = struct({
   cell: int(255),
   state: one("closed", "safe", "mine"),
@@ -179,12 +108,7 @@ const numeric = struct({
 });
 const game = struct({
   v: one(PROTOCOL_VERSION),
-  rules: struct({
-    rules,
-    hash: text(/^[0-9a-f]{64}$/),
-    solver_version: u16,
-    rng_version: u16,
-  }),
+  rules: decodeRulesSnapshot,
   revision: int(),
   phase: one("countdown", "playing", "finished", "aborted", "cancelled"),
   countdown_ms: u32,

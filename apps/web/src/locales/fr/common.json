@@ -154,7 +154,7 @@
   "offline.cached": "Les fichiers publics du jeu local sont en cache sur cet appareil.",
   "offline.notCached": "Le cache n’est pas prêt. Connectez-vous pour le préparer.",
   "offline.pending": "Résultats locaux en attente : {{count}}",
-  "offline.pendingHint": "L’envoi officiel des résultats locaux est en préparation. La connexion ne les envoie pas automatiquement ; ils restent sur cet appareil.",
+  "offline.pendingHint": "La connexion n’envoie rien automatiquement. Confirmez le compte actuel pour envoyer. Les données locales restent sur cet appareil.",
   "offline.clearCache": "Supprimer le cache hors ligne",
   "offline.enableCache": "Préparer le cache hors ligne",
   "offline.clearRecords": "Supprimer les résultats locaux",
@@ -214,7 +214,7 @@
   "auth.error.reauth_required": "Confirmez à nouveau votre connexion avant cette action.",
   "auth.error.auth_rate_limited": "Trop de demandes. Attendez quelques minutes et réessayez.",
   "auth.exported": "Le téléchargement de vos données est prêt.",
-  "auth.pendingHint": "L’envoi officiel des résultats locaux est en préparation. La connexion ne les envoie pas automatiquement ; ils restent sur cet appareil.",
+  "auth.pendingHint": "La connexion n’envoie rien automatiquement. Confirmez le compte actuel pour envoyer. Les données locales restent sur cet appareil.",
   "auth.step": "Étape {{step}} sur 2",
   "auth.provider.google": "Google",
   "auth.provider.apple": "Apple",
@@ -275,5 +275,10 @@
   "result.openedSafe": "Cases sûres ouvertes : {{count}}",
   "result.statsUnavailable": "Les statistiques de cette partie sont indisponibles.",
   "result.latest": "Dernier résultat",
-  "result.latestEmpty": "Aucun résultat récent enregistré."
+  "result.latestEmpty": "Aucun résultat récent enregistré.",
+  "offline.submit": "Envoyer les résultats en attente",
+  "offline.submitConfirm": "Envoyer à ce compte",
+  "offline.submitAccount": "Envoyer les résultats non vérifiés à {{name}} ? Le serveur vérifie la réussite ; le temps local n’est pas officiel.",
+  "offline.submitDone": "{{sent}} envoyés, {{removed}} retirés de la liste. Les données locales sont conservées.",
+  "offline.submitRetained": "Des résultats restent en attente. Vérifiez la connexion et le compte, puis réessayez."
 }

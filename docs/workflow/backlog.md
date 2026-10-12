@@ -138,3 +138,6 @@
 
 
 #126 FR09/10·NFR01/02/05/07/08·TS17/18/21/31/35/36 → [ADR0059](../adr/0059-accepted-daily-core-initialization.md) → accepted snapshot Native/WASM/worker·Rust 단일 규칙·strict16KiB/no fallback·golden parity → [검증126](../verification/126-accepted-daily-core-initialization.md). 공식 웹/대기·상위19 통합은 후속이다.
+
+
+#126/PR127 developa5dbdec 병합·126 CLOSED 확인. 다음 [#128](https://github.com/crystal23733/search-mine/issues/128)은 [ADR0060](../adr/0060-daily-client-and-explicit-pending.md)의 daily client와 설정의 명시적 대기 제출이다. 기존 설정에 버튼/확인 창은 없으므로 함께 구현한다. 공식 시작/순위 UI·상위19는 후속이다.

@@ -154,7 +154,7 @@
   "offline.cached": "Os arquivos públicos do jogo local estão em cache neste dispositivo.",
   "offline.notCached": "O cache não está pronto. Conecte-se para prepará-lo.",
   "offline.pending": "Resultados locais pendentes: {{count}}",
-  "offline.pendingHint": "O envio oficial de resultados locais está em preparação. Entrar não os envia automaticamente; eles permanecem neste dispositivo.",
+  "offline.pendingHint": "Entrar não envia resultados automaticamente. Confirme a conta atual para enviar. Os registros locais ficam neste dispositivo.",
   "offline.clearCache": "Excluir cache offline",
   "offline.enableCache": "Preparar cache offline",
   "offline.clearRecords": "Excluir registros locais",
@@ -214,7 +214,7 @@
   "auth.error.reauth_required": "Confirme seu acesso novamente antes desta ação.",
   "auth.error.auth_rate_limited": "Muitas solicitações. Aguarde alguns minutos e tente de novo.",
   "auth.exported": "O download dos seus dados está pronto.",
-  "auth.pendingHint": "O envio oficial de resultados locais está em preparação. Entrar não os envia automaticamente; eles permanecem neste dispositivo.",
+  "auth.pendingHint": "Entrar não envia resultados automaticamente. Confirme a conta atual para enviar. Os registros locais ficam neste dispositivo.",
   "auth.step": "Etapa {{step}} de 2",
   "auth.provider.google": "Google",
   "auth.provider.apple": "Apple",
@@ -275,5 +275,10 @@
   "result.openedSafe": "Casas seguras abertas: {{count}}",
   "result.statsUnavailable": "As estatísticas desta partida não estão disponíveis.",
   "result.latest": "Resultado mais recente",
-  "result.latestEmpty": "Não há resultado recente salvo."
+  "result.latestEmpty": "Não há resultado recente salvo.",
+  "offline.submit": "Enviar resultados pendentes",
+  "offline.submitConfirm": "Enviar para esta conta",
+  "offline.submitAccount": "Enviar resultados não verificados para {{name}}? O servidor verifica a conclusão; o tempo local não é oficial.",
+  "offline.submitDone": "{{sent}} enviados, {{removed}} removidos dos pendentes. Os registros locais são mantidos.",
+  "offline.submitRetained": "Alguns resultados continuam pendentes. Verifique a conexão e a conta e tente novamente."
 }

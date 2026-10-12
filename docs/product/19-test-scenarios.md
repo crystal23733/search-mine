@@ -339,3 +339,6 @@ TS17/18 확장(#118): 단조 fake Clock과 actual native golden 완료를 사용
 #126 FR09/10·NFR01/02/05/07/08·TS17/18/21/31/35/36 → [ADR0059](../adr/0059-accepted-daily-core-initialization.md) → accepted snapshot Native/WASM/worker·Rust 단일 규칙·strict16KiB/no fallback·golden parity → [검증126](../verification/126-accepted-daily-core-initialization.md). 공식 웹/대기·상위19 통합은 후속이다.
 
 TS17/18 확장(#126): bundled와 다른 accepted countdown/hash/seed의 Rust golden으로 Native·실WASM·production worker 전체 view/입력/완료 replay를 비교한다. unknown field/손상 hash/버전/16KiB 초과는 거절하고 실패 뒤 snapshot은 not_started·다음 정상 init는 가능하다. 기존 두 인자 init와 offline 연습을 유지한다.
+
+
+TS17/18/20/21/29/31/35/36 확장(#128): [ADR0060](../adr/0060-daily-client-and-explicit-pending.md)의 strict daily client·현재 account/revision 전후 proof와 terminal 만료/unsupported post-proof를 확인한다. 실제 production HTTPS PC/mobile8언어 설정에서 WASM 완료 후보→명시 계정 확인→서버 첫 완료/Practice·실패 보존·개인 기록 유지, 별도 실제HTTPS typed start/heartbeat/own/익명 두 순위를 검사한다. 자동 flush·공식 UI 완료를 가정하지 않는다.

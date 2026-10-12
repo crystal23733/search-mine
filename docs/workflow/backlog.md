@@ -135,3 +135,6 @@
 
 
 #122/PR123 develop1414cda 병합·#122 CLOSED 확인. 다음 [#124 두 순위 조회](https://github.com/crystal23733/search-mine/issues/124)는 [ADR0058](../adr/0058-public-daily-rankings.md)에 따라 구현한다. 공식 웹/대기·상위19는 후속이다.
+
+
+#126 FR09/10·NFR01/02/05/07/08·TS17/18/21/31/35/36 → [ADR0059](../adr/0059-accepted-daily-core-initialization.md) → accepted snapshot Native/WASM/worker·Rust 단일 규칙·strict16KiB/no fallback·golden parity → [검증126](../verification/126-accepted-daily-core-initialization.md). 공식 웹/대기·상위19 통합은 후속이다.

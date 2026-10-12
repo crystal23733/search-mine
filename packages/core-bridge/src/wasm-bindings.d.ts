@@ -9,6 +9,7 @@ export class DailySession {
     replay(): string;
     snapshot(): string;
     step(input: string, time_ms: number): string;
+    static withRules(date: string, seed_version: number, rules_json: string): DailySession;
 }
 
 export class LocalSession {
@@ -41,6 +42,7 @@ export interface InitOutput {
     readonly dailysession_replay: (a: number, b: number) => void;
     readonly dailysession_snapshot: (a: number, b: number) => void;
     readonly dailysession_step: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly dailysession_withRules: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
     readonly localsession_advance: (a: number, b: number, c: number) => void;
     readonly localsession_new: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly localsession_snapshot: (a: number, b: number) => void;

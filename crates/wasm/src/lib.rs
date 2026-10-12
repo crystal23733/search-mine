@@ -25,6 +25,18 @@ impl DailySession {
             session: daily::DailySession::new(date, version).map_err(js_error)?,
         })
     }
+    #[wasm_bindgen(js_name = withRules)]
+    pub fn with_rules(
+        date: &str,
+        seed_version: f64,
+        rules_json: &str,
+    ) -> Result<DailySession, JsError> {
+        let version = daily::checked_seed_version(seed_version).map_err(js_error)?;
+        Ok(Self {
+            session: daily::DailySession::from_rules_json(date, version, rules_json)
+                .map_err(js_error)?,
+        })
+    }
     pub fn snapshot(&self) -> Result<String, JsError> {
         serde_json::to_string(&self.session.view()).map_err(|_| js_error(PublicError::Unavailable))
     }

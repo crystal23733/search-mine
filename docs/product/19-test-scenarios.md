@@ -334,3 +334,8 @@ TS17/18 확장(#118): 단조 fake Clock과 actual native golden 완료를 사용
 
 
 #124 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0058](../adr/0058-public-daily-rankings.md) → public bounded 두 순위/accepted metadata·현재 nickname·secret 제외·실PG snapshot/index·[검증124](../verification/124-public-daily-rankings.md). 명시 공식 웹/대기/상위19 통합은 후속이다.
+
+
+#126 FR09/10·NFR01/02/05/07/08·TS17/18/21/31/35/36 → [ADR0059](../adr/0059-accepted-daily-core-initialization.md) → accepted snapshot Native/WASM/worker·Rust 단일 규칙·strict16KiB/no fallback·golden parity → [검증126](../verification/126-accepted-daily-core-initialization.md). 공식 웹/대기·상위19 통합은 후속이다.
+
+TS17/18 확장(#126): bundled와 다른 accepted countdown/hash/seed의 Rust golden으로 Native·실WASM·production worker 전체 view/입력/완료 replay를 비교한다. unknown field/손상 hash/버전/16KiB 초과는 거절하고 실패 뒤 snapshot은 not_started·다음 정상 init는 가능하다. 기존 두 인자 init와 offline 연습을 유지한다.

@@ -280,5 +280,21 @@
   "offline.submitConfirm": "Enviar para esta conta",
   "offline.submitAccount": "Enviar resultados não verificados para {{name}}? O servidor verifica a conclusão; o tempo local não é oficial.",
   "offline.submitDone": "{{sent}} enviados, {{removed}} removidos dos pendentes. Os registros locais são mantidos.",
-  "offline.submitRetained": "Alguns resultados continuam pendentes. Verifique a conexão e a conta e tente novamente."
+  "offline.submitRetained": "Alguns resultados continuam pendentes. Verifique a conexão e a conta e tente novamente.",
+  "ranking.title": "Ranking diário",
+  "ranking.hint": "Apenas a primeira conclusão verificada pelo servidor é oficial. Tempos de treino local são referências pessoais.",
+  "ranking.refresh": "Atualizar ranking",
+  "ranking.unavailable": "Não foi possível carregar o ranking. Tente novamente.",
+  "ranking.offline": "Conecte-se para ver o ranking.",
+  "ranking.loading": "Carregando ranking…",
+  "ranking.unpublished": "Ainda não há um quebra-cabeça publicado para esta data UTC.",
+  "ranking.time": "Ranking por tempo do servidor",
+  "ranking.completion": "Ranking de conclusões verificadas",
+  "ranking.timeHint": "Apenas tentativas com tempo verificado pelo servidor aparecem aqui.",
+  "ranking.completionHint": "Conclusões verificadas são ordenadas por erros. Tempos locais não definem a posição.",
+  "ranking.position": "Posição",
+  "ranking.mistakes": "Erros",
+  "ranking.elapsed": "Tempo do servidor",
+  "ranking.empty": "Ainda não há conclusões verificadas nesta lista.",
+  "ranking.more": "Mostrando as primeiras 50 entradas. Há mais conclusões verificadas."
 }

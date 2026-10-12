@@ -342,3 +342,6 @@ TS17/18 확장(#126): bundled와 다른 accepted countdown/hash/seed의 Rust gol
 
 
 TS17/18/20/21/29/31/35/36 확장(#128): [ADR0060](../adr/0060-daily-client-and-explicit-pending.md)의 strict daily client·현재 account/revision 전후 proof와 terminal 만료/unsupported post-proof를 확인한다. 실제 production HTTPS PC/mobile8언어 설정에서 WASM 완료 후보→명시 계정 확인→서버 첫 완료/Practice·실패 보존·개인 기록 유지, 별도 실제HTTPS typed start/heartbeat/own/익명 두 순위를 검사한다. 자동 flush·공식 UI 완료를 가정하지 않는다.
+
+
+#130 FR09/10/11·NFR01/02/05/06/08·TS17/18/19/20/21/26/36 → [ADR0061](../adr/0061-daily-rankings-ui.md) → 공개 두 순위 lazy 화면/무쿠키·UTC 새로고침·역순/취소/offline·미발행/빈/실패 구분·8언어 semantic table/긴 nickname → [검증130](../verification/130-daily-rankings-ui.md). 공식 시작/controller·본인 receipt/공유·상위19는 후속이다.

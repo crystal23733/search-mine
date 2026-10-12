@@ -97,3 +97,6 @@ PC 대전 우측은 상대 진행 요약만 공개한다. sheet/dialog는 초점
 
 
 #128은 제공13 설정·접근성의 계정/카드·공통 Button/Dialog 토큰을 재사용하여 대기 제출을 연결한다. 현재 nickname/계정 확인·닫기 기본 초점·중복/오프라인/activity 차단·8언어 문구를 적용한다. [ADR0060](../adr/0060-daily-client-and-explicit-pending.md)/[검증128](../verification/128-daily-client-and-explicit-pending.md). 디자인11/12의 명시 공식 시작/두 순위 화면은 후속19다.
+
+
+#130 FR09/10/11·NFR01/02/05/06/08·TS17/18/19/20/21/26/36 → [ADR0061](../adr/0061-daily-rankings-ui.md) → 공개 두 순위 lazy 화면/무쿠키·UTC 새로고침·역순/취소/offline·미발행/빈/실패 구분·8언어 semantic table/긴 nickname → [검증130](../verification/130-daily-rankings-ui.md). 공식 시작/controller·본인 receipt/공유·상위19는 후속이다.

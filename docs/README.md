@@ -112,3 +112,6 @@
 
 
 #128: [daily client·명시적 대기 제출](adr/0060-daily-client-and-explicit-pending.md)·[검증128](verification/128-daily-client-and-explicit-pending.md).
+
+
+[ADR0061 공개 데일리 두 순위 화면](adr/0061-daily-rankings-ui.md) · [#130 실행 근거](verification/130-daily-rankings-ui.md).

@@ -1232,6 +1232,36 @@ input[type="checkbox"]:checked::before {
   max-width: 100%;
   white-space: normal;
 }
+.daily-rankings table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.daily-rankings caption {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: start;
+  margin-bottom: 1rem;
+}
+.daily-rankings th,
+.daily-rankings td {
+  text-align: start;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.daily-rankings .rank-position {
+  width: 3rem;
+}
+.daily-rankings .rank-mistakes {
+  width: 4rem;
+}
+.daily-rankings .rank-time {
+  width: 6rem;
+}
+.rank-duration {
+  font-variant-numeric: tabular-nums;
+}
 @media (max-width: 600px) {
   .identity-row > .button,
   .account-profile > .button {

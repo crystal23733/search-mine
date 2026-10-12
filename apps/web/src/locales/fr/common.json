@@ -280,5 +280,21 @@
   "offline.submitConfirm": "Envoyer à ce compte",
   "offline.submitAccount": "Envoyer les résultats non vérifiés à {{name}} ? Le serveur vérifie la réussite ; le temps local n’est pas officiel.",
   "offline.submitDone": "{{sent}} envoyés, {{removed}} retirés de la liste. Les données locales sont conservées.",
-  "offline.submitRetained": "Des résultats restent en attente. Vérifiez la connexion et le compte, puis réessayez."
+  "offline.submitRetained": "Des résultats restent en attente. Vérifiez la connexion et le compte, puis réessayez.",
+  "ranking.title": "Classements quotidiens",
+  "ranking.hint": "Seule la première réussite vérifiée par le serveur est officielle. Les temps locaux restent des références personnelles.",
+  "ranking.refresh": "Actualiser les classements",
+  "ranking.unavailable": "Les classements sont indisponibles. Réessayez.",
+  "ranking.offline": "Connectez-vous au réseau pour voir les classements.",
+  "ranking.loading": "Chargement des classements…",
+  "ranking.unpublished": "Aucun puzzle publié pour cette date UTC.",
+  "ranking.time": "Classement par temps du serveur",
+  "ranking.completion": "Classement des réussites vérifiées",
+  "ranking.timeHint": "Seules les tentatives au temps vérifié par le serveur figurent ici.",
+  "ranking.completionHint": "Les réussites vérifiées sont classées par erreurs. Les temps locaux ne déterminent pas le rang.",
+  "ranking.position": "Rang",
+  "ranking.mistakes": "Erreurs",
+  "ranking.elapsed": "Temps du serveur",
+  "ranking.empty": "Aucune réussite vérifiée dans cette liste pour le moment.",
+  "ranking.more": "Les 50 premières entrées sont affichées. D’autres réussites vérifiées existent."
 }

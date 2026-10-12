@@ -280,5 +280,21 @@
   "offline.submitConfirm": "이 계정으로 제출",
   "offline.submitAccount": "미검증 결과를 {{name}} 계정에 제출할까요? 서버가 완료를 검증하며 로컬 리플레이 시간은 공식 시간이 아닙니다.",
   "offline.submitDone": "{{sent}}개 제출, 대기 {{removed}}개 제거. 개인 기록은 유지됩니다.",
-  "offline.submitRetained": "일부 결과가 대기 중입니다. 연결과 계정을 확인한 뒤 다시 시도하세요."
+  "offline.submitRetained": "일부 결과가 대기 중입니다. 연결과 계정을 확인한 뒤 다시 시도하세요.",
+  "ranking.title": "데일리 순위",
+  "ranking.hint": "서버 검증을 통과한 첫 완료만 공식 기록입니다. 로컬 연습 시간은 개인 참고용입니다.",
+  "ranking.refresh": "순위 새로고침",
+  "ranking.unavailable": "순위를 불러올 수 없습니다. 다시 시도하세요.",
+  "ranking.offline": "순위를 보려면 연결하세요.",
+  "ranking.loading": "순위를 불러오는 중…",
+  "ranking.unpublished": "이 UTC 날짜의 퍼즐이 아직 발행되지 않았습니다.",
+  "ranking.time": "서버 시간 순위",
+  "ranking.completion": "검증 완료 순위",
+  "ranking.timeHint": "서버 시간이 검증된 도전만 표시합니다.",
+  "ranking.completionHint": "검증된 완료를 실수 순으로 표시합니다. 로컬 시간은 순위에 반영하지 않습니다.",
+  "ranking.position": "순위",
+  "ranking.mistakes": "실수",
+  "ranking.elapsed": "서버 시간",
+  "ranking.empty": "아직 이 목록에 검증된 완료가 없습니다.",
+  "ranking.more": "상위 50개를 표시합니다. 추가 검증 완료 기록이 있습니다."
 }

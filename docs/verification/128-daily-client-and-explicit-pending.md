@@ -27,3 +27,5 @@ ADR0060의 관측 보정을 먼저 기록한 뒤 최종 성공 제출을 one-use
 첫 로컬 반복은 공유 fixture 시계가3workers에서 겹친 배치여서4pass/1timeout/1미실행(46.3초)였고 로그/trace를 보존했다. 이 실행으로 제품이나 관측 수정의 원인을 확정하지 않는다. 새 전용DB/worker1/기존30초 제한/retries0으로 PC/mobile 각3회·총6개/33.2초 통과했다. 부분Vitest34개는 모두 통과했으나 전체coverage20.49%로 명령exit1이므로 전체80% 충족 근거로 쓰지 않는다. 최종 전체 검사와 정확head CI는 이어서 확인한다.
 
 보정 후 scripts/check.ps1 실제exit0: Rust399·웹237/40files/줄89.38%·browser109/4.1분/재시도0·문서178/Mermaid34 실패0. 전체 첫 시도는 Rust 링크의 디스크 공간 부족으로 중단되어 로그를 보존했다. 저장소 내부의 재생성 가능한 증분 캐시만 경로/링크/Git 제외 확인 뒤 정리하고 CARGO_INCREMENTAL=0으로 재실행했다. 새 로컬 PostgreSQL17.4 DB liar_pr129full의 실제HTTPS 검증이며 별도PG18 회귀101은 원격CI 근거로 구분한다. 추가 제품 결함은 검토 범위에서 확인되지 않았다. 원격 새head CI/병합/CLOSED는 PR과 로컬 일별 리뷰에서 최종 확인한다.
+
+최종 source84a8abd7ccbb9750afd83cabe8f82b898a24dd4e의 Product38276356863/Repository38276382216 필수6checks SUCCESS를 확인했다. 원격 Rust399·웹237·브라우저109/4.9분/flaky0, PostgreSQL18.6 회귀101/25.34초·계측101/23.01초·Daily877/893=98.21%/서버9090/9700=93.71% 통과. 정상 squash merge로 PR129 MERGED2026-10-12T16:25:27Z, develop652e6c839cb136068a728f83f0b1f41f071afa9c·#128 CLOSED16:25:29Z를 실제 확인했다. 다음 #130 공개 두 순위 화면과 공식 도전/heartbeat·본인 결과/공유·상위19 통합은 후속이다.

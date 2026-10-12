@@ -72,19 +72,22 @@ export function App({ services }: { services: AppServices }) {
     route === "/practice" ||
     route === "/tutorial" ||
     route === "/daily" ||
+    route === "/daily/rankings" ||
     route === "/queue" ||
     route === "/friends" ? (
       <GameRoute
         route={
           route === "/friends"
             ? "friends"
-            : route === "/queue"
-              ? "queue"
-              : route === "/practice"
-                ? "practice"
-                : route === "/daily"
-                  ? "daily"
-                  : "tutorial"
+            : route === "/daily/rankings"
+              ? "rankings"
+              : route === "/queue"
+                ? "queue"
+                : route === "/practice"
+                  ? "practice"
+                  : route === "/daily"
+                    ? "daily"
+                    : "tutorial"
         }
       />
     ) : route === "/" ? (

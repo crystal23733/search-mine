@@ -280,5 +280,21 @@
   "offline.submitConfirm": "提交至此账号",
   "offline.submitAccount": "将未经验证的结果提交给{{name}}？服务器验证完成情况，本地回放时间不是官方用时。",
   "offline.submitDone": "已提交{{sent}}项，移除{{removed}}项待处理结果。保留本地记录。",
-  "offline.submitRetained": "部分结果仍待处理。请检查网络和账号后重试。"
+  "offline.submitRetained": "部分结果仍待处理。请检查网络和账号后重试。",
+  "ranking.title": "每日排名",
+  "ranking.hint": "只有首次通过服务器验证的完成才是正式记录。本地练习时间仅供个人参考。",
+  "ranking.refresh": "刷新排名",
+  "ranking.unavailable": "无法加载排名，请重试。",
+  "ranking.offline": "连接后即可查看排名。",
+  "ranking.loading": "正在加载排名…",
+  "ranking.unpublished": "此UTC日期的谜题尚未发布。",
+  "ranking.time": "服务器时间排名",
+  "ranking.completion": "验证完成排名",
+  "ranking.timeHint": "仅显示时间经过服务器验证的挑战。",
+  "ranking.completionHint": "已验证的完成按失误次数排序，不使用本地时间排名。",
+  "ranking.position": "排名",
+  "ranking.mistakes": "失误",
+  "ranking.elapsed": "服务器时间",
+  "ranking.empty": "此列表尚无已验证的完成。",
+  "ranking.more": "显示前50条，另有更多已验证的完成。"
 }

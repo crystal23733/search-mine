@@ -141,3 +141,6 @@
 
 
 #126/PR127 developa5dbdec 병합·126 CLOSED 확인. 다음 [#128](https://github.com/crystal23733/search-mine/issues/128)은 [ADR0060](../adr/0060-daily-client-and-explicit-pending.md)의 daily client와 설정의 명시적 대기 제출이다. 기존 설정에 버튼/확인 창은 없으므로 함께 구현한다. 공식 시작/순위 UI·상위19는 후속이다.
+
+
+#130 FR09/10/11·NFR01/02/05/06/08·TS17/18/19/20/21/26/36 → [ADR0061](../adr/0061-daily-rankings-ui.md) → 공개 두 순위 lazy 화면/무쿠키·UTC 새로고침·역순/취소/offline·미발행/빈/실패 구분·8언어 semantic table/긴 nickname → [검증130](../verification/130-daily-rankings-ui.md). 공식 시작/controller·본인 receipt/공유·상위19는 후속이다.

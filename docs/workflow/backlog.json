@@ -892,6 +892,18 @@
         "accepted-daily-core"
       ],
       "acceptance": "ADR0060·typed strict daily client/전후 proof/메모리 revision·공개 무쿠키 순위·설정의 계정 명시 확인/terminal post-proof·실제WASM/HTTPS8언어/PC-mobile/PG·입출력 상한/abort/TDD/full/95-80/리뷰CI·정확head 병합CLOSED"
+    },
+    {
+      "key": "daily-rankings-ui",
+      "issue": 130,
+      "milestone": "M3",
+      "title": "feat(web): 로그인 없는 데일리 두 순위 화면",
+      "requirements": "FR09/10/11, NFR01/02/05/06/08",
+      "scenarios": "TS17/18/19/20/21/26/36",
+      "deps": [
+        "daily-client-pending"
+      ],
+      "acceptance": "ADR0061·public lazy 두 순위/무쿠키/UTC/미발행-빈-실패/offline·역순/취소·8언어 semantic table·실제WASM/HTTPS/PG/PC-mobile·TDD/full/95-80/리뷰CI·정확head 병합CLOSED"
     }
   ]
 }

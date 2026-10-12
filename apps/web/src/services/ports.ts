@@ -12,7 +12,9 @@ import type { AuthPort } from "./auth/types";
 import type { AuthEffects } from "./auth/browser";
 import type { PendingSubmissionsPort } from "./pending-submissions";
 import type { OnlinePort } from "./online/types";
+import type { DailyApi } from "./daily/types";
 export interface AppServices {
+  dailyRankings: DailyApi["rankings"];
   online: OnlinePort;
   auth: AuthPort;
   authEffects: AuthEffects;

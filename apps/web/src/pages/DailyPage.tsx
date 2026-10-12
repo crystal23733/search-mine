@@ -249,7 +249,9 @@ export function DailyPage() {
         ) : (
           <p>{t("daily.empty")}</p>
         )}
-        <p class="muted">{t("daily.ranking")}</p>
+        <NavLink path="/daily/rankings" class="button">
+          {t("ranking.title")}
+        </NavLink>
       </Card>
     </>
   );

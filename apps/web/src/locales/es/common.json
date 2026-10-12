@@ -280,5 +280,21 @@
   "offline.submitConfirm": "Enviar a esta cuenta",
   "offline.submitAccount": "¿Enviar resultados sin verificar a {{name}}? El servidor verifica la finalización; el tiempo local no es oficial.",
   "offline.submitDone": "{{sent}} enviados, {{removed}} retirados de pendientes. Se conservan los registros locales.",
-  "offline.submitRetained": "Quedan resultados pendientes. Comprueba la conexión y la cuenta e inténtalo de nuevo."
+  "offline.submitRetained": "Quedan resultados pendientes. Comprueba la conexión y la cuenta e inténtalo de nuevo.",
+  "ranking.title": "Clasificación diaria",
+  "ranking.hint": "Solo la primera finalización verificada por el servidor es oficial. Los tiempos de práctica local son referencias personales.",
+  "ranking.refresh": "Actualizar clasificación",
+  "ranking.unavailable": "No se puede cargar la clasificación. Inténtalo de nuevo.",
+  "ranking.offline": "Conéctate para ver la clasificación.",
+  "ranking.loading": "Cargando clasificación…",
+  "ranking.unpublished": "Aún no se ha publicado un puzle para esta fecha UTC.",
+  "ranking.time": "Clasificación por tiempo del servidor",
+  "ranking.completion": "Clasificación de finalizaciones verificadas",
+  "ranking.timeHint": "Solo aparecen intentos con tiempo verificado por el servidor.",
+  "ranking.completionHint": "Las finalizaciones verificadas se ordenan por errores. Los tiempos locales no determinan la posición.",
+  "ranking.position": "Posición",
+  "ranking.mistakes": "Errores",
+  "ranking.elapsed": "Tiempo del servidor",
+  "ranking.empty": "Aún no hay finalizaciones verificadas en esta lista.",
+  "ranking.more": "Se muestran las primeras 50 entradas. Hay más finalizaciones verificadas."
 }

@@ -280,5 +280,21 @@
   "offline.submitConfirm": "このアカウントに送信",
   "offline.submitAccount": "未検証の結果を{{name}}に送信しますか？サーバーが完了を検証します。ローカルの時間は公式タイムではありません。",
   "offline.submitDone": "{{sent}}件送信、保留から{{removed}}件削除。個人記録は保持されます。",
-  "offline.submitRetained": "一部の結果は保留中です。接続とアカウントを確認して再試行してください。"
+  "offline.submitRetained": "一部の結果は保留中です。接続とアカウントを確認して再試行してください。",
+  "ranking.title": "デイリーランキング",
+  "ranking.hint": "サーバー検証済みの最初のクリアだけが公式記録です。ローカル練習の時間は個人用の参考です。",
+  "ranking.refresh": "ランキングを更新",
+  "ranking.unavailable": "ランキングを読み込めません。再試行してください。",
+  "ranking.offline": "ランキングを見るには接続してください。",
+  "ranking.loading": "ランキングを読み込み中…",
+  "ranking.unpublished": "このUTC日付のパズルはまだ公開されていません。",
+  "ranking.time": "サーバー時間ランキング",
+  "ranking.completion": "検証済みクリアランキング",
+  "ranking.timeHint": "サーバーで時間を検証した挑戦だけを表示します。",
+  "ranking.completionHint": "検証済みクリアをミス数順に表示します。ローカル時間は順位に使いません。",
+  "ranking.position": "順位",
+  "ranking.mistakes": "ミス",
+  "ranking.elapsed": "サーバー時間",
+  "ranking.empty": "この一覧には検証済みクリアがまだありません。",
+  "ranking.more": "上位50件を表示しています。ほかにも検証済みクリアがあります。"
 }

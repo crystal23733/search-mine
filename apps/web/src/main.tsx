@@ -14,6 +14,7 @@ import { createPendingSubmissions } from "./services/pending-submissions";
 import { chooseLocale, localizedPath } from "./services/locale";
 import "@liar/design-tokens/tokens.css";
 import "./styles.css";
+import type { DailyApi } from "./services/daily/types";
 const root = document.getElementById("app");
 if (!root) throw new Error("Application root is missing");
 let storage: Storage | undefined;
@@ -48,13 +49,17 @@ const account = createBrowserAuth(
   createAuthHttp(window.fetch.bind(window)),
 );
 const records = createDailyRecords(database);
+let dailyApi: DailyApi | undefined;
+async function getDailyApi(): Promise<DailyApi> {
+  const { createDailyHttp } = await import("./services/daily/http");
+  return (dailyApi ??= createDailyHttp(
+    account.auth,
+    window.fetch.bind(window),
+  ));
+}
 const pendingSubmissions = createPendingSubmissions(records, account.auth, {
   submit: async (record, accountId, signal) => {
-    const { createDailyHttp } = await import("./services/daily/http");
-    return createDailyHttp(
-      account.auth,
-      window.fetch.bind(window),
-    ).submitPending(
+    return (await getDailyApi()).submitPending(
       { accountId, revision: account.auth.revision() },
       record,
       signal,
@@ -69,6 +74,7 @@ const offline = createOffline(activity, {
 render(
   <App
     services={{
+      dailyRankings: async (...args) => (await getDailyApi()).rankings(...args),
       auth: account.auth,
       online: {
         latestResult: async (...args) =>

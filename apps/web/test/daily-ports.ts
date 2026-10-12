@@ -8,6 +8,9 @@ export function dailyTestPorts() {
   const auth = guestAuthPorts();
   const records = createDailyRecords();
   return {
+    dailyRankings: async () => {
+      throw Error("unavailable");
+    },
     online: {
       latestResult: async () => {
         throw Error("unavailable");

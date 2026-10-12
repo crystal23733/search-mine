@@ -113,3 +113,6 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 #128 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/29/31/35/36 → [ADR0060](../adr/0060-daily-client-and-explicit-pending.md): strict generated daily client·메모리 revision/전후 proof·공개 무쿠키 순위·설정의 현재 계정 명시 제출/terminal post-proof·pending만 제거. 실제 검증은 [검증128](../verification/128-daily-client-and-explicit-pending.md). 공식 시작/controller·순위 화면/상위19는 후속이다.
 
 PR129 최초 CI의 모바일 제출 본문 관측 실패는 ADR0060의 전달 전 one-use 실HTTP 관측으로 보정한다. 실제 서버 응답과 앱 전달 본문을 같게 유지하며 pending0/개인기록1·503 보존·Practice·8언어 단언을 제거하지 않는다. Chromium 내부 원인/실제 navigation은 미확정으로 기록하고 timeout/retry를 완화하지 않는다.
+
+
+#130 FR09/10/11·NFR01/02/05/06/08·TS17/18/19/20/21/26/36 → [ADR0061](../adr/0061-daily-rankings-ui.md) → 공개 두 순위 lazy 화면/무쿠키·UTC 새로고침·역순/취소/offline·미발행/빈/실패 구분·8언어 semantic table/긴 nickname → [검증130](../verification/130-daily-rankings-ui.md). 공식 시작/controller·본인 receipt/공유·상위19는 후속이다.

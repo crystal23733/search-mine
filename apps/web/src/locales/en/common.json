@@ -280,5 +280,21 @@
   "offline.submitConfirm": "Submit to this account",
   "offline.submitAccount": "Submit these unverified results to {{name}}? The server verifies completion; local replay time is not an official time.",
   "offline.submitDone": "{{sent}} submitted, {{removed}} removed from pending. Local records are kept.",
-  "offline.submitRetained": "Some results remain pending. Check your connection and account, then try again."
+  "offline.submitRetained": "Some results remain pending. Check your connection and account, then try again.",
+  "ranking.title": "Daily rankings",
+  "ranking.hint": "Only the first server-verified completion is official. Local practice times are personal references.",
+  "ranking.refresh": "Refresh rankings",
+  "ranking.unavailable": "Rankings are unavailable. Try again.",
+  "ranking.offline": "Connect to view rankings.",
+  "ranking.loading": "Loading rankings…",
+  "ranking.unpublished": "No puzzle has been published for this UTC date.",
+  "ranking.time": "Server time ranking",
+  "ranking.completion": "Verified completion ranking",
+  "ranking.timeHint": "Only attempts with verified server timing appear here.",
+  "ranking.completionHint": "Verified completions are ordered by mistakes. This list does not rank local times.",
+  "ranking.position": "Rank",
+  "ranking.mistakes": "Mistakes",
+  "ranking.elapsed": "Server time",
+  "ranking.empty": "No verified completions in this list yet.",
+  "ranking.more": "Showing the first 50 entries. More verified completions exist."
 }

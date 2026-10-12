@@ -280,5 +280,21 @@
   "offline.submitConfirm": "An dieses Konto senden",
   "offline.submitAccount": "Ungeprüfte Ergebnisse an {{name}} senden? Der Server prüft den Abschluss; die lokale Zeit ist keine offizielle Zeit.",
   "offline.submitDone": "{{sent}} gesendet, {{removed}} aus der Warteliste entfernt. Lokale Aufzeichnungen bleiben erhalten.",
-  "offline.submitRetained": "Einige Ergebnisse stehen noch aus. Verbindung und Konto prüfen und erneut versuchen."
+  "offline.submitRetained": "Einige Ergebnisse stehen noch aus. Verbindung und Konto prüfen und erneut versuchen.",
+  "ranking.title": "Tägliche Ranglisten",
+  "ranking.hint": "Nur der erste vom Server bestätigte Abschluss ist offiziell. Lokale Übungszeiten dienen als persönliche Referenz.",
+  "ranking.refresh": "Ranglisten aktualisieren",
+  "ranking.unavailable": "Ranglisten sind nicht verfügbar. Bitte erneut versuchen.",
+  "ranking.offline": "Verbinde dich, um die Ranglisten zu sehen.",
+  "ranking.loading": "Ranglisten werden geladen…",
+  "ranking.unpublished": "Für dieses UTC-Datum wurde noch kein Rätsel veröffentlicht.",
+  "ranking.time": "Rangliste nach Serverzeit",
+  "ranking.completion": "Rangliste bestätigter Abschlüsse",
+  "ranking.timeHint": "Hier erscheinen nur Versuche mit bestätigter Serverzeit.",
+  "ranking.completionHint": "Bestätigte Abschlüsse werden nach Fehlern geordnet. Lokale Zeiten bestimmen keinen Rang.",
+  "ranking.position": "Rang",
+  "ranking.mistakes": "Fehler",
+  "ranking.elapsed": "Serverzeit",
+  "ranking.empty": "In dieser Liste gibt es noch keine bestätigten Abschlüsse.",
+  "ranking.more": "Die ersten 50 Einträge werden angezeigt. Weitere bestätigte Abschlüsse sind vorhanden."
 }

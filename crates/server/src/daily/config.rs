@@ -3,6 +3,7 @@ use super::ReplayError;
 pub struct DailyConfig {
     pub authorities: usize,
     pub requests: usize,
+    pub tickets: usize,
 }
 pub fn load_daily_config(get: impl Fn(&str) -> Option<String>) -> Result<DailyConfig, ReplayError> {
     fn limit(value: Option<String>, default: usize, max: usize) -> Result<usize, ReplayError> {
@@ -19,5 +20,6 @@ pub fn load_daily_config(get: impl Fn(&str) -> Option<String>) -> Result<DailyCo
     Ok(DailyConfig {
         authorities: limit(get("LIAR_DAILY_AUTHORITIES"), 64, 20000)?,
         requests: limit(get("LIAR_DAILY_REQUESTS"), 4, 64)?,
+        tickets: limit(get("LIAR_DAILY_TICKETS"), 64, 20000)?,
     })
 }

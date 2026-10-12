@@ -66,6 +66,10 @@ async fn serve() -> ServerResult {
             .map_err(|_| "Lobby capacity is invalid")?;
         let clock = Arc::new(SystemMatchClock::default());
         let auth_clock = Arc::new(SystemAuthClock);
+        let daily_tickets = Arc::new(
+            DailyTicketRegistry::new(daily_config.tickets, daily_authorities, clock.clone())
+                .map_err(|_| "Daily tickets are invalid")?,
+        );
         let origin = config.security.origin().to_string();
         let auth_pool = pool.clone().ok_or("Authentication requires a database")?;
         let store = PgAuthStore::new(auth_pool.clone());
@@ -102,7 +106,7 @@ async fn serve() -> ServerResult {
                         result_authorities.clone(),
                         Arc::new(CombinedSessionInvalidator::new(
                             privacy_authorities.clone(),
-                            daily_authorities.clone(),
+                            daily_tickets.clone(),
                         )),
                     )),
                 )),
@@ -176,10 +180,7 @@ async fn serve() -> ServerResult {
             BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
             sessions.clone(),
             runtime.security.clone(),
-            DailyAuthentication {
-                authorities: daily_authorities,
-                clock: auth_clock,
-            },
+            DailyAuthentication::new(daily_tickets, auth_clock),
             daily_config.requests,
         )
         .map_err(|_| "Daily HTTP initialization failed")?;

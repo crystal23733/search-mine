@@ -40,3 +40,6 @@ PostgreSQL 데이터는 전용 볼륨, 앱은 non-root/read-only rootfs, 임시 
 RPO≤24시간·RTO≤2시간은 운영 목표다. 전원·회선·장비가 없으면 달성 보장하지 않는다. 초기 미니 PC OS·CPU/RAM·업로드 속도·회선 약관은 운영자 확인 사항이다.
 
 #97 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0044](../adr/0044-online-storage-owner.md) → 같은 raw 연결의 session lock/write·bounded 큐/2초 deadline·owner loss ready/프로세스 종료·실제 PG/HTTP 검증 → [검증97](../verification/97-online-storage-owner.md). 기존 인스턴스를 종료한 뒤 단일 새 인스턴스로 교체하며 journal/startup abort/OS kill-restart 결과 복구는 다음 작업이다.
+
+
+#122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). LIAR_DAILY_TICKETS 기본64/엄격1..20000, 같은 authority/단조 clock registry를 main/fixture HTTP와 실제 invalidator에 주입. 중복 authority invalidation 금지·매 요청 reap-before-bind.

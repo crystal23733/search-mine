@@ -115,26 +115,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         AuthorityRegistry::new(32).map_err(|_| "fixture privacy authorities")?;
     let export_workers = ExportWorkers::default();
     let daily_authorities = AuthorityRegistry::new(32).map_err(|_| "fixture daily authorities")?;
-    let store = PgAuthStore::with_vault(pool.clone(), vault.clone()).with_invalidations(Arc::new(
-        CombinedSessionInvalidator::new(
-            Arc::new(CombinedSessionInvalidator::new(
-                sockets.clone(),
-                authorities.clone(),
-            )),
-            Arc::new(CombinedSessionInvalidator::new(
-                result_authorities.clone(),
-                Arc::new(CombinedSessionInvalidator::new(
-                    privacy_authorities.clone(),
-                    daily_authorities.clone(),
-                )),
-            )),
-        ),
-    ));
-    let service = AuthService::new(
-        store.clone(),
-        vault,
-        DigestKeys::new(1, vec![(1, [47; 32])]).expect("test digests"),
-    );
     let initial_utc: i64 = std::env::var("LIAR_FIXTURE_UTC")
         .unwrap_or_else(|_| "1800000000".into())
         .parse()?;
@@ -145,6 +125,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         auth: AtomicI64::new(initial_utc),
         game: AtomicU64::new(0),
     });
+    let daily_tickets = Arc::new(
+        DailyTicketRegistry::new(64, daily_authorities, clock.clone())
+            .map_err(|_| "fixture daily tickets")?,
+    );
+    let store = PgAuthStore::with_vault(pool.clone(), vault.clone()).with_invalidations(Arc::new(
+        CombinedSessionInvalidator::new(
+            Arc::new(CombinedSessionInvalidator::new(
+                sockets.clone(),
+                authorities.clone(),
+            )),
+            Arc::new(CombinedSessionInvalidator::new(
+                result_authorities.clone(),
+                Arc::new(CombinedSessionInvalidator::new(
+                    privacy_authorities.clone(),
+                    daily_tickets.clone(),
+                )),
+            )),
+        ),
+    ));
+    let service = AuthService::new(
+        store.clone(),
+        vault,
+        DigestKeys::new(1, vec![(1, [47; 32])]).expect("test digests"),
+    );
     let security = Arc::new(BrowserSecurity::new(ORIGIN, [48; 32]).expect("loopback origin"));
     let writer = PgJournalRuntime::claim(pool.clone(), clock.clone())
         .await
@@ -227,7 +231,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map_err(|_| "fixture result HTTP")?,
         )
         .merge(privacy_router(Arc::new(PgGameExportReader::with_workers(pool.clone(),clock.clone(),export_workers.clone())),sessions.clone(),security.clone(),PrivacyAuthentication {authorities:privacy_authorities,clock:clock.clone(),workers:export_workers},4).map_err(|_| "fixture privacy HTTP")?)
-        .merge(daily_router(Arc::new(PgDailyRepository::new(pool,clock.clone())),BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),sessions.clone(),security,DailyAuthentication {authorities:daily_authorities,clock:clock.clone()},4).map_err(|_| "fixture daily HTTP")?)
+        .merge(daily_router(Arc::new(PgDailyRepository::new(pool,clock.clone())),BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),sessions.clone(),security,DailyAuthentication::new(daily_tickets,clock.clone()),4).map_err(|_| "fixture daily HTTP")?)
         .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)
         .merge(
             Router::new()

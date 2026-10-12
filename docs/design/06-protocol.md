@@ -33,10 +33,15 @@
 | POST /api/v1/auth/apple/notifications | Apple 서버 알림 서명/iss/aud 검증, 사용자 브라우저 API와 별도 |
 | POST /api/v1/lobby | versioned status/queue_join/room_create/room_join/ready/cancel, 모든 호출 Origin·session-bound CSRF·nickname·bounded read/rate; 본인 상태만, no-store; [ADR0030](../adr/0030-authenticated-lobby-http-runtime.md) |
 | GET /api/v1/bootstrap | 지원 locale·공개 rules·daily versions·server availability, 정답/시드 없음 |
-| GET /api/v1/daily/{date} | UTC date·공개 seed/solver version·rules hash, 캐시 가능 |
-| POST /api/v1/daily/{id}/attempts | attempt_id, input_log, elapsed 주장, version; replay 결과와 verification status |
-| GET /api/v1/daily/{id}/leaderboard | 페이지 제한, verified/local 구분, 닉네임 안전 렌더 |
+| POST /api/v1/daily/definition | closed v/account/session revision/date/seed version·accepted snapshot·현재 인증/CSRF·no-store; ADR0054 |
+| POST /api/v1/daily/submit | closed account/session revision/attempt/replay·검증 완료만 새 기록·원래 receipt 불변; ADR0054/56 |
+| POST /api/v1/daily/own | closed account/session revision/metadata·본인 원래 nullable receipt·no-store; ADR0054/56 |
+| POST /api/v1/daily/start | closed account/session revision/attempt·서버 현재 UTC·accepted snapshot/ticket/TTL·no-store; ADR0057 |
+| POST /api/v1/daily/heartbeat | closed account/session revision/ticket/sequence·nullable 원래 ACK·no-store; ADR0057 |
+| POST /api/v1/daily/submit-timed | closed account/session revision/attempt/필수 nullable ticket/replay·sealed time 또는 완료만·원래 receipt 불변; ADR0057 |
 | GET /health/live, /health/ready | live 프로세스, ready DB·큐·capacity 상태, 내부 상세는 공개 금지 |
+
+공개 순위 조회는 #19 후속 API에서 페이지·시간/완료 분리·최소 닉네임 계약을 확정한다. 무계정 공개 날짜별 연습은 WASM에서 파생하며 위 인증 API가 서버 계정을 대신 만들지 않는다.
 
 변경 HTTP는 same-origin·CSRF 토큰 검사, 크기/레이트 제한을 적용한다. WS는 쿠키 인증과 Origin 검증, account별 한 active session epoch로 탈취·다중 탭을 제어한다.
 
@@ -196,3 +201,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 
 #120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). Rust ExportRecord::Daily/DailyCompletion의 필수 nullable verified_elapsed_ms와 DailyTrust verified_time을 원천으로 생성한다. None은 verified_completion, 검증된 저장 Some만 verified_time. 누락/범위/최소 native elapsed 오류는 strict fail closed이며 plain submit 경로는 유지한다.
+
+
+#122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 별도 closed start/heartbeat/submit-timed Rust DTO→TS, 필수 nullable ticket_id, 현재 UTC 서버 선택·nullable heartbeat ACK·기존 receipt trust.

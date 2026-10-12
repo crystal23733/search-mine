@@ -844,6 +844,18 @@
         "daily-time-authority"
       ],
       "acceptance": "ADR0056·rights-first nullable export/TS/strict download·forward migration/u32/accepted time bounds·sealed account/attempt/meta/digest·immutable first retry/Practice/NULL·actualPG/HTTP/HTTPS/full/fresh95/80/리뷰CI·병합CLOSED 뒤 시간HTTP/순위/UI"
+    },
+    {
+      "key": "daily-timing-http",
+      "issue": 122,
+      "milestone": "M3",
+      "title": "feat(server): 인증 데일리 시작·하트비트·시간 제출 API",
+      "requirements": "FR01/09/10/16, NFR01/02/05/07/08",
+      "scenarios": "TS17/18/20/21/31/35/36",
+      "deps": [
+        "daily-time-persistence"
+      ],
+      "acceptance": "ADR0057·closed Rust→TS/start-heartbeat-submit-timed·현재UTC/accepted·동일authority/reap/currentproof/실제barrier·config/main/fixture·actualPG/native/HTTPS·Red/Green/full/fresh95/80/리뷰CI·병합CLOSED 뒤 순위/UI"
     }
   ]
 }

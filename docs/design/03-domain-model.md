@@ -54,3 +54,6 @@ Clock, RandomSource, MatchRepository, AccountRepository, AuthIdentityRepository,
 
 
 #118 FR09/10·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0055](../adr/0055-bounded-daily-time-authority.md) → pure time policy/bounded authority·actual native evidence/45초/TTL/immutable retry·철회/재시작 → [검증118](../verification/118-daily-time-authority.md). 이 단계는 공개 수집·DB·HTTP·UI를 활성화하지 않으며 후속 rights export 확장 뒤 순차 연결한다.
+
+
+#122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md)의 DailyService는 start의 서버 UTC/accepted snapshot, heartbeat의 nullable ACK, submit-timed의 actual Native evidence→동일 lease sealed time→기존 PG 불변 receipt를 조정한다. 순수 TimingAttempt·DailyTicketRegistry의 정책을 HTTP에 복제하지 않으며 auth/post proof·reap/철회 barrier는 adapter 수명 계약이다. 두 순위/UI는 후속이다.

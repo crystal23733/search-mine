@@ -164,3 +164,6 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 
 
 #120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). forward nullable bigint verified_elapsed_ms 및 u32 CHECK, 기존 migration checksum/첫 완료 불변/권한 transaction·7일raw/90일record 유지. sealed account/attempt/metadata/digest 일치만 저장하고 NULL 사후 승격·retry/Practice 개선을 금지한다.
+
+
+#122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 실제 accepted Native evidence→동일 ticket registry sealed time→기존 immutable 첫 완료 PG 포트. 소실/만료/no-time은 plain 완료이며 원래 NULL/Some 불변.

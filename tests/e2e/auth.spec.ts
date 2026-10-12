@@ -11,6 +11,7 @@ import { registerLatestResultTests } from "./helpers/latest-result";
 import { registerOnlineAbandonTests } from "./helpers/online-abandon";
 import { registerPersonalExportTests } from "./helpers/personal-export";
 import { registerDailyHttpTests } from "./helpers/daily-http";
+import { registerDailyTimingHttpTests } from "./helpers/daily-timing-http";
 const origin = "https://localhost:8443";
 const providers = ["Google", "Apple", "Kakao", "Naver"] as const;
 test.describe.configure({ mode: "serial" }); // The fixture's explicit clock control must not overlap accounts.
@@ -24,6 +25,7 @@ registerLatestResultTests(approve, login);
 registerOnlineAbandonTests(approve, login);
 registerPersonalExportTests(approve, login);
 registerDailyHttpTests(approve, login);
+registerDailyTimingHttpTests(approve, login);
 
 const invitationLocales = [
   "en",

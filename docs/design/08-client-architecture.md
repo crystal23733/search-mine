@@ -103,3 +103,6 @@ service worker는 versioned shell/locale/core 정적 asset만 캐시하고 공�
 
 
 #120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). 서버 시간 수집 전에 strict 본인 export decoder·생성 TS·설정의 명시 JSON 다운로드에 nullable verified_elapsed_ms를 제공한다. 누락을 null로 추정하지 않고 u32/semantic 하한을 검사하며 accepted duration 규칙은 Rust/DB가 담당한다.
+
+
+#122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 새 API는 명시 공식 시작과15초 heartbeat를 위한 계약이다. 아직 공개 UI 활성화 전이며 offline ticket null은 완료만 검증한다. 클라이언트 시간을 공식값으로 보내지 않는다.

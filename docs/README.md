@@ -100,3 +100,6 @@
 
 
 - [ADR0056 서버 시간 영속화·본인 export](adr/0056-daily-time-persistence-and-export.md) · [검증120](verification/120-daily-time-persistence-and-export.md).
+
+
+- [ADR0057 인증 데일리 시간 HTTP](adr/0057-authenticated-daily-timing-http.md) · [검증122](verification/122-authenticated-daily-timing-http.md).

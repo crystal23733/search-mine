@@ -24,6 +24,11 @@ use tokio::sync::Notify;
 use uuid::Uuid;
 const NOW: i64 = 1_791_331_260;
 struct Clock(AtomicI64);
+impl liar_server::online::MatchClock for Clock {
+    fn now_ms(&self) -> u64 {
+        ((self.0.load(Ordering::SeqCst) - NOW).max(0) as u64) * 1000
+    }
+}
 impl AuthClock for Clock {
     fn now(&self) -> i64 {
         self.0.load(Ordering::SeqCst)
@@ -220,10 +225,10 @@ impl Fixture {
             BoundedReplayVerifier::new(verifier),
             sessions.clone(),
             security.clone(),
-            DailyAuthentication {
-                authorities: authorities.clone(),
-                clock: clock.clone(),
-            },
+            DailyAuthentication::new(
+                Arc::new(DailyTicketRegistry::new(64, authorities.clone(), clock.clone()).unwrap()),
+                clock.clone(),
+            ),
             requests,
         )
         .unwrap();
@@ -588,10 +593,10 @@ async fn bounded_requests_timeout_and_twenty_per_second_rate_do_not_wait_unbound
             BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
             f.sessions,
             f.security,
-            DailyAuthentication {
-                authorities: f.authorities,
-                clock: f.clock
-            },
+            DailyAuthentication::new(
+                Arc::new(DailyTicketRegistry::new(64, f.authorities, f.clock.clone()).unwrap()),
+                f.clock
+            ),
             0
         )
         .is_err()
@@ -600,7 +605,14 @@ async fn bounded_requests_timeout_and_twenty_per_second_rate_do_not_wait_unbound
 
 #[tokio::test]
 async fn disabled_daily_routes_are_explicit_unavailable_and_never_cached() {
-    for path in ["definition", "submit", "own"] {
+    for path in [
+        "definition",
+        "submit",
+        "own",
+        "start",
+        "heartbeat",
+        "submit-timed",
+    ] {
         let response = liar_server::app(None)
             .oneshot(
                 Request::builder()
@@ -614,4 +626,118 @@ async fn disabled_daily_routes_are_explicit_unavailable_and_never_cached() {
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(response.headers()["cache-control"], "no-store");
     }
+}
+
+#[tokio::test]
+async fn official_start_selects_server_utc_today_and_reuses_original_ticket() {
+    let f = Fixture::new(4);
+    let mut body = f.body("definition");
+    body.as_object_mut().unwrap().remove("date");
+    body.as_object_mut().unwrap().remove("seed_version");
+    body["attempt_id"] = json!(Uuid::new_v4().to_string());
+    let result = f
+        .app
+        .clone()
+        .oneshot(f.request("start", body.clone()))
+        .await
+        .unwrap();
+    assert_eq!(result.status(), StatusCode::OK);
+    let first: Value =
+        serde_json::from_slice(&to_bytes(result.into_body(), 65536).await.unwrap()).unwrap();
+    assert_eq!(first["metadata"]["date"], "2026-10-07");
+    assert_eq!(first["attempt_id"], body["attempt_id"]);
+    assert_eq!(first["heartbeat_interval_ms"], 15000);
+    f.clock.0.fetch_add(1, Ordering::SeqCst);
+    assert_eq!(f.call("start", body).await.1, first);
+}
+
+#[tokio::test]
+async fn timing_requests_are_closed_and_missing_ticket_is_explicit_null() {
+    let f = Fixture::new(4);
+    let mut start = json!({"v":1,"account_id":f.account.to_string(),"session_revision":f.revision.to_string(),"attempt_id":Uuid::new_v4().to_string()});
+    for key in ["date", "seed", "rules", "verified_elapsed_ms"] {
+        let mut invalid = start.clone();
+        invalid[key] = json!(1);
+        assert_eq!(f.call("start", invalid).await.0, StatusCode::BAD_REQUEST);
+    }
+    let (status, grant) = f.call("start", start.clone()).await;
+    assert_eq!(status, StatusCode::OK);
+    start.as_object_mut().unwrap().remove("attempt_id");
+    start["ticket_id"] = grant["ticket_id"].clone();
+    start["sequence"] = json!(0);
+    assert_eq!(
+        f.call("heartbeat", start.clone()).await.0,
+        StatusCode::BAD_REQUEST
+    );
+    start["sequence"] = json!(2);
+    assert_eq!(
+        f.call("heartbeat", start.clone()).await.0,
+        StatusCode::CONFLICT
+    );
+    start["sequence"] = json!(1);
+    assert_eq!(f.call("heartbeat", start).await.0, StatusCode::OK);
+    let mut timed = f.body("submit");
+    assert_eq!(
+        f.call("submit-timed", timed.clone()).await.0,
+        StatusCode::BAD_REQUEST
+    );
+    timed["ticket_id"] = json!(Uuid::nil().to_string());
+    assert_eq!(
+        f.call("submit-timed", timed.clone()).await.0,
+        StatusCode::BAD_REQUEST
+    );
+    timed["ticket_id"] = Value::Null;
+    let (status, saved) = f.call("submit-timed", timed).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(saved["trust"], "verified_completion");
+    assert!(saved["receipt"]["verified_elapsed_ms"].is_null());
+}
+
+#[tokio::test]
+async fn official_start_uses_accepted_snapshot_and_current_utc_date_not_client_local_date() {
+    let f = Fixture::new(4);
+    let mut rules = RulesSnapshot::bundled().rules;
+    rules.countdown_ms = 5000;
+    let accepted =
+        PublishedDaily::new("2026-10-07", 1, RulesSnapshot::from_rules(rules).unwrap()).unwrap();
+    *f.records.accepted.lock().unwrap() = Some(accepted.clone());
+    let mut input = json!({"v":1,"account_id":f.account.to_string(),"session_revision":f.revision.to_string(),"attempt_id":Uuid::new_v4().to_string()});
+    let (status, first) = f.call("start", input.clone()).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        first["rules"],
+        serde_json::to_value(accepted.rules()).unwrap()
+    );
+    assert_eq!(
+        first["ttl_ms"],
+        u64::from(accepted.rules().rules.countdown_ms)
+            + u64::from(accepted.rules().rules.duration_ms)
+    );
+    f.clock.0.fetch_add(86400, Ordering::SeqCst);
+    f.sessions.row.lock().unwrap().as_mut().unwrap().expires_at += 86400;
+    *f.records.accepted.lock().unwrap() = None;
+    input["attempt_id"] = json!(Uuid::new_v4().to_string());
+    let (status, next) = f.call("start", input).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(next["metadata"]["date"], "2026-10-08");
+}
+
+#[tokio::test]
+async fn utc_midnight_during_snapshot_io_requires_a_fresh_start_without_creating_a_ticket() {
+    let f = Fixture::new(4);
+    let midnight = chrono::NaiveDate::from_ymd_opt(2026, 10, 8)
+        .unwrap()
+        .and_hms_opt(0, 0, 0)
+        .unwrap()
+        .and_utc()
+        .timestamp();
+    f.clock.0.store(midnight - 1, Ordering::SeqCst);
+    f.sessions.row.lock().unwrap().as_mut().unwrap().expires_at = midnight + 1000;
+    *f.records.after.lock().unwrap() = Some((f.clock.clone(), midnight));
+    let input = json!({"v":1,"account_id":f.account.to_string(),"session_revision":f.revision.to_string(),"attempt_id":Uuid::new_v4().to_string()});
+    assert_eq!(f.call("start", input.clone()).await.0, StatusCode::CONFLICT);
+    *f.records.after.lock().unwrap() = None;
+    *f.records.accepted.lock().unwrap() = None;
+    assert_eq!(f.call("start", input).await.0, StatusCode::OK);
+    assert_eq!(f.records.writes.load(Ordering::SeqCst), 0);
 }

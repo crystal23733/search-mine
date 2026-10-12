@@ -88,3 +88,6 @@ PC 대전 우측은 상대 진행 요약만 공개한다. sheet/dialog는 초점
 
 
 #122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 디자인11/12 명시 공식 시작을 위한 API만 연결한다. 시간 proof 없는 완료를 verified_time으로 표시하지 않으며 두 순위와8언어 UI/대기는 후속이다.
+
+
+#124 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0058](../adr/0058-public-daily-rankings.md) → public bounded 두 순위/accepted metadata·현재 nickname·secret 제외·실PG snapshot/index·[검증124](../verification/124-public-daily-rankings.md). 명시 공식 웹/대기/상위19 통합은 후속이다.

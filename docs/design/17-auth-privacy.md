@@ -134,3 +134,6 @@ TS31~36은 4개 어댑터의 최소 권한·추가 claim 제거·state/nonce/JWK
 
 
 #122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 동일 registry의 실제 invalidation barrier와 응답 직전 current session proof, 삭제 cascade와 본인 nullable export를 유지한다. 새 PII/비밀번호 없이 account/revision/ticket을 결합한다.
+
+
+#124 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0058](../adr/0058-public-daily-rankings.md) → public bounded 두 순위/accepted metadata·현재 nickname·secret 제외·실PG snapshot/index·[검증124](../verification/124-public-daily-rankings.md). 명시 공식 웹/대기/상위19 통합은 후속이다.

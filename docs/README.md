@@ -103,3 +103,6 @@
 
 
 - [ADR0057 인증 데일리 시간 HTTP](adr/0057-authenticated-daily-timing-http.md) · [검증122](verification/122-authenticated-daily-timing-http.md).
+
+
+#124: [공개 두 순위 설계](adr/0058-public-daily-rankings.md)·[실행 근거](verification/124-public-daily-rankings.md).

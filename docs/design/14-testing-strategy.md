@@ -102,3 +102,6 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 
 
 #122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 현재 UTC/closed DTO/15초·45초·TTL/원래 retry/NULL fallback·실제PG/native/HTTP/HTTPS·철회 proof·공유2초/rate/requests/reap/역순 clock을 Red→Green/fresh95/80로 검사한다.
+
+
+#124 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0058](../adr/0058-public-daily-rankings.md) → public bounded 두 순위/accepted metadata·현재 nickname·secret 제외·실PG snapshot/index·[검증124](../verification/124-public-daily-rankings.md). 명시 공식 웹/대기/상위19 통합은 후속이다.

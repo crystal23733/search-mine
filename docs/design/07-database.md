@@ -167,3 +167,8 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 
 
 #122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 실제 accepted Native evidence→동일 ticket registry sealed time→기존 immutable 첫 완료 PG 포트. 소실/만료/no-time은 plain 완료이며 원래 NULL/Some 불변.
+
+
+#124 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0058](../adr/0058-public-daily-rankings.md) → public bounded 두 순위/accepted metadata·현재 nickname·secret 제외·실PG snapshot/index·[검증124](../verification/124-public-daily-rankings.md). 명시 공식 웹/대기/상위19 통합은 후속이다.
+
+공개 순위는 같은 repeatable-read/read-only transaction에서 accepted definition과 현재 auth_accounts nickname을 JOIN한다. 시간은 `(verified_elapsed_ms,mistakes,completed_at,id)`, 완료는 `(mistakes,completed_at,id)` 순서이며 각 LIMIT51로 50개와 has_more만 투영한다. forward migration202610120002의 daily_id 선두 인덱스를 사용한다. record_expires_at의 정확90일 경계를 필터하고 기존 publication/receipt validator를 재사용한다. 삭제·닉네임 변경은 후속 조회에 반영된다. 물리 삭제·실장비 성능은 #25/26에서 검증한다.

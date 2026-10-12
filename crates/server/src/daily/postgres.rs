@@ -10,6 +10,8 @@ use std::time::Duration;
 use uuid::Uuid;
 
 const DEADLINE: Duration = Duration::from_secs(2);
+#[path = "postgres_rankings.rs"]
+mod rankings;
 const DEFINITION_SELECT: &str = "SELECT d.id AS definition_id,to_char(d.utc_date,'YYYY-MM-DD') AS utc_date,d.seed_version,d.rules_snapshot::text AS rules_snapshot,EXTRACT(EPOCH FROM d.published_at)::bigint AS published_at,EXTRACT(EPOCH FROM d.verification_expires_at)::bigint AS verification_expires_at,EXTRACT(EPOCH FROM (d.utc_date::timestamp AT TIME ZONE 'UTC'))::bigint AS starts_at FROM daily_definitions d";
 
 struct Publication {

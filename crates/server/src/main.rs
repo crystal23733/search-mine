@@ -175,9 +175,17 @@ async fn serve() -> ServerResult {
             privacy_config.requests,
         )
         .map_err(|_| "Privacy HTTP initialization failed")?;
+        let daily_repository = Arc::new(PgDailyRepository::new(auth_pool, auth_clock.clone()));
+        let daily_workers = BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier));
+        let rankings = daily_rankings_router(
+            daily_repository.clone(),
+            daily_workers.clone(),
+            auth_clock.clone(),
+            runtime.security.clone(),
+        );
         let daily = daily_router(
-            Arc::new(PgDailyRepository::new(auth_pool, auth_clock.clone())),
-            BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
+            daily_repository,
+            daily_workers,
             sessions.clone(),
             runtime.security.clone(),
             DailyAuthentication::new(daily_tickets, auth_clock),
@@ -194,6 +202,7 @@ async fn serve() -> ServerResult {
             .merge(results)
             .merge(privacy)
             .merge(daily)
+            .merge(rankings)
     } else {
         disabled_auth_router()
             .merge(disabled_lobby_router())

@@ -4,6 +4,8 @@ use liar_server::daily::*;
 use std::sync::atomic::{AtomicI64, Ordering};
 
 const START: i64 = 1_791_331_200;
+#[path = "daily_rankings.rs"]
+mod rankings;
 #[path = "daily_storage.rs"]
 mod storage;
 #[path = "daily_time_storage.rs"]

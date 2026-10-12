@@ -212,6 +212,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result_fixture_pool = pool.clone();
     let persisted_fixture_pool = pool.clone();
     let clock_probe = clock.clone();
+    let daily_repository = Arc::new(PgDailyRepository::new(pool.clone(), clock.clone()));
+    let daily_workers = BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier));
+    let rankings = daily_rankings_router(
+        daily_repository.clone(),
+        daily_workers.clone(),
+        clock.clone(),
+        security.clone(),
+    );
     let router = account_auth_router(service, Providers, security.clone(), clock.clone())
         .merge(
             lobby_router(lobby, sessions.clone(), security.clone(), 16)
@@ -231,7 +239,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map_err(|_| "fixture result HTTP")?,
         )
         .merge(privacy_router(Arc::new(PgGameExportReader::with_workers(pool.clone(),clock.clone(),export_workers.clone())),sessions.clone(),security.clone(),PrivacyAuthentication {authorities:privacy_authorities,clock:clock.clone(),workers:export_workers},4).map_err(|_| "fixture privacy HTTP")?)
-        .merge(daily_router(Arc::new(PgDailyRepository::new(pool,clock.clone())),BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),sessions.clone(),security,DailyAuthentication::new(daily_tickets,clock.clone()),4).map_err(|_| "fixture daily HTTP")?)
+        .merge(daily_router(daily_repository,daily_workers,sessions.clone(),security,DailyAuthentication::new(daily_tickets,clock.clone()),4).map_err(|_| "fixture daily HTTP")?)
+        .merge(rankings)
         .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)
         .merge(
             Router::new()

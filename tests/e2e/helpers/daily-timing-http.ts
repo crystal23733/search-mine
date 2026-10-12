@@ -5,6 +5,7 @@ import { solveDaily } from "./daily-http";
 import type {
   AuthBootstrap,
   DailyStartResponse,
+  DailyRankingsResponse,
   PersonalDataExport,
 } from "../../../packages/protocol/src/index";
 type Approve = (context: BrowserContext) => Promise<void>;
@@ -107,6 +108,48 @@ export function registerDailyTimingHttpTests(approve: Approve, login: Login) {
           metadata: replay.metadata,
         });
         expect(own.receipt).toEqual(saved.receipt);
+        const publicRankings = () =>
+          page.evaluate(
+            async (query) => {
+              const response = await fetch("/api/v1/daily/rankings", {
+                method: "POST",
+                credentials: "omit",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(query),
+              });
+              return {
+                status: response.status,
+                cache: response.headers.get("cache-control"),
+                body: await response.json(),
+              };
+            },
+            {
+              v: 1,
+              date: started.metadata.date,
+              seed_version: started.metadata.seed_version,
+            },
+          );
+        const ranked = await publicRankings();
+        expect(ranked.status).toBe(200);
+        expect(ranked.cache).toBe("no-store");
+        const rankings = ranked.body as DailyRankingsResponse;
+        expect(rankings.metadata).toEqual(started.metadata);
+        expect(rankings.time.entries).toContainEqual({
+          position: expect.any(Number),
+          nickname: bootstrap.account!.nickname,
+          mistakes: saved.receipt.mistakes,
+          elapsed_ms: saved.receipt.verified_elapsed_ms,
+        });
+        expect(rankings.completion.entries).toContainEqual({
+          position: expect.any(Number),
+          nickname: bootstrap.account!.nickname,
+          mistakes: saved.receipt.mistakes,
+        });
+        expect(JSON.stringify(rankings)).not.toContain(identity.account_id);
+        expect(JSON.stringify(rankings)).not.toContain(attempt);
+        expect(JSON.stringify(rankings)).not.toContain(
+          saved.receipt.completion_id,
+        );
         for (const locale of [
           "en",
           "ko",
@@ -168,6 +211,7 @@ export function registerDailyTimingHttpTests(approve: Approve, login: Login) {
           { input, csrf: bootstrap.csrf },
         );
         expect(stale).toBe(401);
+        expect((await publicRankings()).status).toBe(200);
       } finally {
         await context.close();
       }

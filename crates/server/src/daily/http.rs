@@ -43,7 +43,7 @@ struct Context {
     requests: Arc<Semaphore>,
     rate: Mutex<ResultRate>,
 }
-fn failure(error: Failure) -> Response {
+pub(super) fn failure(error: Failure) -> Response {
     let (status, code) = match error {
         Failure::Invalid => (StatusCode::BAD_REQUEST, "daily_invalid"),
         Failure::Unauthorized => (StatusCode::UNAUTHORIZED, "auth_required"),
@@ -54,7 +54,7 @@ fn failure(error: Failure) -> Response {
     };
     (status, Json(serde_json::json!({"code":code}))).into_response()
 }
-async fn no_store(mut response: Response) -> Response {
+pub(super) async fn no_store(mut response: Response) -> Response {
     for (key, value) in [
         (header::CACHE_CONTROL, "no-store"),
         (header::REFERRER_POLICY, "no-referrer"),
@@ -75,6 +75,7 @@ pub fn disabled_daily_router() -> Router {
         "/api/v1/daily/start",
         "/api/v1/daily/heartbeat",
         "/api/v1/daily/submit-timed",
+        "/api/v1/daily/rankings",
     ] {
         router = router.route(path, post(|| async { failure(Failure::Unavailable) }));
     }
@@ -169,7 +170,7 @@ fn authority(error: OnlineError) -> Failure {
         Failure::Unavailable
     }
 }
-fn rate(error: ResultError) -> Failure {
+pub(super) fn rate(error: ResultError) -> Failure {
     if error == ResultError::RateLimited {
         Failure::RateLimited
     } else {

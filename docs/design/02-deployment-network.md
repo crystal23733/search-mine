@@ -43,3 +43,5 @@ RPO≤24시간·RTO≤2시간은 운영 목표다. 전원·회선·장비가 없
 
 
 #122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). LIAR_DAILY_TICKETS 기본64/엄격1..20000, 같은 authority/단조 clock registry를 main/fixture HTTP와 실제 invalidator에 주입. 중복 authority invalidation 금지·매 요청 reap-before-bind.
+
+#124: [ADR0058](../adr/0058-public-daily-rankings.md)의 public rankings는 요청2/global20초당·전체HTTP2초·입력4KiB/응답64KiB를 적용한다. 인증 데일리와 공개 조회는 동일 BoundedReplayVerifier clone의 CPU2/2초를 공유한다. IP/브라우저별 추적 키를 만들지 않는다. forward migration202610120002를 serving/HTTPS 검증 전에 별도로 적용한다.

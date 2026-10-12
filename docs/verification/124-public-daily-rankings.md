@@ -24,4 +24,9 @@ PC1440/mobile390 HTTPS는 actualWASM·서버 시간 PG 저장·쿠키/CSRF 없�
 
 최종 scripts/check.ps1 실제 exit0: Rust 395개, 웹 221개/38파일/line88.85%, Chromium 102개/3.7m/재시도0. 실제 PostgreSQL17.4 회귀101개/14.60초, fresh 계측101개/15.03초. Daily 877/893 = 98.21%, Privacy 164/164 = 100.00%, 서버 전체 9090/9700 = 93.71%. 도메인95%/전체80% 기준 충족. 문서174개/시나리오36개/Mermaid34개 실패0.
 
-원격 PR/CI·정확head 병합·#124 CLOSED는 다음 확인 단계다. 명시 공식 웹/대기 제출·상위19 통합·외부42·운영25/26·사람27·미확정83은 미완료다.
+원격 PR/CI·정확head 병합·#124 CLOSED 결과는 아래 완료 기록에서 확인한다. 명시 공식 웹/대기 제출·상위19 통합·외부42·운영25/26·사람27·미확정83은 미완료다.
+
+
+## 원격 CI·병합·종료 확인
+
+PR125는2026-10-12T12:21:57Z develop21f6506754c03d9c877986c2f50e6ad310778e6c에 병합했고 #124 CLOSED12:21:59Z를 별도 확인했다. [Product CI38247543844](https://github.com/crystal23733/search-mine/actions/runs/38247543844) 실제 PostgreSQL18.6 101/33.23초·계측101/33.47초·Daily98.21%/서버93.71%, Rust395/웹221/브라우저102/4.9분·flaky0이다. 최신8checks/3runs 성공·정확f2e368a·clean tree 확인 후 squash merge했다. 다음126은 accepted 규칙 WASM/worker 초기화이며 공식 웹/대기·상위19는 미완료다.

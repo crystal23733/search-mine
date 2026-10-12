@@ -1,6 +1,6 @@
-import type { GameView, LocalInput, LocalStep, TutorialView, TutorialStep, DailyView, DailyStep, DailyReplay } from '@liar/protocol';
+import type { GameView, LocalInput, LocalStep, TutorialView, TutorialStep, DailyView, DailyStep, DailyReplay, RulesSnapshot } from '@liar/protocol';
 export type Difficulty = 'easy' | 'normal' | 'hard';
-export type CoreRequest = { kind: 'init'; seed: string; difficulty: Difficulty } | { kind: 'snapshot' } | { kind: 'advance'; time_ms: number } | { kind: 'step'; input: LocalInput; time_ms: number } | { kind: 'training-init' } | { kind: 'training-snapshot' } | { kind: 'training-advance'; time_ms: number } | { kind: 'training-step'; input: LocalInput; time_ms: number } | { kind: 'daily-init'; date: string; seed_version: number } | { kind: 'daily-snapshot' } | { kind: 'daily-replay' } | { kind: 'daily-advance'; time_ms: number } | { kind: 'daily-step'; input: LocalInput; time_ms: number };
+export type CoreRequest = { kind: 'init'; seed: string; difficulty: Difficulty } | { kind: 'snapshot' } | { kind: 'advance'; time_ms: number } | { kind: 'step'; input: LocalInput; time_ms: number } | { kind: 'training-init' } | { kind: 'training-snapshot' } | { kind: 'training-advance'; time_ms: number } | { kind: 'training-step'; input: LocalInput; time_ms: number } | { kind: 'daily-init'; date: string; seed_version: number; rules?: RulesSnapshot } | { kind: 'daily-snapshot' } | { kind: 'daily-replay' } | { kind: 'daily-advance'; time_ms: number } | { kind: 'daily-step'; input: LocalInput; time_ms: number };
 type PublicReply = GameView | LocalStep | TutorialView | TutorialStep | DailyView | DailyStep | DailyReplay;
 export type CoreReply = { id: number; ok: PublicReply } | { id: number; error: string };
 export type WorkerPort = Pick<Worker, 'postMessage' | 'addEventListener' | 'removeEventListener' | 'terminate'>;
@@ -19,7 +19,7 @@ export interface TrainingCore {
   dispose(): void;
 }
 export interface DailyCore {
-  init(date: string, seed_version: number): Promise<DailyView>;
+  init(date: string, seed_version: number, rules?: RulesSnapshot): Promise<DailyView>;
   snapshot(): Promise<DailyView>;
   advance(time_ms: number): Promise<DailyView>;
   step(input: LocalInput, time_ms: number): Promise<DailyStep>;
@@ -77,7 +77,7 @@ export class WorkerTrainingCore extends WorkerRpc implements TrainingCore {
   step(input: LocalInput, time_ms: number) { return this.request<TutorialStep>({ kind: 'training-step', input, time_ms }); }
 }
 export class WorkerDailyCore extends WorkerRpc implements DailyCore {
-  init(date: string, seed_version: number) { return this.request<DailyView>({ kind: 'daily-init', date, seed_version }); }
+  init(date: string, seed_version: number, rules?: RulesSnapshot) { return this.request<DailyView>({ kind: 'daily-init', date, seed_version, rules }); }
   snapshot() { return this.request<DailyView>({ kind: 'daily-snapshot' }); }
   advance(time_ms: number) { return this.request<DailyView>({ kind: 'daily-advance', time_ms }); }
   step(input: LocalInput, time_ms: number) { return this.request<DailyStep>({ kind: 'daily-step', input, time_ms }); }

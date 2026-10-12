@@ -2,6 +2,7 @@ use liar_core::{
     board::ObservedCell,
     daily::DailyPuzzle,
     game::{Action, Command, Seat},
+    rules::RulesSnapshot,
     solver::{NoGuessSolver, SolverBudget},
 };
 use liar_wasm::daily::DailySession;
@@ -80,7 +81,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cases.push(json!({"seed":seed,"difficulty":difficulty,"initial":initial,"events":events}));
     }
     // Generated full public snapshots are compact; review the explicit replay inputs above.
-    let source = serde_json::to_string(&json!({"v":1,"cases":cases,"daily":daily_case()?}))? + "\n";
+    let source = serde_json::to_string(
+        &json!({"v":1,"cases":cases,"daily":daily_case()?,"accepted_daily":accepted_daily_case()?}),
+    )? + "\n";
     let target =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/native-wasm.json");
     if env::args().any(|arg| arg == "--check") {
@@ -130,5 +133,64 @@ fn daily_case() -> Result<Value, Box<dyn std::error::Error>> {
     if restored.view() != session.view() || !restored.view().completed {
         return Err("Daily roundtrip mismatch".into());
     }
+    Ok(json!({"date":date,"seed_version":1,"initial":initial,"events":events,"replay":replay}))
+}
+
+// Expected accepted snapshots come from the core, independently of the browser adapter.
+fn accepted_daily_case() -> Result<Value, Box<dyn std::error::Error>> {
+    use liar_protocol::daily::{DailyReplay, DailyStep, DailyTimedInput, from_daily};
+    use liar_protocol::game::{decode_local, from_ack};
+    let date = "2026-10-07";
+    let mut rules = RulesSnapshot::bundled().rules;
+    rules.countdown_ms = 5000;
+    let snapshot = RulesSnapshot::from_rules(rules).map_err(|_| "Accepted fixture rules")?;
+    let mut puzzle = DailyPuzzle::with_rules(date, 1, snapshot)
+        .map_err(|_| "Accepted fixture initialization")?;
+    let initial = from_daily(&puzzle);
+    let mut events = Vec::new();
+    let mut inputs = Vec::new();
+    let mut serial = 0_u32;
+    while !puzzle.complete() {
+        let view = puzzle.projection();
+        let cell = NoGuessSolver::deduce(&view.own.cells, SolverBudget::default())
+            .map_err(|_| "Accepted fixture public solve")?
+            .safe
+            .into_iter()
+            .find(|&cell| view.own.cells.cell(cell) == Some(ObservedCell::Unknown))
+            .ok_or("Accepted fixture public progress")?;
+        serial += 1;
+        let time_ms = 5000 + serial * 50;
+        let input = json!({"v":1,"command_id":serial,"client_seq":serial,"action":{"type":"open","cell":cell.0}}).to_string();
+        puzzle
+            .advance(u64::from(time_ms))
+            .map_err(|_| "Accepted fixture clock")?;
+        let ack = puzzle.apply(Command {
+            id: serial.into(),
+            seq: serial.into(),
+            epoch: 1,
+            seat: Seat::One,
+            received_at: u64::from(time_ms),
+            action: Action::Open(cell),
+        });
+        let step = DailyStep {
+            ack: from_ack(ack, serial),
+            view: from_daily(&puzzle),
+        };
+        inputs.push(DailyTimedInput {
+            input: decode_local(&input).map_err(|_| "Accepted fixture input")?,
+            time_ms,
+        });
+        events.push(json!({"input":input,"time_ms":time_ms,"expected":step}));
+    }
+    let final_time_ms = inputs
+        .last()
+        .ok_or("Accepted fixture must include inputs")?
+        .time_ms;
+    let replay = DailyReplay {
+        v: 1,
+        metadata: puzzle.metadata().clone(),
+        inputs,
+        final_time_ms,
+    };
     Ok(json!({"date":date,"seed_version":1,"initial":initial,"events":events,"replay":replay}))
 }

@@ -15,8 +15,16 @@ async function handle(request: Request) {
       const uri = new URL('/core/liar_wasm.js', self.location.origin).href;
       const wasm = await import(/* @vite-ignore */ uri) as typeof import('./wasm-bindings');
       await wasm.default();
+      if (request.kind === 'daily-init') {
+        session = request.rules === undefined
+          ? new wasm.DailySession(request.date, request.seed_version)
+          : wasm.DailySession.withRules(request.date, request.seed_version, JSON.stringify(request.rules));
+      } else if (request.kind === 'training-init') {
+        session = new wasm.TrainingSession();
+      } else {
+        session = new wasm.LocalSession(request.seed, request.difficulty);
+      }
       mode = requestedMode;
-      session = request.kind === 'daily-init' ? new wasm.DailySession(request.date, request.seed_version) : request.kind === 'training-init' ? new wasm.TrainingSession() : new wasm.LocalSession(request.seed, request.difficulty);
     }
     if (!session) throw new Error('not_started');
     if (requestedMode !== mode) throw new Error('unavailable');

@@ -106,3 +106,6 @@
 
 
 #124: [공개 두 순위 설계](adr/0058-public-daily-rankings.md)·[실행 근거](verification/124-public-daily-rankings.md).
+
+
+#126: [accepted 규칙 WASM 초기화](adr/0059-accepted-daily-core-initialization.md)·[검증126](verification/126-accepted-daily-core-initialization.md).

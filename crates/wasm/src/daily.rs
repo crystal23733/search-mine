@@ -1,5 +1,6 @@
 //! Native/browser daily adapter with an explicit unverified replay export.
 use liar_core::daily::DailyPuzzle;
+use liar_core::rules::RulesSnapshot;
 use liar_protocol::{
     daily::{DailyReplay, DailyStep, DailyTimedInput, DailyView, from_daily},
     game::{PROTOCOL_VERSION, PublicError},
@@ -9,18 +10,32 @@ pub struct DailySession {
     inputs: Vec<DailyTimedInput>,
     time_ms: u32,
 }
+pub const MAX_DAILY_RULES_BYTES: usize = 16_384;
 impl DailySession {
     pub fn new(date: &str, version: u16) -> Result<Self, PublicError> {
-        let puzzle = DailyPuzzle::new(date, version).map_err(|error| match error {
-            liar_core::daily::DailyError::InvalidDate => PublicError::Malformed,
-            liar_core::daily::DailyError::UnsupportedVersion => PublicError::UnsupportedVersion,
-            _ => PublicError::Unavailable,
-        })?;
+        Self::with_rules(date, version, RulesSnapshot::bundled())
+    }
+    pub fn with_rules(date: &str, version: u16, rules: RulesSnapshot) -> Result<Self, PublicError> {
+        let puzzle =
+            DailyPuzzle::with_rules(date, version, rules).map_err(|error| match error {
+                liar_core::daily::DailyError::InvalidDate
+                | liar_core::daily::DailyError::InvalidRules => PublicError::Malformed,
+                liar_core::daily::DailyError::UnsupportedVersion => PublicError::UnsupportedVersion,
+                _ => PublicError::Unavailable,
+            })?;
         Ok(Self {
             puzzle,
             inputs: Vec::new(),
             time_ms: 0,
         })
+    }
+    pub fn from_rules_json(date: &str, version: u16, source: &str) -> Result<Self, PublicError> {
+        if source.len() > MAX_DAILY_RULES_BYTES {
+            return Err(PublicError::Malformed);
+        }
+        let rules: RulesSnapshot =
+            serde_json::from_str(source).map_err(|_| PublicError::Malformed)?;
+        Self::with_rules(date, version, rules)
     }
     pub fn view(&self) -> DailyView {
         from_daily(&self.puzzle)
@@ -69,8 +84,12 @@ impl DailySession {
         }
     }
     pub fn from_replay(source: &str) -> Result<Self, PublicError> {
+        Self::from_replay_with_rules(source, RulesSnapshot::bundled())
+    }
+    pub fn from_replay_with_rules(source: &str, rules: RulesSnapshot) -> Result<Self, PublicError> {
         let replay = liar_protocol::daily::decode_replay(source)?;
-        let mut session = Self::new(&replay.metadata.date, replay.metadata.seed_version)?;
+        let mut session =
+            Self::with_rules(&replay.metadata.date, replay.metadata.seed_version, rules)?;
         if session.puzzle.metadata() != &replay.metadata {
             return Err(PublicError::Malformed);
         }

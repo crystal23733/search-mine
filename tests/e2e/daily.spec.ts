@@ -6,23 +6,163 @@ import type {
   DailyReplay,
   DailyStep,
 } from "../../packages/protocol/src/index";
-const daily = JSON.parse(
+const nativeFixture = JSON.parse(
   readFileSync(
     new URL("../fixtures/native-wasm.json", import.meta.url),
     "utf8",
   ),
-).daily as {
+);
+type DailyFixture = {
   date: string;
   seed_version: number;
   initial: DailyView;
   events: Array<{ input: string; time_ms: number; expected: DailyStep }>;
   replay: DailyReplay;
 };
+const daily = nativeFixture.daily as DailyFixture;
+const acceptedDaily = nativeFixture.accepted_daily as DailyFixture;
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() =>
     localStorage.setItem("liar.tutorial.v1", '"skipped"'),
   );
   await page.clock.setFixedTime(new Date("2026-10-07T23:59:59Z"));
+});
+test("production daily worker uses the server accepted snapshot for the full completed replay", async ({
+  page,
+}) => {
+  await page.goto("/en/settings");
+  const actual = await page.evaluate(async (fixture) => {
+    const wasmUri = "/core/liar_wasm.js";
+    const wasm = await import(/* @vite-ignore */ wasmUri);
+    await wasm.default();
+    const native = wasm.DailySession.withRules(
+      fixture.date,
+      fixture.seed_version,
+      JSON.stringify(fixture.initial.rules),
+    );
+    let wasmResult;
+    try {
+      wasmResult = {
+        initial: JSON.parse(native.snapshot()),
+        steps: fixture.events.map((event) =>
+          JSON.parse(native.step(event.input, event.time_ms)),
+        ),
+        replay: JSON.parse(native.replay()),
+      };
+    } finally {
+      native.free();
+    }
+    const uri = "/src/services/core.ts";
+    const { createDailyCore } = await import(/* @vite-ignore */ uri);
+    const core = createDailyCore();
+    try {
+      const initial = await core.init(
+        fixture.date,
+        fixture.seed_version,
+        fixture.initial.rules,
+      );
+      const steps = [];
+      for (const event of fixture.events)
+        steps.push(await core.step(JSON.parse(event.input), event.time_ms));
+      return { initial, steps, replay: await core.replay(), wasm: wasmResult };
+    } finally {
+      core.dispose();
+    }
+  }, acceptedDaily);
+  expect(acceptedDaily.initial.rules.rules.countdown_ms).toBe(5000);
+  expect(acceptedDaily.initial.metadata.seed).not.toBe(
+    daily.initial.metadata.seed,
+  );
+  expect(actual.initial).toEqual(acceptedDaily.initial);
+  expect(actual.steps).toEqual(
+    acceptedDaily.events.map((event) => event.expected),
+  );
+  expect(actual.replay).toEqual(acceptedDaily.replay);
+  expect(actual.wasm).toEqual({
+    initial: acceptedDaily.initial,
+    steps: acceptedDaily.events.map((event) => event.expected),
+    replay: acceptedDaily.replay,
+  });
+});
+
+test("accepted daily rules fail closed in WASM and a rejected worker init can recover without fallback", async ({
+  page,
+}) => {
+  await page.goto("/en/settings");
+  const actual = await page.evaluate(async (fixture) => {
+    const wasmUri = "/core/liar_wasm.js";
+    const wasm = await import(/* @vite-ignore */ wasmUri);
+    await wasm.default();
+    const rules = fixture.initial.rules;
+    const source = JSON.stringify(rules);
+    const exact =
+      source + " ".repeat(16384 - new TextEncoder().encode(source).length);
+    const invalid = [
+      "{",
+      "null",
+      exact + " ",
+      "한".repeat(8192),
+      source.replace("{", '{"hash":"duplicate",'),
+      JSON.stringify({ ...rules, hash: "forged" }),
+      JSON.stringify({ ...rules, solver_version: 999 }),
+      JSON.stringify({ ...rules, rng_version: 999 }),
+      JSON.stringify({ ...rules, extra: true }),
+      JSON.stringify({ ...rules, rules: { ...rules.rules, extra: true } }),
+      JSON.stringify({ ...rules, rules: { ...rules.rules, countdown_ms: 0 } }),
+    ];
+    const errors = invalid.map((input) => {
+      try {
+        const value = wasm.DailySession.withRules(fixture.date, 1, input);
+        value.free();
+        return "accepted";
+      } catch (error) {
+        return (error as Error).message;
+      }
+    });
+    const exactSession = wasm.DailySession.withRules(fixture.date, 1, exact);
+    const exactView = JSON.parse(exactSession.snapshot());
+    exactSession.free();
+    const versions = [0, 1.5, 2, 65537, NaN, Infinity].map((version) => {
+      try {
+        const value = wasm.DailySession.withRules(
+          fixture.date,
+          version,
+          source,
+        );
+        value.free();
+        return "accepted";
+      } catch (error) {
+        return (error as Error).message;
+      }
+    });
+    const uri = "/src/services/core.ts";
+    const { createDailyCore } = await import(/* @vite-ignore */ uri);
+    const core = createDailyCore();
+    try {
+      let rejected = "",
+        notStarted = "";
+      try {
+        await core.init(fixture.date, 1, { ...rules, hash: "forged" });
+      } catch (error) {
+        rejected = (error as Error).message;
+      }
+      try {
+        await core.snapshot();
+      } catch (error) {
+        notStarted = (error as Error).message;
+      }
+      const recovered = await core.init(fixture.date, 1, rules);
+      return { errors, versions, exactView, rejected, notStarted, recovered };
+    } finally {
+      core.dispose();
+    }
+  }, acceptedDaily);
+  expect(actual.errors).toEqual(Array(11).fill("malformed"));
+  expect(actual.versions).toEqual(Array(6).fill("unsupported_version"));
+  expect(actual.exactView).toEqual(acceptedDaily.initial);
+  expect(actual.rejected).toBe("malformed");
+  expect(actual.notStarted).toBe("not_started");
+  expect(actual.recovered).toEqual(acceptedDaily.initial);
 });
 test("daily native/WASM completed replay and production worker share the same public solo contract", async ({
   page,

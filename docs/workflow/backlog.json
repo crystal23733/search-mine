@@ -868,6 +868,18 @@
         "daily-timing-http"
       ],
       "acceptance": "ADR0058·public closed Rust→TS·accepted/time/completion/현재nickname·max50/has_more·secret제외·PG readonly snapshot/forward index/90일·global20초당/requests2/HTTP2초/sharedCPU·TDD/PG/HTTPS/full/95/80/리뷰CI·정확head 병합CLOSED"
+    },
+    {
+      "key": "accepted-daily-core",
+      "issue": 126,
+      "milestone": "M3",
+      "title": "feat(wasm): 서버 확정 데일리 규칙으로 세션 초기화",
+      "requirements": "FR09/10, NFR01/02/05/07/08",
+      "scenarios": "TS17/18/21/31/35/36",
+      "deps": [
+        "daily-rankings"
+      ],
+      "acceptance": "ADR0059·Native/WASM/worker accepted snapshot·strict16KiB/no fallback·Rust golden/실제Red/완료 replay·기존연습·full/95/80/리뷰CI·정확head 병합CLOSED"
     }
   ]
 }

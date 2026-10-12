@@ -23,6 +23,8 @@ use std::{
 use tokio::sync::Notify;
 use uuid::Uuid;
 const NOW: i64 = 1_791_331_260;
+#[path = "unit/daily_rankings_http.rs"]
+mod rankings_tests;
 struct Clock(AtomicI64);
 impl liar_server::online::MatchClock for Clock {
     fn now_ms(&self) -> u64 {
@@ -186,6 +188,27 @@ struct Fixture {
     account: Uuid,
     revision: Uuid,
 }
+impl DailyRankingReader for Records {
+    fn read<'a>(
+        &'a self,
+        _: &'a str,
+        _: u16,
+    ) -> DailyFuture<'a, Result<Option<DailyRankingSnapshot>, DailyStoreError>> {
+        Box::pin(async move {
+            self.check().await?;
+            Ok(self
+                .accepted
+                .lock()
+                .unwrap()
+                .clone()
+                .map(|definition| DailyRankingSnapshot {
+                    definition,
+                    time: vec![],
+                    completion: vec![],
+                }))
+        })
+    }
+}
 fn replay() -> Value {
     let fixture: Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -220,9 +243,10 @@ impl Fixture {
         let records = Arc::new(Records::new());
         let authorities = AuthorityRegistry::new(64).unwrap();
         let security = Arc::new(BrowserSecurity::new("https://game.example", [5; 32]).unwrap());
+        let workers = BoundedReplayVerifier::new(verifier);
         let app = daily_router(
             records.clone(),
-            BoundedReplayVerifier::new(verifier),
+            workers.clone(),
             sessions.clone(),
             security.clone(),
             DailyAuthentication::new(
@@ -231,7 +255,13 @@ impl Fixture {
             ),
             requests,
         )
-        .unwrap();
+        .unwrap()
+        .merge(daily_rankings_router(
+            records.clone(),
+            workers,
+            clock.clone(),
+            security.clone(),
+        ));
         Self {
             app,
             records,
@@ -327,6 +357,28 @@ async fn response(app: Router, request: Request<Body>) -> (StatusCode, Value) {
         serde_json::from_slice(&to_bytes(result.into_body(), 65536).await.unwrap()).unwrap(),
     )
 }
+#[tokio::test]
+async fn public_rankings_do_not_require_a_session_or_create_an_account() {
+    let f = Fixture::new(4);
+    let request = Request::post("/api/v1/daily/rankings")
+        .header(header::ORIGIN, "https://game.example")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(
+            json!({"v":1,"date":"2026-10-07","seed_version":1}).to_string(),
+        ))
+        .unwrap();
+    let reply = f.app.oneshot(request).await.unwrap();
+    assert_eq!(reply.status(), StatusCode::OK);
+    let value: Value =
+        serde_json::from_slice(&to_bytes(reply.into_body(), 65536).await.unwrap()).unwrap();
+    assert_eq!(
+        value,
+        json!({"v":1,"metadata":null,"time":{"entries":[],"has_more":false},"completion":{"entries":[],"has_more":false}})
+    );
+    assert_eq!(f.sessions.reads.load(Ordering::SeqCst), 0);
+    assert_eq!(f.records.writes.load(Ordering::SeqCst), 0);
+}
+
 #[tokio::test]
 async fn authenticated_completion_retry_practice_and_own_preserve_original_receipt_and_trust() {
     let f = Fixture::new(4);
@@ -612,6 +664,7 @@ async fn disabled_daily_routes_are_explicit_unavailable_and_never_cached() {
         "start",
         "heartbeat",
         "submit-timed",
+        "rankings",
     ] {
         let response = liar_server::app(None)
             .oneshot(

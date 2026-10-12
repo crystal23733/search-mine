@@ -127,6 +127,43 @@ pub struct DailyHeartbeatResponse {
     pub ack: Option<DailyHeartbeatAck>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyTimeRankingEntry {
+    pub position: u16,
+    pub nickname: String,
+    pub mistakes: u16,
+    pub elapsed_ms: u32,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyCompletionRankingEntry {
+    pub position: u16,
+    pub nickname: String,
+    pub mistakes: u16,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyTimeRankingPage {
+    pub entries: Vec<DailyTimeRankingEntry>,
+    pub has_more: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyCompletionRankingPage {
+    pub entries: Vec<DailyCompletionRankingEntry>,
+    pub has_more: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct DailyRankingsInput {
+    pub v: u16,
+    pub date: String,
+    pub seed_version: u16,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyRankingsResponse {
+    pub v: u16,
+    pub metadata: Option<DailyMetadata>,
+    pub time: DailyTimeRankingPage,
+    pub completion: DailyCompletionRankingPage,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct DailyDefinition {
     pub v: u16,
     pub metadata: DailyMetadata,
@@ -228,6 +265,12 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         DailyStartResponse::decl(config),
         DailyHeartbeatAck::decl(config),
         DailyHeartbeatResponse::decl(config),
+        DailyTimeRankingEntry::decl(config),
+        DailyCompletionRankingEntry::decl(config),
+        DailyTimeRankingPage::decl(config),
+        DailyCompletionRankingPage::decl(config),
+        DailyRankingsInput::decl(config),
+        DailyRankingsResponse::decl(config),
         DailyDefinition::decl(config),
         DailyTrust::decl(config),
         DailyDisposition::decl(config),

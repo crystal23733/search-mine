@@ -106,3 +106,6 @@ service worker는 versioned shell/locale/core 정적 asset만 캐시하고 공�
 
 
 #122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 새 API는 명시 공식 시작과15초 heartbeat를 위한 계약이다. 아직 공개 UI 활성화 전이며 offline ticket null은 완료만 검증한다. 클라이언트 시간을 공식값으로 보내지 않는다.
+
+
+#124 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0058](../adr/0058-public-daily-rankings.md) → public bounded 두 순위/accepted metadata·현재 nickname·secret 제외·실PG snapshot/index·[검증124](../verification/124-public-daily-rankings.md). 명시 공식 웹/대기/상위19 통합은 후속이다.

@@ -39,9 +39,10 @@
 | POST /api/v1/daily/start | closed account/session revision/attempt·서버 현재 UTC·accepted snapshot/ticket/TTL·no-store; ADR0057 |
 | POST /api/v1/daily/heartbeat | closed account/session revision/ticket/sequence·nullable 원래 ACK·no-store; ADR0057 |
 | POST /api/v1/daily/submit-timed | closed account/session revision/attempt/필수 nullable ticket/replay·sealed time 또는 완료만·원래 receipt 불변; ADR0057 |
+| POST /api/v1/daily/rankings | closed `{v,date,seed_version}`·로그인 없는 same-origin 읽기·accepted metadata(nullable)·time/completion 각50개/has_more·현재 nickname·no-store; ADR0058 |
 | GET /health/live, /health/ready | live 프로세스, ready DB·큐·capacity 상태, 내부 상세는 공개 금지 |
 
-공개 순위 조회는 #19 후속 API에서 페이지·시간/완료 분리·최소 닉네임 계약을 확정한다. 무계정 공개 날짜별 연습은 WASM에서 파생하며 위 인증 API가 서버 계정을 대신 만들지 않는다.
+공개 순위 조회는 [ADR0058](../adr/0058-public-daily-rankings.md)의 시간/완료 분리·최소 닉네임 계약을 따른다. 서버 시간이 있는 기록만 시간 순위에 포함하며 client replay 시간은 정렬·응답하지 않는다. 첫 페이지 각50개와 has_more를 제공하고 임의 offset·전체 COUNT·50위 밖 개인 등수는 제공하지 않는다. 조회는 계정이나 publication을 만들지 않는다. 무계정 공개 날짜별 연습은 WASM에서 파생한다.
 
 변경 HTTP는 same-origin·CSRF 토큰 검사, 크기/레이트 제한을 적용한다. WS는 쿠키 인증과 Origin 검증, account별 한 active session epoch로 탈취·다중 탭을 제어한다.
 
@@ -204,3 +205,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 
 #122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 별도 closed start/heartbeat/submit-timed Rust DTO→TS, 필수 nullable ticket_id, 현재 UTC 서버 선택·nullable heartbeat ACK·기존 receipt trust.
+
+
+#124 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0058](../adr/0058-public-daily-rankings.md) → public bounded 두 순위/accepted metadata·현재 nickname·secret 제외·실PG snapshot/index·[검증124](../verification/124-public-daily-rankings.md). 명시 공식 웹/대기/상위19 통합은 후속이다.

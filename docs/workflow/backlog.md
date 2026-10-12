@@ -132,3 +132,6 @@
 
 
 #122 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0057](../adr/0057-authenticated-daily-timing-http.md) → 인증 start/heartbeat/submit-timed·same authority/reap/current proof/실PG → [검증122](../verification/122-authenticated-daily-timing-http.md). 순위/UI/상위19는 후속이다.
+
+
+#122/PR123 develop1414cda 병합·#122 CLOSED 확인. 다음 [#124 두 순위 조회](https://github.com/crystal23733/search-mine/issues/124)는 [ADR0058](../adr/0058-public-daily-rankings.md)에 따라 구현한다. 공식 웹/대기·상위19는 후속이다.

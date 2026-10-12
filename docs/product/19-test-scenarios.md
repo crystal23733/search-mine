@@ -331,3 +331,6 @@ TS17/18 확장(#118): 단조 fake Clock과 actual native golden 완료를 사용
 
 
 #122 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0057](../adr/0057-authenticated-daily-timing-http.md) → 인증 start/heartbeat/submit-timed·same authority/reap/current proof/실PG → [검증122](../verification/122-authenticated-daily-timing-http.md). 순위/UI/상위19는 후속이다.
+
+
+#124 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0058](../adr/0058-public-daily-rankings.md) → public bounded 두 순위/accepted metadata·현재 nickname·secret 제외·실PG snapshot/index·[검증124](../verification/124-public-daily-rankings.md). 명시 공식 웹/대기/상위19 통합은 후속이다.

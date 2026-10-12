@@ -25,3 +25,8 @@ pm-ai-shipping:code-review correctness/changes/baseline08eede7을 연결 범위�
 최종 scripts/check.ps1 실제Exit0: Rust387·web221/38files/Lines88.85%·browser102/3.8m/재시도0·fmt/Clippy/WASM/types/fixtures/tokens/format/lint/typecheck/build·문서172/추적36/Mermaid34실패0. actualPG96/13.89초 및 격리 instrumentation PG96/16.42초: Daily782/798 = 97.99%·Privacy164/164 = 100.00%·서버8820/9422 = 93.61%, domain95/전체80/entry point 기준 유지. 측정 후 Rust source/test 변경 없음.
 
 원격 PR/CI·exact-head 병합/122CLOSED는 다음 확인 단계다. 두 순위/명시8언어 공식 시작UI/owned pending·상위19·외부42·물리25·하드웨어26·사람27·미확정SW83은 미완료다.
+
+
+## 병합·종료 확인
+
+PR123은 2026-10-12T11:25:23Z에 develop1414cda22708b13af1207f98215069b89edc2381로 병합됐고 #122 CLOSED 11:25:24Z를 별도 확인했다. 최신8checks/3runs와 정확b9349dc·clean tree를 확인했다. CI PG18.6 회귀96/33.11초·계측96/34.02초, Daily97.99%/Privacy100%/서버93.61%, 웹221/38files/line88.85%, Chromium102/4.6분·재시도 관측0. 다음 두 순위124와 공식 웹/상위19는 미완료다.

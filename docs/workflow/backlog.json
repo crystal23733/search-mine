@@ -856,6 +856,18 @@
         "daily-time-persistence"
       ],
       "acceptance": "ADR0057·closed Rust→TS/start-heartbeat-submit-timed·현재UTC/accepted·동일authority/reap/currentproof/실제barrier·config/main/fixture·actualPG/native/HTTPS·Red/Green/full/fresh95/80/리뷰CI·병합CLOSED 뒤 순위/UI"
+    },
+    {
+      "key": "daily-rankings",
+      "issue": 124,
+      "milestone": "M3",
+      "title": "feat(server): 두 신뢰 수준의 데일리 순위 조회",
+      "requirements": "FR01/09/10/16, NFR01/02/05/07/08",
+      "scenarios": "TS17/18/20/21/31/35/36",
+      "deps": [
+        "daily-timing-http"
+      ],
+      "acceptance": "ADR0058·public closed Rust→TS·accepted/time/completion/현재nickname·max50/has_more·secret제외·PG readonly snapshot/forward index/90일·global20초당/requests2/HTTP2초/sharedCPU·TDD/PG/HTTPS/full/95/80/리뷰CI·정확head 병합CLOSED"
     }
   ]
 }

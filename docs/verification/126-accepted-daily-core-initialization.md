@@ -20,4 +20,9 @@ scripts/check.ps1 실제 exit0: Rust399개·웹221개/38파일/line88.85%·브�
 
 pm-ai-shipping:code-review correctness/changes/baseline21f6506를 순차 적용했다. 입력 크기/JSON/규칙 hash·버전, core 단일 원천, metadata 결합 복원, worker의 성공 후 mode 전환, 기존 fixture/두 인자 init·wire replay 상한을 검토했다. 검토 범위에서 추가로 근거가 뒷받침된 결함은 없다. 독립 보안 감사·실기기/인간/RTT 검증은 수행하지 않았다.
 
-원격CI·정확head 병합·#126 CLOSED는 다음 확인 단계다. 공식 start/heartbeat/순위 UI·session-bound pending·실제 HTTPS UI와 상위19 전체는 후속이다. snapshot 전달은 인증/시간/공식 제출 권위를 부여하지 않는다.
+아래 실제 원격CI·정확head 병합·CLOSED 기록으로 종료했다. 공식 start/heartbeat/순위 UI·session-bound pending·실제 HTTPS UI와 상위19 전체는 후속이다. snapshot 전달은 인증/시간/공식 제출 권위를 부여하지 않는다.
+
+
+## 실제 CI·병합 종료
+
+Product CI38251715502 성공: Rust399·PG18.6 101/40.23초·계측101/35.36초, Daily877/893=98.21%·서버9090/9700=93.71%·core95% gate·웹221·브라우저106첫통과/4.5분/flaky0. 최신8checks/3runs 성공과 정확03d355de643f7e91a8a6d68437b88c2d04b22f38·clean tree를 확인했다. [PR127](https://github.com/crystal23733/search-mine/pull/127) MERGED2026-10-12T13:05:06Z/developa5dbdecb4bc83d92c36b677230e003d9160be631, #126 CLOSED13:05:07Z 별도 확인. 후속128과 공식UI/상위19는 별도다.

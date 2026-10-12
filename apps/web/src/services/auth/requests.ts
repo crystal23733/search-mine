@@ -14,6 +14,7 @@ export interface RequestOwner {
 }
 export interface RequestContext {
   csrf: string;
+  sessionRevision: string;
   signal: AbortSignal;
 }
 export interface AuthenticatedRequests {
@@ -107,7 +108,11 @@ export function createAuthenticatedRequests(
       const run = async () => {
         const csrf = await proof();
         assertCurrent();
-        const value = await work({ csrf, signal: controller.signal });
+        const value = await work({
+          csrf,
+          sessionRevision: owner.sessionId,
+          signal: controller.signal,
+        });
         assertCurrent();
         await proof();
         assertCurrent();

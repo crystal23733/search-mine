@@ -5,6 +5,7 @@ import { Button } from "../ui/atoms/Button";
 import { Dialog } from "../ui/atoms/Dialog";
 import { LanguageSelect } from "../ui/molecules/LanguageSelect";
 import { AccountSettings } from "../ui/organisms/AccountSettings";
+import { PendingSubmission } from "../ui/organisms/PendingSubmission";
 import type { Preferences } from "../services/preferences";
 import { useSnapshot } from "../ui/useSnapshot";
 export function SettingsPage() {
@@ -44,8 +45,12 @@ export function SettingsPage() {
                 : "offline.notCached",
           )}
         </p>
-        <p>{t("offline.pending", { count: pending })}</p>
-        <p class="muted">{t("offline.pendingHint")}</p>
+        <PendingSubmission
+          count={pending}
+          refresh={async () => {
+            setPending((await services.dailyRecords.pending()).value.length);
+          }}
+        />
         <div class="match-controls">
           <Button
             disabled={

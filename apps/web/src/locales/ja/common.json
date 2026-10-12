@@ -154,7 +154,7 @@
   "offline.cached": "公開ローカルプレイのファイルをこの端末に保存しました。",
   "offline.notCached": "キャッシュは未準備です。接続して準備してください。",
   "offline.pending": "送信待ちのローカル記録：{{count}}件",
-  "offline.pendingHint": "ローカル結果の公式送信は準備中です。ログインしても自動送信されず、保留中の結果はこの端末に残ります。",
+  "offline.pendingHint": "ログインだけでは自動送信しません。現在のアカウントを確認して送信できます。個人記録は端末に残ります。",
   "offline.clearCache": "オフラインキャッシュを削除",
   "offline.enableCache": "オフラインキャッシュを準備",
   "offline.clearRecords": "ローカル記録を削除",
@@ -214,7 +214,7 @@
   "auth.error.reauth_required": "この操作にはログインの再確認が必要です。",
   "auth.error.auth_rate_limited": "リクエストが多すぎます。少し待って再試行してください。",
   "auth.exported": "データのダウンロードを準備しました。",
-  "auth.pendingHint": "ローカル結果の公式送信は準備中です。ログインしても自動送信されず、保留中の結果はこの端末に残ります。",
+  "auth.pendingHint": "ログインだけでは自動送信しません。現在のアカウントを確認して送信できます。個人記録は端末に残ります。",
   "auth.step": "ステップ {{step}} / 2",
   "auth.provider.google": "Google",
   "auth.provider.apple": "Apple",
@@ -275,5 +275,10 @@
   "result.openedSafe": "開いた安全マス: {{count}}",
   "result.statsUnavailable": "この対戦の統計は確認できません。",
   "result.latest": "最近の対戦結果",
-  "result.latestEmpty": "最近の保存された対戦結果はありません。"
+  "result.latestEmpty": "最近の保存された対戦結果はありません。",
+  "offline.submit": "保留中の結果を送信",
+  "offline.submitConfirm": "このアカウントに送信",
+  "offline.submitAccount": "未検証の結果を{{name}}に送信しますか？サーバーが完了を検証します。ローカルの時間は公式タイムではありません。",
+  "offline.submitDone": "{{sent}}件送信、保留から{{removed}}件削除。個人記録は保持されます。",
+  "offline.submitRetained": "一部の結果は保留中です。接続とアカウントを確認して再試行してください。"
 }

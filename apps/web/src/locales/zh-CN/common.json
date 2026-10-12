@@ -154,7 +154,7 @@
   "offline.cached": "公开的本地游戏文件已缓存在此设备上。",
   "offline.notCached": "离线缓存尚未就绪。请联网准备。",
   "offline.pending": "待提交本地记录：{{count}}",
-  "offline.pendingHint": "本地结果的正式提交功能正在准备中。登录不会自动提交，待提交结果会保留在此设备上。",
+  "offline.pendingHint": "登录不会自动提交。确认当前账号后可提交待处理结果，本地记录保留在设备上。",
   "offline.clearCache": "删除离线缓存",
   "offline.enableCache": "准备离线缓存",
   "offline.clearRecords": "删除本地记录",
@@ -214,7 +214,7 @@
   "auth.error.reauth_required": "执行此操作前需要再次确认登录。",
   "auth.error.auth_rate_limited": "请求过多，请稍后重试。",
   "auth.exported": "数据下载已准备好。",
-  "auth.pendingHint": "本地结果的正式提交功能正在准备中。登录不会自动提交，待提交结果会保留在此设备上。",
+  "auth.pendingHint": "登录不会自动提交。确认当前账号后可提交待处理结果，本地记录保留在设备上。",
   "auth.step": "第 {{step}} / 2 步",
   "auth.provider.google": "Google",
   "auth.provider.apple": "Apple",
@@ -275,5 +275,10 @@
   "result.openedSafe": "已打开的安全格：{{count}}",
   "result.statsUnavailable": "无法获取这场对局的统计数据。",
   "result.latest": "最近对局结果",
-  "result.latestEmpty": "暂无最近保存的对局结果。"
+  "result.latestEmpty": "暂无最近保存的对局结果。",
+  "offline.submit": "提交待处理结果",
+  "offline.submitConfirm": "提交至此账号",
+  "offline.submitAccount": "将未经验证的结果提交给{{name}}？服务器验证完成情况，本地回放时间不是官方用时。",
+  "offline.submitDone": "已提交{{sent}}项，移除{{removed}}项待处理结果。保留本地记录。",
+  "offline.submitRetained": "部分结果仍待处理。请检查网络和账号后重试。"
 }

@@ -151,7 +151,11 @@ function setup() {
   let candidate: RequestOwner | null = null;
   const auth: OnlineAuth = {
     execute: async (_owner, work, signal) =>
-      work({ csrf: "proof", signal: signal ?? new AbortController().signal }),
+      work({
+        sessionRevision: "b0000000-0000-4000-8000-000000000001",
+        csrf: "proof",
+        signal: signal ?? new AbortController().signal,
+      }),
     account: () => account,
     connected: () => account !== null,
     revision: () => revision,

@@ -880,6 +880,18 @@
         "daily-rankings"
       ],
       "acceptance": "ADR0059·Native/WASM/worker accepted snapshot·strict16KiB/no fallback·Rust golden/실제Red/완료 replay·기존연습·full/95/80/리뷰CI·정확head 병합CLOSED"
+    },
+    {
+      "key": "daily-client-pending",
+      "issue": 128,
+      "milestone": "M3",
+      "title": "feat(web): 데일리 API와 명시적 대기 제출 연결",
+      "requirements": "FR01/09/10/16, NFR01/02/05/07/08",
+      "scenarios": "TS17/18/20/21/29/31/35/36",
+      "deps": [
+        "accepted-daily-core"
+      ],
+      "acceptance": "ADR0060·typed strict daily client/전후 proof/메모리 revision·공개 무쿠키 순위·설정의 계정 명시 확인/terminal post-proof·실제WASM/HTTPS8언어/PC-mobile/PG·입출력 상한/abort/TDD/full/95-80/리뷰CI·정확head 병합CLOSED"
     }
   ]
 }

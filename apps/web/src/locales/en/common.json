@@ -154,7 +154,7 @@
   "offline.cached": "Public local play assets are cached on this device.",
   "offline.notCached": "The offline cache is not ready. Connect to prepare it.",
   "offline.pending": "Pending local results: {{count}}",
-  "offline.pendingHint": "Official submission of local results is still being prepared; signing in does not submit them automatically. Pending results stay on this device.",
+  "offline.pendingHint": "Sign-in does not submit results automatically. Confirm the current account to submit pending results. Local records stay on this device.",
   "offline.clearCache": "Delete offline cache",
   "offline.enableCache": "Prepare offline cache",
   "offline.clearRecords": "Delete local records",
@@ -214,7 +214,7 @@
   "auth.error.reauth_required": "Confirm your sign-in again before this action.",
   "auth.error.auth_rate_limited": "Too many requests. Wait a few minutes and try again.",
   "auth.exported": "Your data download is ready.",
-  "auth.pendingHint": "Official submission of local results is still being prepared; signing in does not submit them automatically. Pending results stay on this device.",
+  "auth.pendingHint": "Sign-in does not submit results automatically. Confirm the current account to submit pending results. Local records stay on this device.",
   "auth.step": "Step {{step}} of 2",
   "auth.provider.google": "Google",
   "auth.provider.apple": "Apple",
@@ -275,5 +275,10 @@
   "result.openedSafe": "Safe cells opened: {{count}}",
   "result.statsUnavailable": "Statistics for this match are unavailable.",
   "result.latest": "Latest match result",
-  "result.latestEmpty": "No recent saved result is available."
+  "result.latestEmpty": "No recent saved result is available.",
+  "offline.submit": "Submit pending results",
+  "offline.submitConfirm": "Submit to this account",
+  "offline.submitAccount": "Submit these unverified results to {{name}}? The server verifies completion; local replay time is not an official time.",
+  "offline.submitDone": "{{sent}} submitted, {{removed}} removed from pending. Local records are kept.",
+  "offline.submitRetained": "Some results remain pending. Check your connection and account, then try again."
 }

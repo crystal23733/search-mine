@@ -109,3 +109,6 @@
 
 
 #126: [accepted 규칙 WASM 초기화](adr/0059-accepted-daily-core-initialization.md)·[검증126](verification/126-accepted-daily-core-initialization.md).
+
+
+#128: [daily client·명시적 대기 제출](adr/0060-daily-client-and-explicit-pending.md)·[검증128](verification/128-daily-client-and-explicit-pending.md).

@@ -154,7 +154,7 @@
   "offline.cached": "공개 로컬 플레이 파일이 이 기기에 캐시되었습니다.",
   "offline.notCached": "오프라인 캐시가 아직 준비되지 않았습니다. 연결하여 준비하세요.",
   "offline.pending": "대기 중인 로컬 기록: {{count}}개",
-  "offline.pendingHint": "로컬 결과의 공식 제출 기능은 준비 중입니다. 로그인해도 자동 제출하지 않으며 대기 결과는 이 기기에 유지됩니다.",
+  "offline.pendingHint": "로그인만으로 자동 제출하지 않습니다. 현재 계정을 확인한 뒤 대기 결과를 제출할 수 있으며 개인 기록은 이 기기에 유지됩니다.",
   "offline.clearCache": "오프라인 캐시 삭제",
   "offline.enableCache": "오프라인 캐시 준비",
   "offline.clearRecords": "로컬 기록 삭제",
@@ -214,7 +214,7 @@
   "auth.error.reauth_required": "이 작업을 하려면 로그인을 다시 확인해야 해요.",
   "auth.error.auth_rate_limited": "요청이 많아요. 잠시 기다린 뒤 다시 시도하세요.",
   "auth.exported": "내 데이터 다운로드를 준비했어요.",
-  "auth.pendingHint": "로컬 결과의 공식 제출 기능은 준비 중입니다. 로그인해도 자동 제출하지 않으며 대기 결과는 이 기기에 유지됩니다.",
+  "auth.pendingHint": "로그인만으로 자동 제출하지 않습니다. 현재 계정을 확인한 뒤 대기 결과를 제출할 수 있으며 개인 기록은 이 기기에 유지됩니다.",
   "auth.step": "{{step}} / 2 단계",
   "auth.provider.google": "Google",
   "auth.provider.apple": "Apple",
@@ -275,5 +275,10 @@
   "result.openedSafe": "열린 안전칸: {{count}}",
   "result.statsUnavailable": "이 대전의 통계를 확인할 수 없습니다.",
   "result.latest": "최근 대전 결과",
-  "result.latestEmpty": "최근 저장된 대전 결과가 없습니다."
+  "result.latestEmpty": "최근 저장된 대전 결과가 없습니다.",
+  "offline.submit": "대기 결과 제출",
+  "offline.submitConfirm": "이 계정으로 제출",
+  "offline.submitAccount": "미검증 결과를 {{name}} 계정에 제출할까요? 서버가 완료를 검증하며 로컬 리플레이 시간은 공식 시간이 아닙니다.",
+  "offline.submitDone": "{{sent}}개 제출, 대기 {{removed}}개 제거. 개인 기록은 유지됩니다.",
+  "offline.submitRetained": "일부 결과가 대기 중입니다. 연결과 계정을 확인한 뒤 다시 시도하세요."
 }

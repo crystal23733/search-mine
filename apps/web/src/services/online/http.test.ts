@@ -9,7 +9,11 @@ const owner: RequestOwner = {
 };
 const auth: AuthenticatedRequests = {
   execute: async (_owner, work, signal) =>
-    work({ csrf: "fresh-proof", signal: signal! }),
+    work({
+      sessionRevision: "b0000000-0000-4000-8000-000000000001",
+      csrf: "fresh-proof",
+      signal: signal!,
+    }),
 };
 test("uses fixed same-origin POST with private fresh proof and allowlisted Rust command only", async () => {
   const fetcher = vi.fn(

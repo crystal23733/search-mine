@@ -32,7 +32,11 @@ const event = (seq = 1) => ({
 });
 const auth: AuthenticatedRequests = {
   execute: async (_o, work, signal) =>
-    work({ csrf: "never-in-url", signal: signal! }),
+    work({
+      sessionRevision: "b0000000-0000-4000-8000-000000000001",
+      csrf: "never-in-url",
+      signal: signal!,
+    }),
 };
 test("opens fixed wss URL, buffers until both authority checks finish, then drains snapshot once", async () => {
   const socket = new Socket(),
@@ -41,7 +45,11 @@ test("opens fixed wss URL, buffers until both authority checks finish, then drai
   const requests: AuthenticatedRequests = {
     execute: async (o, work, s) => {
       expect(o).toEqual(owner);
-      const result = await work({ csrf: "proof", signal: s! });
+      const result = await work({
+        sessionRevision: "b0000000-0000-4000-8000-000000000001",
+        csrf: "proof",
+        signal: s!,
+      });
       await new Promise<void>((r) => {
         post = r;
       });
@@ -107,7 +115,11 @@ test("bounds pre-acceptance buffering and closes when post-snapshot authority ve
   let post!: () => void;
   const requests: AuthenticatedRequests = {
     execute: async (_o, work, s) => {
-      const result = await work({ csrf: "proof", signal: s! });
+      const result = await work({
+        sessionRevision: "b0000000-0000-4000-8000-000000000001",
+        csrf: "proof",
+        signal: s!,
+      });
       await new Promise<void>((r) => {
         post = r;
       });
@@ -130,7 +142,11 @@ test("bounds pre-acceptance buffering and closes when post-snapshot authority ve
   const second = new Socket();
   const revoked: AuthenticatedRequests = {
     execute: async (_o, work, s) => {
-      await work({ csrf: "proof", signal: s! });
+      await work({
+        sessionRevision: "b0000000-0000-4000-8000-000000000001",
+        csrf: "proof",
+        signal: s!,
+      });
       throw Error("post proof failed");
     },
   };

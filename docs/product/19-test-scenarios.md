@@ -328,3 +328,6 @@ TS17/18 확장(#118): 단조 fake Clock과 actual native golden 완료를 사용
 
 
 #120 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0056](../adr/0056-daily-time-persistence-and-export.md) → rights-first nullable time/실PG sealed first completion·불변/본인export → [검증120](../verification/120-daily-time-persistence-and-export.md). 공개 시간HTTP·두 순위/UI·상위19는 후속이다.
+
+
+#122 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0057](../adr/0057-authenticated-daily-timing-http.md) → 인증 start/heartbeat/submit-timed·same authority/reap/current proof/실PG → [검증122](../verification/122-authenticated-daily-timing-http.md). 순위/UI/상위19는 후속이다.

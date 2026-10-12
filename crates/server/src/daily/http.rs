@@ -22,8 +22,18 @@ use tokio::sync::Semaphore;
 
 #[derive(Clone)]
 pub struct DailyAuthentication {
-    pub authorities: Arc<AuthorityRegistry>,
-    pub clock: Arc<dyn AuthClock>,
+    authorities: Arc<AuthorityRegistry>,
+    clock: Arc<dyn AuthClock>,
+    tickets: Arc<DailyTicketRegistry>,
+}
+impl DailyAuthentication {
+    pub fn new(tickets: Arc<DailyTicketRegistry>, clock: Arc<dyn AuthClock>) -> Self {
+        Self {
+            authorities: tickets.authorities(),
+            clock,
+            tickets,
+        }
+    }
 }
 struct Context {
     service: DailyService,
@@ -62,6 +72,9 @@ pub fn disabled_daily_router() -> Router {
         "/api/v1/daily/definition",
         "/api/v1/daily/submit",
         "/api/v1/daily/own",
+        "/api/v1/daily/start",
+        "/api/v1/daily/heartbeat",
+        "/api/v1/daily/submit-timed",
     ] {
         router = router.route(path, post(|| async { failure(Failure::Unavailable) }));
     }
@@ -82,6 +95,9 @@ pub fn daily_router(
         .route("/api/v1/daily/definition", post(definition))
         .route("/api/v1/daily/submit", post(submit))
         .route("/api/v1/daily/own", post(own))
+        .route("/api/v1/daily/start", post(start))
+        .route("/api/v1/daily/heartbeat", post(heartbeat))
+        .route("/api/v1/daily/submit-timed", post(timed_submit))
         .layer(DefaultBodyLimit::max(MAX_DAILY_REPLAY_BYTES + 4096))
         .layer(middleware::map_response(no_store))
         .with_state(Arc::new(Context {
@@ -89,6 +105,7 @@ pub fn daily_router(
                 repository,
                 verifier,
                 clock: authentication.clock.clone(),
+                tickets: authentication.tickets.clone(),
             },
             sessions,
             security,
@@ -121,6 +138,30 @@ async fn own(
 ) -> Response {
     respond(ctx, uri, headers, body, Operation::Own).await
 }
+async fn start(
+    State(ctx): State<Arc<Context>>,
+    uri: Uri,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    respond(ctx, uri, headers, body, Operation::Start).await
+}
+async fn heartbeat(
+    State(ctx): State<Arc<Context>>,
+    uri: Uri,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    respond(ctx, uri, headers, body, Operation::Heartbeat).await
+}
+async fn timed_submit(
+    State(ctx): State<Arc<Context>>,
+    uri: Uri,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    respond(ctx, uri, headers, body, Operation::TimedSubmit).await
+}
 fn authority(error: OnlineError) -> Failure {
     if error == OnlineError::Unauthorized {
         Failure::Unauthorized
@@ -150,10 +191,11 @@ async fn respond(
         if uri.query().is_some() || headers.get_all(header::CONTENT_TYPE).iter().count() != 1
             || headers.get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok()).and_then(|v| v.split(';').next()).map(str::trim) != Some("application/json") { return Err(Failure::Invalid); }
         let body = body.map_err(|_| Failure::Invalid)?;
-        let limit = if matches!(operation, Operation::Submit) { MAX_DAILY_REPLAY_BYTES + 4096 } else { 4096 };
+        let limit = if matches!(operation, Operation::Submit | Operation::TimedSubmit) { MAX_DAILY_REPLAY_BYTES + 4096 } else { 4096 };
         if body.len() > limit { return Err(Failure::Invalid); }
         let _permit = ctx.requests.clone().try_acquire_owned().map_err(|_| Failure::Unavailable)?;
         ctx.rate.lock().map_err(|_| Failure::Unavailable)?.session(token.hash(), watermark).map_err(rate)?;
+        ctx.authentication.tickets.reap()?;
         let generation = ctx.authentication.authorities.generation().map_err(authority)?;
         tokio::time::timeout(Duration::from_secs(2), async {
             let first = ctx.sessions.read(token.hash()).await.map_err(|_| Failure::Unavailable)?.ok_or(Failure::Unauthorized)?;
@@ -165,7 +207,7 @@ async fn respond(
             let lease = ctx.authentication.authorities.bind_shared(generation, expected.account, token.hash(), first.expires_at, watermark).map_err(authority)?;
             let mut revoked = lease.revoked();
             let work = async {
-                let reply = ctx.service.execute(DailySession { account: expected.account, hash: token.hash() }, &expected.input, &mut watermark).await?;
+                let reply = ctx.service.execute(DailySession { account: expected.account, hash: token.hash() }, &lease, expected.revision, &expected.input, &mut watermark).await?;
                 let now = observe(ctx.authentication.clock.as_ref(), &mut watermark)?;
                 let encoding = expected.clone();
                 let bytes = ctx.service.verifier.run(move || reply.encode(&encoding, now).map_err(|_| ReplayError::Unavailable)).await.map_err(Failure::from)?;

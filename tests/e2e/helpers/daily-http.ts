@@ -32,40 +32,7 @@ export function registerDailyHttpTests(approve: Approve, login: Login) {
           .get("/__fixture/clock")
           .then((r) => r.json())) as { utc: number };
         const date = new Date(utc.utc * 1000).toISOString().slice(0, 10);
-        const replay = await page.evaluate(async (date) => {
-          const uri = "/core/liar_wasm.js";
-          const wasm = await import(/* @vite-ignore */ uri);
-          await wasm.default();
-          const session = new wasm.DailySession(date, 1);
-          try {
-            let time = 3000;
-            let view = JSON.parse(session.advance(time)) as DailyView;
-            let sequence = 0;
-            for (
-              let cell = 0;
-              cell < view.own.cells.length && !view.completed;
-              cell++
-            ) {
-              if (view.own.cells[cell].state !== "closed") continue;
-              time += Math.max(50, view.own.stun_ms);
-              const input: LocalInput = {
-                v: 1,
-                command_id: ++sequence,
-                client_seq: sequence,
-                action: { type: "open", cell },
-              };
-              view = (
-                JSON.parse(
-                  session.step(JSON.stringify(input), time),
-                ) as DailyStep
-              ).view;
-            }
-            if (!view.completed) throw Error("WASM attempt did not complete");
-            return JSON.parse(session.replay()) as DailyReplay;
-          } finally {
-            session.free();
-          }
-        }, date);
+        const replay = await solveDaily(page, date);
         const result = await page.evaluate(
           async ({ bootstrap, date, replay }) => {
             const identity = {
@@ -203,4 +170,42 @@ export function registerDailyHttpTests(approve: Approve, login: Login) {
         await context.close();
       }
     });
+}
+
+export async function solveDaily(
+  page: Page,
+  date: string,
+): Promise<DailyReplay> {
+  return page.evaluate(async (date) => {
+    const uri = "/core/liar_wasm.js";
+    const wasm = await import(/* @vite-ignore */ uri);
+    await wasm.default();
+    const session = new wasm.DailySession(date, 1);
+    try {
+      let time = 3000;
+      let view = JSON.parse(session.advance(time)) as DailyView;
+      let sequence = 0;
+      for (
+        let cell = 0;
+        cell < view.own.cells.length && !view.completed;
+        cell++
+      ) {
+        if (view.own.cells[cell].state !== "closed") continue;
+        time += Math.max(50, view.own.stun_ms);
+        const input: LocalInput = {
+          v: 1,
+          command_id: ++sequence,
+          client_seq: sequence,
+          action: { type: "open", cell },
+        };
+        view = (
+          JSON.parse(session.step(JSON.stringify(input), time)) as DailyStep
+        ).view;
+      }
+      if (!view.completed) throw Error("WASM attempt did not complete");
+      return JSON.parse(session.replay()) as DailyReplay;
+    } finally {
+      session.free();
+    }
+  }, date);
 }

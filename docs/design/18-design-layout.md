@@ -85,3 +85,6 @@ PC 대전 우측은 상대 진행 요약만 공개한다. sheet/dialog는 초점
 
 
 #120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). 제공 디자인11/12의 공식/연습 경계에 따라 저장된 Some만 verified_time이며 기존 NULL 기록은 승격하지 않는다. 설정의 명시 내보내기는 nullable 서버 시간을 포함한다. 공식 시작/heartbeat/두 순위/8언어 데일리 UI는 후속이다.
+
+
+#122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 디자인11/12 명시 공식 시작을 위한 API만 연결한다. 시간 proof 없는 완료를 verified_time으로 표시하지 않으며 두 순위와8언어 UI/대기는 후속이다.

@@ -19,6 +19,16 @@ fn request(operation: Operation) -> Value {
             value["seed_version"] = json!(1);
         }
         Operation::Own => value["metadata"] = sample()["metadata"].clone(),
+        Operation::Start => value["attempt_id"] = json!(Uuid::new_v4().to_string()),
+        Operation::Heartbeat => {
+            value["ticket_id"] = json!(Uuid::new_v4().to_string());
+            value["sequence"] = json!(1);
+        }
+        Operation::TimedSubmit => {
+            value["attempt_id"] = json!(Uuid::new_v4().to_string());
+            value["ticket_id"] = Value::Null;
+            value["replay"] = sample();
+        }
         Operation::Submit => {
             value["attempt_id"] = json!(Uuid::new_v4().to_string());
             value["replay"] = sample();
@@ -31,7 +41,14 @@ fn parse(value: Value, operation: Operation) -> Result<Expected, ReplayError> {
 }
 #[test]
 fn closed_requests_have_canonical_identity_version_and_bounded_replay() {
-    for operation in [Operation::Definition, Operation::Submit, Operation::Own] {
+    for operation in [
+        Operation::Definition,
+        Operation::Submit,
+        Operation::Own,
+        Operation::Start,
+        Operation::Heartbeat,
+        Operation::TimedSubmit,
+    ] {
         let valid = request(operation);
         let parsed = parse(valid.clone(), operation).unwrap();
         assert_eq!(parsed.account.to_string(), valid["account_id"]);
@@ -194,7 +211,8 @@ fn configuration_is_bounded_and_strict() {
         load_daily_config(|_| None).unwrap(),
         DailyConfig {
             authorities: 64,
-            requests: 4
+            requests: 4,
+            tickets: 64
         }
     );
     assert_eq!(
@@ -209,7 +227,8 @@ fn configuration_is_bounded_and_strict() {
         .unwrap(),
         DailyConfig {
             authorities: 20000,
-            requests: 64
+            requests: 64,
+            tickets: 20000
         }
     );
     for bad in [

@@ -74,6 +74,58 @@ pub struct DailyOwnInput {
     pub session_revision: String,
     pub metadata: DailyMetadata,
 }
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct DailyStartInput {
+    pub v: u16,
+    pub account_id: String,
+    pub session_revision: String,
+    pub attempt_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct DailyHeartbeatInput {
+    pub v: u16,
+    pub account_id: String,
+    pub session_revision: String,
+    pub ticket_id: String,
+    pub sequence: u32,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+pub struct DailyTimedSubmitInput {
+    pub v: u16,
+    pub account_id: String,
+    pub session_revision: String,
+    pub attempt_id: String,
+    pub ticket_id: Option<String>,
+    pub replay: DailyReplay,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyStartResponse {
+    pub v: u16,
+    pub account_id: String,
+    pub attempt_id: String,
+    pub ticket_id: String,
+    pub metadata: DailyMetadata,
+    pub rules: RulesSnapshot,
+    #[ts(type = "number")]
+    pub ttl_ms: u64,
+    pub heartbeat_interval_ms: u32,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyHeartbeatAck {
+    pub sequence: u32,
+    #[ts(type = "number")]
+    pub elapsed_ms: u64,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct DailyHeartbeatResponse {
+    pub v: u16,
+    pub account_id: String,
+    pub ticket_id: String,
+    pub ack: Option<DailyHeartbeatAck>,
+}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct DailyDefinition {
     pub v: u16,
@@ -170,6 +222,12 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         DailyDefinitionInput::decl(config),
         DailySubmitInput::decl(config),
         DailyOwnInput::decl(config),
+        DailyStartInput::decl(config),
+        DailyHeartbeatInput::decl(config),
+        DailyTimedSubmitInput::decl(config),
+        DailyStartResponse::decl(config),
+        DailyHeartbeatAck::decl(config),
+        DailyHeartbeatResponse::decl(config),
         DailyDefinition::decl(config),
         DailyTrust::decl(config),
         DailyDisposition::decl(config),

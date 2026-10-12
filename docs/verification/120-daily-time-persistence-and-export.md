@@ -31,3 +31,8 @@ actual HTTPS의 WASM 완료→completion-only API→본인 nullable time·raw �
 ## 제한과 다음 절차
 
 공개start/heartbeat/timed-submit·두순위·8언어명시데일리UI/대기는후속이다. seed사전계산/인간풀이/전세계latency공정성을sealedelapsed가증명하지않고주입clock성공을실벽시계성적으로계산하지않는다. 상위19·외부42·물리25·하드웨어26·사람27·원인미확정SW83은OPEN이다. 최초118로컬resource오류를이작업으로해결했다고주장하지않는다. /review/ 일별파일은Git에서제외한다. 원격CI·exact-head병합/120CLOSED는다음절차다.
+
+
+## 원격 CI·병합 종료
+
+[PR121](https://github.com/crystal23733/search-mine/pull/121) sourceacf1fa9의 Product38152189136/Repository38152189162와 본문 갱신 최신 검사 모두 SUCCESS. 실제PG18.6 92/30.40초·instrumented92/29.88초·Daily695/70898.16%/Privacy100%/서버8685/928993.50%, web221/38files/Lines88.85%, browser100/6.4분(실패·재시도 관측0). 최신8rollup/6필수·3run·정확head/clean 확인 후 2026-10-11T15:51:27Z squash 병합 develop08eede7, #120 CLOSED15:51:28Z 별도 확인. 최초 로컬 browser DB forward migration 준비 누락은 실제 psql 확인·migrate 후 같은 source로 수정/최종 full100을 확인했다. 기존83 미확정 원인과 구분한다. 다음 #122는 공개 시간 HTTP이며 두 순위/UI/상위19는 미완료다.

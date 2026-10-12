@@ -7,7 +7,14 @@ use std::sync::{
     atomic::{AtomicI64, Ordering},
 };
 const NOW: i64 = 1_791_331_260;
+#[path = "daily_timing_http.rs"]
+mod timing_http;
 struct Clock(AtomicI64);
+impl liar_server::online::MatchClock for Clock {
+    fn now_ms(&self) -> u64 {
+        ((self.0.load(Ordering::SeqCst) - NOW).max(0) as u64) * 1000
+    }
+}
 impl AuthClock for Clock {
     fn now(&self) -> i64 {
         self.0.load(Ordering::SeqCst)
@@ -142,10 +149,13 @@ async fn stored_sealed_time_is_projected_by_real_own_retry_practice_and_owner_ex
         BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
         sessions.clone(),
         security.clone(),
-        DailyAuthentication {
-            authorities: AuthorityRegistry::new(64).unwrap(),
-            clock: clock.clone(),
-        },
+        DailyAuthentication::new(
+            Arc::new(
+                DailyTicketRegistry::new(64, AuthorityRegistry::new(64).unwrap(), clock.clone())
+                    .unwrap(),
+            ),
+            clock.clone(),
+        ),
         4,
     )
     .unwrap()
@@ -237,10 +247,10 @@ async fn production_http_native_verifier_pg_first_retry_practice_export_and_eras
         BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
         sessions.clone(),
         security.clone(),
-        DailyAuthentication {
-            authorities,
-            clock: clock.clone(),
-        },
+        DailyAuthentication::new(
+            Arc::new(DailyTicketRegistry::new(64, authorities, clock.clone()).unwrap()),
+            clock.clone(),
+        ),
         4,
     )
     .unwrap()
@@ -407,10 +417,11 @@ impl ReplayVerifier for GatedVerifier {
 #[ignore = "requires actual PostgreSQL; executed in database CI"]
 async fn actual_logout_or_erasure_while_native_worker_is_live_cannot_restore_a_completion() {
     let pool = auth_pool().await;
-    for erase in [false, true] {
+    for (erase, timed) in [(false, false), (true, false), (false, true), (true, true)] {
         let clock = Arc::new(Clock(AtomicI64::new(NOW)));
         let authorities = AuthorityRegistry::new(64).unwrap();
-        let store = PgAuthStore::new(pool.clone()).with_invalidations(authorities.clone());
+        let tickets = Arc::new(DailyTicketRegistry::new(64, authorities, clock.clone()).unwrap());
+        let store = PgAuthStore::new(pool.clone()).with_invalidations(tickets.clone());
         let client = participant(&store).await;
         let security = Arc::new(BrowserSecurity::new("https://game.example", [116; 32]).unwrap());
         let (entered, mut started) = tokio::sync::mpsc::unbounded_channel();
@@ -423,17 +434,26 @@ async fn actual_logout_or_erasure_while_native_worker_is_live_cannot_restore_a_c
             })),
             Arc::new(PgSessionReader::new(store.clone(), clock.clone())),
             security.clone(),
-            DailyAuthentication { authorities, clock },
+            DailyAuthentication::new(tickets, clock.clone()),
             4,
         )
         .unwrap();
-        let req = request(
-            &client,
-            &security,
-            "/api/v1/daily/submit",
-            body(&client, "submit"),
-            NOW,
-        );
+        let mut submission = body(&client, "submit");
+        let path = if timed {
+            let mut start = json!({"v":1,"account_id":client.account.to_string(),"session_revision":client.revision.to_string(),"attempt_id":submission["attempt_id"]});
+            let (status, grant) = response(
+                app.clone(),
+                request(&client, &security, "/api/v1/daily/start", start.take(), NOW),
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK);
+            clock.0.store(NOW + 12, Ordering::SeqCst);
+            submission["ticket_id"] = grant["ticket_id"].clone();
+            "/api/v1/daily/submit-timed"
+        } else {
+            "/api/v1/daily/submit"
+        };
+        let req = request(&client, &security, path, submission.clone(), clock.now());
         let task = tokio::spawn(response(app.clone(), req));
         tokio::time::timeout(Duration::from_secs(2), started.recv())
             .await
@@ -444,7 +464,7 @@ async fn actual_logout_or_erasure_while_native_worker_is_live_cannot_restore_a_c
                 .erase_authorized(SessionAuthority {
                     account: client.account,
                     hash: client.token.hash(),
-                    now: NOW,
+                    now: clock.now(),
                 })
                 .await
                 .unwrap();
@@ -457,13 +477,7 @@ async fn actual_logout_or_erasure_while_native_worker_is_live_cannot_restore_a_c
         assert_eq!(
             response(
                 app,
-                request(
-                    &client,
-                    &security,
-                    "/api/v1/daily/submit",
-                    body(&client, "submit"),
-                    NOW
-                )
+                request(&client, &security, path, submission, clock.now())
             )
             .await
             .0,

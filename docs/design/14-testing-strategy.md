@@ -99,3 +99,6 @@ CI는 contents read 기본, untrusted PR에 secret 금지, 최신 안정 의존�
 
 
 #120: [ADR0056](../adr/0056-daily-time-persistence-and-export.md). nullable export Red→Green 뒤 actual Native evidence+실제 ticket registry sealed proof→실PG first-time/NULL/재시도/Practice/동시성/불변UPDATE/손상/삭제/보존/본인HTTP·HTTPS를 검사한다. fresh Daily95/전체80과 full/최신CI를 실행하고 fake clock을 real elapsed로 보고하지 않는다.
+
+
+#122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). 현재 UTC/closed DTO/15초·45초·TTL/원래 retry/NULL fallback·실제PG/native/HTTP/HTTPS·철회 proof·공유2초/rate/requests/reap/역순 clock을 Red→Green/fresh95/80로 검사한다.

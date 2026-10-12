@@ -58,6 +58,9 @@ fn authority(error: OnlineError) -> TicketError {
     }
 }
 impl DailyTicketRegistry {
+    pub(super) fn authorities(&self) -> Arc<AuthorityRegistry> {
+        self.authorities.clone()
+    }
     /// Reclaim expired leases before capturing generation and binding a new request.
     pub fn reap(&self) -> Result<(), TicketError> {
         let mut retired = Vec::new();

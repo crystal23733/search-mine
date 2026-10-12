@@ -34,16 +34,32 @@ impl From<DailyStoreError> for Failure {
         }
     }
 }
+impl From<TicketError> for Failure {
+    fn from(error: TicketError) -> Self {
+        match error {
+            TicketError::Invalid => Self::Invalid,
+            TicketError::Conflict => Self::Conflict,
+            TicketError::Unauthorized => Self::Unauthorized,
+            TicketError::Capacity | TicketError::Unavailable => Self::Unavailable,
+        }
+    }
+}
 #[derive(Clone, Copy)]
 pub(super) enum Operation {
     Definition,
     Submit,
     Own,
+    Start,
+    Heartbeat,
+    TimedSubmit,
 }
 pub(super) enum Input {
     Definition(String, u16),
     Submit(Uuid, DailyReplay, String),
     Own(liar_core::daily::DailyMetadata),
+    Start(Uuid),
+    Heartbeat(Uuid, u32),
+    TimedSubmit(Uuid, Option<Uuid>, DailyReplay, String),
 }
 pub(super) struct Expected {
     pub account: Uuid,
@@ -67,7 +83,7 @@ fn closed<T: serde::de::DeserializeOwned + Serialize>(source: &[u8]) -> Result<T
     Ok(value)
 }
 pub(super) fn decode(source: Vec<u8>, operation: Operation) -> Result<Expected, ReplayError> {
-    let max = if matches!(operation, Operation::Submit) {
+    let max = if matches!(operation, Operation::Submit | Operation::TimedSubmit) {
         MAX_DAILY_REPLAY_BYTES + 4096
     } else {
         4096
@@ -114,6 +130,44 @@ pub(super) fn decode(source: Vec<u8>, operation: Operation) -> Result<Expected, 
                 value.account_id,
                 value.session_revision,
                 Input::Own(value.metadata),
+            )
+        }
+        Operation::Start => {
+            let value: DailyStartInput = closed(&source)?;
+            (
+                value.v,
+                value.account_id,
+                value.session_revision,
+                Input::Start(id(&value.attempt_id)?),
+            )
+        }
+        Operation::Heartbeat => {
+            let value: DailyHeartbeatInput = closed(&source)?;
+            if value.sequence == 0 {
+                return Err(ReplayError::Malformed);
+            }
+            (
+                value.v,
+                value.account_id,
+                value.session_revision,
+                Input::Heartbeat(id(&value.ticket_id)?, value.sequence),
+            )
+        }
+        Operation::TimedSubmit => {
+            let value: DailyTimedSubmitInput = closed(&source)?;
+            let replay =
+                serde_json::to_string(&value.replay).map_err(|_| ReplayError::Unavailable)?;
+            decode_replay(&replay).map_err(|_| ReplayError::Malformed)?;
+            (
+                value.v,
+                value.account_id,
+                value.session_revision,
+                Input::TimedSubmit(
+                    id(&value.attempt_id)?,
+                    value.ticket_id.as_deref().map(id).transpose()?,
+                    value.replay,
+                    replay,
+                ),
             )
         }
     };

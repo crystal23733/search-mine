@@ -24,6 +24,7 @@ export function DailyRankingsPage() {
       <div class="page-title">
         <h1>{t("ranking.title")}</h1>
         <NavLink path="/daily">{t("home.daily")}</NavLink>
+        <NavLink path="/daily/official">{t("official.title")}</NavLink>
       </div>
       <Card>
         {state.date && (

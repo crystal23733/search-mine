@@ -252,6 +252,9 @@ export function DailyPage() {
         <NavLink path="/daily/rankings" class="button">
           {t("ranking.title")}
         </NavLink>
+        <NavLink path="/daily/official" class="button">
+          {t("official.title")}
+        </NavLink>
       </Card>
     </>
   );

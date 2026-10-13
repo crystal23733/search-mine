@@ -345,3 +345,10 @@ TS17/18/20/21/29/31/35/36 확장(#128): [ADR0060](../adr/0060-daily-client-and-e
 
 
 #130 FR09/10/11·NFR01/02/05/06/08·TS17/18/19/20/21/26/36 → [ADR0061](../adr/0061-daily-rankings-ui.md) → 공개 두 순위 lazy 화면/무쿠키·UTC 새로고침·역순/취소/offline·미발행/빈/실패 구분·8언어 semantic table/긴 nickname → [검증130](../verification/130-daily-rankings-ui.md). 공식 시작/controller·본인 receipt/공유·상위19는 후속이다.
+
+
+#132 FR01/09/10/11/16·NFR01/02/05/06/07/08·TS17/18/19/20/21/22/26/29/31/35/36 → [ADR0062](../adr/0062-official-daily-flow.md) → 명시 공식 시작/accepted WASM·단일 heartbeat/owner 수명·unverified 후보 선보존/같은 attempt 재시도·본인 receipt/두 시간 신뢰·allowlist 공유/8언어 → [검증132](../verification/132-official-daily-flow.md). 실제 OAuth/운영/사람 검증과 상위19 전체 출구는 별도다.
+
+TS17/18/20/21/35 확장(#132): 현재 계정 확인 전 start=0, 중복 start=1, 응답 소실 재시도는 같은 attempt. 서버 accepted metadata/rules가 WASM 초기화 결과와 다르면 board/제출=0. heartbeat는 단일 순번·무중첩이며 완료는 진행 중 ACK를 기다린다. ACK null/실패 후 ticket=null, 화면 이탈/계정 revision/연결 변경은 즉시 abort·private view 제거, 늦은 이전 heartbeat/결과는 새 run을 변경하지 않는다. 종료 미완료는 저장/제출=0. 완료는 unverified first 후보를 먼저 저장하고 실패 시 보존·명시 재시도는 같은 attempt다. 다른 첫 local 후보는 삭제하지 않는다. Practice는 원래 서버 receipt를 표시한다. 본인 조회는 정상 없음/실패를 구분한다.
+
+TS19/22/26/36 확장(#132): 공식 완료 시간은 receipt의 nullable verified_elapsed_ms만 사용하고 로컬 시간을 개인 참고로 표시한다. text/PNG는 미검증·완료 검증·시간 검증을 일관되게 표시한다. allowlist 밖 nickname/account/attempt/ticket/completion ID·seed/hash/정답/입력은 공유하지 않고 공유 동작은 daily 요청을 발생시키지 않는다. PC1440/mobile390의 실제 HTTPS/PG/WASM 보드 입력→첫 완료/Practice→503 보존·명시 재시도→8언어 본인 조회와 수평 넘침·offline private 결과 제거를 확인한다.

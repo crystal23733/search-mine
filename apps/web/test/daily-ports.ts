@@ -8,6 +8,23 @@ export function dailyTestPorts() {
   const auth = guestAuthPorts();
   const records = createDailyRecords();
   return {
+    dailyChallenge: {
+      start: async () => {
+        throw Error("unavailable");
+      },
+      heartbeat: async () => {
+        throw Error("unavailable");
+      },
+      definition: async () => {
+        throw Error("unavailable");
+      },
+      own: async () => {
+        throw Error("unavailable");
+      },
+      submitTimed: async () => {
+        throw Error("unavailable");
+      },
+    },
     dailyRankings: async () => {
       throw Error("unavailable");
     },

@@ -74,6 +74,15 @@ const offline = createOffline(activity, {
 render(
   <App
     services={{
+      dailyChallenge: {
+        start: async (...args) => (await getDailyApi()).start(...args),
+        heartbeat: async (...args) => (await getDailyApi()).heartbeat(...args),
+        definition: async (...args) =>
+          (await getDailyApi()).definition(...args),
+        own: async (...args) => (await getDailyApi()).own(...args),
+        submitTimed: async (...args) =>
+          (await getDailyApi()).submitTimed(...args),
+      },
       dailyRankings: async (...args) => (await getDailyApi()).rankings(...args),
       auth: account.auth,
       online: {

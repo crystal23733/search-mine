@@ -2,7 +2,7 @@
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114 본인 게임기록 내보내기를 병합·종료했고 #116 인증 데일리 제출 API를 병합·종료했고 #118 시간 티켓/하트비트 기반을 병합·종료했고 #120 본인 export·서버 시간 영속화를 병합·종료했고 #122 인증 시간 시작·하트비트·제출 HTTP를 병합·종료했고 #124 공개 두 순위와 #126 accepted 규칙 초기화를 병합·종료했고 #128 typed daily client·설정의 명시적 대기 제출을 병합·종료했고 #130 로그인 없는 두 순위 화면을 연결했습니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114 본인 게임기록 내보내기를 병합·종료했고 #116 인증 데일리 제출 API를 병합·종료했고 #118 시간 티켓/하트비트 기반을 병합·종료했고 #120 본인 export·서버 시간 영속화를 병합·종료했고 #122 인증 시간 시작·하트비트·제출 HTTP를 병합·종료했고 #124 공개 두 순위와 #126 accepted 규칙 초기화를 병합·종료했고 #128 typed daily client·설정의 명시적 대기 제출을 병합·종료했고 #130 로그인 없는 두 순위 화면과 #132 공식 도전·본인 결과·검증 공유를 연결했습니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
@@ -48,11 +48,11 @@ pnpm dev
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·영속 장애 복구·고정 결과 조회를 제공하며 공식 데일리 API는 준비됐으며 명시적 웹 제출/시간 순위와 정책 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·영속 장애 복구·고정 결과 조회를 제공하며 공식 데일리 도전·하트비트·첫 완료 검증·본인 결과/신뢰별 공유와 로그인 없는 두 순위 화면을 제공합니다. 정책·운영 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
 
 ## 오프라인 확인
 
-`pnpm build` 뒤 `pnpm --filter @liar/web preview --port 4173`으로 production을 연다. 설정의 캐시 준비를 확인한 뒤 연결을 끊으면 저장된8언어·WASM·로컬 봇/데일리를 이용할 수 있다. 개발 서버5173에서는 SW를 켜지 않는다. 최초 미캐시 offline 방문은 지원하지 않으며 브라우저가 캐시를 지울 수 있다. 업데이트는 열린 모든 탭이 홈으로 돌아온 뒤 버튼으로 적용한다. 설정에서 공개 cache와 개인 기록/제출 대기를 각각 삭제할 수 있다. 제출 후보는 미검증이며 #128에서 설정의 현재 계정 확인 후 명시 전송을 연결한다. 로그인/연결 복구만으로 자동 제출하지 않고 서버 검증 뒤 pending만 제거하며 개인 기록은 유지한다. 공식 시작/순위 화면은 후속 #19다.
+`pnpm build` 뒤 `pnpm --filter @liar/web preview --port 4173`으로 production을 연다. 설정의 캐시 준비를 확인한 뒤 연결을 끊으면 저장된8언어·WASM·로컬 봇/데일리를 이용할 수 있다. 개발 서버5173에서는 SW를 켜지 않는다. 최초 미캐시 offline 방문은 지원하지 않으며 브라우저가 캐시를 지울 수 있다. 업데이트는 열린 모든 탭이 홈으로 돌아온 뒤 버튼으로 적용한다. 설정에서 공개 cache와 개인 기록/제출 대기를 각각 삭제할 수 있다. 제출 후보는 미검증이며 설정의 현재 계정 확인 후 명시 전송한다. 로그인/연결 복구만으로 자동 제출하지 않고 서버 검증 뒤 pending만 제거하며 개인 기록은 유지한다. 공식 도전은 데일리의 링크에서 계정을 명시 확인해 시작하며 완료 후보를 먼저 보존하고 자동 검증 제출한다. 실패하면 같은 시도를 명시 재전송하며 첫 서버 기록을 유지한다. 본인 완료·nullable 서버 시간과 로컬 시간을 구분한다. 공개 두 순위는 로그인 없이 조회한다.
 
 ## 검증
 
@@ -93,7 +93,7 @@ cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](test
 
 [#66 OAuth 초대 복귀](docs/verification/66-oauth-invitation-return.md)는 `/{locale}/login?return_path=friends&code=ABCD2345`의 canonical 초대를 서버5분 인증 거래에 보존한다. callback·nickname·tutorial 뒤 같은 code로 friends에 돌아가고, 소비된 취소/실패에서도 안전한 새 로그인 재시도를 제공한다. 실제 로비/온라인 화면은 #70/#72에서 연결했다.
 
-`/{locale}/login`, `/onboarding`, `/settings`에서 네 제공자·닉네임·연결/해제·내보내기·로그아웃·삭제를 제공한다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 #19이며 친구 초대의 실제 OAuth 왕복은 #66/#72에서 검증했다.
+`/{locale}/login`, `/onboarding`, `/settings`에서 네 제공자·닉네임·연결/해제·내보내기·로그아웃·삭제를 제공한다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 데일리의 공식 도전 또는 설정의 명시 대기 제출을 사용하며 친구 초대의 실제 OAuth 왕복은 #66/#72에서 검증했다.
 
 설정의 명시적 내보내기는 최근 재인증 뒤 최소 계정 정보와 본인 온라인·데일리 기록, 보관 중인 본인 daily replay를 `liar-account.json`으로 내려받는다. 닉네임이 없어도 가능하다. 서버는50개 페이지·2초 요청·raw7일/기록90일·매 요청 현재 세션을 적용한다. 브라우저는2048페이지/32MiB 안에서 수집하며 오류·취소·계정 전환 시 완성 파일을 만들지 않는다. 여러 페이지를 단일 DB snapshot으로 보장하지 않는다. [ADR0053](docs/adr/0053-personal-game-data-export.md)·[실행 근거](docs/verification/114-personal-game-data-export.md)를 확인한다.
 

@@ -140,3 +140,6 @@ TS31~36은 4개 어댑터의 최소 권한·추가 claim 제거·state/nonce/JWK
 
 
 #128 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/29/31/35/36 → [ADR0060](../adr/0060-daily-client-and-explicit-pending.md): strict generated daily client·메모리 revision/전후 proof·공개 무쿠키 순위·설정의 현재 계정 명시 제출/terminal post-proof·pending만 제거. 실제 검증은 [검증128](../verification/128-daily-client-and-explicit-pending.md). 공식 시작/controller·순위 화면/상위19는 후속이다.
+
+
+#132 FR01/09/10/11/16·NFR01/02/05/06/07/08·TS17/18/19/20/21/22/26/29/31/35/36 → [ADR0062](../adr/0062-official-daily-flow.md) → 명시 공식 시작/accepted WASM·단일 heartbeat/owner 수명·unverified 후보 선보존/같은 attempt 재시도·본인 receipt/두 시간 신뢰·allowlist 공유/8언어 → [검증132](../verification/132-official-daily-flow.md). 실제 OAuth/운영/사람 검증과 상위19 전체 출구는 별도다.

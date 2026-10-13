@@ -115,3 +115,5 @@
 
 
 [ADR0061 공개 데일리 두 순위 화면](adr/0061-daily-rankings-ui.md) · [#130 실행 근거](verification/130-daily-rankings-ui.md).
+
+- [ADR0062: 공식 데일리 흐름](adr/0062-official-daily-flow.md) · [검증132](verification/132-official-daily-flow.md)

@@ -1,4 +1,9 @@
-import type { DailyView } from "@liar/protocol";
+import type {
+  DailyCompletion,
+  DailyTrust,
+  DailyView,
+  RulesSnapshot,
+} from "@liar/protocol";
 import { COLORS } from "@liar/design-tokens";
 export interface DailyShare {
   date: string;
@@ -8,7 +13,7 @@ export interface DailyShare {
   safe_total: number;
   elapsed_ms: number;
   mistakes: number;
-  trust: "unverified";
+  trust: "unverified" | DailyTrust;
 }
 export interface SharePort {
   copy(text: string): Promise<void>;
@@ -26,6 +31,27 @@ export function dailyShare(view: DailyView): DailyShare {
     elapsed_ms: view.elapsed_ms,
     mistakes: view.own.stats.mistakes,
     trust: "unverified",
+  };
+}
+export function verifiedDailyShare(
+  receipt: DailyCompletion,
+  trust: DailyTrust,
+  rules: RulesSnapshot,
+): DailyShare {
+  if (trust === "verified_time" && receipt.verified_elapsed_ms === null)
+    throw Error("verified_time_missing");
+  return {
+    date: receipt.metadata.date,
+    version: receipt.metadata.seed_version,
+    completed: true,
+    opened_safe: receipt.opened_safe,
+    safe_total: rules.rules.width * rules.rules.height - rules.rules.mines,
+    elapsed_ms:
+      trust === "verified_time"
+        ? receipt.verified_elapsed_ms!
+        : receipt.replayed_elapsed_ms,
+    mistakes: receipt.mistakes,
+    trust,
   };
 }
 export function shareMosaic(card: DailyShare): string[] {
@@ -65,7 +91,16 @@ export async function renderSharePng(
     .forEach((line, index) =>
       context.fillText(line, 48, 110 + index * 32, 704),
     );
-  context.fillText("UNVERIFIED · LOCAL", 48, 290);
+  context.fillText(
+    card.trust === "verified_time"
+      ? "VERIFIED · SERVER TIME"
+      : card.trust === "verified_completion"
+        ? "VERIFIED COMPLETION · TIME UNVERIFIED"
+        : "UNVERIFIED · LOCAL",
+    48,
+    290,
+    704,
+  );
   const filled = shareMosaic(card).join("").split("🟨").length - 1;
   for (let index = 0; index < 32; index++) {
     context.fillStyle = color(index < filled ? COLORS.accent : COLORS.closed);

@@ -904,6 +904,18 @@
         "daily-client-pending"
       ],
       "acceptance": "ADR0061·public lazy 두 순위/무쿠키/UTC/미발행-빈-실패/offline·역순/취소·8언어 semantic table·실제WASM/HTTPS/PG/PC-mobile·TDD/full/95-80/리뷰CI·정확head 병합CLOSED"
+    },
+    {
+      "key": "official-daily-flow",
+      "issue": 132,
+      "milestone": "M3",
+      "title": "feat(web): 공식 데일리 도전·본인 결과·검증 공유",
+      "requirements": "FR01/09/10/11/16, NFR01/02/05/06/07/08",
+      "scenarios": "TS17/18/19/20/21/22/26/29/31/35/36",
+      "deps": [
+        "daily-rankings-ui"
+      ],
+      "acceptance": "ADR0062·명시 공식 시작/accepted WASM/단일 heartbeat·owner/취소 수명·후보 보존/같은 attempt 재시도·own/공유 신뢰/8언어·실제HTTPS/PG/WASM·TDD/full/95-80/리뷰CI·정확head 병합CLOSED"
     }
   ]
 }

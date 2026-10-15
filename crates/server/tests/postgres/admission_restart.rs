@@ -90,9 +90,15 @@ async fn pair(pool: &sqlx::PgPool, client: &Client, origin: &str) -> ([User; 2],
         )
         .await;
     }
+    let mut last_state = Value::Null;
     let id = tokio::time::timeout(Duration::from_secs(4), async {
         loop {
             let state = lobby(client, origin, &users[0], json!({"type":"status"})).await;
+            last_state = state.clone();
+            assert_ne!(
+                state["state"]["type"], "failed",
+                "Real main preparation failed: {state}"
+            );
             if state["state"]["type"] == "matched" {
                 break Uuid::parse_str(state["state"]["match_id"].as_str().unwrap()).unwrap();
             }
@@ -101,7 +107,9 @@ async fn pair(pool: &sqlx::PgPool, client: &Client, origin: &str) -> ([User; 2],
         }
     })
     .await
-    .expect("Real main must publish a durable human match");
+    .unwrap_or_else(|_| {
+        panic!("Real main must publish a durable human match; last state: {last_state}")
+    });
     (users, id)
 }
 async fn result(client: &Client, origin: &str, user: &User, id: Uuid) -> reqwest::Response {
@@ -176,6 +184,20 @@ async fn assert_unknown(
             .await
             .unwrap();
     assert_eq!(remaining, 0);
+    let event:(String,String,i64,i64)=sqlx::query_as("SELECT end_reason,opponent_type,occurred_at,received_at FROM product_events WHERE online_match_id=$1 AND account_id=$2")
+        .bind(id).bind(user.id).fetch_one(pool).await.unwrap();
+    assert_eq!(
+        (event.0.as_str(), event.1.as_str()),
+        ("server_failure", "human")
+    );
+    let recorded: i64 = sqlx::query_scalar(
+        "SELECT EXTRACT(EPOCH FROM recorded_at)::bigint FROM online_match_results WHERE id=$1",
+    )
+    .bind(id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    assert_eq!((event.2, event.3), (recorded, recorded));
 }
 
 #[tokio::test]
@@ -232,9 +254,25 @@ async fn real_main_os_kill_recovers_authenticated_ws_match_once_with_original_an
         StatusCode::NOT_FOUND
     );
     let original = stored(&pool, id).await;
+    let accepted: Vec<(Uuid, i64)> = sqlx::query_as(
+        "SELECT id,received_at FROM product_events WHERE online_match_id=$1 ORDER BY id",
+    )
+    .bind(id)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(accepted.len(), 2);
     kill(server);
     let (server, origin) = spawn(&pool).await;
     assert_unknown(&pool, &client, &origin, &users[0], id, &hash, at).await;
+    let repeated: Vec<(Uuid, i64)> = sqlx::query_as(
+        "SELECT id,received_at FROM product_events WHERE online_match_id=$1 ORDER BY id",
+    )
+    .bind(id)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(accepted, repeated);
     assert_eq!(
         stored(&pool, id).await,
         original,

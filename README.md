@@ -6,6 +6,8 @@
 
 ## 먼저 읽을 문서
 
+[#138 자동 필수 이벤트](docs/verification/138-atomic-essential-event-producers.md)는 온라인/데일리 원본 transaction과 함께 수집하는 출구다. 물리 보존·first-normal/NSM/D7·운영 조회는 후속20이다.
+
 [#134 이벤트 도메인 계약](docs/verification/134-event-domain-contracts.md)은 목적별 동의·재전송 동일성·보존 경계와 bounded NSM/D7 계산을 Rust로 정의한다. 필수 저장·권리는 #136에 연결하며 자동 수집·물리 보존·집계는 후속 #20이고 비필수 수집은 #21의 실제 동의 연결 전까지 켜지 않는다.
 
 [#136 필수 이벤트 저장·본인 권리](docs/verification/136-essential-event-store-and-rights.md)는 committed 서버 기록의 최소 PG 저장과 기존 명시 내보내기의 event 스트림을 제공한다. 자동 수집·물리 보존·운영 집계는 후속 #20이며 선택 이벤트 저장은 차단한다.

@@ -16,10 +16,10 @@ impl AuthClock for Clock {
         self.0.load(Ordering::SeqCst)
     }
 }
-fn definition() -> PublishedDaily {
+pub(super) fn definition() -> PublishedDaily {
     PublishedDaily::new("2026-10-07", 1, RulesSnapshot::bundled()).unwrap()
 }
-fn evidence() -> ReplayEvidence {
+pub(super) fn evidence() -> ReplayEvidence {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../tests/fixtures/native-wasm.json"
@@ -29,7 +29,7 @@ fn evidence() -> ReplayEvidence {
         .verify(&definition(), &fixture["daily"]["replay"].to_string())
         .unwrap()
 }
-async fn participant(pool: &sqlx::PgPool, now: i64) -> DailySession {
+pub(super) async fn participant(pool: &sqlx::PgPool, now: i64) -> DailySession {
     let auth = PgAuthStore::new(pool.clone());
     let token = SecretToken::generate().unwrap();
     let account = auth

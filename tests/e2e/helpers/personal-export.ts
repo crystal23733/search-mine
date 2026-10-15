@@ -63,9 +63,6 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
         expect(
           peer.lastView()!.own.cells.filter((c) => c.state === "safe"),
         ).toHaveLength(4);
-        const captured = await a.request.post(`/__fixture/events/${matchId}`);
-        expect(captured.status()).toBe(200);
-        expect(await captured.json()).toEqual({ count: 2 });
         let acceptedEventId: string | undefined;
         for (const locale of [
           "en",

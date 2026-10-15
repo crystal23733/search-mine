@@ -183,11 +183,21 @@ export function registerDailyTimingHttpTests(approve: Approve, login: Login) {
           const exported = JSON.parse(
             await readFile(path!, "utf8"),
           ) as PersonalDataExport;
-          expect(exported.games).toHaveLength(1);
+          expect(exported.games).toHaveLength(2);
           expect(exported.games[0]).toMatchObject({
             kind: "daily",
             completion_id: saved.receipt.completion_id,
             verified_elapsed_ms: saved.receipt.verified_elapsed_ms,
+          });
+          expect(exported.games[1]).toMatchObject({
+            kind: "event",
+            fact: {
+              type: "daily_verified",
+              completion_id: saved.receipt.completion_id,
+              date: replay.metadata.date,
+              mistakes: saved.receipt.mistakes,
+              trust: "verified_time",
+            },
           });
           expect(exported.replays[0].replay).toEqual(replay);
         }

@@ -20,6 +20,8 @@ mod admission_restart;
 mod daily;
 #[path = "postgres/daily_http.rs"]
 mod daily_http;
+#[path = "postgres/event_producers.rs"]
+mod event_producers;
 #[path = "postgres/events.rs"]
 mod events;
 #[path = "postgres/latest_results.rs"]
@@ -562,6 +564,10 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
     .await
     .unwrap();
     sqlx::query("GRANT SELECT,INSERT,UPDATE,DELETE ON auth_accounts,auth_identities,auth_credentials,auth_sessions,auth_transactions,auth_deletion_tombstones,auth_apple_revoke_queue,auth_apple_notification_receipts,online_match_results,online_match_players TO liar_auth_test_dml").execute(&pool).await.unwrap();
+    sqlx::query("GRANT SELECT,INSERT,DELETE ON product_events TO liar_auth_test_dml")
+        .execute(&pool)
+        .await
+        .unwrap();
     let url = env::var("DATABASE_URL").unwrap();
     let schema: String = sqlx::query_scalar("SELECT current_schema()")
         .fetch_one(&pool)
@@ -634,6 +640,13 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
             .unwrap(),
         SaveResult::Saved
     );
+    let events: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM product_events WHERE online_match_id=$1")
+            .bind(final_result.id)
+            .fetch_one(&dml)
+            .await
+            .unwrap();
+    assert_eq!(events, 1);
     sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
         .bind(result.account.id)
         .execute(&dml)
@@ -647,6 +660,13 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
     .await
     .unwrap();
     assert_eq!(humans, 0);
+    let events: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM product_events WHERE online_match_id=$1")
+            .bind(final_result.id)
+            .fetch_one(&dml)
+            .await
+            .unwrap();
+    assert_eq!(events, 0);
     dml.close().await;
     close_auth_pool(pool).await;
 }

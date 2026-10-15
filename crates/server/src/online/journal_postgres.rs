@@ -29,7 +29,7 @@ async fn final_exists(connection: &mut PgConnection, id: Uuid) -> Result<bool, O
 }
 async fn account_exists(connection: &mut PgConnection, account: Uuid) -> Result<bool, OnlineError> {
     Ok(
-        sqlx::query_scalar::<_, Uuid>("SELECT id FROM auth_accounts WHERE id=$1 FOR KEY SHARE")
+        sqlx::query_scalar::<_, Uuid>("SELECT id FROM auth_accounts WHERE id=$1 FOR UPDATE")
             .bind(account)
             .fetch_optional(connection)
             .await
@@ -47,8 +47,10 @@ pub(super) async fn register(
     if final_exists(&mut tx, active.id).await? {
         return Err(OnlineError::Malformed);
     }
-    for account in active.players.iter().flatten() {
-        if !account_exists(&mut tx, *account).await? {
+    let mut accounts: Vec<Uuid> = active.players.iter().flatten().copied().collect();
+    accounts.sort_unstable();
+    for account in accounts {
+        if !account_exists(&mut tx, account).await? {
             return Err(OnlineError::Unauthorized);
         }
     }
@@ -172,6 +174,9 @@ pub(super) async fn finish(
             .bind(player.mistakes as i16).bind(player.accusations as i16).bind(player.correct_accusations as i16)
             .execute(&mut *tx).await.map_err(db_error)?;
     }
+    crate::events::collect_online(&mut tx, result.id, now)
+        .await
+        .map_err(|_| OnlineError::Unavailable)?;
     delete_active(&mut tx, result.id).await?;
     tx.commit().await.map_err(db_error)?;
     Ok(SaveResult::Saved)
@@ -203,6 +208,12 @@ async fn recover_batch(connection: &mut PgConnection, now: i64) -> Result<usize,
     let mut tx = connection.begin().await.map_err(db_error)?;
     let active:Vec<(Uuid,String,i64)>=sqlx::query_as("SELECT id,rules_hash,EXTRACT(EPOCH FROM admitted_at)::bigint FROM online_active_matches ORDER BY admitted_at,id LIMIT 64 FOR UPDATE")
         .fetch_all(&mut *tx).await.map_err(db_error)?;
+    let ids: Vec<Uuid> = active.iter().map(|(id, _, _)| *id).collect();
+    let accounts: Vec<Uuid> = sqlx::query_scalar("SELECT DISTINCT account_id FROM online_active_players WHERE match_id=ANY($1) AND account_id IS NOT NULL ORDER BY account_id")
+        .bind(&ids).fetch_all(&mut *tx).await.map_err(db_error)?;
+    for account in accounts {
+        let _ = account_exists(&mut tx, account).await?;
+    }
     for (id, hash, at) in &active {
         if *at > now || final_exists(&mut tx, *id).await? {
             return Err(OnlineError::Malformed);
@@ -214,6 +225,9 @@ async fn recover_batch(connection: &mut PgConnection, now: i64) -> Result<usize,
             sqlx::query("INSERT INTO online_match_players(match_id,seat,account_id,is_bot,outcome,opened_safe,mistakes,accusations,correct_accusations) VALUES($1,$2,$3,$4,'abort',NULL,NULL,NULL,NULL)")
                 .bind(id).bind(seat).bind(account).bind(bot).execute(&mut *tx).await.map_err(db_error)?;
         }
+        crate::events::collect_online(&mut tx, *id, now)
+            .await
+            .map_err(|_| OnlineError::Unavailable)?;
         delete_active(&mut tx, *id).await?;
     }
     tx.commit().await.map_err(db_error)?;

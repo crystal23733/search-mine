@@ -362,3 +362,7 @@ TS29 확장(#134): 최대1024byte/closed client draft에서 민감·server/essen
 #136 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0064](../adr/0064-essential-event-store-and-rights.md) → committed PG source/동일account 잠금·불변 dedup/원래30일·default-deny optional·본인 typed event export/삭제 → [검증136](../verification/136-essential-event-store-and-rights.md). 자동 수집/물리retention/집계·상위20은 후속이다.
 
 TS29 확장(#136): 실제 committed 본인 인간 match/daily source로만 필수 event를 만든다. 같은ID/다른내용 경합·새ID의 같은source 재시도는 accepted ID/received_at을 보존한다. account삭제와 같은 잠금/transaction·삭제/만료뒤재전송 비복원·exact30일·rollback/timeout·불변/essential CHECK를 실제PG로 확인한다. 기존 인증 export의 event 스트림은 own51개 페이지·현재session/recent auth·전후 proof·취소·strict 최소 DTO/32MiB 안에서 실제HTTPS 다운로드에 포함된다. optional runtime 수집은0이다.
+
+#138 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/29/31/35/36 → [ADR0065](../adr/0065-atomic-essential-event-producers.md) → 원본 transaction 안의 자동 essential 수집·UUID순 계정 잠금·공동 rollback·재전송 비복원·unknown OS 복구/본인 HTTPS 다운로드 → [검증138](../verification/138-atomic-essential-event-producers.md). 물리 보존·first-normal/NSM/D7·상위20 통합 출구는 후속이다.
+
+TS29 확장(#138): direct/runtime·journal finish/unknown recovery·daily 첫 official은 source와 essential event를 함께 commit한다. 실제 PG event INSERT 실패는 source/active 삭제까지 rollback한다. 같은 source/attempt 재전송과 Practice는 최초 ID/received_at을 유지하고 raw 삭제/정확30일·원본90일 만료 후 복원하지 않는다. 반대 좌석 계정·batch는 UUID순 잠금이며 계정 삭제는 bot/인간 재생성 없이 반영된다. 실제 main OS kill/restart와 수동 capture 없는 HTTPS PC/mobile8언어 own 다운로드를 확인한다.

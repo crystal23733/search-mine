@@ -121,3 +121,5 @@
 [ADR0063 이벤트 도메인 계약](adr/0063-event-domain-contracts.md) · [검증134](verification/134-event-domain-contracts.md).
 
 [ADR0064 필수 이벤트 저장·본인 권리](adr/0064-essential-event-store-and-rights.md) · [검증136](verification/136-essential-event-store-and-rights.md).
+
+[ADR0065 원자적 필수 이벤트 수집](adr/0065-atomic-essential-event-producers.md) · [검증138](verification/138-atomic-essential-event-producers.md).

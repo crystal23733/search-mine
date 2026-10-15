@@ -18,6 +18,8 @@
 
 ## 관측과 남은 출구
 
+실제 main 준비 실패를 구분하도록 admission의 board_take/prepare/register 실패는 stable component·stage·code만 내부 stderr에 기록한다. source ID·계정·정답·seed·입력·SQL 오류 원문을 포함하지 않는다. 실제 OS 시험은 서버 stderr를 격리 파일에 보존하고 준비 실패 시 해당 진단을 보여준다. 공개 error/timeout/재시도·게임 규칙을 바꾸지 않는다.
+
 실제 PG로 자동1:1 저장·동시 반대좌석 account 순서·삭제 경합·source/event 공동 rollback·원본 dedup·정확30일/90일·daily first/Practice·유효 sealed time을 확인한다. 실제 main OS kill/restart의 unknown 저장에도 최소 event가 자동 생겨야 한다. HTTPS PC/mobile8언어 본인 다운로드는 test-only 수동 capture route 없이 자동 event를 관측한다. 기존 규칙·DTO·game/replay 보존·광고/언어 출구를 유지한다.
 
 물리 bounded raw30일·anonymous calendar13개월 보존, authoritative first-normal/D7 완결성·운영 조회·상위20 통합 감사는 다음 필수 출구다. raw30일의 첫 관측을 lifetime first로 간주하지 않는다. 실제 CMP/실OAuth42·운영25/26·사람27·미확정83은 별도다.

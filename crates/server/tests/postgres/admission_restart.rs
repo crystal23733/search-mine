@@ -95,20 +95,23 @@ async fn pair(pool: &sqlx::PgPool, client: &Client, origin: &str) -> ([User; 2],
         loop {
             let state = lobby(client, origin, &users[0], json!({"type":"status"})).await;
             last_state = state.clone();
-            assert_ne!(
-                state["state"]["type"], "failed",
-                "Real main preparation failed: {state}"
-            );
+            if state["state"]["type"] == "failed" {
+                break Err(());
+            }
             if state["state"]["type"] == "matched" {
-                break Uuid::parse_str(state["state"]["match_id"].as_str().unwrap()).unwrap();
+                break Ok(Uuid::parse_str(state["state"]["match_id"].as_str().unwrap()).unwrap());
             }
             // Observe preparation below the production 20 requests/second limit.
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
     })
     .await
-    .unwrap_or_else(|_| {
-        panic!("Real main must publish a durable human match; last state: {last_state}")
+    .unwrap_or(Err(()));
+    let id = id.unwrap_or_else(|_| {
+        panic!(
+            "Real main preparation failed; last state: {last_state}; diagnostics: {}",
+            std::fs::read_to_string(admission_log_path(pool)).unwrap_or_default()
+        )
     });
     (users, id)
 }
@@ -125,9 +128,15 @@ async fn result(client: &Client, origin: &str, user: &User, id: Uuid) -> reqwest
 }
 async fn spawn(pool: &sqlx::PgPool) -> (Server, String) {
     let (mut command, origin) = server_command(pool).await;
+    std::fs::create_dir_all(".tmp/admission-main").unwrap();
+    command.stderr(std::fs::File::create(admission_log_path(pool)).unwrap());
     let mut server = Server(command.spawn().unwrap());
     wait_ready(&mut server, &origin).await;
     (server, origin)
+}
+fn admission_log_path(pool: &sqlx::PgPool) -> std::path::PathBuf {
+    // Each isolated pool has a stable unique identity during this test.
+    std::path::PathBuf::from(format!(".tmp/admission-main/{:p}.log", pool))
 }
 fn kill(mut server: Server) {
     // std::process::Child::kill is SIGKILL on Unix and TerminateProcess on Windows.

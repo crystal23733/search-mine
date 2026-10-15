@@ -37,4 +37,6 @@ Auth99.48%·Match99.31%·Lobby98.37%·Result100%도 실제 통과했다. DB 없�
 
 ## 남은 범위
 
+최초 원격 run38739491807의 필수 checks는 성공했지만 HTTPS PC export가1회 flaky였다(112pass/1flaky·11.8분). 실패는 새 fixture capture/내보내기 호출 전 countdown 시작 시 expected playing/actual cancelled였다. trace에는 첫 좌석 grid1개만 확인하고 advance한 것이 남으며 기존 빠른 대전 검증은 두 좌석 snapshot을 기다렸다. 내보내기 시험도 두 grid/동일match snapshot·양쪽playing을 확인하도록 보완하고, peer 연결을 첫 좌석 snapshot 뒤로 제어해 순서를 검증한다. timeout을 늘리거나 재시도를 통과로 숨기지 않는다. 수정 후 PC1440/mobile390 각각3회, 실제HTTPS8언어 다운로드6pass/47.2초/재시도0을 확인했다. 공유 fixture 큐/Clock의 반복은 workers1로 격리했다. 최신 source CI 결과는 해당 PR·이슈와 일별 리뷰에 실제 응답으로 기록한다.
+
 읽기/재시도는 원래30일 만료를 적용하지만 물리 cleanup worker·자동 runtime producer·first-normal anchor/NSM/D7 집계 저장/운영 조회는 다음 필수 #20이다. analytics/advertising는 아직 저장할 수 없으며 현재 consent subject/revision의 동일 transaction 검증은 #21 실제 consent adapter를 연결할 때 필수다. 법적 검수·목표 성능·실OAuth42·운영25/26·사람27·미확정83의 완료를 주장하지 않는다.

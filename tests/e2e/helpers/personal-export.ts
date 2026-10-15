@@ -28,6 +28,11 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
         await login(two);
         const observed = stream(one),
           peer = stream(two);
+        // Exercise the peer connecting after the first seat's snapshot.
+        await two.routeWebSocket("**/api/v1/ws", async (client) => {
+          await expect.poll(() => Boolean(observed.snapshot())).toBe(true);
+          client.connectToServer();
+        });
         await one.goto("/en/queue");
         await one.getByRole("button", { name: "Find an opponent" }).click();
         await expect(
@@ -36,8 +41,14 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
         await two.goto("/en/queue");
         await two.getByRole("button", { name: "Find an opponent" }).click();
         await expect(one.getByRole("gridcell")).toHaveCount(9);
+        await expect(two.getByRole("gridcell")).toHaveCount(9);
+        await expect
+          .poll(() => Boolean(observed.snapshot() && peer.snapshot()))
+          .toBe(true);
+        expect(peer.snapshot()!.match_id).toBe(observed.snapshot()!.match_id);
         await advance(one, 3);
         await expect.poll(() => observed.lastView()?.phase).toBe("playing");
+        await expect.poll(() => peer.lastView()?.phase).toBe("playing");
         await one.locator('[data-cell="8"]').click();
         await expect
           .poll(() => observed.lastView()?.own.cells[8].state)

@@ -125,3 +125,7 @@ PR129 최초 CI의 모바일 제출 본문 관측 실패는 ADR0060의 전달 �
 
 
 #136 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0064](../adr/0064-essential-event-store-and-rights.md) → committed PG source/동일account 잠금·불변 dedup/원래30일·default-deny optional·본인 typed event export/삭제 → [검증136](../verification/136-essential-event-store-and-rights.md). 자동 수집/물리retention/집계·상위20은 후속이다.
+
+PR137 최초 CI의 personal-export 시작 취소는 새 capture 이전의 준비 순서 실패였다. fixture 시간 advance 전에 두 좌석의 실제 snapshot/동일 match를 확인하고 양쪽 playing을 검증한다. peer 연결을 first snapshot 뒤로 제어한 재현 조건을 유지하며 실제 저장/내보내기 단언·기존 timeout/재시도 정책을 완화하지 않는다.
+
+인증 fixture의 큐와 Clock을 공유하므로 auth 반복은 `pnpm exec playwright test tests/e2e/auth.spec.ts --project auth --grep complete.own.online.export --repeat-each 3 --retries 0 --workers 1`처럼 workers1로 실행한다. repeat 그룹을 병렬 실행하면 서로 다른 시험의 계정끼리 매칭될 수 있다. 일반 전체 검사는 auth 파일의 serial 설정을 유지한다.

@@ -147,3 +147,6 @@
 
 
 #132 FR01/09/10/11/16·NFR01/02/05/06/07/08·TS17/18/19/20/21/22/26/29/31/35/36 → [ADR0062](../adr/0062-official-daily-flow.md) → 명시 공식 시작/accepted WASM·단일 heartbeat/owner 수명·unverified 후보 선보존/같은 attempt 재시도·본인 receipt/두 시간 신뢰·allowlist 공유/8언어 → [검증132](../verification/132-official-daily-flow.md). 실제 OAuth/운영/사람 검증과 상위19 전체 출구는 별도다.
+
+
+#132/PR133 develop0d25f9f 병합·132 CLOSED(2026-10-13T14:59:58Z), 상위19 CLOSED15:02:05Z와 필수12개 하위 종료·실제통합 출구를 확인했다. 다음 #20 첫 하위 [#134](https://github.com/crystal23733/search-mine/issues/134)는 [ADR0063](../adr/0063-event-domain-contracts.md)의 이벤트 목적/보존/NSM·D7 도메인 계약이다. 실제 PG 수집·retention/본인 권리·운영 producer는 후속 필수 작업이며 #20은 OPEN이다.

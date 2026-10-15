@@ -40,3 +40,6 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 
 
 #103 [ADR0047](../adr/0047-durable-lobby-admission.md): 공개 runtime은 typed journal owner를 claim하고 startup unknown abort 완료 뒤 serving한다. owner failure는 기존 serve guard로 종료하며 단일 인스턴스 교체를 유지한다. 재시작은 원래 admitted retention 기준을 유지하고 seed/통계를 복구 추측하지 않는다. 물리 삭제/백업25와 하드웨어26·새로고침 결과 발견은 별도다.
+
+
+#134 FR16·NFR01/02/05/07/08·TS20/21/22/24/29/31/34/35/36 → [ADR0063](../adr/0063-event-domain-contracts.md) → closed client/server 권위·목적별 consent/identity·30일/달력13개월·bounded NSM/D7/완결성·domain95 누락 방지 → [검증134](../verification/134-event-domain-contracts.md). 실제 PG 수집/retention·권리/운영·상위20은 후속이다.

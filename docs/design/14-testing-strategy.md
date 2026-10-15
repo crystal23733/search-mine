@@ -119,3 +119,6 @@ PR129 최초 CI의 모바일 제출 본문 관측 실패는 ADR0060의 전달 �
 
 
 #132 FR01/09/10/11/16·NFR01/02/05/06/07/08·TS17/18/19/20/21/22/26/29/31/35/36 → [ADR0062](../adr/0062-official-daily-flow.md) → 명시 공식 시작/accepted WASM·단일 heartbeat/owner 수명·unverified 후보 선보존/같은 attempt 재시도·본인 receipt/두 시간 신뢰·allowlist 공유/8언어 → [검증132](../verification/132-official-daily-flow.md). 실제 OAuth/운영/사람 검증과 상위19 전체 출구는 별도다.
+
+
+#134 FR16·NFR01/02/05/07/08·TS20/21/22/24/29/31/34/35/36 → [ADR0063](../adr/0063-event-domain-contracts.md) → closed client/server 권위·목적별 consent/identity·30일/달력13개월·bounded NSM/D7/완결성·domain95 누락 방지 → [검증134](../verification/134-event-domain-contracts.md). 실제 PG 수집/retention·권리/운영·상위20은 후속이다.

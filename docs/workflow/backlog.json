@@ -916,6 +916,18 @@
         "daily-rankings-ui"
       ],
       "acceptance": "ADR0062·명시 공식 시작/accepted WASM/단일 heartbeat·owner/취소 수명·후보 보존/같은 attempt 재시도·own/공유 신뢰/8언어·실제HTTPS/PG/WASM·TDD/full/95-80/리뷰CI·정확head 병합CLOSED"
+    },
+    {
+      "key": "event-domain-contracts",
+      "issue": 134,
+      "milestone": "M3",
+      "title": "feat(events): 목적·보존·NSM/D7 도메인 계약",
+      "requirements": "FR16, NFR01/02/05/07/08",
+      "scenarios": "TS20/21/22/24/29/31/34/35/36",
+      "deps": [
+        "daily-server"
+      ],
+      "acceptance": "ADR0063·closed event/서버권위·목적별consent/identity·30일/calendar13개월·bounded NSM/D7 첫날짜/완결성·TDD/fresh domain95/전체80/full/실DB회귀/리뷰CI·정확head 병합CLOSED; 실제PG수집/retention/권리/운영은후속20"
     }
   ]
 }

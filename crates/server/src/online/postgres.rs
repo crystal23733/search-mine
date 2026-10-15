@@ -55,6 +55,20 @@ pub(super) async fn persist_result(
 ) -> Result<SaveResult, OnlineError> {
     let reason = reason(result.reason);
     let mut tx = connection.begin().await.map_err(db_error)?;
+    let mut accounts: Vec<Uuid> = result.players.iter().filter_map(|p| p.account).collect();
+    accounts.sort_unstable();
+    let mut live = Vec::with_capacity(accounts.len());
+    for account in accounts {
+        if sqlx::query_scalar::<_, Uuid>("SELECT id FROM auth_accounts WHERE id=$1 FOR UPDATE")
+            .bind(account)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(db_error)?
+            .is_some()
+        {
+            live.push(account);
+        }
+    }
     let inserted: Option<Uuid> = sqlx::query_scalar("INSERT INTO online_match_results(id,rules_hash,secret_seed,end_elapsed_ms,reason,recorded_at,seed_expires_at,retention_started_at) VALUES($1,$2,$3,$4,$5,to_timestamp($6::double precision),to_timestamp($6::double precision)+interval '7 days',to_timestamp($6::double precision)) ON CONFLICT(id) DO NOTHING RETURNING id")
                 .bind(result.id).bind(&result.rules_hash).bind(result.seed.as_slice())
                 .bind(result.ended_ms as i64).bind(reason).bind(now)
@@ -65,17 +79,11 @@ pub(super) async fn persist_result(
         return Ok(SaveResult::Duplicate);
     }
     for (seat, player) in result.players.iter().enumerate() {
-        if let Some(account) = player.account {
-            // Serialize with deletion without restoring a deleted participant.
-            let exists: Option<Uuid> =
-                sqlx::query_scalar("SELECT id FROM auth_accounts WHERE id=$1 FOR KEY SHARE")
-                    .bind(account)
-                    .fetch_optional(&mut *tx)
-                    .await
-                    .map_err(db_error)?;
-            if exists.is_none() {
-                continue;
-            }
+        if player
+            .account
+            .is_some_and(|account| !live.contains(&account))
+        {
+            continue;
         }
         sqlx::query("INSERT INTO online_match_players(match_id,seat,account_id,is_bot,outcome,opened_safe,mistakes,accusations,correct_accusations) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)")
                     .bind(result.id).bind(seat as i16).bind(player.account).bind(player.account.is_none())
@@ -83,6 +91,9 @@ pub(super) async fn persist_result(
                     .bind(player.accusations as i16).bind(player.correct_accusations as i16)
                     .execute(&mut *tx).await.map_err(db_error)?;
     }
+    crate::events::collect_online(&mut tx, result.id, now)
+        .await
+        .map_err(|_| OnlineError::Unavailable)?;
     tx.commit().await.map_err(db_error)?;
     Ok(SaveResult::Saved)
 }

@@ -103,6 +103,7 @@ async fn produce(
     sender: mpsc::Sender<CachedBoard>,
     mut stop: watch::Receiver<bool>,
 ) {
+    let mut reported = false;
     loop {
         if *stop.borrow() || sender.is_closed() {
             return;
@@ -144,6 +145,10 @@ async fn produce(
                 biased;
                 _ = stop.changed() => return,
                 result = sender.send(cached) => if result.is_err() { return; },
+            }
+            if !reported {
+                eprintln!("{{\"component\":\"board_pool\",\"code\":\"ready\"}}");
+                reported = true;
             }
         } else {
             tokio::select! {

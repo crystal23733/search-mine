@@ -202,6 +202,12 @@ async fn journal_final_requires_admission_and_atomically_preserves_survivors_and
     assert_eq!(owner.save(result.clone()).await, Ok(SaveResult::Saved));
     let times=sqlx::query_as::<_,(i64,i64,i64)>("SELECT EXTRACT(EPOCH FROM recorded_at)::bigint,EXTRACT(EPOCH FROM retention_started_at)::bigint,EXTRACT(EPOCH FROM seed_expires_at)::bigint FROM online_match_results WHERE id=$1").bind(result.id).fetch_one(&pool).await.unwrap();
     assert_eq!(times, (NOW + 30, NOW, NOW + 604800));
+    let fact:(Uuid,String,String,i64,i64)=sqlx::query_as("SELECT account_id,end_reason,opponent_type,occurred_at,received_at FROM product_events WHERE online_match_id=$1")
+        .bind(result.id).fetch_one(&pool).await.unwrap();
+    assert_eq!(
+        fact,
+        (a, "timeout".into(), "human".into(), NOW + 30, NOW + 30)
+    );
     assert_eq!(counts(&pool).await, (0, 0, 1));
     let seats: Vec<i16> =
         sqlx::query_scalar("SELECT seat FROM online_match_players WHERE match_id=$1 ORDER BY seat")

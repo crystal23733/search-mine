@@ -178,3 +178,7 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 
 
 #136 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0064](../adr/0064-essential-event-store-and-rights.md) → committed PG source/동일account 잠금·불변 dedup/원래30일·default-deny optional·본인 typed event export/삭제 → [검증136](../verification/136-essential-event-store-and-rights.md). 자동 수집/물리retention/집계·상위20은 후속이다.
+
+#138 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/29/31/35/36 → [ADR0065](../adr/0065-atomic-essential-event-producers.md) → 원본 transaction 안의 자동 essential 수집·UUID순 계정 잠금·공동 rollback·재전송 비복원·unknown OS 복구/본인 HTTPS 다운로드 → [검증138](../verification/138-atomic-essential-event-producers.md). 물리 보존·first-normal/NSM/D7·상위20 통합 출구는 후속이다.
+
+#138 serving DML 권한은 기존 source/account DML과 product_events의 SELECT/INSERT/DELETE를 포함한다. 이벤트 UPDATE·DDL·_sqlx_migrations 권한은 필요하지 않다. 실제 제한 역할로 결과+event commit와 account 삭제 cascade를 검증하며 migration은 별도 DDL 계정으로 수행한다.

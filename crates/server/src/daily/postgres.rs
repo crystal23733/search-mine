@@ -227,6 +227,9 @@ impl PgDailyRepository {
             let record_expiry = now.checked_add(7776000).ok_or(DailyStoreError::Invalid)?;
             sqlx::query("INSERT INTO daily_completions(id,account_id,daily_id,attempt_id,replay_digest,opened_safe,mistakes,replayed_elapsed_ms,completed_at,replay_json,replay_expires_at,record_expires_at,verified_elapsed_ms) VALUES($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9::double precision),$10::text::jsonb,to_timestamp($11::double precision),to_timestamp($12::double precision),$13)")
                 .bind(saved.id).bind(session.account).bind(daily).bind(attempt).bind(evidence.fingerprint().as_slice()).bind(i32::try_from(saved.opened_safe).map_err(|_| DailyStoreError::Invalid)?).bind(i32::from(saved.mistakes)).bind(i64::from(saved.replayed_elapsed_ms)).bind(now).bind(evidence.canonical_replay()).bind(replay_expiry).bind(record_expiry).bind(saved.verified_elapsed_ms.map(i64::from)).execute(&mut *tx).await.map_err(unavailable)?;
+            crate::events::collect_daily(&mut tx, session.account, saved.id, now)
+                .await
+                .map_err(|_| DailyStoreError::Unavailable)?;
             tx.commit().await.map_err(unavailable)?;
             Ok(DailySubmission::Official(saved))
         }))

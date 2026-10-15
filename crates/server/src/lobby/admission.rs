@@ -82,6 +82,7 @@ impl AdmissionWork {
         let board = match taken {
             Ok(board) => board,
             Err(error) => {
+                report_failure("board_take", error);
                 let _ = completed.send(Err(error));
                 return;
             }
@@ -102,10 +103,12 @@ impl AdmissionWork {
         let (prepared, permit) = match prepared {
             Ok((Ok(prepared), permit)) => (prepared, permit),
             Ok((Err(error), _)) => {
+                report_failure("prepare", error);
                 let _ = completed.send(Err(error));
                 return;
             }
             Err(_) => {
+                report_failure("prepare_join", OnlineError::Unavailable);
                 let _ = completed.send(Err(OnlineError::Unavailable));
                 return;
             }
@@ -121,6 +124,7 @@ impl AdmissionWork {
         };
         // Once registration starts, normal cancellation must observe its outcome.
         if let Err(error) = self.journal.register(active).await {
+            report_failure("register", error);
             let _ = completed.send(Err(error));
             return;
         }
@@ -145,6 +149,13 @@ impl AdmissionWork {
             ready.receipt.discard().await;
         }
     }
+}
+
+fn report_failure(stage: &'static str, error: OnlineError) {
+    eprintln!(
+        "{}",
+        serde_json::json!({"component":"admission", "stage":stage,"code":error})
+    );
 }
 
 #[cfg(test)]

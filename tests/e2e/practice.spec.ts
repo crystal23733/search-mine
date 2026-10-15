@@ -48,9 +48,9 @@ test("first visit runs actual WASM attack and accusation, preserves locale and c
     "1",
   );
   await expect(page.getByText("Correct accusations: 1 / 1")).toBeVisible();
-  expect(
-    await page.evaluate(() => localStorage.getItem("liar.tutorial.v1")),
-  ).toBe('"complete"');
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("liar.tutorial.v1")))
+    .toBe('"complete"');
   expect(requests.some((uri) => unrequestedServiceCall(uri, page.url()))).toBe(
     false,
   );

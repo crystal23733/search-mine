@@ -940,6 +940,18 @@
         "event-domain-contracts"
       ],
       "acceptance": "ADR0064·실PG committed source/계정 잠금·불변 ID/source dedup/원래30일·optional차단·본인 event export/삭제/HTTPS·TDD/full/95-80/리뷰CI·정확head 병합CLOSED; runtime/물리retention/집계후속20"
+    },
+    {
+      "key": "atomic-essential-event-producers",
+      "issue": 138,
+      "milestone": "M3",
+      "title": "feat(events): 서버 결과와 필수 이벤트 원자적 수집",
+      "requirements": "FR01/09/14/16, NFR01/02/05/07/08",
+      "scenarios": "TS15/16/17/18/20/21/29/31/35/36",
+      "deps": [
+        "essential-event-store"
+      ],
+      "acceptance": "ADR0065·source transaction 자동수집/공동rollback·UUID순계정잠금/삭제비복원·최초ID/수신시각/retry/Practice/30-90일·실PG/OSrestart/수동capture없는HTTPS·TDD/full/95-80/리뷰CI·정확head병합CLOSED; physicalretention/first/metrics후속20"
     }
   ]
 }

@@ -88,6 +88,7 @@ impl AdmissionWork {
             }
         };
         let permit = self.permit;
+        report_progress("prepare", false);
         let preparer = self.preparer;
         let cancellation = canceled.clone();
         let prepared = tokio::task::spawn_blocking(move || {
@@ -117,17 +118,20 @@ impl AdmissionWork {
             return;
         }
         let id = Uuid::new_v4();
+        report_progress("prepare", true);
         let active = ActiveMatch {
             id,
             rules_hash: prepared.engine.rules_hash().to_owned(),
             players: self.reservation.players,
         };
         // Once registration starts, normal cancellation must observe its outcome.
+        report_progress("register", false);
         if let Err(error) = self.journal.register(active).await {
             report_failure("register", error);
             let _ = completed.send(Err(error));
             return;
         }
+        report_progress("register", true);
         let receipt = Receipt {
             id,
             journal: self.journal,
@@ -151,6 +155,12 @@ impl AdmissionWork {
     }
 }
 
+fn report_progress(stage: &'static str, ready: bool) {
+    eprintln!(
+        "{}",
+        serde_json::json!({"component":"admission","stage":stage,"code":if ready{"ready"}else{"started"}})
+    );
+}
 fn report_failure(stage: &'static str, error: OnlineError) {
     eprintln!(
         "{}",

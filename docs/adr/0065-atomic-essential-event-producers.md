@@ -22,6 +22,8 @@
 
 후속 CI의 강제 register 잠금 시험은 첫 보드 준비가 최대2초인 경로에서 바로1초 SQL 경계를 기다려 실패했다. 실제 BoardPool worker는 처음 인증된 보드를 cache에 넣은 뒤 stable ready 진단을1회만 남긴다. OS 시험의 기존8초 준비 상한 안에서 HTTP ready와 실제 cache ready를 함께 관측한 뒤 첫 요청을 시작한다. 실제 OsSeedSource/인증 생성·2초 admission/1초 SQL 경계·4초 pair 상한은 유지하며 cold 준비를 완료한 것으로 추정하지 않는다. 최초 public unavailable의 어느 단계인지는 추가 증거 없이 확정하지 않는다.
 
+#140 로컬 전체검사 중 cache ready 뒤에도4초 pair가 preparing으로 남은 관측은 별도141로 보존한다. prepare/register의 started/ready도 stable component/stage/code만 기록해 실제 CPU 준비와 SQL 진입 경계를 구분한다. 이 진단은 게임 입력·예산·규칙·secret 노출을 바꾸지 않으며 성공 반복으로 원인 해결을 주장하지 않는다.
+
 실제 PG로 자동1:1 저장·동시 반대좌석 account 순서·삭제 경합·source/event 공동 rollback·원본 dedup·정확30일/90일·daily first/Practice·유효 sealed time을 확인한다. 실제 main OS kill/restart의 unknown 저장에도 최소 event가 자동 생겨야 한다. HTTPS PC/mobile8언어 본인 다운로드는 test-only 수동 capture route 없이 자동 event를 관측한다. 기존 규칙·DTO·game/replay 보존·광고/언어 출구를 유지한다.
 
 물리 bounded raw30일·anonymous calendar13개월 보존, authoritative first-normal/D7 완결성·운영 조회·상위20 통합 감사는 다음 필수 출구다. raw30일의 첫 관측을 lifetime first로 간주하지 않는다. 실제 CMP/실OAuth42·운영25/26·사람27·미확정83은 별도다.

@@ -6,6 +6,8 @@
 
 `LIAR_PUBLIC_ORIGIN`은 path/query/userinfo 없는 실제 HTTPS 도메인 origin이다. origin이나 인증 이름이 하나라도 설정되면 세 공통 키를 전부 요구하고 부분 설정을 거절한다. 모든 인증 이름이 없으면4개 비활성·계정 null/CSRF null로 로컬 연습/health를 유지한다. 인증 설정을 켤 때 DML `DATABASE_URL`도 필요하다. migration CLI는 별도 DDL 계정의 `MIGRATION_DATABASE_URL`을 쓰며 serving에서는 DDL 권한이 없다.
 
+#140의 필수 이벤트 정리는 인증 DB/owner 준비 뒤 별도 작업에서 수행한다. 실제 DML 역할에는 product_events SELECT/INSERT/DELETE와 row lock용 UPDATE(id)가 필요하다. 다른 column UPDATE·DDL·migration 권한을 추가하지 않으며 불변 trigger를 유지한다. 인증 비활성/프로세스 중단/DB 장애 동안의 물리 backlog는 재개 시 정리하고 논리30일 조회 차단은 별도로 적용한다.
+
 - `LIAR_AUTH_CSRF_KEY`: CSPRNG32byte를 padding 없는 base64url로 저장한다.
 - `LIAR_AUTH_DIGEST_KEYS`, `LIAR_AUTH_VAULT_KEYS`: 서로 다른32byte 키의 JSON keyring. 형식은 `{"current":1,"keys":[{"version":1,"key":"<base64url32bytes>"}]}`이고 최대4개다. 0키/미등록 current/중복 version/잘못된 길이를 거절한다. DB 밖에 보관하고 앱/백업 키를 분리한다.
 - digest current를 바꿀 때 모든 쓰기 프로세스의 current를 같게 유지한다. identity 쓰기를 잠시 멈추고 동기화한 뒤 재개하며 이전 키를 즉시 제거하지 않는다. [인증 설계](../design/17-auth-privacy.md).

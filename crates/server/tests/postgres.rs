@@ -20,6 +20,8 @@ mod admission_restart;
 mod daily;
 #[path = "postgres/daily_http.rs"]
 mod daily_http;
+#[path = "postgres/event_metrics.rs"]
+mod event_metrics;
 #[path = "postgres/event_producers.rs"]
 mod event_producers;
 #[path = "postgres/event_retention.rs"]

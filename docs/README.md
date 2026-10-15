@@ -125,3 +125,5 @@
 [ADR0065 원자적 필수 이벤트 수집](adr/0065-atomic-essential-event-producers.md) · [검증138](verification/138-atomic-essential-event-producers.md).
 
 [ADR0066 원시 이벤트 물리 보존](adr/0066-bounded-raw-event-retention.md) · [검증140](verification/140-bounded-raw-event-retention.md).
+
+- [ADR0067 · 권위 NSM/D7 snapshot](adr/0067-authoritative-metric-snapshots.md), [검증143](verification/143-authoritative-metric-snapshots.md).

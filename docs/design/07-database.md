@@ -186,3 +186,8 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 #140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.
 
 #140 cleanup은 기존 event SELECT/INSERT/DELETE에 UPDATE(id) row-lock 권한을 추가한다. 다른 event column UPDATE·DDL·migration 조회는 허용하지 않으며 불변 trigger가 실제 ID 변경도 차단한다. 인증 DB가 활성이고 owner 준비가 끝난 main의 별도 작업에서만 실행한다. received_at 기반 연장이나 expired source 재수집은 하지 않는다.
+
+
+#143 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0067](../adr/0067-authoritative-metric-snapshots.md) → collection/30일 경계·RR/2초/10000입력·권위 first-normal 근거·NSM/D7 불완전 거절 → [검증143](../verification/143-authoritative-metric-snapshots.md). 새 개인 first marker/평생flag 없이 기존 source90일을 사용하며 익명 저장/13개월/운영조회·상위20 감사는 후속이다.
+
+metric_collection은 singleton=true와 최초 started_at/단조 증가 coverage_since 두 UTC epoch만 저장한다. 개인 FK·날짜별 개인 marker·명단·source ID는 없고 수집 완결성의 전역 운영 metadata다. forward migration202610160001을 별도 적용하며 serving은 SELECT/INSERT만 쓴다. trigger는 시작 시각 변경·coverage 역행을 막는다. 미래25의 비계정 원본 삭제가 미만료 raw를 cascade하는 경우 같은 transaction의 coverage 전진을 연결해야 하며, 계정삭제는 해당 snapshot의 집계 대상에서 제외하는 기존 정책이다.

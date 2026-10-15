@@ -47,3 +47,6 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 #140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.
 
 #140 내부 event_retention 로그는 complete의 deleted/has_more/batches 또는 invalid_clock/unavailable code만 포함한다. 정상 주기60초·cycle최대8batch/2초·진전0 중단이고 backlog/장애/비활성·중단 시간에는 물리 지연이 생긴다. 조회 논리 만료는 즉시 적용되며 시작 시 첫 tick으로 정리를 재개한다. 실제 운영 backlog 처리량/최대 지연은26에서 측정한다. DDL 운영자는 실제 serving 역할에 product_events UPDATE(id)만 추가하며 secret/집IP/DB포트를 공개하지 않는다.
+
+
+#143 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0067](../adr/0067-authoritative-metric-snapshots.md) → collection/30일 경계·RR/2초/10000입력·권위 first-normal 근거·NSM/D7 불완전 거절 → [검증143](../verification/143-authoritative-metric-snapshots.md). 새 개인 first marker/평생flag 없이 기존 source90일을 사용하며 익명 저장/13개월/운영조회·상위20 감사는 후속이다.

@@ -176,6 +176,32 @@ fn export(stored: StoredEvent) -> Result<ExportRecord, EventStoreError> {
         fact,
     })
 }
+pub(super) async fn metric_events(
+    tx: &mut Transaction<'_, Postgres>,
+    start: i64,
+    end: i64,
+    now: i64,
+) -> Result<Vec<ProductEvent>, super::MetricReadError> {
+    let mut query = sqlx::QueryBuilder::new("SELECT ");
+    let rows=query.push(COLUMNS)
+        .push(" FROM product_events WHERE online_match_id IS NOT NULL AND account_id IN (SELECT id FROM auth_accounts) AND occurred_at>=")
+        .push_bind(start).push(" AND occurred_at<").push_bind(end)
+        .push(" ORDER BY occurred_at,id LIMIT ").push_bind((super::MAX_METRIC_INPUTS+1) as i64)
+        .build().fetch_all(&mut **tx).await.map_err(|_|super::MetricReadError::Unavailable)?;
+    if rows.len() > super::MAX_METRIC_INPUTS {
+        return Err(super::EventError::Capacity.into());
+    }
+    rows.iter()
+        .map(|row| {
+            let stored = hydrate(row).map_err(|_| super::MetricReadError::Unavailable)?;
+            super::raw_event_alive(stored.event.occurred_at(), now)?;
+            if stored.received_at > now {
+                return Err(super::EventError::Invalid.into());
+            }
+            Ok(stored.event)
+        })
+        .collect()
+}
 pub(crate) async fn export_events(
     tx: &mut Transaction<'_, Postgres>,
     account: Uuid,

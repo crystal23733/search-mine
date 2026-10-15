@@ -157,3 +157,5 @@
 #136/PR137 develop3a1e0be 병합·136 CLOSED 확인. 다음 [#138](https://github.com/crystal23733/search-mine/issues/138)은 [ADR0065](../adr/0065-atomic-essential-event-producers.md)의 원본 transaction 내 자동 essential producer다. 물리retention·first-normal/집계·운영조회와 상위20 통합 감사는 필수 후속이다.
 
 #138/PR139 develop3d53a20 병합·138 CLOSED 확인. 다음 [#140](https://github.com/crystal23733/search-mine/issues/140)은 [ADR0066](../adr/0066-bounded-raw-event-retention.md)의 원시30일 물리 보존이다. first-normal/anonymous metrics/calendar13개월/운영조회·상위20 감사는필수후속이며미확정main준비는141이다.
+
+#143 · M3 · authoritative-metric-snapshots · 선행 raw-event-retention(#140) → ADR0067/TS29/권위 first·NSM/D7 snapshot. 익명 보존과운영은다음순차하위다.

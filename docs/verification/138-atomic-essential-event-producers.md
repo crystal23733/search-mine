@@ -31,4 +31,6 @@
 
 TS13 관측 수정 후 실제 WASM PC/mobile 각각5회, 총10pass/50.0초·재시도0·workers2를 확인했다. 잘못 지정한 desktop 프로젝트의 준비 실패는 chromium으로 수정했으며 행동 Red로 계산하지 않았다. 제품 소스/timeout/retry는 변경하지 않았다. main 준비 간헐 원인미확정은 [후속141](https://github.com/crystal23733/search-mine/issues/141), 다음 원시 보존은 [140](https://github.com/crystal23733/search-mine/issues/140)으로 구분한다.
 
+f713 CI의 DB는118pass/1fail/45.29초였다. 강제 register 잠금 시험이 실제2초 board take를 거치는 준비 경로에서1초 SQL blocking을 곧바로 기대하고 있었다. 실제 BoardPool이 처음 인증 보드를 cache에 넣은 뒤1회 ready 진단을 남기며 OS 시험은 기존8초 준비 안에서 HTTP/cache ready를 함께 관측한다. 실제 native 생성/OsSeedSource·admission2초/SQL1초/pair4초를 유지한다. 수정 뒤 로컬 PG119개3회(22.19·18.57·18.92초), BoardPool11/0.74초·all-targets clippy·docs188/Mermaid34failure0 통과. 최초 public unavailable 단계의 원인은 추가 증거 없이 확정하지 않는다.
+
 최종 scripts/check.ps1 exit0: fmt/clippy·Rust416pass(119ignored DB는 별도 실제 실행)·WASM/types/fixtures/tokens/format/lint/typecheck/build, 웹44files/267pass·줄90.91%, 실제Chromium113pass/5.4m·재시도0, 문서188/제품21/설계18/시나리오36·Mermaid34/failure0·diff --check 통과. PC1440/mobile390 각각8언어의 자동 online event와 plain/sealed daily event가 실제 명시 다운로드에 포함됐고 secret/replay 권리를 유지했다.

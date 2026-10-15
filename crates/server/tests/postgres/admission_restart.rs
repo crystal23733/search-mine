@@ -1,4 +1,4 @@
-use super::result_owner::{Server, client, server_command, wait_failed, wait_ready};
+use super::result_owner::{Server, client, server_command, wait_failed};
 use super::*;
 use futures_util::StreamExt;
 use reqwest::Client;
@@ -131,7 +131,15 @@ async fn spawn(pool: &sqlx::PgPool) -> (Server, String) {
     std::fs::create_dir_all(".tmp/admission-main").unwrap();
     command.stderr(std::fs::File::create(admission_log_path(pool)).unwrap());
     let mut server = Server(command.spawn().unwrap());
-    wait_ready(&mut server, &origin).await;
+    tokio::time::timeout(Duration::from_secs(8),async {
+        loop {
+            assert!(server.0.try_wait().unwrap().is_none(),"Owner exited before preparation");
+            let ready=client().get(format!("{origin}/health/ready")).send().await.is_ok_and(|r|r.status()==StatusCode::OK);
+            let cached=std::fs::read_to_string(admission_log_path(pool)).unwrap_or_default().contains("{\"component\":\"board_pool\",\"code\":\"ready\"}");
+            if ready && cached {break;}
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    }).await.expect("Actual main and certified board cache must be ready within the existing preparation budget");
     (server, origin)
 }
 fn admission_log_path(pool: &sqlx::PgPool) -> std::path::PathBuf {

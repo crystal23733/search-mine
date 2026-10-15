@@ -133,3 +133,5 @@ PR137 최초 CI의 personal-export 시작 취소는 새 capture 이전의 준비
 #138 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/29/31/35/36 → [ADR0065](../adr/0065-atomic-essential-event-producers.md) → 원본 transaction 안의 자동 essential 수집·UUID순 계정 잠금·공동 rollback·재전송 비복원·unknown OS 복구/본인 HTTPS 다운로드 → [검증138](../verification/138-atomic-essential-event-producers.md). 물리 보존·first-normal/NSM/D7·상위20 통합 출구는 후속이다.
 
 #138 CI의 TS13 관측 보강: TutorialPage는 완료 view의 렌더 뒤 effect에서 LearningPort에 기록한다. 완료 화면 확인 직후 localStorage를 한 번만 읽으면 아직 effect 전일 수 있다. 실제 WASM E2E는 기존 expect 상한 안에서 완료 기록을 관측한 뒤 Continue/reload를 검증한다. 저장 결과의 기대값·production 동작·timeout·재시도는 유지한다.
+
+#138 실제 OS 서버 준비는 기존8초 안에서 HTTP ready와 첫 실제 인증 보드 cache ready 진단을 함께 확인한다. 시작 직후2초 board take가 가능한데1초 SQL blocking을 곧바로 기대하지 않는다. 실제 native OsSeedSource/생성과2초 admission·1초 SQL 경계·4초 pair 예산은 유지한다.

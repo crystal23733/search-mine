@@ -928,6 +928,18 @@
         "daily-server"
       ],
       "acceptance": "ADR0063·closed event/서버권위·목적별consent/identity·30일/calendar13개월·bounded NSM/D7 첫날짜/완결성·TDD/fresh domain95/전체80/full/실DB회귀/리뷰CI·정확head 병합CLOSED; 실제PG수집/retention/권리/운영은후속20"
+    },
+    {
+      "key": "essential-event-store",
+      "issue": 136,
+      "milestone": "M3",
+      "title": "feat(events): 필수 이벤트 PostgreSQL 저장과 본인 권리",
+      "requirements": "FR01/16, NFR01/02/05/07/08",
+      "scenarios": "TS20/21/29/31/34/35/36",
+      "deps": [
+        "event-domain-contracts"
+      ],
+      "acceptance": "ADR0064·실PG committed source/계정 잠금·불변 ID/source dedup/원래30일·optional차단·본인 event export/삭제/HTTPS·TDD/full/95-80/리뷰CI·정확head 병합CLOSED; runtime/물리retention/집계후속20"
     }
   ]
 }

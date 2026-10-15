@@ -357,3 +357,8 @@ TS19/22/26/36 확장(#132): 공식 완료 시간은 receipt의 nullable verified
 #134 FR16·NFR01/02/05/07/08·TS20/21/22/24/29/31/34/35/36 → [ADR0063](../adr/0063-event-domain-contracts.md) → closed client/server 권위·목적별 consent/identity·30일/달력13개월·bounded NSM/D7/완결성·domain95 누락 방지 → [검증134](../verification/134-event-domain-contracts.md). 실제 PG 수집/retention·권리/운영·상위20은 후속이다.
 
 TS29 확장(#134): 최대1024byte/closed client draft에서 민감·server/essential/임의 payload 필드는 거절한다. analytics와 advertising의 각각 유효 consent revision이 발생/현재를 덮어야 한다. 같은 event_id의 동일내용/충돌/다른 ID, 원래시각30일·calendar13개월 정확 만료/월말/역행을 구분한다. NSM은 월요일주 clear/timeout 1:1 account+match2회이며 bot 포함·포기/abort/daily/client 제외; 양쪽 참여자/중복/오염/부분주·10000상한을 검증한다. D7은 별도 첫 정상 날짜 snapshot·정확+7UTC일/미성숙null·분모0/불완전 입력 거절·삭제 후 식별 입력 제거를 확인한다. 실제 event PG/삭제/HTTP/운영은 다음 하위 검증이다.
+
+
+#136 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0064](../adr/0064-essential-event-store-and-rights.md) → committed PG source/동일account 잠금·불변 dedup/원래30일·default-deny optional·본인 typed event export/삭제 → [검증136](../verification/136-essential-event-store-and-rights.md). 자동 수집/물리retention/집계·상위20은 후속이다.
+
+TS29 확장(#136): 실제 committed 본인 인간 match/daily source로만 필수 event를 만든다. 같은ID/다른내용 경합·새ID의 같은source 재시도는 accepted ID/received_at을 보존한다. account삭제와 같은 잠금/transaction·삭제/만료뒤재전송 비복원·exact30일·rollback/timeout·불변/essential CHECK를 실제PG로 확인한다. 기존 인증 export의 event 스트림은 own51개 페이지·현재session/recent auth·전후 proof·취소·strict 최소 DTO/32MiB 안에서 실제HTTPS 다운로드에 포함된다. optional runtime 수집은0이다.

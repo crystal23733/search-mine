@@ -108,6 +108,11 @@ impl GameExportReader for PgGameExportReader {
             let mut tx = self.pool.begin().await.map_err(db)?;
             let now = self.authorize(&mut tx, session).await?;
             let records = match stream {
+                ExportStream::Event => {
+                    crate::events::export_events(&mut tx, session.account, after, now)
+                        .await
+                        .map_err(|_| ExportError::Unavailable)?
+                }
                 ExportStream::Online => {
                     let rows = sqlx::query("SELECT r.id,p.account_id,r.rules_hash,r.end_elapsed_ms,r.reason,p.outcome,p.opened_safe,p.mistakes,p.accusations,p.correct_accusations,EXTRACT(EPOCH FROM r.recorded_at)::bigint AS recorded_at,EXTRACT(EPOCH FROM COALESCE(r.retention_started_at,r.recorded_at))::bigint AS retention_started_at,(SELECT count(*) FROM online_match_players duplicate WHERE duplicate.match_id=r.id AND duplicate.account_id=$1 AND NOT duplicate.is_bot) AS human_seats FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id WHERE p.account_id=$1 AND NOT p.is_bot AND ($2::uuid IS NULL OR r.id>$2) AND r.recorded_at>=to_timestamp(0) AND r.recorded_at<=to_timestamp($3::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>=to_timestamp(0) AND COALESCE(r.retention_started_at,r.recorded_at)<=to_timestamp($3::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>to_timestamp($3::double precision)-interval '7776000 seconds' ORDER BY r.id LIMIT 51")
                         .bind(session.account).bind(after).bind(now).fetch_all(&mut *tx).await.map_err(db)?;

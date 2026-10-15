@@ -150,3 +150,6 @@
 
 
 #132/PR133 develop0d25f9f 병합·132 CLOSED(2026-10-13T14:59:58Z), 상위19 CLOSED15:02:05Z와 필수12개 하위 종료·실제통합 출구를 확인했다. 다음 #20 첫 하위 [#134](https://github.com/crystal23733/search-mine/issues/134)는 [ADR0063](../adr/0063-event-domain-contracts.md)의 이벤트 목적/보존/NSM·D7 도메인 계약이다. 실제 PG 수집·retention/본인 권리·운영 producer는 후속 필수 작업이며 #20은 OPEN이다.
+
+
+#134/PR135 develop0155012 병합·134 CLOSED 확인. 다음 [#136](https://github.com/crystal23733/search-mine/issues/136)은 [ADR0064](../adr/0064-essential-event-store-and-rights.md)의 필수 이벤트 PostgreSQL 저장·본인 권리다. 자동producer·물리retention/집계는 필수후속이며 상위20은 OPEN이다.

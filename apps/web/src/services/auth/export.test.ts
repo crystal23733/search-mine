@@ -45,7 +45,7 @@ function fixture() {
   };
   return { t, bootstrap, auth: createAuth(t) };
 }
-test("explicit export includes both game streams without requiring a nickname and proves the session again", async () => {
+test("explicit export includes game and event streams without requiring a nickname and proves the session again", async () => {
   const { t, auth } = fixture();
   await auth.refresh();
   const before = t.bootstrap.mock.calls.length;
@@ -60,7 +60,7 @@ test("explicit export includes both game streams without requiring a nickname an
     },
   });
   expect(t.gameExport.mock.calls.map((c) => c[0])).toEqual(
-    ["online", "daily"].map((stream) => ({
+    ["online", "daily", "event"].map((stream) => ({
       v: 1,
       account_id: account.id,
       session_revision: revision,
@@ -123,6 +123,88 @@ const page = (
   records: ExportRecord[] = [],
   next: string | null = null,
 ) => ({ v: 1, account_id: account.id, stream, records, next });
+test("event export admits only minimal closed server facts and immutable timestamp shapes", () => {
+  const base = {
+    kind: "event",
+    event_id: id(1),
+    occurred_at: 100,
+    received_at: 101,
+    fact: {
+      type: "match_end",
+      match_id: id(2),
+      opponent: "bot",
+      reason: "timeout",
+    },
+  };
+  const dailyFact = {
+    type: "daily_verified",
+    completion_id: id(3),
+    date: "2024-02-29",
+    mistakes: 65535,
+    trust: "verified_time",
+  };
+  for (const fact of [
+    base.fact,
+    dailyFact,
+    { ...dailyFact, trust: "verified_completion" },
+  ]) {
+    const raw = { ...base, fact };
+    expect(
+      decodeGamePage({ ...page("event"), records: [raw] }).records,
+    ).toEqual([raw]);
+  }
+  for (const change of [
+    { event_id: id(0).replace("4000-8000", "0000-0000") },
+    { received_at: 99 },
+    { received_at: 100 + 30 * 86400 },
+    { occurred_at: -1 },
+    { occurred_at: 1.5 },
+    { received_at: 253402300800 },
+    { payload: "secret" },
+    { fact: { ...base.fact, seed: "secret" } },
+    { fact: { ...base.fact, reason: "unknown" } },
+    { fact: { ...base.fact, opponent: "client" } },
+    { fact: { ...base.fact, match_id: "BAD" } },
+    { fact: { ...dailyFact, date: "2025-02-29" } },
+    { fact: { ...dailyFact, date: "1969-12-31" } },
+    { fact: { ...dailyFact, date: "2024-2-29" } },
+    { fact: { ...dailyFact, mistakes: 65536 } },
+    { fact: { ...dailyFact, trust: "unverified" } },
+    { fact: { ...dailyFact, completion_id: "bad" } },
+    { fact: { type: "ad_impression" } },
+  ]) {
+    expect(() =>
+      decodeGamePage({ ...page("event"), records: [{ ...base, ...change }] }),
+    ).toThrow(AuthError);
+  }
+  expect(() => decodeGamePage({ ...page(), records: [base] })).toThrow(
+    AuthError,
+  );
+});
+test("explicit download includes own events and preserves their accepted ids", async () => {
+  const { t, auth } = fixture();
+  const event: ExportRecord = {
+    kind: "event",
+    event_id: id(1),
+    occurred_at: 100,
+    received_at: 101,
+    fact: {
+      type: "match_end",
+      match_id: id(2),
+      opponent: "human",
+      reason: "clear",
+    },
+  };
+  t.gameExport.mockImplementation(async (input) =>
+    page(input.stream, input.stream === "event" ? [event] : []),
+  );
+  await auth.refresh();
+  const sink = vi.fn(async () => {});
+  expect((await auth.exportTo(account.id, sink)).ok).toBe(true);
+  expect(sink.mock.calls).toHaveLength(1);
+  expect(JSON.stringify(sink.mock.calls[0])).toContain(event.event_id);
+  expect(JSON.stringify(sink.mock.calls[0])).not.toContain("session_revision");
+});
 test("daily export preserves a required nullable server time and rejects missing or corrupt time", () => {
   for (const elapsed of [null, 3200, 4000, 0xffffffff]) {
     const raw = Object.assign(daily(1), { verified_elapsed_ms: elapsed });
@@ -412,7 +494,9 @@ test("page and raw requests are paced and cancellation interrupts waiting before
     const sent: number[] = [];
     f.t.gameExport.mockImplementation(async (input) => {
       sent.push(performance.now());
-      return input.stream === "online" ? page() : page("daily", [daily(1)]);
+      return input.stream === "daily"
+        ? page("daily", [daily(1)])
+        : page(input.stream);
     });
     f.t.replayExport.mockImplementation(async () => {
       sent.push(performance.now());
@@ -426,9 +510,9 @@ test("page and raw requests are paced and cancellation interrupts waiting before
     const task = f.auth.export(account.id);
     await vi.runAllTimersAsync();
     expect((await task).ok).toBe(true);
-    expect(sent).toHaveLength(3);
-    expect(sent[1] - sent[0]).toBeGreaterThanOrEqual(100);
-    expect(sent[2] - sent[1]).toBeGreaterThanOrEqual(100);
+    expect(sent).toHaveLength(4);
+    for (let i = 1; i < sent.length; i++)
+      expect(sent[i] - sent[i - 1]).toBeGreaterThanOrEqual(100);
     const t = fixture();
     await t.auth.refresh();
     const cancelled = t.auth.export(account.id);

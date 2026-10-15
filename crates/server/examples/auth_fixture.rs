@@ -13,6 +13,7 @@ use liar_core::{
 };
 use liar_server::auth::*;
 use liar_server::daily::*;
+use liar_server::events::{EventId, EventSource, PgEventStore};
 use liar_server::privacy::*;
 use liar_server::results::{PgResultReader, ResultAuthentication, result_router};
 use liar_server::{lobby::*, online::*};
@@ -220,6 +221,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         clock.clone(),
         security.clone(),
     );
+    let event_fixture_pool = pool.clone();
+    let event_fixture_store = Arc::new(PgEventStore::new(pool.clone(), clock.clone()));
     let router = account_auth_router(service, Providers, security.clone(), clock.clone())
         .merge(
             lobby_router(lobby, sessions.clone(), security.clone(), 16)
@@ -245,6 +248,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(
             Router::new()
                 .route("/__fixture/ready", get(|| async { "test-only" }))
+                .route("/__fixture/events/{id}", post(move |Path(id):Path<String>| {
+                    let pool=event_fixture_pool.clone(); let store=event_fixture_store.clone();
+                    async move {
+                        let Ok(match_id)=EventId::parse(&id) else {return StatusCode::BAD_REQUEST.into_response();};
+                        let Ok(accounts)=sqlx::query_scalar::<_,uuid::Uuid>("SELECT account_id FROM online_match_players WHERE match_id=$1 AND NOT is_bot LIMIT 3").bind(match_id.uuid()).fetch_all(&pool).await else {return StatusCode::SERVICE_UNAVAILABLE.into_response();};
+                        if accounts.is_empty()||accounts.len()>2 {return StatusCode::NOT_FOUND.into_response();}
+                        let count=accounts.len();
+                        for account in accounts {
+                            let (Ok(account),Ok(event_id))=(EventId::parse(&account.to_string()),EventId::parse(&uuid::Uuid::new_v4().to_string())) else {return StatusCode::SERVICE_UNAVAILABLE.into_response();};
+                            if store.capture(event_id,EventSource::Online{account,match_id}).await.is_err() {return StatusCode::SERVICE_UNAVAILABLE.into_response();}
+                        }
+                        Json(serde_json::json!({"count":count})).into_response()
+                    }
+                }))
                 .route("/__fixture/clock",get(move || {let clock=clock_probe.clone();async move {Json(serde_json::json!({"utc":clock.now()}))}}))
                 .route("/__fixture/persisted/{id}",get(move |Path(id):Path<String>| {
                     let pool=persisted_fixture_pool.clone();

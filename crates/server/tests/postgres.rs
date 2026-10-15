@@ -20,6 +20,8 @@ mod admission_restart;
 mod daily;
 #[path = "postgres/daily_http.rs"]
 mod daily_http;
+#[path = "postgres/events.rs"]
+mod events;
 #[path = "postgres/latest_results.rs"]
 mod latest_results;
 #[path = "postgres/privacy.rs"]

@@ -6,6 +6,7 @@ import {
   type DailyReplay,
   type ExportRecord,
   type ExportStream,
+  type ExportEventFact,
   type GameExportInput,
   type GameExportPage,
   type PersonalDataExport,
@@ -14,6 +15,7 @@ import {
 import { object, decodeExport } from "./decode";
 import { decodePersonalResult } from "../online/decode";
 import { AuthError, type AuthTransport } from "./types";
+import { one } from "../wire-decode";
 const invalid = (): never => {
   throw new AuthError("auth_unavailable");
 };
@@ -148,8 +150,73 @@ function replay(value: unknown): DailyReplay {
     final_time_ms: uint(v.final_time_ms),
   };
 }
+function eventFact(value: unknown): ExportEventFact {
+  try {
+    const type = (value as { type?: unknown })?.type;
+    if (type === "match_end") {
+      const v = object(value, ["type", "match_id", "opponent", "reason"]);
+      return {
+        type,
+        match_id: exportId(v.match_id),
+        opponent: one("human", "bot")(v.opponent),
+        reason: one(
+          "clear",
+          "timeout",
+          "forfeit",
+          "abandoned",
+          "server_failure",
+          "cancelled",
+        )(v.reason),
+      };
+    }
+    if (type !== "daily_verified") return invalid();
+    const v = object(value, [
+      "type",
+      "completion_id",
+      "date",
+      "mistakes",
+      "trust",
+    ]);
+    if (
+      typeof v.date !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(v.date) ||
+      v.date < "1970-01-01" ||
+      new Date(`${v.date}T00:00:00Z`).toISOString().slice(0, 10) !== v.date
+    )
+      return invalid();
+    return {
+      type,
+      completion_id: exportId(v.completion_id),
+      date: v.date,
+      mistakes: uint(v.mistakes, 65535),
+      trust: one("verified_completion", "verified_time")(v.trust),
+    };
+  } catch {
+    return invalid();
+  }
+}
 export function decodeGameRecord(value: unknown): ExportRecord {
   const kind = (value as { kind?: unknown })?.kind;
+  if (kind === "event") {
+    const v = object(value, [
+      "kind",
+      "event_id",
+      "occurred_at",
+      "received_at",
+      "fact",
+    ]);
+    const occurred_at = timestamp(v.occurred_at),
+      received_at = timestamp(v.received_at);
+    if (received_at < occurred_at || received_at - occurred_at >= 30 * 86400)
+      return invalid();
+    return {
+      kind,
+      event_id: exportId(v.event_id),
+      occurred_at,
+      received_at,
+      fact: eventFact(v.fact),
+    };
+  }
   if (kind === "online") {
     const v = object(value, [
       "kind",
@@ -205,6 +272,7 @@ export function decodeGameRecord(value: unknown): ExportRecord {
   };
 }
 function recordId(record: ExportRecord) {
+  if (record.kind === "event") return record.event_id;
   return record.kind === "online"
     ? record.result.match_id
     : record.completion_id;
@@ -213,7 +281,7 @@ export function decodeGamePage(value: unknown): GameExportPage {
   const v = object(value, ["v", "account_id", "stream", "records", "next"]);
   if (
     v.v !== PROTOCOL_VERSION ||
-    !["online", "daily"].includes(v.stream as string) ||
+    !["online", "daily", "event"].includes(v.stream as string) ||
     !Array.isArray(v.records) ||
     v.records.length > 50 ||
     bytes(value) > 65536
@@ -306,7 +374,7 @@ export async function collectGameExport(
     if (signal.aborted || (size += bytes(value)) > EXPORT_MAX_BYTES)
       return invalid();
   };
-  for (const stream of ["online", "daily"] as const) {
+  for (const stream of ["online", "daily", "event"] as const) {
     let after: string | null = null;
     for (;;) {
       if (++pages > 2048 || signal.aborted) return invalid();

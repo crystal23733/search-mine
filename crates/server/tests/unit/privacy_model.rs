@@ -68,6 +68,77 @@ fn daily(n: u128) -> ExportRecord {
     }
 }
 #[test]
+fn own_event_projection_rejects_wrong_stream_ids_dates_time_and_expired_raw() {
+    let make = |fact| ExportRecord::Event {
+        event_id: Uuid::from_u128(1).to_string(),
+        occurred_at: 100,
+        received_at: 101,
+        fact,
+    };
+    let match_fact = ExportEventFact::MatchEnd {
+        match_id: Uuid::from_u128(2).to_string(),
+        opponent: EventOpponent::Human,
+        reason: PublicEndReason::Timeout,
+    };
+    let daily_fact = ExportEventFact::DailyVerified {
+        completion_id: Uuid::from_u128(3).to_string(),
+        date: "2024-02-29".into(),
+        mistakes: 65535,
+        trust: liar_protocol::daily::DailyTrust::VerifiedTime,
+    };
+    for fact in [match_fact.clone(), daily_fact.clone()] {
+        let event = make(fact);
+        assert_eq!(
+            record_id(&event, ExportStream::Event, 101).unwrap(),
+            Uuid::from_u128(1)
+        );
+        assert!(record_id(&event, ExportStream::Online, 101).is_err());
+        assert!(
+            record_id(
+                &event,
+                ExportStream::Event,
+                100 + crate::events::RAW_EVENT_SECONDS
+            )
+            .is_err()
+        );
+    }
+    for (event_id, occurred_at, received_at) in [
+        (Uuid::nil(), 100, 101),
+        (Uuid::from_u128(1), 100, 99),
+        (Uuid::from_u128(1), 100, 102),
+        (Uuid::from_u128(1), -1, 101),
+    ] {
+        let bad = ExportRecord::Event {
+            event_id: event_id.to_string(),
+            occurred_at,
+            received_at,
+            fact: match_fact.clone(),
+        };
+        assert!(record_id(&bad, ExportStream::Event, 101).is_err());
+    }
+    for bad in [
+        ExportEventFact::MatchEnd {
+            match_id: "bad".into(),
+            opponent: EventOpponent::Bot,
+            reason: PublicEndReason::Clear,
+        },
+        ExportEventFact::DailyVerified {
+            completion_id: "bad".into(),
+            date: "2024-02-29".into(),
+            mistakes: 0,
+            trust: liar_protocol::daily::DailyTrust::VerifiedCompletion,
+        },
+        ExportEventFact::DailyVerified {
+            completion_id: Uuid::from_u128(3).to_string(),
+            date: "2025-02-29".into(),
+            mistakes: 0,
+            trust: liar_protocol::daily::DailyTrust::VerifiedCompletion,
+        },
+    ] {
+        assert!(record_id(&make(bad), ExportStream::Event, 101).is_err());
+    }
+}
+#[test]
 fn owner_export_rejects_a_time_shorter_than_native_completion() {
     let mut value = daily(1);
     for time in [None, Some(3200), Some(u32::MAX)] {

@@ -52,6 +52,10 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
         expect(
           peer.lastView()!.own.cells.filter((c) => c.state === "safe"),
         ).toHaveLength(4);
+        const captured = await a.request.post(`/__fixture/events/${matchId}`);
+        expect(captured.status()).toBe(200);
+        expect(await captured.json()).toEqual({ count: 2 });
+        let acceptedEventId: string | undefined;
         for (const locale of [
           "en",
           "ko",
@@ -95,7 +99,7 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
             "v",
           ]);
           expect(value.v).toBe(1);
-          expect(value.games).toHaveLength(1);
+          expect(value.games).toHaveLength(2);
           expect(value.replays).toEqual([]);
           const record = value.games[0];
           expect(record.kind).toBe("online");
@@ -103,6 +107,19 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
             throw Error("missing own online result");
           expect(record.result.match_id).toBe(matchId);
           expect(record.result.own?.opened_safe).toBe(ownOpened);
+          const event = value.games.find((g) => g.kind === "event");
+          expect(event?.kind).toBe("event");
+          if (event?.kind !== "event")
+            throw Error("missing own essential event");
+          expect(event.fact).toEqual({
+            type: "match_end",
+            match_id: matchId,
+            opponent: "human",
+            reason: "timeout",
+          });
+          expect(event.received_at).toBeGreaterThanOrEqual(event.occurred_at);
+          acceptedEventId ??= event.event_id;
+          expect(event.event_id).toBe(acceptedEventId);
           expect(JSON.stringify(value)).not.toMatch(
             /secret|seed|board|subject|digest|credential|csrf|session_revision|token|password|email/,
           );

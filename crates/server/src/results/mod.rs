@@ -6,6 +6,6 @@ mod rate;
 pub use config::*;
 pub use http::*;
 pub use model::*;
-pub(crate) use postgres::stored;
 pub use postgres::*;
+pub(crate) use postgres::{reason, stored};
 pub(crate) use rate::ResultRate;

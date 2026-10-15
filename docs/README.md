@@ -119,3 +119,5 @@
 - [ADR0062: 공식 데일리 흐름](adr/0062-official-daily-flow.md) · [검증132](verification/132-official-daily-flow.md)
 
 [ADR0063 이벤트 도메인 계약](adr/0063-event-domain-contracts.md) · [검증134](verification/134-event-domain-contracts.md).
+
+[ADR0064 필수 이벤트 저장·본인 권리](adr/0064-essential-event-store-and-rights.md) · [검증136](verification/136-essential-event-store-and-rights.md).

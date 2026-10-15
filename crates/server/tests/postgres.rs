@@ -22,6 +22,8 @@ mod daily;
 mod daily_http;
 #[path = "postgres/event_producers.rs"]
 mod event_producers;
+#[path = "postgres/event_retention.rs"]
+mod event_retention;
 #[path = "postgres/events.rs"]
 mod events;
 #[path = "postgres/latest_results.rs"]
@@ -634,7 +636,7 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
     use liar_server::online::{PgResultRepository, ResultRepository, SaveResult};
     let final_result = online::finished([Some(result.account.id), None]);
     assert_eq!(
-        PgResultRepository::new(dml.clone(), Arc::new(HttpClock))
+        PgResultRepository::new(dml.clone(), Arc::new(event_retention::Clock(3001)))
             .save(final_result.clone())
             .await
             .unwrap(),
@@ -647,6 +649,63 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
             .await
             .unwrap();
     assert_eq!(events, 1);
+    use liar_server::events::{
+        EventRetentionStore, EventStoreError, PgEventRetention, RAW_EVENT_SECONDS, RetentionBatch,
+    };
+    let retention = PgEventRetention::new(
+        dml.clone(),
+        Arc::new(event_retention::Clock(3001 + RAW_EVENT_SECONDS)),
+    );
+    let error = sqlx::query("SELECT id FROM product_events FOR UPDATE")
+        .fetch_one(&dml)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.as_database_error().unwrap().code().as_deref(),
+        Some("42501")
+    );
+    assert_eq!(
+        retention.reap(Duration::from_secs(2)).await,
+        Err(EventStoreError::Unavailable)
+    );
+    sqlx::query("GRANT UPDATE(id) ON product_events TO liar_auth_test_dml")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let error = sqlx::query("UPDATE product_events SET occurred_at=occurred_at+1")
+        .execute(&dml)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.as_database_error().unwrap().code().as_deref(),
+        Some("42501")
+    );
+    let error = sqlx::query("UPDATE product_events SET id=$1")
+        .bind(Uuid::new_v4())
+        .execute(&dml)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.as_database_error().unwrap().code().as_deref(),
+        Some("23514")
+    );
+    assert_eq!(
+        retention.reap(Duration::from_secs(2)).await,
+        Ok(RetentionBatch {
+            deleted: 1,
+            has_more: false
+        })
+    );
+    assert_eq!(
+        PgResultRepository::new(
+            dml.clone(),
+            Arc::new(event_retention::Clock(3001 + RAW_EVENT_SECONDS))
+        )
+        .save(final_result.clone())
+        .await
+        .unwrap(),
+        SaveResult::Duplicate
+    );
     sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
         .bind(result.account.id)
         .execute(&dml)

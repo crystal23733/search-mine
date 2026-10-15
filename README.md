@@ -6,6 +6,8 @@
 
 ## 먼저 읽을 문서
 
+[#140 원시 이벤트 물리 보존](docs/verification/140-bounded-raw-event-retention.md)은 원래30일 만료·bounded 삭제와 별도 maintenance 출구다. first-normal/NSM·D7/anonymous13개월·운영조회는후속20이다.
+
 [#138 자동 필수 이벤트](docs/verification/138-atomic-essential-event-producers.md)는 온라인/데일리 원본 transaction과 함께 수집하는 출구다. 물리 보존·first-normal/NSM/D7·운영 조회는 후속20이다.
 
 [#134 이벤트 도메인 계약](docs/verification/134-event-domain-contracts.md)은 목적별 동의·재전송 동일성·보존 경계와 bounded NSM/D7 계산을 Rust로 정의한다. 필수 저장·권리는 #136에 연결하며 자동 수집·물리 보존·집계는 후속 #20이고 비필수 수집은 #21의 실제 동의 연결 전까지 켜지 않는다.

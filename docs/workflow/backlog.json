@@ -952,6 +952,18 @@
         "essential-event-store"
       ],
       "acceptance": "ADR0065·source transaction 자동수집/공동rollback·UUID순계정잠금/삭제비복원·최초ID/수신시각/retry/Practice/30-90일·실PG/OSrestart/수동capture없는HTTPS·TDD/full/95-80/리뷰CI·정확head병합CLOSED; physicalretention/first/metrics후속20"
+    },
+    {
+      "key": "raw-event-retention",
+      "issue": 140,
+      "milestone": "M3",
+      "title": "feat(events): 원시 이벤트 30일 bounded 물리 보존",
+      "requirements": "FR01/16, NFR01/02/05/07/08",
+      "scenarios": "TS20/21/29/31/35",
+      "deps": [
+        "atomic-essential-event-producers"
+      ],
+      "acceptance": "ADR0066·실PG원래30일물리삭제/500개2초SKIPLOCKED·Clock/rollback/동시·최소DML·main60초/cycle8batch2초·본인권리/source유지/retry비복원·TDD/full/95-80/리뷰6CI/정확head병합CLOSED;first/metrics/13m/20후속"
     }
   ]
 }

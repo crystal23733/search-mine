@@ -182,3 +182,7 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 #138 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/29/31/35/36 → [ADR0065](../adr/0065-atomic-essential-event-producers.md) → 원본 transaction 안의 자동 essential 수집·UUID순 계정 잠금·공동 rollback·재전송 비복원·unknown OS 복구/본인 HTTPS 다운로드 → [검증138](../verification/138-atomic-essential-event-producers.md). 물리 보존·first-normal/NSM/D7·상위20 통합 출구는 후속이다.
 
 #138 serving DML 권한은 기존 source/account DML과 product_events의 SELECT/INSERT/DELETE를 포함한다. 이벤트 UPDATE·DDL·_sqlx_migrations 권한은 필요하지 않다. 실제 제한 역할로 결과+event commit와 account 삭제 cascade를 검증하며 migration은 별도 DDL 계정으로 수행한다.
+
+#140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.
+
+#140 cleanup은 기존 event SELECT/INSERT/DELETE에 UPDATE(id) row-lock 권한을 추가한다. 다른 event column UPDATE·DDL·migration 조회는 허용하지 않으며 불변 trigger가 실제 ID 변경도 차단한다. 인증 DB가 활성이고 owner 준비가 끝난 main의 별도 작업에서만 실행한다. received_at 기반 연장이나 expired source 재수집은 하지 않는다.

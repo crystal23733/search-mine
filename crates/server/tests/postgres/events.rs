@@ -528,7 +528,7 @@ impl AuthClock for MovingClock {
         self.0.load(Ordering::SeqCst)
     }
 }
-async fn single_pool(pool: &sqlx::PgPool) -> (sqlx::PgPool, i32) {
+pub(super) async fn single_pool(pool: &sqlx::PgPool) -> (sqlx::PgPool, i32) {
     let schema: String = sqlx::query_scalar("SELECT current_schema()")
         .fetch_one(pool)
         .await
@@ -554,7 +554,7 @@ async fn single_pool(pool: &sqlx::PgPool) -> (sqlx::PgPool, i32) {
         .unwrap();
     (single, pid)
 }
-async fn blocked(pool: &sqlx::PgPool, pid: i32) {
+pub(super) async fn blocked(pool: &sqlx::PgPool, pid: i32) {
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             if sqlx::query_scalar::<_, bool>("SELECT cardinality(pg_blocking_pids($1))>0")

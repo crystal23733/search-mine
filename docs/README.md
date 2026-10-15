@@ -123,3 +123,5 @@
 [ADR0064 필수 이벤트 저장·본인 권리](adr/0064-essential-event-store-and-rights.md) · [검증136](verification/136-essential-event-store-and-rights.md).
 
 [ADR0065 원자적 필수 이벤트 수집](adr/0065-atomic-essential-event-producers.md) · [검증138](verification/138-atomic-essential-event-producers.md).
+
+[ADR0066 원시 이벤트 물리 보존](adr/0066-bounded-raw-event-retention.md) · [검증140](verification/140-bounded-raw-event-retention.md).

@@ -366,3 +366,7 @@ TS29 확장(#136): 실제 committed 본인 인간 match/daily source로만 필�
 #138 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/29/31/35/36 → [ADR0065](../adr/0065-atomic-essential-event-producers.md) → 원본 transaction 안의 자동 essential 수집·UUID순 계정 잠금·공동 rollback·재전송 비복원·unknown OS 복구/본인 HTTPS 다운로드 → [검증138](../verification/138-atomic-essential-event-producers.md). 물리 보존·first-normal/NSM/D7·상위20 통합 출구는 후속이다.
 
 TS29 확장(#138): direct/runtime·journal finish/unknown recovery·daily 첫 official은 source와 essential event를 함께 commit한다. 실제 PG event INSERT 실패는 source/active 삭제까지 rollback한다. 같은 source/attempt 재전송과 Practice는 최초 ID/received_at을 유지하고 raw 삭제/정확30일·원본90일 만료 후 복원하지 않는다. 반대 좌석 계정·batch는 UUID순 잠금이며 계정 삭제는 bot/인간 재생성 없이 반영된다. 실제 main OS kill/restart와 수동 capture 없는 HTTPS PC/mobile8언어 own 다운로드를 확인한다.
+
+#140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.
+
+TS29 확장(#140): 실제 PG의 exact30일·received 비연장·500+1/동시·잠긴row skip/backlog·SQLfail/Clockrollback/2초·취소 rollback·본인 논리 만료와 물리 삭제·원본/권리 유지·raw retry 비복원을 확인한다. main즉시/60초·cycle8batch/2초·진전0/skip tick/겹침·최소DML과physicalstartup출구를확인한다. 현재없는anonymous13개월집계는완료로계산하지않는다.

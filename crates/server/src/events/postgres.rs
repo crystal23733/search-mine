@@ -67,7 +67,7 @@ impl EventSource {
         }
     }
 }
-fn checked_now(clock: &dyn AuthClock, previous: i64) -> Result<i64, EventStoreError> {
+pub(super) fn checked_now(clock: &dyn AuthClock, previous: i64) -> Result<i64, EventStoreError> {
     let now = clock.now();
     valid_timestamp(now).map_err(policy)?;
     if now < previous {

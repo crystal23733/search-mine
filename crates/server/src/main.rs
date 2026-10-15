@@ -1,5 +1,6 @@
 use liar_server::auth::*;
 use liar_server::daily::*;
+use liar_server::events::{EventRetentionMaintenance, PgEventRetention};
 use liar_server::lobby::*;
 use liar_server::online::*;
 use liar_server::privacy::*;
@@ -86,6 +87,13 @@ async fn serve() -> ServerResult {
             .map_err(|_| "Online storage ownership unavailable")?;
         result_owner = Some(writer.health());
         let writer = Arc::new(writer);
+        tokio::spawn(
+            EventRetentionMaintenance::new(Arc::new(PgEventRetention::new(
+                auth_pool.clone(),
+                auth_clock.clone(),
+            )))
+            .run(),
+        );
         let registry = MatchRegistry::new(
             online.limits,
             clock,

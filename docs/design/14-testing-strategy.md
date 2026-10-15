@@ -135,3 +135,5 @@ PR137 최초 CI의 personal-export 시작 취소는 새 capture 이전의 준비
 #138 CI의 TS13 관측 보강: TutorialPage는 완료 view의 렌더 뒤 effect에서 LearningPort에 기록한다. 완료 화면 확인 직후 localStorage를 한 번만 읽으면 아직 effect 전일 수 있다. 실제 WASM E2E는 기존 expect 상한 안에서 완료 기록을 관측한 뒤 Continue/reload를 검증한다. 저장 결과의 기대값·production 동작·timeout·재시도는 유지한다.
 
 #138 실제 OS 서버 준비는 기존8초 안에서 HTTP ready와 첫 실제 인증 보드 cache ready 진단을 함께 확인한다. 시작 직후2초 board take가 가능한데1초 SQL blocking을 곧바로 기대하지 않는다. 실제 native OsSeedSource/생성과2초 admission·1초 SQL 경계·4초 pair 예산은 유지한다.
+
+#140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.

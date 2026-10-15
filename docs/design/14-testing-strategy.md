@@ -131,3 +131,5 @@ PR137 최초 CI의 personal-export 시작 취소는 새 capture 이전의 준비
 인증 fixture의 큐와 Clock을 공유하므로 auth 반복은 `pnpm exec playwright test tests/e2e/auth.spec.ts --project auth --grep complete.own.online.export --repeat-each 3 --retries 0 --workers 1`처럼 workers1로 실행한다. repeat 그룹을 병렬 실행하면 서로 다른 시험의 계정끼리 매칭될 수 있다. 일반 전체 검사는 auth 파일의 serial 설정을 유지한다.
 
 #138 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/29/31/35/36 → [ADR0065](../adr/0065-atomic-essential-event-producers.md) → 원본 transaction 안의 자동 essential 수집·UUID순 계정 잠금·공동 rollback·재전송 비복원·unknown OS 복구/본인 HTTPS 다운로드 → [검증138](../verification/138-atomic-essential-event-producers.md). 물리 보존·first-normal/NSM/D7·상위20 통합 출구는 후속이다.
+
+#138 CI의 TS13 관측 보강: TutorialPage는 완료 view의 렌더 뒤 effect에서 LearningPort에 기록한다. 완료 화면 확인 직후 localStorage를 한 번만 읽으면 아직 effect 전일 수 있다. 실제 WASM E2E는 기존 expect 상한 안에서 완료 기록을 관측한 뒤 Continue/reload를 검증한다. 저장 결과의 기대값·production 동작·timeout·재시도는 유지한다.

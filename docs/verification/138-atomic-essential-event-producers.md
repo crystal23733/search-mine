@@ -27,4 +27,8 @@
 
 물리 retention·anonymous 집계·first-normal/D7·운영 조회는 후속20이다. 원격CI/정확head 병합 상태는 해당 PR/이슈와 로컬 일별 리뷰에 실제 결과로 기록한다. 실OAuth42·운영25/26·사람27·미확정83과 실제 성능 목표를 이 producer로 완료했다고 주장하지 않는다.
 
+후속 CI ae98b12의 필수6checks는 성공했으나 web은112pass/1flaky·7.1분이었다. mobile TS13 튜토리얼 완료 화면의 저장소를 한 번만 읽어 null을 관측했다. TutorialPage는 렌더 뒤 effect에서 LearningPort를 기록하며 기존 unit도 기록 완료를 waitFor로 관측한다. 실제 WASM 시험도 기존 expect 상한 내에서 원래 complete 값을 관측한 뒤 Continue/reload를 검사한다. 이 재시도 성공을 최종113pass로 계산하지 않고 수정 뒤 재시도0 반복과 새 head 전체CI를 확인한다.
+
+TS13 관측 수정 후 실제 WASM PC/mobile 각각5회, 총10pass/50.0초·재시도0·workers2를 확인했다. 잘못 지정한 desktop 프로젝트의 준비 실패는 chromium으로 수정했으며 행동 Red로 계산하지 않았다. 제품 소스/timeout/retry는 변경하지 않았다. main 준비 간헐 원인미확정은 [후속141](https://github.com/crystal23733/search-mine/issues/141), 다음 원시 보존은 [140](https://github.com/crystal23733/search-mine/issues/140)으로 구분한다.
+
 최종 scripts/check.ps1 exit0: fmt/clippy·Rust416pass(119ignored DB는 별도 실제 실행)·WASM/types/fixtures/tokens/format/lint/typecheck/build, 웹44files/267pass·줄90.91%, 실제Chromium113pass/5.4m·재시도0, 문서188/제품21/설계18/시나리오36·Mermaid34/failure0·diff --check 통과. PC1440/mobile390 각각8언어의 자동 online event와 plain/sealed daily event가 실제 명시 다운로드에 포함됐고 secret/replay 권리를 유지했다.

@@ -28,6 +28,11 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
         await login(two);
         const observed = stream(one),
           peer = stream(two);
+        // Exercise the peer connecting after the first seat's snapshot.
+        await two.routeWebSocket("**/api/v1/ws", async (client) => {
+          await expect.poll(() => Boolean(observed.snapshot())).toBe(true);
+          client.connectToServer();
+        });
         await one.goto("/en/queue");
         await one.getByRole("button", { name: "Find an opponent" }).click();
         await expect(
@@ -36,8 +41,14 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
         await two.goto("/en/queue");
         await two.getByRole("button", { name: "Find an opponent" }).click();
         await expect(one.getByRole("gridcell")).toHaveCount(9);
+        await expect(two.getByRole("gridcell")).toHaveCount(9);
+        await expect
+          .poll(() => Boolean(observed.snapshot() && peer.snapshot()))
+          .toBe(true);
+        expect(peer.snapshot()!.match_id).toBe(observed.snapshot()!.match_id);
         await advance(one, 3);
         await expect.poll(() => observed.lastView()?.phase).toBe("playing");
+        await expect.poll(() => peer.lastView()?.phase).toBe("playing");
         await one.locator('[data-cell="8"]').click();
         await expect
           .poll(() => observed.lastView()?.own.cells[8].state)
@@ -52,6 +63,10 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
         expect(
           peer.lastView()!.own.cells.filter((c) => c.state === "safe"),
         ).toHaveLength(4);
+        const captured = await a.request.post(`/__fixture/events/${matchId}`);
+        expect(captured.status()).toBe(200);
+        expect(await captured.json()).toEqual({ count: 2 });
+        let acceptedEventId: string | undefined;
         for (const locale of [
           "en",
           "ko",
@@ -95,7 +110,7 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
             "v",
           ]);
           expect(value.v).toBe(1);
-          expect(value.games).toHaveLength(1);
+          expect(value.games).toHaveLength(2);
           expect(value.replays).toEqual([]);
           const record = value.games[0];
           expect(record.kind).toBe("online");
@@ -103,6 +118,19 @@ export function registerPersonalExportTests(approve: Approve, login: Login) {
             throw Error("missing own online result");
           expect(record.result.match_id).toBe(matchId);
           expect(record.result.own?.opened_safe).toBe(ownOpened);
+          const event = value.games.find((g) => g.kind === "event");
+          expect(event?.kind).toBe("event");
+          if (event?.kind !== "event")
+            throw Error("missing own essential event");
+          expect(event.fact).toEqual({
+            type: "match_end",
+            match_id: matchId,
+            opponent: "human",
+            reason: "timeout",
+          });
+          expect(event.received_at).toBeGreaterThanOrEqual(event.occurred_at);
+          acceptedEventId ??= event.event_id;
+          expect(event.event_id).toBe(acceptedEventId);
           expect(JSON.stringify(value)).not.toMatch(
             /secret|seed|board|subject|digest|credential|csrf|session_revision|token|password|email/,
           );

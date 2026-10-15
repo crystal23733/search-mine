@@ -56,6 +56,36 @@ pub(crate) fn record_id(
 ) -> Result<Uuid, ExportError> {
     match (stream, record) {
         (
+            ExportStream::Event,
+            ExportRecord::Event {
+                event_id,
+                occurred_at,
+                received_at,
+                fact,
+            },
+        ) => {
+            let event_id = id(event_id).map_err(|_| ExportError::Unavailable)?;
+            crate::events::raw_event_alive(*occurred_at, now)
+                .map_err(|_| ExportError::Unavailable)?;
+            if *received_at < *occurred_at || *received_at > now {
+                return Err(ExportError::Unavailable);
+            }
+            match fact {
+                ExportEventFact::MatchEnd { match_id, .. } => {
+                    id(match_id).map_err(|_| ExportError::Unavailable)?;
+                }
+                ExportEventFact::DailyVerified {
+                    completion_id,
+                    date,
+                    ..
+                } => {
+                    id(completion_id).map_err(|_| ExportError::Unavailable)?;
+                    crate::events::UtcDay::parse(date).map_err(|_| ExportError::Unavailable)?;
+                }
+            }
+            Ok(event_id)
+        }
+        (
             ExportStream::Online,
             ExportRecord::Online {
                 result,

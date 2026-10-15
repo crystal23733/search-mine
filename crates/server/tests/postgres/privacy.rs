@@ -8,7 +8,7 @@ impl AuthClock for Clock {
         self.0
     }
 }
-async fn participant(pool: &sqlx::PgPool, now: i64) -> ExportSession {
+pub(super) async fn participant(pool: &sqlx::PgPool, now: i64) -> ExportSession {
     let token = SecretToken::generate().unwrap();
     let store = PgAuthStore::new(pool.clone());
     let login = store
@@ -49,11 +49,11 @@ async fn nickname_is_not_required_for_empty_self_export_and_freshness_is_strict(
     close_auth_pool(pool).await;
 }
 
-async fn seed_online(pool: &sqlx::PgPool, account: Uuid, id: Uuid, at: i64) {
+pub(super) async fn seed_online(pool: &sqlx::PgPool, account: Uuid, id: Uuid, at: i64) {
     sqlx::query("INSERT INTO online_match_results(id,rules_hash,secret_seed,end_elapsed_ms,reason,recorded_at,seed_expires_at) VALUES($1,$2,$3,243000,'timeout',to_timestamp($4::double precision),to_timestamp($4::double precision)+interval '7 days')").bind(id).bind(liar_core::rules::RulesSnapshot::bundled().hash).bind([46u8;8].as_slice()).bind(at).execute(pool).await.unwrap();
     sqlx::query("INSERT INTO online_match_players(match_id,seat,account_id,is_bot,outcome,opened_safe,mistakes,accusations,correct_accusations) VALUES($1,0,$2,false,'draw',4,0,0,0),($1,1,NULL,true,'draw',99,8,5,3)").bind(id).bind(account).execute(pool).await.unwrap();
 }
-async fn fresh(pool: &sqlx::PgPool, session: ExportSession, at: i64) {
+pub(super) async fn fresh(pool: &sqlx::PgPool, session: ExportSession, at: i64) {
     sqlx::query("UPDATE auth_sessions SET created_at=to_timestamp($2::double precision),authenticated_at=to_timestamp($2::double precision),expires_at=to_timestamp($2::double precision)+interval '30 days' WHERE id=$1").bind(session.revision).bind(at).execute(pool).await.unwrap();
 }
 #[tokio::test]
@@ -196,7 +196,7 @@ async fn duplicate_human_seats_and_corrupt_online_projection_fail_closed() {
 const START: i64 = 1791331200;
 #[path = "privacy_lifetime.rs"]
 mod lifetime;
-async fn completed(pool: &sqlx::PgPool) -> (ExportSession, Uuid) {
+pub(super) async fn completed(pool: &sqlx::PgPool) -> (ExportSession, Uuid) {
     use liar_server::daily::*;
     let session = participant(pool, START + 60).await;
     let auth = PgAuthStore::new(pool.clone());

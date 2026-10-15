@@ -107,7 +107,7 @@ fn statistics(values: [Option<i16>; 4]) -> Result<Option<ResultStats>, ResultErr
         _ => Err(ResultError::Unavailable),
     }
 }
-fn reason(value: &str) -> Result<PublicEndReason, ResultError> {
+pub(crate) fn reason(value: &str) -> Result<PublicEndReason, ResultError> {
     Ok(match value {
         "clear" => PublicEndReason::Clear,
         "timeout" => PublicEndReason::Timeout,

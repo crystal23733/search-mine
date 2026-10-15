@@ -1,5 +1,10 @@
 //! Bounded self-only game export; account/session proofs are never exported.
-use crate::{auth::AuthExport, daily::DailyReplay, results::PersonalResult};
+use crate::{
+    auth::AuthExport,
+    daily::{DailyReplay, DailyTrust},
+    game::PublicEndReason,
+    results::PersonalResult,
+};
 use liar_core::daily::DailyMetadata;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -9,6 +14,28 @@ use ts_rs::TS;
 pub enum ExportStream {
     Online,
     Daily,
+    Event,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum EventOpponent {
+    Human,
+    Bot,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ExportEventFact {
+    MatchEnd {
+        match_id: String,
+        opponent: EventOpponent,
+        reason: PublicEndReason,
+    },
+    DailyVerified {
+        completion_id: String,
+        date: String,
+        mistakes: u16,
+        trust: DailyTrust,
+    },
 }
 #[derive(Deserialize, Serialize, TS)]
 #[serde(deny_unknown_fields)]
@@ -30,6 +57,14 @@ pub struct ReplayExportInput {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ExportRecord {
+    Event {
+        event_id: String,
+        #[ts(type = "number")]
+        occurred_at: i64,
+        #[ts(type = "number")]
+        received_at: i64,
+        fact: ExportEventFact,
+    },
     Online {
         result: PersonalResult,
         #[ts(type = "number")]
@@ -75,6 +110,8 @@ pub struct PersonalDataExport {
 pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
     vec![
         ExportStream::decl(config),
+        EventOpponent::decl(config),
+        ExportEventFact::decl(config),
         GameExportInput::decl(config),
         ReplayExportInput::decl(config),
         ExportRecord::decl(config),

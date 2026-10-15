@@ -4,7 +4,7 @@
 
 ## 이벤트 계약
 
-공통 필드는 event_id(UUID), event_version, occurred_at(UTC), received_at, account_id(동의된 제품 분석 또는 필수 서버 기록 구분), session_id, locale, rules_version, source(server/client), mode다. 닉네임·OAuth subject·이메일·실명·사진·전화·원시 IP·토큰·시드·채팅·정답을 이벤트에 넣지 않는다. event_id unique로 중복 제거한다.
+이벤트의 최소 공통 필드는 event_id(UUID), event_version, occurred_at(UTC), source(server/client)다. 저장 시각 received_at은 저장 adapter가 소유하고, account_id는 필수 서버 기록에만, session_key는 비필수 client의 일시적 탭 상관에만 사용한다. auth session ID/토큰을 복사하지 않는다. locale·rules_version·mode는 해당 이벤트에 필요한 경우에만 닫힌 계약으로 추가한다. 닉네임·OAuth subject·이메일·실명·사진·전화·원시 IP·토큰·시드·채팅·정답을 이벤트에 넣지 않는다. event_id unique로 중복 제거한다. 아래 표는 전체 목표이며 #134가 구현한 부분은 ADR0063의 client9종/server2종 순수 계약이다. 실제 수집·저장·운영 집계는 후속 #20에서 연결한다.
 
 | 이벤트 | 생성 주체 / 필드 | 신뢰 |
 |---|---|---|
@@ -15,7 +15,7 @@
 | rematch_selected | 클라이언트 / previous_match_id | 분석 동의 후 |
 | daily_verified | 서버 / daily_id, errors, verification_status | 순위 필수 기록 |
 | share_click | 클라이언트 / daily_id, channel | 분석 동의 후, 실제 공유 성공과 구분 |
-| consent_changed | 클라이언트 / policy_version, 상태 enum | 동의 상태 최소 기록 |
+| consent_changed | 검증된 동의 adapter / policy_version, 상태 enum | 별도 현재 동의 권위; 불신 client 이벤트가 grant를 만들지 않음 |
 | ad_request, ad_impression, ad_failed | 클라이언트 / placement, provider enum | 광고 동의 후, 실제 SDK callback만 |
 
 ## 정의와 경보
@@ -51,3 +51,6 @@ NSM과 운영 통계는 필수 게임 기록에서 산출한다. 비필수 행�
 ## 열린 질문
 
 필수 처리와 비필수 분석 구분, 보존 기간의 정책 문구는 공개 전 최종 검토한다.
+
+
+#134 FR16·NFR01/02/05/07/08·TS20/21/22/24/29/31/34/35/36 → [ADR0063](../adr/0063-event-domain-contracts.md) → closed client/server 권위·목적별 consent/identity·30일/달력13개월·bounded NSM/D7/완결성·domain95 누락 방지 → [검증134](../verification/134-event-domain-contracts.md). 실제 PG 수집/retention·권리/운영·상위20은 후속이다.

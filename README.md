@@ -6,6 +6,8 @@
 
 ## 먼저 읽을 문서
 
+[#134 이벤트 도메인 계약](docs/verification/134-event-domain-contracts.md)은 목적별 동의·재전송 동일성·보존 경계와 bounded NSM/D7 계산을 Rust로 정의한다. 실제 이벤트 저장·수집·물리 보존·권리 연결은 후속 #20이며 비필수 수집은 #21의 실제 동의 연결 전까지 켜지 않는다.
+
 - [PRD: 범위와 인수 조건](docs/product/16-PRD.md)
 - [설계 검토·승인 항목·요구 추적표](docs/design/00-review-checklist.md)
 - [전체 문서 안내](docs/README.md)

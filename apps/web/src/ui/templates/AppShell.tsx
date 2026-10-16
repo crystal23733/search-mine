@@ -18,6 +18,7 @@ export function AppShell({ children }: { children: ComponentChildren }) {
       <footer>
         <NavLink path="/privacy">{t("privacy")}</NavLink>
         <NavLink path="/terms">{t("terms")}</NavLink>
+        <NavLink path="/storage">{t("storage.pageTitle")}</NavLink>
         <NavLink path="/settings">{t("consent")}</NavLink>
       </footer>
     </div>

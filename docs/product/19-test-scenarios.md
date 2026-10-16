@@ -379,3 +379,8 @@ TS29 확장(#140): 실제 PG의 exact30일·received 비연장·500+1/동시·�
 
 
 #148 NFR01/02/05/07/08 · TS15/16/20/21/31 → [ADR0069](../adr/0069-main-preparation-diagnostics.md) → 실제 child별 고유 로그·단조 단계/실패 상태·재시작 보존 → [검증148](../verification/148-main-preparation-diagnostics.md). 상위141의 미확정 준비 원인과 진단 보존을 구분한다.
+
+
+#150 FR01/10/11/13·NFR01/02/06/07/08·TS18/19/24/26/31/35/36 → [ADR0070](../adr/0070-technical-storage-notice.md) → 읽기 전용8언어 실제 저장소/쿠키·footer/route/dialog·유지/삭제/메모리 대체 → [검증150](../verification/150-technical-storage-notice.md). 실제 CMP/전체 정책/외부147·상위21과83/141은 별도다.
+
+TS24/19/18 확장(#150): footer에서 언어별 저장소 고지에 접근하고 설정 dialog와 같은 실제 범주/기간/삭제 안내를 읽는다. 읽기/닫기가 login/동의/전송/삭제를 실행하지 않고,30개 로컬 결과/명시 제출·5분/30일 쿠키·기록/캐시/로그아웃/계정삭제 범위·메모리 대체가8언어에 존재한다. PC/mobile/360px·keyboard/초점 복구·저장소 차단/서버 실패 뒤 로컬 연습이 계속 가능하다. 실제CMP/법적 정책 검수는147/21의 후속이다.

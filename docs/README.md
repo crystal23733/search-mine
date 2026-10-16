@@ -131,3 +131,5 @@
 - [ADR0068 · 익명 집계 보존/운영](adr/0068-anonymous-metrics-retention-and-operations.md), [검증145](verification/145-anonymous-metrics-retention-and-operations.md).
 
 - [ADR0069 실제 main 준비 진단](adr/0069-main-preparation-diagnostics.md) · [검증148](verification/148-main-preparation-diagnostics.md).
+
+- [ADR0070 실제 저장소·쿠키 고지](adr/0070-technical-storage-notice.md) · [검증150](verification/150-technical-storage-notice.md)

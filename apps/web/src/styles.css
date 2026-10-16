@@ -408,6 +408,19 @@ footer a {
 .reading-page .card p:last-child {
   margin-bottom: 0;
 }
+.storage-notice dl > div {
+  margin-block: 20px;
+}
+.storage-notice dt {
+  font-weight: 700;
+  color: var(--color-accent);
+}
+.storage-notice dd {
+  margin: 8px 0 0;
+}
+.storage-notice {
+  overflow-wrap: anywhere;
+}
 .settings-list {
   padding: 0;
   overflow: hidden;

@@ -42,7 +42,7 @@ NSM과 운영 통계는 필수 게임 기록에서 산출한다. 비필수 행�
 [28일 순수익] [현금비] [전력·운영시간]
 ```
 
-운영은 매일, 제품은 매주, 현금 손익은 월간 검토한다. 운영자는 로컬 대시보드/로그로 확인하며 외부 분석 SaaS와 자동 메시지 전송은 추가하지 않는다. 원시 이벤트 30일, 익명 일별 집계 13개월 제안; [DB 보존](../design/07-database.md)을 따른다.
+운영은 매일, 제품은 매주, 현금 손익은 월간 검토한다. 운영자는 로컬 CLI/로그로 확인하며 외부 분석 SaaS와 자동 메시지 전송은 추가하지 않는다. 원시 이벤트30일, 익명 NSM 주별/D7 코호트별 집계는 원래 UTC period부터13달력개월로 결정했다. [DB 보존](../design/07-database.md)과 [ADR0068](../adr/0068-anonymous-metrics-retention-and-operations.md)을 따른다.
 
 ## 결정 사항
 
@@ -50,7 +50,7 @@ NSM과 운영 통계는 필수 게임 기록에서 산출한다. 비필수 행�
 
 ## 열린 질문
 
-필수 처리와 비필수 분석 구분, 보존 기간의 정책 문구는 공개 전 최종 검토한다.
+실제 운영자와 정책 문구·CMP 검수는 #21에서 확인한다. 선택 분석을 활성화하기 전 현재 consent subject/revision을 저장 transaction에서 검증해야 한다.
 
 
 #134 FR16·NFR01/02/05/07/08·TS20/21/22/24/29/31/34/35/36 → [ADR0063](../adr/0063-event-domain-contracts.md) → closed client/server 권위·목적별 consent/identity·30일/달력13개월·bounded NSM/D7/완결성·domain95 누락 방지 → [검증134](../verification/134-event-domain-contracts.md). 실제 PG 수집/retention·권리/운영·상위20은 후속이다.
@@ -64,3 +64,6 @@ NSM과 운영 통계는 필수 게임 기록에서 산출한다. 비필수 행�
 
 
 #143 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0067](../adr/0067-authoritative-metric-snapshots.md) → collection/30일 경계·RR/2초/10000입력·권위 first-normal 근거·NSM/D7 불완전 거절 → [검증143](../verification/143-authoritative-metric-snapshots.md). 새 개인 first marker/평생flag 없이 기존 source90일을 사용하며 익명 저장/13개월/운영조회·상위20 감사는 후속이다.
+
+
+#145 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0068](../adr/0068-anonymous-metrics-retention-and-operations.md) → same-RR 익명 scalar 집계·원래13달력개월/500개2초 정리·자동주기/로컬운영·계정삭제·상위20 감사 → [검증145](../verification/145-anonymous-metrics-retention-and-operations.md). optional21/외부42·25/26·27·미확정83/141은 별도다.

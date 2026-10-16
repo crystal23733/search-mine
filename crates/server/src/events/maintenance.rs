@@ -9,10 +9,20 @@ pub struct RetentionCycle {
 }
 pub struct EventRetentionMaintenance {
     store: Arc<dyn EventRetentionStore>,
+    component: &'static str,
 }
 impl EventRetentionMaintenance {
     pub fn new(store: Arc<dyn EventRetentionStore>) -> Self {
-        Self { store }
+        Self {
+            store,
+            component: "event_retention",
+        }
+    }
+    pub fn anonymous(store: Arc<dyn EventRetentionStore>) -> Self {
+        Self {
+            store,
+            component: "metric_retention",
+        }
     }
     pub async fn run_cycle(&self) -> Result<RetentionCycle, EventStoreError> {
         let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
@@ -51,11 +61,11 @@ impl EventRetentionMaintenance {
             match self.run_cycle().await {
                 Ok(cycle) => eprintln!(
                     "{}",
-                    serde_json::json!({"component":"event_retention","code":"complete","deleted":cycle.deleted,"has_more":cycle.has_more,"batches":cycle.batches})
+                    serde_json::json!({"component":self.component,"code":"complete","deleted":cycle.deleted,"has_more":cycle.has_more,"batches":cycle.batches})
                 ),
                 Err(error) => eprintln!(
                     "{}",
-                    serde_json::json!({"component":"event_retention","code":if error==EventStoreError::Invalid {"invalid_clock"}else{"unavailable"}})
+                    serde_json::json!({"component":self.component,"code":if error==EventStoreError::Invalid {"invalid_clock"}else{"unavailable"}})
                 ),
             }
         }

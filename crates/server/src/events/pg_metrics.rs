@@ -48,7 +48,7 @@ impl PgMetricReader {
             .await
             .unwrap_or(Err(MetricReadError::Unavailable))
     }
-    async fn read(&self, day: UtcDay, cohort: bool) -> Result<Report, MetricReadError> {
+    async fn read(&self, day: UtcDay, cohort: bool) -> Result<MetricSnapshot, MetricReadError> {
         let deadline = Instant::now() + Duration::from_secs(2);
         let work = async {
             let started = now(self.clock.as_ref(), 0)?;
@@ -58,81 +58,7 @@ impl PgMetricReader {
                 .await
                 .map_err(unavailable)?;
             let sampled = now(self.clock.as_ref(), started)?;
-            budget(&mut tx, deadline).await?;
-            let coverage = sqlx::query_scalar::<_, i64>(
-                "SELECT coverage_since FROM metric_collection WHERE singleton",
-            )
-            .fetch_optional(&mut *tx)
-            .await
-            .map_err(unavailable)?
-            .ok_or(EventError::Incomplete)?;
-            window(day.start(), coverage, sampled)?;
-            let end = UtcDay(
-                day.0
-                    .checked_add_days(Days::new(if cohort { 8 } else { 7 }))
-                    .ok_or(EventError::Invalid)?,
-            )
-            .start();
-            super::valid_timestamp(end)?;
-            budget(&mut tx, deadline).await?;
-            let events = pg_records::metric_events(&mut tx, day.start(), end, sampled).await?;
-            budget(&mut tx, deadline).await?;
-            let normal: Vec<_> = events.iter().filter_map(normal).collect();
-            let accounts: Vec<_> = normal
-                .iter()
-                .map(|n| n.account)
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect();
-            let matches: Vec<_> = normal
-                .iter()
-                .map(|n| n.match_id)
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect();
-            let proofs = proofs(&mut tx, &accounts, &matches, cohort, sampled).await?;
-            verify_raw(&normal, &proofs)?;
-            let report = if cohort {
-                let mut first = Vec::new();
-                let mut members = BTreeSet::new();
-                let cohort_end = day.start() + 86400;
-                let mut earliest_by_account = BTreeMap::<Uuid, &Proof>::new();
-                for proof in &proofs {
-                    earliest_by_account
-                        .entry(proof.account)
-                        .and_modify(|earliest| {
-                            if proof.at < earliest.at {
-                                *earliest = proof;
-                            }
-                        })
-                        .or_insert(proof);
-                }
-                for account in normal
-                    .iter()
-                    .filter(|n| n.at < cohort_end)
-                    .map(|n| n.account)
-                    .collect::<BTreeSet<_>>()
-                {
-                    let earliest = earliest_by_account
-                        .get(&account)
-                        .ok_or(EventError::Incomplete)?;
-                    if earliest.at < day.start() {
-                        continue;
-                    }
-                    if earliest.created <= sampled - 7776000 {
-                        return Err(EventError::Incomplete.into());
-                    }
-                    first.push(FirstNormalCompletion {
-                        account: event_id(account)?,
-                        day: UtcDay::from_timestamp(earliest.at)?,
-                    });
-                    members.insert(account);
-                }
-                let selected:Vec<_>=events.into_iter().filter(|e|matches!(e.subject,EventSubject::Account(a) if members.contains(&a.uuid()))).collect();
-                Report::Cohort(d7_cohort(&first, &selected, day, sampled, true)?)
-            } else {
-                Report::Week(weekly_nsm(&events, day, sampled, true)?)
-            };
+            let (report, coverage) = snapshot(&mut tx, day, cohort, sampled, deadline).await?;
             budget(&mut tx, deadline).await?;
             let finished = now(self.clock.as_ref(), sampled)?;
             window(day.start(), coverage, finished)?;
@@ -148,7 +74,7 @@ impl EventMetricReader for PgMetricReader {
     fn weekly(&self, week: UtcDay) -> MetricFuture<'_, WeeklyNsm> {
         Box::pin(async move {
             match self.read(week, false).await? {
-                Report::Week(r) => Ok(r),
+                MetricSnapshot::WeeklyNsm(r) => Ok(r),
                 _ => Err(MetricReadError::Unavailable),
             }
         })
@@ -156,20 +82,16 @@ impl EventMetricReader for PgMetricReader {
     fn d7(&self, cohort: UtcDay) -> MetricFuture<'_, D7Cohort> {
         Box::pin(async move {
             match self.read(cohort, true).await? {
-                Report::Cohort(r) => Ok(r),
+                MetricSnapshot::D7(r) => Ok(r),
                 _ => Err(MetricReadError::Unavailable),
             }
         })
     }
 }
-enum Report {
-    Week(WeeklyNsm),
-    Cohort(D7Cohort),
-}
-fn unavailable(_: sqlx::Error) -> MetricReadError {
+pub(super) fn unavailable(_: sqlx::Error) -> MetricReadError {
     MetricReadError::Unavailable
 }
-fn now(clock: &dyn AuthClock, previous: i64) -> Result<i64, MetricReadError> {
+pub(super) fn now(clock: &dyn AuthClock, previous: i64) -> Result<i64, MetricReadError> {
     let value = clock.now();
     super::valid_timestamp(value)?;
     if value < previous {
@@ -177,7 +99,7 @@ fn now(clock: &dyn AuthClock, previous: i64) -> Result<i64, MetricReadError> {
     }
     Ok(value)
 }
-async fn budget(
+pub(super) async fn budget(
     tx: &mut Transaction<'_, Postgres>,
     deadline: Instant,
 ) -> Result<(), MetricReadError> {
@@ -185,7 +107,7 @@ async fn budget(
         .await
         .map_err(|_| MetricReadError::Unavailable)
 }
-fn window(start: i64, coverage: i64, now: i64) -> Result<(), MetricReadError> {
+pub(super) fn window(start: i64, coverage: i64, now: i64) -> Result<(), MetricReadError> {
     if start > now {
         return Err(EventError::Invalid.into());
     }
@@ -312,4 +234,93 @@ fn verify_raw(normal: &[Normal], proofs: &[Proof]) -> Result<(), MetricReadError
         }
     }
     Ok(())
+}
+
+pub(super) async fn snapshot(
+    tx: &mut Transaction<'_, Postgres>,
+    day: UtcDay,
+    cohort: bool,
+    sampled: i64,
+    deadline: Instant,
+) -> Result<(MetricSnapshot, i64), MetricReadError> {
+    budget(tx, deadline).await?;
+    let coverage = sqlx::query_scalar::<_, i64>(
+        "SELECT coverage_since FROM metric_collection WHERE singleton",
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .ok_or(EventError::Incomplete)?;
+    window(day.start(), coverage, sampled)?;
+    let end = UtcDay(
+        day.0
+            .checked_add_days(Days::new(if cohort { 8 } else { 7 }))
+            .ok_or(EventError::Invalid)?,
+    )
+    .start();
+    super::valid_timestamp(end)?;
+    budget(tx, deadline).await?;
+    let events = pg_records::metric_events(tx, day.start(), end, sampled).await?;
+    budget(tx, deadline).await?;
+    let normal: Vec<_> = events.iter().filter_map(normal).collect();
+    let accounts: Vec<_> = normal
+        .iter()
+        .map(|n| n.account)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    let matches: Vec<_> = normal
+        .iter()
+        .map(|n| n.match_id)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    let proofs = proofs(tx, &accounts, &matches, cohort, sampled).await?;
+    verify_raw(&normal, &proofs)?;
+    let report = if cohort {
+        let mut first = Vec::new();
+        let mut members = BTreeSet::new();
+        let cohort_end = day.start() + 86400;
+        let mut earliest_by_account = BTreeMap::<Uuid, &Proof>::new();
+        for proof in &proofs {
+            earliest_by_account
+                .entry(proof.account)
+                .and_modify(|earliest| {
+                    if proof.at < earliest.at {
+                        *earliest = proof;
+                    }
+                })
+                .or_insert(proof);
+        }
+        for account in normal
+            .iter()
+            .filter(|n| n.at < cohort_end)
+            .map(|n| n.account)
+            .collect::<BTreeSet<_>>()
+        {
+            let earliest = earliest_by_account
+                .get(&account)
+                .ok_or(EventError::Incomplete)?;
+            if earliest.at < day.start() {
+                continue;
+            }
+            if earliest.created <= sampled - 7776000 {
+                return Err(EventError::Incomplete.into());
+            }
+            first.push(FirstNormalCompletion {
+                account: event_id(account)?,
+                day: UtcDay::from_timestamp(earliest.at)?,
+            });
+            members.insert(account);
+        }
+        let selected: Vec<_> = events
+            .into_iter()
+            .filter(|e| matches!(e.subject,EventSubject::Account(a) if members.contains(&a.uuid())))
+            .collect();
+        MetricSnapshot::D7(d7_cohort(&first, &selected, day, sampled, true)?)
+    } else {
+        MetricSnapshot::WeeklyNsm(weekly_nsm(&events, day, sampled, true)?)
+    };
+
+    Ok((report, coverage))
 }

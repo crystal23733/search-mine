@@ -10,6 +10,8 @@
 
 #143은 owner recovery 뒤 Serving 전에 비식별 metric_collection을 최초 초기화한다. 새 migration은 별도 migration 역할로 적용하고 serving에는 metric_collection SELECT/INSERT만 부여한다. UPDATE/DELETE·DDL/migration 조회는 불필요하다. 재시작은 원래 시작 경계를 유지하며 수집 이전·만료 기간은 Incomplete다. 미래 source cleanup25가 미만료 raw를 cascade하면 coverage_since 전진을 같은 transaction에 연결해야 한다.
 
+#145의 product_metric_aggregates는 SELECT/INSERT/DELETE와 computed_at/observed_through/complete/participants/repeat_accounts/human_participations/bot_participations/sample_size/retained UPDATE만 필요하다. metric/period/expires_at UPDATE는 부여하지 않으며 불변 trigger를 유지한다. 실제 제한 역할에서 이 범위의 저장·조회·cleanup과 다른권한42501을 검증한다. maintenance는 별도max2 pool을 공유하며 요청pool5+기존detachedowner1과 합쳐 최대8연결이다. 로컬 metrics CLI의 DATABASE_URL도 secret 환경으로 주입하고 인수/로그/Git에 넣지 않는다.
+
 - `LIAR_AUTH_CSRF_KEY`: CSPRNG32byte를 padding 없는 base64url로 저장한다.
 - `LIAR_AUTH_DIGEST_KEYS`, `LIAR_AUTH_VAULT_KEYS`: 서로 다른32byte 키의 JSON keyring. 형식은 `{"current":1,"keys":[{"version":1,"key":"<base64url32bytes>"}]}`이고 최대4개다. 0키/미등록 current/중복 version/잘못된 길이를 거절한다. DB 밖에 보관하고 앱/백업 키를 분리한다.
 - digest current를 바꿀 때 모든 쓰기 프로세스의 current를 같게 유지한다. identity 쓰기를 잠시 멈추고 동기화한 뒤 재개하며 이전 키를 즉시 제거하지 않는다. [인증 설계](../design/17-auth-privacy.md).

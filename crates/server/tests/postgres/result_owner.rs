@@ -30,7 +30,14 @@ pub(super) async fn server_command(pool: &sqlx::PgPool) -> (Command, String) {
         .env("LIAR_AUTH_DIGEST_KEYS",r#"{"current":1,"keys":[{"version":1,"key":"AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"}]}"#)
         .env("LIAR_AUTH_VAULT_KEYS",r#"{"current":1,"keys":[{"version":1,"key":"AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM"}]}"#)
         .stdout(Stdio::null()).stderr(Stdio::null());
-    for name in ["SystemRoot", "WINDIR", "PATH", "TEMP", "TMP"] {
+    for name in [
+        "SystemRoot",
+        "WINDIR",
+        "PATH",
+        "TEMP",
+        "TMP",
+        "LLVM_PROFILE_FILE",
+    ] {
         if let Some(value) = env::var_os(name) {
             command.env(name, value);
         }

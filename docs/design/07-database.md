@@ -191,3 +191,8 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 #143 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0067](../adr/0067-authoritative-metric-snapshots.md) → collection/30일 경계·RR/2초/10000입력·권위 first-normal 근거·NSM/D7 불완전 거절 → [검증143](../verification/143-authoritative-metric-snapshots.md). 새 개인 first marker/평생flag 없이 기존 source90일을 사용하며 익명 저장/13개월/운영조회·상위20 감사는 후속이다.
 
 metric_collection은 singleton=true와 최초 started_at/단조 증가 coverage_since 두 UTC epoch만 저장한다. 개인 FK·날짜별 개인 marker·명단·source ID는 없고 수집 완결성의 전역 운영 metadata다. forward migration202610160001을 별도 적용하며 serving은 SELECT/INSERT만 쓴다. trigger는 시작 시각 변경·coverage 역행을 막는다. 미래25의 비계정 원본 삭제가 미만료 raw를 cascade하는 경우 같은 transaction의 coverage 전진을 연결해야 하며, 계정삭제는 해당 snapshot의 집계 대상에서 제외하는 기존 정책이다.
+
+
+#145 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0068](../adr/0068-anonymous-metrics-retention-and-operations.md) → same-RR 익명 scalar 집계·원래13달력개월/500개2초 정리·자동주기/로컬운영·계정삭제·상위20 감사 → [검증145](../verification/145-anonymous-metrics-retention-and-operations.md). optional21/외부42·25/26·27·미확정83/141은 별도다.
+
+product_metric_aggregates는 metric+UTC period 키, computed_at/observed_through/expires_at/complete와 닫힌 NSM 또는 D7 counter만 저장한다. 임의payload/개인FK/식별자/명단이 없으며 원래13달력개월 expiry는 Rust에서 검증한다. forward migration202610160002의 trigger가 period/expiry 변경과시각/완결성후퇴·같은시각다른내용을막는다. TTL index로500개씩 물리삭제하며계정삭제는다음RR재계산에반영하고기존익명과거집계에는개인mapping을두지않는다.

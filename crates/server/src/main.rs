@@ -1,6 +1,9 @@
 use liar_server::auth::*;
 use liar_server::daily::*;
-use liar_server::events::{EventRetentionMaintenance, PgEventRetention, PgMetricReader};
+use liar_server::events::{
+    AggregationMaintenance, EventRetentionMaintenance, PgAggregateRetention, PgAggregateStore,
+    PgEventRetention, PgMetricReader,
+};
 use liar_server::lobby::*;
 use liar_server::online::*;
 use liar_server::privacy::*;
@@ -30,13 +33,14 @@ fn run(server: impl std::future::Future<Output = ServerResult>) -> ServerResult 
 mod tests;
 
 async fn serve() -> ServerResult {
-    let pool = env::var("DATABASE_URL")
-        .ok()
+    let database_url = env::var("DATABASE_URL").ok();
+    let pool = database_url
+        .as_deref()
         .map(|url| {
             PgPoolOptions::new()
                 .max_connections(5)
                 .acquire_timeout(Duration::from_secs(1))
-                .connect_lazy(&url)
+                .connect_lazy(url)
         })
         .transpose()
         .map_err(|_| "Database configuration is invalid")?;
@@ -91,11 +95,34 @@ async fn serve() -> ServerResult {
             .initialize()
             .await
             .map_err(|_| "Metric collection initialization failed")?;
+        let maintenance_pool = PgPoolOptions::new()
+            .max_connections(2)
+            .acquire_timeout(Duration::from_secs(1))
+            .connect_lazy(
+                database_url
+                    .as_deref()
+                    .ok_or("Maintenance requires a database")?,
+            )
+            .map_err(|_| "Maintenance database configuration is invalid")?;
         tokio::spawn(
             EventRetentionMaintenance::new(Arc::new(PgEventRetention::new(
-                auth_pool.clone(),
+                maintenance_pool.clone(),
                 auth_clock.clone(),
             )))
+            .run(),
+        );
+        tokio::spawn(
+            EventRetentionMaintenance::anonymous(Arc::new(PgAggregateRetention::new(
+                maintenance_pool.clone(),
+                auth_clock.clone(),
+            )))
+            .run(),
+        );
+        tokio::spawn(
+            AggregationMaintenance::new(
+                Arc::new(PgAggregateStore::new(maintenance_pool, auth_clock.clone())),
+                auth_clock.clone(),
+            )
             .run(),
         );
         let registry = MatchRegistry::new(

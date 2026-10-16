@@ -158,3 +158,6 @@ TS31~36은 4개 어댑터의 최소 권한·추가 claim 제거·state/nonce/JWK
 #143 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0067](../adr/0067-authoritative-metric-snapshots.md) → collection/30일 경계·RR/2초/10000입력·권위 first-normal 근거·NSM/D7 불완전 거절 → [검증143](../verification/143-authoritative-metric-snapshots.md). 새 개인 first marker/평생flag 없이 기존 source90일을 사용하며 익명 저장/13개월/운영조회·상위20 감사는 후속이다.
 
 first-normal 근거는 기존 본인 게임90일 기록과 계정 생성 시각을 조회 중에만 사용한다. 개인별 최초 날짜/평생 flag를 새로 저장하지 않아 본인 export 형식과 raw30일/게임90일·계정삭제 보존은 그대로다. 전역 collection 경계에는 개인 연결 필드가 없다. 기존 이력으로 전체 생애 첫 정상 날짜를 증명할 수 없는 오래된 계정은 D7 Incomplete로 처리한다.
+
+
+#145 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0068](../adr/0068-anonymous-metrics-retention-and-operations.md) → same-RR 익명 scalar 집계·원래13달력개월/500개2초 정리·자동주기/로컬운영·계정삭제·상위20 감사 → [검증145](../verification/145-anonymous-metrics-retention-and-operations.md). optional21/외부42·25/26·27·미확정83/141은 별도다.

@@ -16,6 +16,8 @@ use zeroize::Zeroizing;
 struct HttpClock;
 #[path = "postgres/admission_restart.rs"]
 mod admission_restart;
+#[path = "postgres/anonymous_metrics.rs"]
+mod anonymous_metrics;
 #[path = "postgres/daily.rs"]
 mod daily;
 #[path = "postgres/daily_http.rs"]

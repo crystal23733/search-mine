@@ -8,6 +8,7 @@ import { createDailyRecords } from "./services/daily-records";
 import { createSharePort } from "./services/daily-share";
 import { createActivity } from "./services/activity";
 import { createOffline } from "./services/offline";
+import { createConsent } from "./services/consent";
 import { createBrowserAuth } from "./services/auth/browser";
 import { createAuthHttp } from "./services/auth/http";
 import { createPendingSubmissions } from "./services/pending-submissions";
@@ -74,6 +75,7 @@ const offline = createOffline(activity, {
 render(
   <App
     services={{
+      consent: createConsent(),
       dailyChallenge: {
         start: async (...args) => (await getDailyApi()).start(...args),
         heartbeat: async (...args) => (await getDailyApi()).heartbeat(...args),

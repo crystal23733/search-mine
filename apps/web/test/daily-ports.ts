@@ -1,6 +1,7 @@
 import { createDailyRecords } from "../src/services/daily-records";
 import { createActivity } from "../src/services/activity";
 import { createOffline } from "../src/services/offline";
+import { createConsent } from "../src/services/consent";
 import { guestAuthPorts } from "./guest-auth";
 import { createPendingSubmissions } from "../src/services/pending-submissions";
 export function dailyTestPorts() {
@@ -8,6 +9,7 @@ export function dailyTestPorts() {
   const auth = guestAuthPorts();
   const records = createDailyRecords();
   return {
+    consent: createConsent(),
     dailyChallenge: {
       start: async () => {
         throw Error("unavailable");

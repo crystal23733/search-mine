@@ -384,3 +384,8 @@ TS29 확장(#140): 실제 PG의 exact30일·received 비연장·500+1/동시·�
 #150 FR01/10/11/13·NFR01/02/06/07/08·TS18/19/24/26/31/35/36 → [ADR0070](../adr/0070-technical-storage-notice.md) → 읽기 전용8언어 실제 저장소/쿠키·footer/route/dialog·유지/삭제/메모리 대체 → [검증150](../verification/150-technical-storage-notice.md). 실제 CMP/전체 정책/외부147·상위21과83/141은 별도다.
 
 TS24/19/18 확장(#150): footer에서 언어별 저장소 고지에 접근하고 설정 dialog와 같은 실제 범주/기간/삭제 안내를 읽는다. 읽기/닫기가 login/동의/전송/삭제를 실행하지 않고,30개 로컬 결과/명시 제출·5분/30일 쿠키·기록/캐시/로그아웃/계정삭제 범위·메모리 대체가8언어에 존재한다. PC/mobile/360px·keyboard/초점 복구·저장소 차단/서버 실패 뒤 로컬 연습이 계속 가능하다. 실제CMP/법적 정책 검수는147/21의 후속이다.
+
+
+#152 FR11/13·NFR01/02/06/07/08·TS19/24/26/29/31/36 → [ADR0071](../adr/0071-purpose-consent-port.md) → 목적별 닫힌 current CMP port/재열기수명·8언어설정·실행앱미설정차단 → [검증152](../verification/152-purpose-consent-port.md). 실제CMP/계정탭/서버동의·선택수집/외부147·상위21은후속이다.
+
+TS24 확장(#152): fake CMP valid analytics-only/advertising-only→해당목적만허용,unknown/denied/error/예외/추가필드/잘못된boolean→양쪽차단. 현재read가철회되면예전view와재열기late Promise가허용을복원하지않는다. pending/중복/실패/취소/dispose·구독오류를검사한다.8언어설정과실행앱unavailable/저장소차단·503/PCmobile에서추가선택요청없이실제로컬연습을계속한다. 실제CMP/계정탭/서버transaction통합은21/147후속이다.

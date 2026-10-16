@@ -335,5 +335,19 @@
   "storage.optional.description": "Les balises et le stockage de publicité et d’analyse facultatives sont actuellement inactifs. Se connecter, jouer localement ou lire cet avis n’accorde aucun consentement facultatif.",
   "storage.manage": "Dans les paramètres, effacer les résultats locaux supprime aussi les envois en attente ; effacer le cache hors ligne supprime les fichiers de l’application. Ces actions ne suppriment pas le compte sur le serveur. La déconnexion termine la session actuelle. Supprimer le compte exige une confirmation distincte dans les paramètres du compte ; préférences et cache public ont leurs propres commandes.",
   "storage.siteData": "Effacer les données de ce site dans le navigateur peut supprimer ensemble les cookies de connexion, les préférences, la progression du tutoriel, les résultats locaux et les fichiers hors ligne.",
-  "storage.fallback": "Si le stockage du navigateur est indisponible, les préférences et résultats locaux utilisent la mémoire et peuvent disparaître au rechargement."
+  "storage.fallback": "Si le stockage du navigateur est indisponible, les préférences et résultats locaux utilisent la mémoire et peuvent disparaître au rechargement.",
+  "consent.description": "L’analyse et la publicité se choisissent séparément. Vous pouvez vous connecter et jouer sans autoriser le traitement facultatif.",
+  "consent.analytics": "Analyse facultative",
+  "consent.advertising": "Publicité",
+  "consent.allowed": "Autorisé",
+  "consent.blocked": "Bloqué",
+  "consent.reopen": "Rouvrir les choix de consentement",
+  "consent.cancel": "Annuler l’ouverture",
+  "consent.opening": "Ouverture des choix ; le traitement facultatif est bloqué.",
+  "consent.reopenFailed": "Impossible d’ouvrir les choix. Le traitement facultatif est bloqué ; vous pouvez continuer à jouer.",
+  "consent.state.unavailable": "Les choix de consentement sont indisponibles. La publicité et l’analyse facultatives sont bloquées.",
+  "consent.state.unknown": "Aucun choix actuel n’est confirmé. Le traitement facultatif est bloqué.",
+  "consent.state.denied": "Le traitement facultatif est refusé.",
+  "consent.state.error": "Impossible de vérifier les choix. Le traitement facultatif est bloqué.",
+  "consent.state.valid": "Vos choix actuels sont appliqués."
 }

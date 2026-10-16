@@ -335,5 +335,19 @@
   "storage.optional.description": "Las etiquetas y el almacenamiento de publicidad y analítica opcionales están inactivos. Iniciar sesión, jugar localmente o leer este aviso no otorga consentimiento opcional.",
   "storage.manage": "En ajustes, borrar registros locales elimina resultados y envíos pendientes; borrar la caché sin conexión elimina archivos de la aplicación. Ninguna acción borra tu cuenta del servidor. Cerrar sesión termina la sesión actual. Borrar la cuenta requiere una confirmación aparte en ajustes de cuenta; las preferencias y la caché pública tienen sus propios controles.",
   "storage.siteData": "Borrar los datos de este sitio en el navegador puede eliminar a la vez cookies de sesión, preferencias, progreso del tutorial, registros locales y archivos sin conexión.",
-  "storage.fallback": "Si el almacenamiento del navegador no está disponible, las preferencias y los registros locales usan la memoria y pueden perderse al recargar."
+  "storage.fallback": "Si el almacenamiento del navegador no está disponible, las preferencias y los registros locales usan la memoria y pueden perderse al recargar.",
+  "consent.description": "La analítica y la publicidad se eligen por separado. Puedes iniciar sesión y jugar sin permitir el tratamiento opcional.",
+  "consent.analytics": "Analítica opcional",
+  "consent.advertising": "Publicidad",
+  "consent.allowed": "Permitido",
+  "consent.blocked": "Bloqueado",
+  "consent.reopen": "Reabrir opciones de consentimiento",
+  "consent.cancel": "Cancelar apertura",
+  "consent.opening": "Abriendo opciones; el tratamiento opcional está bloqueado.",
+  "consent.reopenFailed": "No se pudieron abrir las opciones. El tratamiento opcional está bloqueado; puedes seguir jugando.",
+  "consent.state.unavailable": "Las opciones de consentimiento no están disponibles. La publicidad y la analítica opcionales están bloqueadas.",
+  "consent.state.unknown": "No hay una elección actual confirmada. El tratamiento opcional está bloqueado.",
+  "consent.state.denied": "Se ha rechazado el tratamiento opcional.",
+  "consent.state.error": "No se pudieron comprobar las opciones. El tratamiento opcional está bloqueado.",
+  "consent.state.valid": "Se han aplicado tus opciones actuales."
 }

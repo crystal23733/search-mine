@@ -1013,6 +1013,18 @@
         "main-preparation-diagnostics"
       ],
       "acceptance": "ADR0070·실제저장목적/유지삭제8언어·읽기전용footer/route/dialog·무부작용/스토리지차단/연습무차단·RedGreen/웹PCmobile/리뷰6CI/정확head병합CLOSED;실제CMP/전체정책/외부147/상위21후속"
+    },
+    {
+      "key": "purpose-consent-port",
+      "issue": 152,
+      "milestone": "M4",
+      "title": "feat(consent): 목적별 기본 차단 포트와 설정 화면",
+      "requirements": "FR11/13, NFR01/02/06/07/08",
+      "scenarios": "TS19/24/26/29/31/36",
+      "deps": [
+        "technical-storage-notice"
+      ],
+      "acceptance": "ADR0071·목적별닫힌currentCMPport/기본차단·재열기/취소/실패/late/dispose·8언어설정/실행unavailable·RedGreen/full/리뷰6CI/정확head병합CLOSED;실제CMP/계정탭/서버동의/선택수집/147/21후속"
     }
   ]
 }

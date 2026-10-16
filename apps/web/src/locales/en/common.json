@@ -335,5 +335,19 @@
   "storage.optional.description": "Optional advertising and analytics tags and storage are currently inactive. Sign-in, local play and reading this notice do not grant optional consent.",
   "storage.manage": "In settings, clearing local records removes local results and pending submissions; clearing the offline cache removes app files. Neither deletes your server account. Signing out ends the current session. Deleting your server account requires a separate confirmation in account settings; device preferences and public cache have their own clearing controls.",
   "storage.siteData": "Your browser’s option to clear this site’s data may remove sign-in cookies, preferences, tutorial progress, local records and offline files together.",
-  "storage.fallback": "If browser storage is unavailable, preferences and local records use memory and may disappear after a reload."
+  "storage.fallback": "If browser storage is unavailable, preferences and local records use memory and may disappear after a reload.",
+  "consent.description": "Analytics and advertising have separate choices. You can sign in and play without allowing optional processing.",
+  "consent.analytics": "Optional analytics",
+  "consent.advertising": "Advertising",
+  "consent.allowed": "Allowed",
+  "consent.blocked": "Blocked",
+  "consent.reopen": "Reopen consent choices",
+  "consent.cancel": "Cancel opening",
+  "consent.opening": "Opening choices; optional processing is blocked.",
+  "consent.reopenFailed": "Choices could not be opened. Optional processing is blocked; you can keep playing.",
+  "consent.state.unavailable": "Consent choices are unavailable. Optional advertising and analytics are blocked.",
+  "consent.state.unknown": "No current choice is confirmed. Optional processing is blocked.",
+  "consent.state.denied": "Optional processing is declined.",
+  "consent.state.error": "Choices could not be checked. Optional processing is blocked.",
+  "consent.state.valid": "Your current choices are applied."
 }

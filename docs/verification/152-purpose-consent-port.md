@@ -11,3 +11,13 @@ FR11/13 · NFR01/02/06/07/08 · TS19/24/26/29/31/36. 선행20/150 CLOSED·PR146/
 정확성 리뷰 기준 develop9eb6a91: adapter 현재 선택→엄격한 최소 view·목적별 허용, CMP 변경→구독/조회, pending/abort/dispose/이전 완료→현재 요청과 UI 수명을 대조했다. 취소 자체는 동의를 만들지 않고 이후에도 현재 선택만 읽는다. 실제 runtime은 createConsent() 미설정뿐이며 fake CMP는 테스트 안에서만 조립한다. raw payload/선택 저장/네트워크/게임 lock·server grant를 새로 추가하지 않았다. 실제 CMP·계정탭·서버 선택 저장은 후속 범위다.
 
 새 독립 DB 전체·문서/Mermaid·최신CI와 병합은 수행 뒤 PR/당일 로컬 review에 구분해 기록한다. #21/#147/M4·#83/#141은 OPEN이다.
+
+## 최초 전체·원격 실패와 비교
+
+최초 source3a747ec의 로컬 전체는 기존 #83 offline-mobile 두 탭 idle Apply 뒤 load10초 대기에서114pass/1fail/2미실행5.6분이었다. trace/context·전체 로그·PC/mobile probe를別도 보존했다. 두 true ACK 뒤 skipWaiting-request가 있었지만10초 동안 새 controllerchange/boot 없이 active activated·waiting installed였고 old native worker는 stop/start했다. 이 단계는 #143의 과거 실패와 같지만 원인을 확정하지 못했다. SW/updateCoordinator/activity·timeout/retry는 변경하지 않았다.
+
+[최초 원격 Product38932762113](https://github.com/crystal23733/search-mine/actions/runs/38932762113)도 같은 mobile load 단계가 최초/기존 재시도 모두 실패해114pass/1fail/2미실행8.7분이었다. 실패 후 내장된 SW 네트워크 계측 비활성 비교도7pass/1fail45.8초이며 실패 상태는 waiting installed/boot1이었다. browser-failures의 trace3개와 probe11개·raw web 로그를 실제 내려받아 보존했다. 설치된 Playwright1.63 코드가 해당 flag에서 network manager 생성을 생략함을 대조했으며, 이 설정만으로 해결되지 않으므로 기본값을 바꾸지 않는다.
+
+같은 실행 코드의 로컬 기본 환경 PC/mobile 각4회 총8pass31.1초, 네트워크 계측 비활성8pass29.0초를 retries0/workers2로 확인했다. 별도 숨김 Chromium153.0.8010.12에 Node 기본 WebSocket/CDP로 page만 연결하고 worker debugger/Playwright Browser/ServiceWorker.enable 없이 같은 production 파일·실제 WASM daily·게임 중 거부→idle Apply→두 load/boot2를 원래10초 제한으로 확인했다. PC1440/mobile390 에뮬레이션 각4회 총8회 모두 완료했다. 이 독립 진단은 cache 삭제까지의 전체 E2E나 실제 기기/사람 검수가 아니며 성공 표본만으로 브라우저·계측 원인을 단정하지 않는다.
+
+모든 최초 실패/DB/trace/probe·독립 진단 프로필과 결과를 로컬 .tmp와 review에 보존한다. 원격 gate는 아직 실패이며 #152/PR153을 병합하지 않았다. 위 비교 근거를 보강한 뒤 같은 실행 코드와 새 독립 DB의 전체·최신 head 원격 검증을 수행하고 결과를 구분해 기록한다. #83 원인 해결·전체 성공·timeout/retry 완화로 해석하지 않는다.

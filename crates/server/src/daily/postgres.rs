@@ -294,7 +294,7 @@ impl DailyRepository for PgDailyRepository {
             let snapshot =
                 serde_json::to_string(candidate.rules()).map_err(|_| DailyStoreError::Invalid)?;
             let mut tx = self.pool.begin().await.map_err(unavailable)?;
-            sqlx::query("INSERT INTO daily_definitions(id,utc_date,seed_version,rules_snapshot,published_at,verification_expires_at) SELECT $1,$2::text::date,$3,$4::text::jsonb,to_timestamp($5::double precision),($2::text::date::timestamp AT TIME ZONE 'UTC')+604800*interval '1 second' WHERE to_timestamp($5::double precision)>=($2::text::date::timestamp AT TIME ZONE 'UTC') AND to_timestamp($5::double precision)<($2::text::date::timestamp AT TIME ZONE 'UTC')+604800*interval '1 second' ON CONFLICT(utc_date,seed_version) DO NOTHING")
+            sqlx::query("INSERT INTO daily_definitions(id,utc_date,seed_version,rules_snapshot,published_at,verification_expires_at) SELECT $1,$2::text::date,$3,$4::text::jsonb,to_timestamp($5::double precision),($2::text::date::timestamp AT TIME ZONE 'UTC')+604800*interval '1 second' WHERE to_timestamp($5::double precision)>=($2::text::date::timestamp AT TIME ZONE 'UTC') AND to_timestamp($5::double precision)<($2::text::date::timestamp AT TIME ZONE 'UTC')+604800*interval '1 second' ON CONFLICT DO NOTHING")
                 .bind(candidate.metadata().id()).bind(&candidate.metadata().date).bind(i32::from(candidate.metadata().seed_version)).bind(snapshot).bind(now).execute(&mut *tx).await.map_err(unavailable)?;
             let accepted = by_date(
                 &mut tx,

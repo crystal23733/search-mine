@@ -32,4 +32,6 @@ forward migration은 별도 migration 역할로 적용한다. serving에는 aggr
 
 ## 인수 검증
 
+PR146 최초 PG18 CI에서 기존 daily start 동시 발행이147pass/1fail(HTTP503)이었다. PG 로그는 동일 derived daily ID의 daily_definitions_pkey 중복이며 publish의 ON CONFLICT가 날짜/버전 index만 대상으로 삼았다. 동일 발행의 모든 unique 충돌은 DO NOTHING으로 수렴한 뒤 기존 by_date/typed metadata 검증으로 accepted snapshot을 읽도록 보정한다. [PostgreSQL INSERT 공식 계약](https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT)은 DO NOTHING의 conflict target을 생략하면 모든 사용 가능한 unique 제약/index 충돌을 처리한다. 기존 값/발행시각을 덮지 않고 예외·취소·deadline은 유지한다. 같은/다른 snapshot 경합과 손상 데이터 거절을 실제 PG로 재검증한다. 이 회귀 수정은 #145 인수 검사에서 확인한 기존 원자적 필수 이벤트 source의 선행 결함이며 새 기능 활성화가 아니다.
+
 실제 PG Red→Green: 익명 필드만 저장·월말/exact13개월·원래expiry 불변·현재삭제 재계산/과거anonymous 유지·Incomplete/Capacity 비덮어쓰기·동시/equalClock·SQL/Clock/취소 rollback·최소DML·물리500+1/잠긴row/동시cleanup·실제CLI/main을 확인한다. maintenance는60초/23분순환/4초공유budget/실패독립/겹침0·stale를 검사한다. full/실DB/freshdomain95전체80·docs/Mermaid·실제 코드리뷰·최신6CI/정확head squash merge/CLOSED와 상위20 인수 trace audit를 기록한다. 고정 fixture Clock이 이전 실행 기록과 섞이지 않게 전체 E2E마다 독립 검증 DB를 만들며 기존 DB/logs/trace를 보존한다. optional21·OAuth42·운영25/26·사람27·미확정83/141은 별도이며 실사용 지표/운영 성능을 달성했다고 주장하지 않는다.

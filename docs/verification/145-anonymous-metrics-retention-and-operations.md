@@ -31,3 +31,10 @@ FR01/16 · NFR01/02/05/07/08 · TS20/21/29/31/34/35/36. 선행143 CLOSED·PR144/
 ## 최종 로컬 검증
 
 최종 로컬 같은 제품 source: 전체 scripts/check.ps1 exit0, Rust429pass·웹267pass/90.91%·Chromium113pass/6.5m/재시도0·WASM/types/fixtures/tokens/format/lint/typecheck/build·문서194/Mermaid34failure0 통과. 독립 DB liar_events145full_20261016202042의 실제PG17.4 회귀148/31.93초. fresh coverage 472pass(실제PG148/37.90초), Event478/479=99.79%·Privacy100%·서버10984/11439=96.02%로 모든domain95/전체80 게이트 통과; 실제 metrics/main/migrate entry 포함. 전체 로그 events145-validation-20261016202042, fresh 보고서 events145-coverage-20261016202552.json 보존. 원격PG18/최신6checks·정확head 병합/CLOSED는 다음 단계다.
+
+
+## 원격 인수 실패와 기존 데일리 동시 발행 수정
+
+최초 source611d949의 Product38894668896 database는147pass/1fail/51.35초였다. daily start 동시 최초 발행의HTTP503이며 PG로그의동일daily ID primary key 중복을 실제 확인했다. 날짜/버전만 conflict target인 기존 publish를 모든 unique 충돌 DO NOTHING 뒤 typed accepted snapshot 조회로 보정했다. ADR0068을 코드보다 먼저 갱신했고 같은발행4개/16날짜의 실제PG Red0pass/1fail/0.64초(Unavailable)를 관측했다. 첫 Red도0/1/.97초였으나 반복version2 이후가 유효하지 않아 날짜 반복으로 고친 뒤 다시Red를확인했다. 첫실패raw로그events145-ci-first-database.log와Red로그는보존한다. 수정후전체PG149/full/fresh/새head6CI를재실행하며이전source의성공을새source통과로대체하지않는다.
+
+수정 뒤 실제 PG 데일리26개/9.29초 Green으로 동일 발행4개·16날짜/다른 snapshot 경합·accepted evidence·최초 기록/재시도·손상/권한/삭제/시각 경계를 확인했다. SQL 변경은 모든 unique 충돌을 skip한 뒤 기존 typed 조회를 유지하므로 손상·다른 날짜를 승인하지 않고 기존 값·published_at도 덮지 않는다. 이후 정확 source의 전체/fresh/최신6checks·병합/CLOSED 결과는 [PR146 최종 검증 기록](https://github.com/crystal23733/search-mine/pull/146)과 로컬 당일 review에 이어 기록한다.

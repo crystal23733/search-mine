@@ -268,6 +268,46 @@ async fn concurrent_publishers_use_one_accepted_snapshot_and_only_its_evidence()
 }
 
 #[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn identical_first_publishers_converge_across_both_unique_constraints() {
+    let pool = auth_pool().await;
+    for offset in 0..16 {
+        let now = START + offset * 86400 + 60;
+        let store = PgDailyRepository::new(pool.clone(), Arc::new(Clock(AtomicI64::new(now))));
+        let date = chrono::DateTime::from_timestamp(now, 0)
+            .unwrap()
+            .date_naive()
+            .to_string();
+        let candidate = PublishedDaily::new(&date, 1, RulesSnapshot::bundled()).unwrap();
+        let barrier = Arc::new(tokio::sync::Barrier::new(4));
+        let mut tasks = Vec::new();
+        for _ in 0..4 {
+            let store = store.clone();
+            let candidate = candidate.clone();
+            let barrier = barrier.clone();
+            tasks.push(tokio::spawn(async move {
+                barrier.wait().await;
+                store.publish(candidate).await
+            }));
+        }
+        for task in tasks {
+            let accepted = task.await.unwrap();
+            assert!(
+                accepted.is_ok(),
+                "Identical concurrent publications must converge: {accepted:?}"
+            );
+            assert_eq!(accepted.unwrap().metadata(), candidate.metadata());
+        }
+    }
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM daily_definitions")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 16);
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn canonical_retry_changed_payload_changed_day_and_practice_keep_the_first_row() {
     use sha2::{Digest, Sha256};

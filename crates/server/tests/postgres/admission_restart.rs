@@ -1,4 +1,5 @@
-use super::result_owner::{Server, client, server_command, wait_failed};
+use super::main_observation::ObservedServer;
+use super::result_owner::{client, wait_failed};
 use super::*;
 use futures_util::StreamExt;
 use reqwest::Client;
@@ -76,7 +77,12 @@ async fn lobby(client: &Client, origin: &str, user: &User, command: Value) -> Va
     assert_eq!(response.status(), StatusCode::OK);
     response.json().await.unwrap()
 }
-async fn pair(pool: &sqlx::PgPool, client: &Client, origin: &str) -> ([User; 2], Uuid) {
+async fn pair(
+    pool: &sqlx::PgPool,
+    client: &Client,
+    origin: &str,
+    server: &ObservedServer,
+) -> ([User; 2], Uuid) {
     let users = [
         user(pool, client, origin, "RestartOne").await,
         user(pool, client, origin, "RestartTwo").await,
@@ -94,6 +100,7 @@ async fn pair(pool: &sqlx::PgPool, client: &Client, origin: &str) -> ([User; 2],
     let id = tokio::time::timeout(Duration::from_secs(4), async {
         loop {
             let state = lobby(client, origin, &users[0], json!({"type":"status"})).await;
+            server.observe(&state);
             last_state = state.clone();
             if state["state"]["type"] == "failed" {
                 break Err(());
@@ -110,7 +117,7 @@ async fn pair(pool: &sqlx::PgPool, client: &Client, origin: &str) -> ([User; 2],
     let id = id.unwrap_or_else(|_| {
         panic!(
             "Real main preparation failed; last state: {last_state}; diagnostics: {}",
-            std::fs::read_to_string(admission_log_path(pool)).unwrap_or_default()
+            server.diagnostics()
         )
     });
     (users, id)
@@ -126,27 +133,19 @@ async fn result(client: &Client, origin: &str, user: &User, id: Uuid) -> reqwest
         .await
         .unwrap()
 }
-async fn spawn(pool: &sqlx::PgPool) -> (Server, String) {
-    let (mut command, origin) = server_command(pool).await;
-    std::fs::create_dir_all(".tmp/admission-main").unwrap();
-    command.stderr(std::fs::File::create(admission_log_path(pool)).unwrap());
-    let mut server = Server(command.spawn().unwrap());
-    tokio::time::timeout(Duration::from_secs(8),async {
+async fn spawn(pool: &sqlx::PgPool) -> (ObservedServer, String) {
+    let (mut server, origin) = ObservedServer::spawn(pool).await;
+    tokio::time::timeout(Duration::from_secs(8), async {
         loop {
-            assert!(server.0.try_wait().unwrap().is_none(),"Owner exited before preparation");
-            let ready=client().get(format!("{origin}/health/ready")).send().await.is_ok_and(|r|r.status()==StatusCode::OK);
-            let cached=std::fs::read_to_string(admission_log_path(pool)).unwrap_or_default().contains("{\"component\":\"board_pool\",\"code\":\"ready\"}");
-            if ready && cached {break;}
+            assert!(server.0.try_wait().unwrap().is_none(), "Owner exited before preparation");
+            let ready = client().get(format!("{origin}/health/ready")).send().await.is_ok_and(|r| r.status()==StatusCode::OK);
+            if ready && server.cached() { break; }
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
     }).await.expect("Actual main and certified board cache must be ready within the existing preparation budget");
     (server, origin)
 }
-fn admission_log_path(pool: &sqlx::PgPool) -> std::path::PathBuf {
-    // Each isolated pool has a stable unique identity during this test.
-    std::path::PathBuf::from(format!(".tmp/admission-main/{:p}.log", pool))
-}
-fn kill(mut server: Server) {
+fn kill(mut server: ObservedServer) {
     // std::process::Child::kill is SIGKILL on Unix and TerminateProcess on Windows.
     server.0.kill().unwrap();
     assert!(!server.0.wait().unwrap().success());
@@ -223,7 +222,7 @@ async fn real_main_os_kill_recovers_authenticated_ws_match_once_with_original_an
     let pool = auth_pool().await;
     let client = client();
     let (server, origin) = spawn(&pool).await;
-    let (users, id) = pair(&pool, &client, &origin).await;
+    let (users, id) = pair(&pool, &client, &origin, &server).await;
     let (hash, at) = active(&pool, id).await;
     let mut request = format!("{}/api/v1/ws", origin.replacen("http://", "ws://", 1))
         .into_client_request()
@@ -305,7 +304,7 @@ async fn real_main_known_start_cancellation_is_immutable_across_os_kill_and_rest
     let pool = auth_pool().await;
     let client = client();
     let (server, origin) = spawn(&pool).await;
-    let (users, id) = pair(&pool, &client, &origin).await;
+    let (users, id) = pair(&pool, &client, &origin, &server).await;
     let (_, at) = active(&pool, id).await;
     // Neither participant attaches: the real core/actor saves a known start cancellation.
     let before = tokio::time::timeout(Duration::from_secs(5), async {
@@ -345,12 +344,11 @@ async fn real_main_failed_recovery_never_serves_or_partially_saves_and_erasure_i
     let pool = auth_pool().await;
     let client = client();
     let (server, origin) = spawn(&pool).await;
-    let (users, id) = pair(&pool, &client, &origin).await;
+    let (users, id) = pair(&pool, &client, &origin, &server).await;
     let (hash, at) = active(&pool, id).await;
     kill(server);
     sqlx::raw_sql("CREATE FUNCTION reject_recovery_seat() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.seat=1 THEN RAISE EXCEPTION 'controlled recovery failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER reject_recovery_seat BEFORE INSERT ON online_match_players FOR EACH ROW EXECUTE FUNCTION reject_recovery_seat();").execute(&pool).await.unwrap();
-    let (mut command, failed_origin) = server_command(&pool).await;
-    let mut failed = Server(command.spawn().unwrap());
+    let (mut failed, failed_origin) = ObservedServer::spawn(&pool).await;
     wait_failed(&mut failed).await;
     assert!(
         client

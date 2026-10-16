@@ -71,6 +71,12 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
+          name: main-preparation-diagnostics
+          path: crates/server/.tmp/admission-main/*.jsonl
+          retention-days: 7
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
           name: auth-coverage
           path: target/auth-coverage.json
           retention-days: 7

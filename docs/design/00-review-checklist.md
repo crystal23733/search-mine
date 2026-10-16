@@ -201,3 +201,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #145 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0068](../adr/0068-anonymous-metrics-retention-and-operations.md) → same-RR 익명 scalar 집계·원래13달력개월/500개2초 정리·자동주기/로컬운영·계정삭제·상위20 감사 → [검증145](../verification/145-anonymous-metrics-retention-and-operations.md). optional21/외부42·25/26·27·미확정83/141은 별도다.
+
+
+#148 NFR01/02/05/07/08 · TS15/16/20/21/31 → [ADR0069](../adr/0069-main-preparation-diagnostics.md) → 실제 child별 고유 로그·단조 단계/실패 상태·재시작 보존 → [검증148](../verification/148-main-preparation-diagnostics.md). 상위141의 미확정 준비 원인과 진단 보존을 구분한다.

@@ -55,3 +55,6 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 #145 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0068](../adr/0068-anonymous-metrics-retention-and-operations.md) → same-RR 익명 scalar 집계·원래13달력개월/500개2초 정리·자동주기/로컬운영·계정삭제·상위20 감사 → [검증145](../verification/145-anonymous-metrics-retention-and-operations.md). optional21/외부42·25/26·27·미확정83/141은 별도다.
 
 운영 metrics CLI는 private DB 환경에서 `cargo run --locked -p liar-server --bin metrics -- read weekly_nsm 2026-10-12` 또는 `refresh d7 2026-10-05` 형식으로 실행한다. 날짜는 형식 예시이며 실제 collection/30일 완결성을 만족하는 기간만 refresh한다. 현재NSM은정상60초, 이전주/각matureD7는정상약23분순환이고 실제 computed_at/observed_through와30분stale를표시한다. 없는기간은missing,13개월밖은expired,표본0/미성숙D7rate는null이다. past final에도계산시각/stale를숨기지않는다. 공개HTTP admin/외부SaaS/자동메시지없음. 장애·backlog 때갱신/물리삭제가늦어질수있으며미니PC실제성능은26에서측정한다.
+
+
+#148 NFR01/02/05/07/08 · TS15/16/20/21/31 → [ADR0069](../adr/0069-main-preparation-diagnostics.md) → 실제 child별 고유 로그·단조 단계/실패 상태·재시작 보존 → [검증148](../verification/148-main-preparation-diagnostics.md). 상위141의 미확정 준비 원인과 진단 보존을 구분한다.

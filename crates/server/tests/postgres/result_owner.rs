@@ -362,8 +362,7 @@ async fn bounded_queue_skips_unstarted_cancellations_but_preserves_started_commi
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn main_exits_and_stops_http_and_existing_socket_when_owner_is_lost() {
     let pool = auth_pool().await;
-    let (mut command, origin) = server_command(&pool).await;
-    let mut server = Server(command.spawn().unwrap());
+    let (mut server, origin) = super::main_observation::ObservedServer::spawn(&pool).await;
     wait_ready(&mut server, &origin).await;
     let client = client();
     let denied = client
@@ -470,6 +469,11 @@ async fn main_exits_and_stops_http_and_existing_socket_when_owner_is_lost() {
                 .json()
                 .await
                 .unwrap();
+            server.observe(&state);
+            assert_ne!(
+                state["state"]["type"], "failed",
+                "Real main admission failed"
+            );
             if state["state"]["type"] == "matched" {
                 break state;
             }

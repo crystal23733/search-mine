@@ -988,6 +988,18 @@
         "authoritative-metric-snapshots"
       ],
       "acceptance": "ADR0068·sameRR익명scalar/원래13달력개월/500개2초정리·불완전비덮어쓰기/Clock/동시/권리·자동주기/CLI/minDML/main·실PG/TDD/full/fresh95-80/리뷰6CI/정확head병합CLOSED·상위20통합인수감사"
+    },
+    {
+      "key": "main-preparation-diagnostics",
+      "issue": 148,
+      "milestone": "M3",
+      "title": "test(server): 실제 main 준비·재시작 진단 보존",
+      "requirements": "NFR01/02/05/07/08",
+      "scenarios": "TS15/16/20/21/31",
+      "deps": [
+        "anonymous-metrics-retention"
+      ],
+      "acceptance": "ADR0069·실제child고유create_new로그/단조관측·재시작/동시보존·원래예산/실제coreOS·RedGreen/PG/full/fresh/리뷰6CI/정확head병합CLOSED;미확정141원인별도"
     }
   ]
 }

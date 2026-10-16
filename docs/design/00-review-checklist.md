@@ -210,3 +210,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #152 FR11/13·NFR01/02/06/07/08·TS19/24/26/29/31/36 → [ADR0071](../adr/0071-purpose-consent-port.md) → 목적별 닫힌 current CMP port/재열기수명·8언어설정·실행앱미설정차단 → [검증152](../verification/152-purpose-consent-port.md). 실제CMP/계정탭/서버동의·선택수집/외부147·상위21은후속이다.
+
+
+#154 FR10·NFR01/02/05/07/08·TS18/20/26 → [ADR0072](../adr/0072-offline-fetch-diagnostics.md) → fixture 전용 respondWith/handled 독립 수명·원본 Promise/stream/반환/예외 보존·닫힌 진단 → [검증154](../verification/154-offline-fetch-diagnostics.md). 제품 원인 #83은 별도 OPEN이다.

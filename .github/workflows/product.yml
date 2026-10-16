@@ -115,6 +115,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm test:worker-probe
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: MIGRATION_DATABASE_URL="$DATABASE_URL" cargo run --locked -p liar-server --bin migrate

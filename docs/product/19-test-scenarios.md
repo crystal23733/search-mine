@@ -389,3 +389,8 @@ TS24/19/18 확장(#150): footer에서 언어별 저장소 고지에 접근하고
 #152 FR11/13·NFR01/02/06/07/08·TS19/24/26/29/31/36 → [ADR0071](../adr/0071-purpose-consent-port.md) → 목적별 닫힌 current CMP port/재열기수명·8언어설정·실행앱미설정차단 → [검증152](../verification/152-purpose-consent-port.md). 실제CMP/계정탭/서버동의·선택수집/외부147·상위21은후속이다.
 
 TS24 확장(#152): fake CMP valid analytics-only/advertising-only→해당목적만허용,unknown/denied/error/예외/추가필드/잘못된boolean→양쪽차단. 현재read가철회되면예전view와재열기late Promise가허용을복원하지않는다. pending/중복/실패/취소/dispose·구독오류를검사한다.8언어설정과실행앱unavailable/저장소차단·503/PCmobile에서추가선택요청없이실제로컬연습을계속한다. 실제CMP/계정탭/서버transaction통합은21/147후속이다.
+
+
+#154 FR10·NFR01/02/05/07/08·TS18/20/26 → [ADR0072](../adr/0072-offline-fetch-diagnostics.md) → fixture 전용 respondWith/handled 독립 수명·원본 Promise/stream/반환/예외 보존·닫힌 진단 → [검증154](../verification/154-offline-fetch-diagnostics.md). 제품 원인 #83은 별도 OPEN이다.
+
+TS18 확장(#154): 두 요청 응답 Promise의 역순 완료/거절과 handled·waitUntil의 독립 pending을 구분한다. native 동기 예외/반환값·원래 Promise를 보존하고 열린 ReadableStream body를 소비하거나 잠그지 않는다. 로그에 원시 URL/query/header/body가 없고 단조 시간을 유지한다. 실제 WASM PC/mobile 업데이트·캐시 삭제의 원래 인수 조건을 유지하며 성공 반복은 #83 원인 해결을 의미하지 않는다.

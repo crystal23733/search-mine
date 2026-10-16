@@ -159,3 +159,5 @@
 #138/PR139 develop3d53a20 병합·138 CLOSED 확인. 다음 [#140](https://github.com/crystal23733/search-mine/issues/140)은 [ADR0066](../adr/0066-bounded-raw-event-retention.md)의 원시30일 물리 보존이다. first-normal/anonymous metrics/calendar13개월/운영조회·상위20 감사는필수후속이며미확정main준비는141이다.
 
 #143 · M3 · authoritative-metric-snapshots · 선행 raw-event-retention(#140) → ADR0067/TS29/권위 first·NSM/D7 snapshot. 익명 보존과운영은다음순차하위다.
+
+#145 · M3 · anonymous-metrics-retention · 선행 authoritative-metric-snapshots143 → ADR0068/익명13개월/운영·상위20 인수 감사.

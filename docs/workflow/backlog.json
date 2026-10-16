@@ -976,6 +976,18 @@
         "raw-event-retention"
       ],
       "acceptance": "ADR0067·collection/RR/2초/10000입력·source90일 first-normal 증명/old-gap Incomplete·NSM/D7 maturity/sample·계정삭제/실PG/최소DML/main·TDD/full/95-80/리뷰6CI/정확head병합CLOSED;익명13개월/운영조회/20후속"
+    },
+    {
+      "key": "anonymous-metrics-retention",
+      "issue": 145,
+      "milestone": "M3",
+      "title": "feat(events): 익명 집계 13개월 보존과 운영 조회",
+      "requirements": "FR01/16, NFR01/02/05/07/08",
+      "scenarios": "TS20/21/29/31/34/35/36",
+      "deps": [
+        "authoritative-metric-snapshots"
+      ],
+      "acceptance": "ADR0068·sameRR익명scalar/원래13달력개월/500개2초정리·불완전비덮어쓰기/Clock/동시/권리·자동주기/CLI/minDML/main·실PG/TDD/full/fresh95-80/리뷰6CI/정확head병합CLOSED·상위20통합인수감사"
     }
   ]
 }

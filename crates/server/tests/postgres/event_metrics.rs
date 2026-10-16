@@ -421,7 +421,7 @@ async fn shared_pool_and_sql_deadline_and_cancellation_do_not_leak_transaction_s
     close_auth_pool(pool).await;
 }
 
-async fn many_sources(pool: &sqlx::PgPool, account: Uuid, at: i64, reason: &str) {
+pub(super) async fn many_sources(pool: &sqlx::PgPool, account: Uuid, at: i64, reason: &str) {
     sqlx::query("INSERT INTO online_match_results(id,rules_hash,end_elapsed_ms,reason,recorded_at,seed_expires_at) SELECT md5(n::text)::uuid,$2,243000,$3,to_timestamp($1::double precision),to_timestamp($1::double precision)+interval '7 days' FROM generate_series(1,10001) n")
         .bind(at).bind("a".repeat(64)).bind(reason).execute(pool).await.unwrap();
     sqlx::query("INSERT INTO online_match_players(match_id,seat,account_id,is_bot,outcome,opened_safe,mistakes,accusations,correct_accusations) SELECT id,0,$1,false,'draw',4,0,0,0 FROM online_match_results")

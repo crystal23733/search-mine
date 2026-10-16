@@ -1025,6 +1025,18 @@
         "technical-storage-notice"
       ],
       "acceptance": "ADR0071·목적별닫힌currentCMPport/기본차단·재열기/취소/실패/late/dispose·8언어설정/실행unavailable·RedGreen/full/리뷰6CI/정확head병합CLOSED;실제CMP/계정탭/서버동의/선택수집/147/21후속"
+    },
+    {
+      "key": "offline-fetch-diagnostics",
+      "issue": 154,
+      "milestone": "M3",
+      "title": "test(offline): fetch 응답 수명과 업데이트 진단 보존",
+      "requirements": "FR10, NFR01/02/05/07/08",
+      "scenarios": "TS18/20/26",
+      "deps": [
+        "purpose-consent-port"
+      ],
+      "acceptance": "ADR0072·fixture전용respondWith/handled독립수명·닫힌요청유형/단조시간·원본반환예외/Promise/stream보존·RedGreen/실PCmobile반복/full/리뷰6CI/정확head병합CLOSED;제품원인83별도OPEN"
     }
   ]
 }

@@ -370,3 +370,6 @@ TS29 확장(#138): direct/runtime·journal finish/unknown recovery·daily 첫 of
 #140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.
 
 TS29 확장(#140): 실제 PG의 exact30일·received 비연장·500+1/동시·잠긴row skip/backlog·SQLfail/Clockrollback/2초·취소 rollback·본인 논리 만료와 물리 삭제·원본/권리 유지·raw retry 비복원을 확인한다. main즉시/60초·cycle8batch/2초·진전0/skip tick/겹침·최소DML과physicalstartup출구를확인한다. 현재없는anonymous13개월집계는완료로계산하지않는다.
+
+
+#143 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0067](../adr/0067-authoritative-metric-snapshots.md) → collection/30일 경계·RR/2초/10000입력·권위 first-normal 근거·NSM/D7 불완전 거절 → [검증143](../verification/143-authoritative-metric-snapshots.md). 새 개인 first marker/평생flag 없이 기존 source90일을 사용하며 익명 저장/13개월/운영조회·상위20 감사는 후속이다.

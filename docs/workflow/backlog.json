@@ -964,6 +964,18 @@
         "atomic-essential-event-producers"
       ],
       "acceptance": "ADR0066·실PG원래30일물리삭제/500개2초SKIPLOCKED·Clock/rollback/동시·최소DML·main60초/cycle8batch2초·본인권리/source유지/retry비복원·TDD/full/95-80/리뷰6CI/정확head병합CLOSED;first/metrics/13m/20후속"
+    },
+    {
+      "key": "authoritative-metric-snapshots",
+      "issue": 143,
+      "milestone": "M3",
+      "title": "feat(events): 권위 NSM·D7 snapshot과 첫 정상 게임 근거",
+      "requirements": "FR01/16, NFR01/02/05/07/08",
+      "scenarios": "TS20/21/29/31/34/35/36",
+      "deps": [
+        "raw-event-retention"
+      ],
+      "acceptance": "ADR0067·collection/RR/2초/10000입력·source90일 first-normal 증명/old-gap Incomplete·NSM/D7 maturity/sample·계정삭제/실PG/최소DML/main·TDD/full/95-80/리뷰6CI/정확head병합CLOSED;익명13개월/운영조회/20후속"
     }
   ]
 }

@@ -153,3 +153,8 @@ TS31~36은 4개 어댑터의 최소 권한·추가 claim 제거·state/nonce/JWK
 #138 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/29/31/35/36 → [ADR0065](../adr/0065-atomic-essential-event-producers.md) → 원본 transaction 안의 자동 essential 수집·UUID순 계정 잠금·공동 rollback·재전송 비복원·unknown OS 복구/본인 HTTPS 다운로드 → [검증138](../verification/138-atomic-essential-event-producers.md). 물리 보존·first-normal/NSM/D7·상위20 통합 출구는 후속이다.
 
 #140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.
+
+
+#143 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0067](../adr/0067-authoritative-metric-snapshots.md) → collection/30일 경계·RR/2초/10000입력·권위 first-normal 근거·NSM/D7 불완전 거절 → [검증143](../verification/143-authoritative-metric-snapshots.md). 새 개인 first marker/평생flag 없이 기존 source90일을 사용하며 익명 저장/13개월/운영조회·상위20 감사는 후속이다.
+
+first-normal 근거는 기존 본인 게임90일 기록과 계정 생성 시각을 조회 중에만 사용한다. 개인별 최초 날짜/평생 flag를 새로 저장하지 않아 본인 export 형식과 raw30일/게임90일·계정삭제 보존은 그대로다. 전역 collection 경계에는 개인 연결 필드가 없다. 기존 이력으로 전체 생애 첫 정상 날짜를 증명할 수 없는 오래된 계정은 D7 Incomplete로 처리한다.

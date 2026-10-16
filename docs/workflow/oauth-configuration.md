@@ -8,6 +8,8 @@
 
 #140의 필수 이벤트 정리는 인증 DB/owner 준비 뒤 별도 작업에서 수행한다. 실제 DML 역할에는 product_events SELECT/INSERT/DELETE와 row lock용 UPDATE(id)가 필요하다. 다른 column UPDATE·DDL·migration 권한을 추가하지 않으며 불변 trigger를 유지한다. 인증 비활성/프로세스 중단/DB 장애 동안의 물리 backlog는 재개 시 정리하고 논리30일 조회 차단은 별도로 적용한다.
 
+#143은 owner recovery 뒤 Serving 전에 비식별 metric_collection을 최초 초기화한다. 새 migration은 별도 migration 역할로 적용하고 serving에는 metric_collection SELECT/INSERT만 부여한다. UPDATE/DELETE·DDL/migration 조회는 불필요하다. 재시작은 원래 시작 경계를 유지하며 수집 이전·만료 기간은 Incomplete다. 미래 source cleanup25가 미만료 raw를 cascade하면 coverage_since 전진을 같은 transaction에 연결해야 한다.
+
 - `LIAR_AUTH_CSRF_KEY`: CSPRNG32byte를 padding 없는 base64url로 저장한다.
 - `LIAR_AUTH_DIGEST_KEYS`, `LIAR_AUTH_VAULT_KEYS`: 서로 다른32byte 키의 JSON keyring. 형식은 `{"current":1,"keys":[{"version":1,"key":"<base64url32bytes>"}]}`이고 최대4개다. 0키/미등록 current/중복 version/잘못된 길이를 거절한다. DB 밖에 보관하고 앱/백업 키를 분리한다.
 - digest current를 바꿀 때 모든 쓰기 프로세스의 current를 같게 유지한다. identity 쓰기를 잠시 멈추고 동기화한 뒤 재개하며 이전 키를 즉시 제거하지 않는다. [인증 설계](../design/17-auth-privacy.md).

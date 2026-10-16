@@ -137,3 +137,6 @@ PR137 최초 CI의 personal-export 시작 취소는 새 capture 이전의 준비
 #138 실제 OS 서버 준비는 기존8초 안에서 HTTP ready와 첫 실제 인증 보드 cache ready 진단을 함께 확인한다. 시작 직후2초 board take가 가능한데1초 SQL blocking을 곧바로 기대하지 않는다. 실제 native OsSeedSource/생성과2초 admission·1초 SQL 경계·4초 pair 예산은 유지한다.
 
 #140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.
+
+
+#143 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0067](../adr/0067-authoritative-metric-snapshots.md) → collection/30일 경계·RR/2초/10000입력·권위 first-normal 근거·NSM/D7 불완전 거절 → [검증143](../verification/143-authoritative-metric-snapshots.md). 새 개인 first marker/평생flag 없이 기존 source90일을 사용하며 익명 저장/13개월/운영조회·상위20 감사는 후속이다.

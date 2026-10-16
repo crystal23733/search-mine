@@ -23,31 +23,21 @@ pub(super) async fn load(
             let retention: i64 = row.try_get("retention_at").map_err(db)?;
             let seats: i64 = row.try_get("seats").map_err(db)?;
             let bots: i64 = row.try_get("bots").map_err(db)?;
-            if !row.try_get::<bool, _>("whole_second").map_err(db)?
-                || !(1..=2).contains(&seats)
-                || !(0..=1).contains(&bots)
-                || bots >= seats
-            {
-                return Err(EventStoreError::Unavailable);
-            }
-            valid_timestamp(retention).map_err(policy)?;
-            if retention > at || at > now {
-                return Err(EventStoreError::Invalid);
-            }
-            if now - retention >= 7776000 {
-                return Err(EventStoreError::Expired);
-            }
+            let opponent = online_source(
+                at,
+                retention,
+                row.try_get("whole_second").map_err(db)?,
+                seats,
+                bots,
+                now,
+            )?;
             let reason = crate::results::reason(&row.try_get::<String, _>("reason").map_err(db)?)
                 .map_err(|_| EventStoreError::Unavailable)?;
             (
                 at,
                 ServerFact::MatchEnd {
                     match_id,
-                    opponent: if bots == 1 {
-                        OpponentKind::Bot
-                    } else {
-                        OpponentKind::Human
-                    },
+                    opponent,
                     reason,
                 },
             )
@@ -77,4 +67,29 @@ pub(super) async fn load(
     };
     raw_event_alive(at, now).map_err(policy)?;
     ProductEvent::server(event_id, source.account(), at, fact).map_err(policy)
+}
+pub(super) fn online_source(
+    at: i64,
+    retention: i64,
+    whole_second: bool,
+    seats: i64,
+    bots: i64,
+    now: i64,
+) -> Result<OpponentKind, EventStoreError> {
+    if !whole_second || !(1..=2).contains(&seats) || !(0..=1).contains(&bots) || bots >= seats {
+        return Err(EventStoreError::Unavailable);
+    }
+    valid_timestamp(at).map_err(policy)?;
+    valid_timestamp(retention).map_err(policy)?;
+    if retention > at || at > now {
+        return Err(EventStoreError::Invalid);
+    }
+    if now - retention >= 7776000 {
+        return Err(EventStoreError::Expired);
+    }
+    Ok(if bots == 1 {
+        OpponentKind::Bot
+    } else {
+        OpponentKind::Human
+    })
 }

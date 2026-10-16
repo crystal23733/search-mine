@@ -54,7 +54,7 @@ impl EventRetentionStore for PgEventRetention {
         })
     }
 }
-async fn statement_budget(
+pub(super) async fn statement_budget(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     deadline: tokio::time::Instant,
 ) -> Result<(), EventStoreError> {

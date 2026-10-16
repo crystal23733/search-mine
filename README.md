@@ -181,3 +181,5 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 
 
 #126의 [확정 규칙 WASM 초기화](docs/adr/0059-accepted-daily-core-initialization.md)는 `DailySession.withRules(date, seed_version, rules_json)`과 선택적 `DailyCore.init(date, seed_version, rules)`를 제공한다. Rust의 strict16KiB/규칙 검증으로 서버 accepted snapshot의 동일 판을 시작하며 기본 연습과 기존 두 인자 init는 유지한다. 명시 공식 시작/heartbeat/순위 UI·대기 제출은 후속이다. [검증126](docs/verification/126-accepted-daily-core-initialization.md).
+
+#143: [권위 NSM/D7 snapshot 설계](docs/adr/0067-authoritative-metric-snapshots.md)와 [실행 검증](docs/verification/143-authoritative-metric-snapshots.md). 익명13개월 보존/운영조회는 후속이다.

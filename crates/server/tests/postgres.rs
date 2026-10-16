@@ -32,6 +32,8 @@ mod event_retention;
 mod events;
 #[path = "postgres/latest_results.rs"]
 mod latest_results;
+#[path = "postgres/main_observation.rs"]
+mod main_observation;
 #[path = "postgres/privacy.rs"]
 mod privacy;
 #[tokio::test]

@@ -161,3 +161,6 @@
 #143 · M3 · authoritative-metric-snapshots · 선행 raw-event-retention(#140) → ADR0067/TS29/권위 first·NSM/D7 snapshot. 익명 보존과운영은다음순차하위다.
 
 #145 · M3 · anonymous-metrics-retention · 선행 authoritative-metric-snapshots143 → ADR0068/익명13개월/운영·상위20 인수 감사.
+
+
+#148 NFR01/02/05/07/08 · TS15/16/20/21/31 → [ADR0069](../adr/0069-main-preparation-diagnostics.md) → 실제 child별 고유 로그·단조 단계/실패 상태·재시작 보존 → [검증148](../verification/148-main-preparation-diagnostics.md). 상위141의 미확정 준비 원인과 진단 보존을 구분한다.

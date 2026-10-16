@@ -19,3 +19,13 @@ Node VM 최초6개는0/6 Red→6/6 Green이었다. 추가 리뷰에서 thenable�
 ## 코드 리뷰
 
 같은 this/인자의 native 호출 우선·반환/예외 보존, thenable 재실행 금지, body 미소비/미clone/미잠금, 추가 waitUntil/요청/타이머/debugger 부재를 확인했다. WeakMap은 event 수명을 강하게 잡지 않으며 callback은 최소 info만 보유한다. 제품 SW/coordinator/activity/core/lockfile diff는 없다. 추가 console 관측의 scheduling 영향과 VM이 실제 브라우저 전체를 대체하지 못하는 한계는 유지한다. `/review`·원자료는 gitignore 대상으로 보존한다.
+
+## 최종 실행 코드 비교와 최초 CI
+
+source `e548c7c1d81770c901dcf29b0fce85f13967685b`의 별도 기본8/30.3초·네트워크 계측 비활성8/26.8초(각 PC/mobile4회·retries0·workers2)는 통과했다. 실제 probe16개의 config false8/true8·bootAt·닫힌 필드·skipWaiting 완료·관측 불가0을 확인하고 `.tmp/offline154-comparisons-e548c7c`에 보존했다. 최초 전체 실패에 합산하지 않으며 계측 비활성만을 해결책으로 채택하지 않는다.
+
+첫 Product38952625466은 rust/coverage/web 통과, database 실패로 전체 미통과다. 웹305/91.2%·진단8·Chromium117/7.1분/flaky0이며 browser artifact의 실제 PC/mobile probe2개를 내려 받아 검토했다. 코어 커버리지는97.83%다. 원자료는 `.tmp/offline154-ci-first-e548c7c`에 보존한다.
+
+DB는 PostgreSQL 일반149pass/1fail/62.30초였다. admission_restart의 real_main_cancel_during_started_register 시험이 line145의 기존8초 HTTP+인증 보드 캐시 준비에서 Elapsed였다. pair/register 취소 관찰 전 실패하며 계측 DB 검사는 선행 실패로 미실행이다. 실패 child JSONL에는 retention complete 415/416ms·metrics incomplete 418ms와 states[]만 있고 board_pool ready/admission 단계가 없다. HTTP/cache/생성/CPU/DB 중 원인은 확정하지 못했다. 실제 child13개73행의 닫힌 필드/경과시간을 확인하고 #141에 근거를 추가했다. 이는 #148 진단 유실의 재발 증거가 아니다.
+
+최초 CI 실패도 수정 완료로 숨기지 않는다. 이 기록을 추가한 문서 commit은 실행 코드와 테스트 조건을 바꾸지 않는다. 새 head의 격리 CI 결과·최신6checks·병합 상태를 PR155/당일 review에 별도로 기록하며 #83/#141은 OPEN으로 유지한다.

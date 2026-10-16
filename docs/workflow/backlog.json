@@ -1000,6 +1000,19 @@
         "anonymous-metrics-retention"
       ],
       "acceptance": "ADR0069·실제child고유create_new로그/단조관측·재시작/동시보존·원래예산/실제coreOS·RedGreen/PG/full/fresh/리뷰6CI/정확head병합CLOSED;미확정141원인별도"
+    },
+    {
+      "key": "technical-storage-notice",
+      "issue": 150,
+      "milestone": "M4",
+      "title": "feat(web): 실제 저장소·쿠키 고지 8언어",
+      "requirements": "FR01/10/11/13, NFR01/02/06/07/08",
+      "scenarios": "TS18/19/24/26/31/35/36",
+      "deps": [
+        "anonymous-metrics-retention",
+        "main-preparation-diagnostics"
+      ],
+      "acceptance": "ADR0070·실제저장목적/유지삭제8언어·읽기전용footer/route/dialog·무부작용/스토리지차단/연습무차단·RedGreen/웹PCmobile/리뷰6CI/정확head병합CLOSED;실제CMP/전체정책/외부147/상위21후속"
     }
   ]
 }

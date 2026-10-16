@@ -4,6 +4,7 @@ import { AppShell } from "./ui/templates/AppShell";
 import { HomePage } from "./pages/HomePage";
 import { LatestResultPage } from "./pages/LatestResultPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { StoragePage } from "./pages/StoragePage";
 import { RulesPage } from "./pages/RulesPage";
 import { StatusPage } from "./pages/StatusPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -99,6 +100,8 @@ export function App({ services }: { services: AppServices }) {
       <LatestResultPage />
     ) : route === "/settings" ? (
       <SettingsPage />
+    ) : route === "/storage" ? (
+      <StoragePage />
     ) : route === "/login" ? (
       <LoginPage />
     ) : route === "/onboarding" ? (

@@ -6,6 +6,7 @@ import { Dialog } from "../ui/atoms/Dialog";
 import { LanguageSelect } from "../ui/molecules/LanguageSelect";
 import { AccountSettings } from "../ui/organisms/AccountSettings";
 import { PendingSubmission } from "../ui/organisms/PendingSubmission";
+import { StorageNotice } from "../ui/organisms/StorageNotice";
 import type { Preferences } from "../services/preferences";
 import { useSnapshot } from "../ui/useSnapshot";
 export function SettingsPage() {
@@ -186,8 +187,9 @@ export function SettingsPage() {
         open={notice}
         onClose={() => setNotice(false)}
         title={t("storage.title")}
+        focusTitle
       >
-        <p>{t("storage.description")}</p>
+        <StorageNotice />
       </Dialog>
     </div>
   );

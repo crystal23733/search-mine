@@ -164,3 +164,6 @@
 
 
 #148 NFR01/02/05/07/08 · TS15/16/20/21/31 → [ADR0069](../adr/0069-main-preparation-diagnostics.md) → 실제 child별 고유 로그·단조 단계/실패 상태·재시작 보존 → [검증148](../verification/148-main-preparation-diagnostics.md). 상위141의 미확정 준비 원인과 진단 보존을 구분한다.
+
+
+#150 FR01/10/11/13·NFR01/02/06/07/08·TS18/19/24/26/31/35/36 → [ADR0070](../adr/0070-technical-storage-notice.md) → 읽기 전용8언어 실제 저장소/쿠키·footer/route/dialog·유지/삭제/메모리 대체 → [검증150](../verification/150-technical-storage-notice.md). 실제 CMP/전체 정책/외부147·상위21과83/141은 별도다.

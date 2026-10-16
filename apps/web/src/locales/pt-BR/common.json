@@ -335,5 +335,19 @@
   "storage.optional.description": "As tags e o armazenamento de publicidade e análise opcionais estão inativos. Entrar, jogar localmente ou ler este aviso não concede consentimento opcional.",
   "storage.manage": "Nas configurações, apagar registros locais remove resultados e envios pendentes; apagar o cache offline remove arquivos do aplicativo. Nenhuma dessas ações apaga a conta no servidor. Sair encerra a sessão atual. Apagar a conta exige uma confirmação separada nas configurações da conta; preferências e cache público têm seus próprios controles.",
   "storage.siteData": "Apagar os dados deste site no navegador pode remover juntos cookies de login, preferências, progresso do tutorial, registros locais e arquivos offline.",
-  "storage.fallback": "Se o armazenamento do navegador estiver indisponível, preferências e registros locais usam a memória e podem sumir após recarregar."
+  "storage.fallback": "Se o armazenamento do navegador estiver indisponível, preferências e registros locais usam a memória e podem sumir após recarregar.",
+  "consent.description": "Análise e publicidade têm escolhas separadas. Você pode entrar e jogar sem permitir o tratamento opcional.",
+  "consent.analytics": "Análise opcional",
+  "consent.advertising": "Publicidade",
+  "consent.allowed": "Permitido",
+  "consent.blocked": "Bloqueado",
+  "consent.reopen": "Reabrir escolhas de consentimento",
+  "consent.cancel": "Cancelar abertura",
+  "consent.opening": "Abrindo escolhas; o tratamento opcional está bloqueado.",
+  "consent.reopenFailed": "Não foi possível abrir as escolhas. O tratamento opcional está bloqueado; você pode continuar jogando.",
+  "consent.state.unavailable": "As escolhas de consentimento estão indisponíveis. Publicidade e análise opcionais estão bloqueadas.",
+  "consent.state.unknown": "Nenhuma escolha atual foi confirmada. O tratamento opcional está bloqueado.",
+  "consent.state.denied": "O tratamento opcional foi recusado.",
+  "consent.state.error": "Não foi possível verificar as escolhas. O tratamento opcional está bloqueado.",
+  "consent.state.valid": "Suas escolhas atuais foram aplicadas."
 }

@@ -57,6 +57,20 @@ test("storage purposes and clearing controls are readable in eight locales witho
       .locator("main")
       .getByRole("link", { name: text.settings, exact: true })
       .click();
+    const consent = page.getByRole("region", { name: text.consent });
+    await expect(consent.getByRole("status")).toHaveText(
+      text["consent.state.unavailable"],
+    );
+    await expect(consent.locator("dd")).toHaveText([
+      text["consent.blocked"],
+      text["consent.blocked"],
+    ]);
+    await expect(
+      consent.getByRole("button", {
+        name: text["consent.reopen"],
+        exact: true,
+      }),
+    ).toBeDisabled();
     const opener = page.getByRole("button", {
       name: text["storage.title"],
       exact: true,
@@ -129,6 +143,13 @@ test("storage notice stays available with denied storage and failed authenticati
   await expect(
     page.getByText(messages("en")["storage.fallback"], { exact: true }),
   ).toBeVisible();
+  await page
+    .locator("main")
+    .getByRole("link", { name: "Settings", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Consent settings" }).getByRole("status"),
+  ).toHaveText(messages("en")["consent.state.unavailable"]);
   await page.getByRole("link", { name: "Liar Sweeper", exact: true }).click();
   await page
     .getByRole("button", { name: "Skip tutorial", exact: true })

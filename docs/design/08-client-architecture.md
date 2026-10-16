@@ -121,3 +121,6 @@ service worker는 versioned shell/locale/core 정적 asset만 캐시하고 공�
 
 
 #132 FR01/09/10/11/16·NFR01/02/05/06/07/08·TS17/18/19/20/21/22/26/29/31/35/36 → [ADR0062](../adr/0062-official-daily-flow.md) → 명시 공식 시작/accepted WASM·단일 heartbeat/owner 수명·unverified 후보 선보존/같은 attempt 재시도·본인 receipt/두 시간 신뢰·allowlist 공유/8언어 → [검증132](../verification/132-official-daily-flow.md). 실제 OAuth/운영/사람 검증과 상위19 전체 출구는 별도다.
+
+
+#152 FR11/13·NFR01/02/06/07/08·TS19/24/26/29/31/36 → [ADR0071](../adr/0071-purpose-consent-port.md) → 목적별 닫힌 current CMP port/재열기수명·8언어설정·실행앱미설정차단 → [검증152](../verification/152-purpose-consent-port.md). 실제CMP/계정탭/서버동의·선택수집/외부147·상위21은후속이다.

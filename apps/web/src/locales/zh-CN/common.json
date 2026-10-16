@@ -335,5 +335,19 @@
   "storage.optional.description": "可选广告与分析标签及其存储目前未启用。登录、本地游玩和阅读本说明均不会授予可选同意。",
   "storage.manage": "设置中的清除本地记录会移除本地结果和待提交项；清除离线缓存会移除应用文件。两者都不会删除服务器账号。退出登录会结束当前会话。删除服务器账号需要在账号设置中单独确认；设备设置和公开缓存分别使用各自的清除方式。",
   "storage.siteData": "浏览器的清除此网站数据功能可能一起移除登录Cookie、设置、教程进度、本地记录和离线文件。",
-  "storage.fallback": "浏览器存储不可用时，设置和本地记录仅保存在内存中，重新加载后可能丢失。"
+  "storage.fallback": "浏览器存储不可用时，设置和本地记录仅保存在内存中，重新加载后可能丢失。",
+  "consent.description": "分析和广告分别选择。即使不允许可选处理，也能登录和游玩。",
+  "consent.analytics": "可选分析",
+  "consent.advertising": "广告",
+  "consent.allowed": "允许",
+  "consent.blocked": "阻止",
+  "consent.reopen": "重新打开同意选项",
+  "consent.cancel": "取消打开",
+  "consent.opening": "正在打开选项，期间阻止可选处理。",
+  "consent.reopenFailed": "无法打开选项。可选处理已阻止，你仍可继续游玩。",
+  "consent.state.unavailable": "同意选项目前不可用。可选广告与分析已阻止。",
+  "consent.state.unknown": "尚未确认当前选择，已阻止可选处理。",
+  "consent.state.denied": "已拒绝可选处理。",
+  "consent.state.error": "无法确认选项，已阻止可选处理。",
+  "consent.state.valid": "已应用当前选择。"
 }

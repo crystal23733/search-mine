@@ -133,3 +133,5 @@
 - [ADR0069 실제 main 준비 진단](adr/0069-main-preparation-diagnostics.md) · [검증148](verification/148-main-preparation-diagnostics.md).
 
 - [ADR0070 실제 저장소·쿠키 고지](adr/0070-technical-storage-notice.md) · [검증150](verification/150-technical-storage-notice.md)
+
+- [ADR0071 목적별 동의 포트](adr/0071-purpose-consent-port.md) · [검증152](verification/152-purpose-consent-port.md)

@@ -14,7 +14,9 @@ import type { PendingSubmissionsPort } from "./pending-submissions";
 import type { OnlinePort } from "./online/types";
 import type { DailyApi } from "./daily/types";
 import type { DailyChallengeApi } from "./daily/official";
+import type { ConsentPort } from "./consent";
 export interface AppServices {
+  consent: ConsentPort;
   dailyChallenge: DailyChallengeApi;
   dailyRankings: DailyApi["rankings"];
   online: OnlinePort;

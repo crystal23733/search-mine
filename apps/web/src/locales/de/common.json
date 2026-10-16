@@ -335,5 +335,19 @@
   "storage.optional.description": "Tags und Speicher für optionale Werbung und Analyse sind derzeit inaktiv. Anmeldung, lokales Spielen und das Lesen dieses Hinweises erteilen keine optionale Einwilligung.",
   "storage.manage": "In den Einstellungen entfernt das Löschen lokaler Aufzeichnungen Ergebnisse und ausstehende Übermittlungen; das Löschen des Offline-Caches entfernt App-Dateien. Beides löscht nicht dein Serverkonto. Abmelden beendet die aktuelle Sitzung. Das Löschen des Serverkontos erfordert eine separate Bestätigung in den Kontoeinstellungen; Geräteeinstellungen und öffentlicher Cache haben eigene Löschmöglichkeiten.",
   "storage.siteData": "Das Löschen der Websitedaten im Browser kann Anmeldecookies, Einstellungen, Tutorial-Fortschritt, lokale Aufzeichnungen und Offline-Dateien zusammen entfernen.",
-  "storage.fallback": "Ist der Browserspeicher nicht verfügbar, bleiben Einstellungen und lokale Aufzeichnungen nur im Arbeitsspeicher und können beim Neuladen verloren gehen."
+  "storage.fallback": "Ist der Browserspeicher nicht verfügbar, bleiben Einstellungen und lokale Aufzeichnungen nur im Arbeitsspeicher und können beim Neuladen verloren gehen.",
+  "consent.description": "Analyse und Werbung werden getrennt gewählt. Du kannst dich anmelden und spielen, ohne optionale Verarbeitung zu erlauben.",
+  "consent.analytics": "Optionale Analyse",
+  "consent.advertising": "Werbung",
+  "consent.allowed": "Erlaubt",
+  "consent.blocked": "Blockiert",
+  "consent.reopen": "Einwilligungsauswahl erneut öffnen",
+  "consent.cancel": "Öffnen abbrechen",
+  "consent.opening": "Auswahl wird geöffnet; optionale Verarbeitung ist blockiert.",
+  "consent.reopenFailed": "Die Auswahl konnte nicht geöffnet werden. Optionale Verarbeitung ist blockiert; du kannst weiterspielen.",
+  "consent.state.unavailable": "Die Einwilligungsauswahl ist nicht verfügbar. Optionale Werbung und Analyse sind blockiert.",
+  "consent.state.unknown": "Keine aktuelle Auswahl bestätigt. Optionale Verarbeitung ist blockiert.",
+  "consent.state.denied": "Optionale Verarbeitung wurde abgelehnt.",
+  "consent.state.error": "Die Auswahl konnte nicht geprüft werden. Optionale Verarbeitung ist blockiert.",
+  "consent.state.valid": "Deine aktuelle Auswahl wird angewendet."
 }

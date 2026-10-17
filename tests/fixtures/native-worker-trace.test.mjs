@@ -1,4 +1,4 @@
-import test from "node:test";
+﻿import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { observeNativeWorkerTrace } from "../e2e/helpers/native-worker-trace.ts";
@@ -16,7 +16,10 @@ class Session extends EventEmitter {
     if (method === "Tracing.end") {
       if (this.mode === "end-error") throw Error("private vendor data");
       if (this.mode === "sync") this.emit("Tracing.tracingComplete", {});
-      if (this.mode === "hang") return new Promise(() => {});
+      if (this.mode === "hang")
+        return new Promise((resolve) => {
+          this.releaseEnd = resolve;
+        });
     }
     return {};
   }
@@ -38,6 +41,7 @@ test("native events and synchronous completion survive without worker/debugger c
   const result = await finish();
   assert.deepEqual(result, {
     events: [event],
+    phase: "complete",
     complete: true,
     truncated: false,
     issue: null,
@@ -61,6 +65,7 @@ test("a rejected start never terminates another owner's trace or exposes the exc
     complete: false,
     truncated: false,
     issue: "start_unavailable",
+    phase: "not_started",
   });
   assert.equal(session.calls.length, 1);
   assert.equal(session.detached, 1);
@@ -74,6 +79,7 @@ test("end rejection preserves partial events and removes every observer", async 
   const result = await finish();
   assert.deepEqual(result.events, [{ name: "partial" }]);
   assert.equal(result.issue, "finish_unavailable");
+  assert.equal(result.phase, "end_rejected");
   assert.equal(result.complete, false);
   assert.equal(session.detached, 1);
   assert.equal(listeners(session), 0);
@@ -84,9 +90,20 @@ test("a missing completion or hung End has a bounded finish and cleanup", async 
     const finish = await observeNativeWorkerTrace(session);
     const result = await finish();
     assert.equal(result.issue, "finish_unavailable");
+    assert.equal(
+      result.phase,
+      mode === "missing" ? "completion_pending" : "end_pending",
+    );
     assert.equal(result.complete, false);
     assert.equal(session.detached, 1);
     assert.equal(listeners(session), 0);
+    const phase = result.phase;
+    session.releaseEnd?.({});
+    session.emit("Tracing.tracingComplete", {});
+    session.emit("Tracing.dataCollected", { value: [{ name: "late" }] });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(result.phase, phase);
+    assert.deepEqual(result.events, []);
   }
 });
 test("concurrent repeated finish shares one End and one cleanup", async () => {

@@ -2,6 +2,8 @@
 
 TS18/20/26/30 확장(#159): 앱 없는 두 탭의 첫 제어권 준비 후 동일workerURL bytes를 갱신한다. control과 stopping 직후 재시작 요청/실제old재시작/원래10초reload를 구분한다. Browser trace의 다른 소유자 보호·동기/누락 완료·상한/중복 정리를 확인하고 자연 E2E의 최초 실패·native 자료를 CI에 보존한다. [ADR0075](../adr/0075-native-worker-restart-observation.md). #83 제품 수정 완료를 주장하지 않는다.
 
+TS18/20 진단 확장(#159): 실제 Linux 최초 CI의 빈 trace를 성공 자료로 세지 않는다. 진단 종료에만5초 상한을 두고 End의 미응답/거절과 완료 event 누락을 닫힌 단계로 구분한다. 원래 load10초·제품 예산·재시도·network manager는 유지한다.
+
 TS21/27 확장(#141): 공개 tail seed5108을 실제 생성·인증하고 기존 main 캐시 준비8초 안에 완료한다. dev/test 빌드에서 코어만 opt1이며 debug assertion/overflow·RNG/규칙/실제 OsSeedSource를 유지한다. 실제 PG·native main 재시작/취소·계측을 확인하고 단위 준비 예산과 미니 PC 목표를 구분한다. [ADR0074](../adr/0074-native-preparation-build-profile.md).
 
 > 적용: pm-execution:test-scenarios · 입력: [Stories](17-stories.md), [PRD](16-PRD.md)

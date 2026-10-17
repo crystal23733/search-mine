@@ -16,9 +16,13 @@
 
 실제 두 탭 E2E에는 `LIAR_TRACE_SW_NATIVE`가 있을 때만 Browser CDP의 ServiceWorker category trace를 추가한다. CI web은 이 관측을 켜고 기존 network manager·제품/테스트 timeout·retry는 유지한다. worker debugger·stop/start/활성화 강제는 자연 관측 경로에 넣지 않는다. trace는 격리 fixture의 전용 브라우저에서만 수집하고 `.tmp/native-worker-traces`와 기존 browser artifact에 보존한다. 제품 산출물에는 포함하지 않는다.
 
-collector는 시작 ACK를 받은 자신의 trace만 종료한다. 다른 trace가 이미 시작돼 거절되면 그것을 종료하지 않고 자신의 세션/리스너만 정리한다. 완료 리스너를 End보다 먼저 붙여 동기 완료도 보존하고, 완료 누락/오류는1초 관측 예산 뒤 닫힌 상태로 기록한다. 중복 종료는 합치며 최대50000event·잘린 여부/완료/실패를 명시한다. 예외 원문은 진단 상태에 복사하지 않는다. 수집은 관측 시점에 영향을 줄 수 있으므로 성공을 원인 해결로 해석하지 않는다.
+collector는 시작 ACK를 받은 자신의 trace만 종료한다. 다른 trace가 이미 시작돼 거절되면 그것을 종료하지 않고 자신의 세션/리스너만 정리한다. 완료 리스너를 End보다 먼저 붙여 동기 완료도 보존한다. 최초1초 관측 예산은 Product39042067694의 Linux에서 두 trace 모두0event/finish_unavailable로 끝났다(제품119개는 첫 실행 통과). 이 자료를 보존하고 진단 종료에만5초 상한을 적용하며 end_pending/end_rejected/completion_pending/complete 단계를 구분한다. 제품·인수 테스트의 timeout/retry는 그대로다. 중복 종료는 합치며 최대50000event·잘린 여부/완료/실패를 명시한다. 예외 원문은 진단 상태에 복사하지 않는다. 수집은 관측 시점에 영향을 줄 수 있으므로 성공을 원인 해결로 해석하지 않는다.
 
 ## 검증
+
+종료 예산 뒤 도착한 End 응답/실패·trace event는 이미 반환한 닫힌 종료 단계/자료를 바꾸지 못하게 한다. 실제 누락/멈춤 test의 late completion으로 확인한다.
+
+5초·단계 보정 뒤 로컬8회도 제품8통과/native7완료·1 completion_pending/0event였다. 대기 상한만으로 관측 완료를 주장하지 않는다. 페이지 CDP 구독 세션 detach 전에 소유 Browser trace의 종료·자료 보존을 마치는 순서로 보정하고 실제 대조한다. 관측 경로 순서의 조사이며 #83 제품 원인 확정은 아니다.
 
 가짜 CDP 경계의 소유권/동기 완료/누락 완료/오류/중복 종료/구독 정리·상한을 실제 Red→Green으로 확인한다. 실제 PC/mobile 최소 대조와 production 두 탭·전체 회귀·문서/Mermaid·코드 리뷰·최신6checks/정확head를 기록한다. 첫 실패는 재시도 성공과 별도로 남기고 #83의 제품 수정 완료는 주장하지 않는다.
 

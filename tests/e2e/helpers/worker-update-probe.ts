@@ -151,12 +151,6 @@ export async function observeWorkerUpdate(
       }
     }
     context.off("console", onConsole);
-    try {
-      await observeWithinBudget(native.detach());
-    } catch (error) {
-      events.push({ type: "observer-detach", message: String(error) });
-    }
-    const body = JSON.stringify(events, null, 2);
     const id = createHash("sha256")
       .update(info.testId)
       .digest("hex")
@@ -166,6 +160,7 @@ export async function observeWorkerUpdate(
         ? await finishTrace()
         : {
             events: [],
+            phase: "not_started",
             complete: false,
             truncated: false,
             issue: "start_unavailable",
@@ -181,6 +176,12 @@ export async function observeWorkerUpdate(
         contentType: "application/json",
       });
     }
+    try {
+      await observeWithinBudget(native.detach());
+    } catch (error) {
+      events.push({ type: "observer-detach", message: String(error) });
+    }
+    const body = JSON.stringify(events, null, 2);
     await mkdir(".tmp/offline-update-probes", { recursive: true });
     await writeFile(
       `.tmp/offline-update-probes/${id}-${info.repeatEachIndex}-${info.retry}-${Date.now()}.json`,

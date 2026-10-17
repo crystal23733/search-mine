@@ -15,7 +15,7 @@ class Session extends EventEmitter {
       throw Error("private vendor data");
     if (method === "Tracing.end") {
       if (this.mode === "end-error") throw Error("private vendor data");
-      if (["sync", "data-loss"].includes(this.mode))
+      if (["sync", "data-loss", "detach-hang"].includes(this.mode))
         this.emit("Tracing.tracingComplete", {
           dataLossOccurred: this.mode === "data-loss",
         });
@@ -28,6 +28,7 @@ class Session extends EventEmitter {
   }
   async detach() {
     this.detached++;
+    if (this.mode === "detach-hang") return new Promise(() => {});
   }
 }
 const listeners = (session) =>
@@ -45,6 +46,7 @@ test("native events and synchronous completion survive without worker/debugger c
   assert.deepEqual(result, {
     events: [event],
     phase: "complete",
+    cleanup: "detached",
     complete: true,
     truncated: false,
     issue: null,
@@ -69,6 +71,7 @@ test("a rejected start never terminates another owner's trace or exposes the exc
     truncated: false,
     issue: "start_unavailable",
     phase: "not_started",
+    cleanup: "detached",
   });
   assert.equal(session.calls.length, 1);
   assert.equal(session.detached, 1);
@@ -143,3 +146,17 @@ test("browser-reported data loss remains explicit below the collector cap", asyn
   assert.equal(result.events.length, 1);
   assert.equal(result.truncated, true);
 });
+
+test(
+  "a hung detach has a separate bounded cleanup",
+  { timeout: 2000 },
+  async () => {
+    const session = new Session("detach-hang");
+    const finish = await observeNativeWorkerTrace(session);
+    const result = await finish();
+    assert.equal(result.complete, true);
+    assert.equal(result.cleanup, "unavailable");
+    assert.equal(session.detached, 1);
+    assert.equal(listeners(session), 0);
+  },
+);

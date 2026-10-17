@@ -2,6 +2,7 @@ import type { CDPSession } from "@playwright/test";
 type TraceSession = Pick<CDPSession, "send" | "on" | "once" | "off" | "detach">;
 export interface NativeWorkerTrace {
   events: unknown[];
+  cleanup: "detached" | "unavailable";
   phase:
     | "not_started"
     | "recording"
@@ -18,6 +19,7 @@ export async function observeNativeWorkerTrace(
 ): Promise<() => Promise<NativeWorkerTrace>> {
   const result: NativeWorkerTrace = {
     events: [],
+    cleanup: "unavailable",
     phase: "not_started",
     complete: false,
     truncated: false,
@@ -29,10 +31,22 @@ export async function observeNativeWorkerTrace(
     result.truncated ||= value.length > room;
   };
   const detach = async () => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      await session.detach();
+      const detached = await Promise.race([
+        session.detach().then(
+          () => true,
+          () => false,
+        ),
+        new Promise<false>((resolve) => {
+          timer = setTimeout(() => resolve(false), 1000);
+        }),
+      ]);
+      if (detached) result.cleanup = "detached";
     } catch {
       /* The browser may already be closed. */
+    } finally {
+      clearTimeout(timer);
     }
   };
   session.on("Tracing.dataCollected", collect);

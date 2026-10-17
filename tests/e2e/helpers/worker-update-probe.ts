@@ -161,6 +161,7 @@ export async function observeWorkerUpdate(
         : {
             events: [],
             phase: "not_started",
+            cleanup: "unavailable",
             complete: false,
             truncated: false,
             issue: "start_unavailable",

@@ -173,3 +173,6 @@
 
 
 #154 FR10·NFR01/02/05/07/08·TS18/20/26 → [ADR0072](../adr/0072-offline-fetch-diagnostics.md) → fixture 전용 respondWith/handled 독립 수명·원본 Promise/stream/반환/예외 보존·닫힌 진단 → [검증154](../verification/154-offline-fetch-diagnostics.md). 제품 원인 #83은 별도 OPEN이다.
+
+
+#156 FR01/10/11/13·NFR01/02/05/06/07/08·TS18/19/20/24/26/29/31/35/36 → [ADR0073](../adr/0073-consent-context-and-expiry.md) → 메모리 현재 context/revision/만료·계정탭/복원 취소·시계/타이머 정리 → [검증156](../verification/156-consent-context-and-expiry.md). 실제 CMP/서버 proof/선택 수집·외부147/상위21은 후속이다.

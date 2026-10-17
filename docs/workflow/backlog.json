@@ -1037,6 +1037,19 @@
         "purpose-consent-port"
       ],
       "acceptance": "ADR0072·fixture전용respondWith/handled독립수명·닫힌요청유형/단조시간·원본반환예외/Promise/stream보존·RedGreen/실PCmobile반복/full/리뷰6CI/정확head병합CLOSED;제품원인83별도OPEN"
+    },
+    {
+      "key": "consent-context-expiry",
+      "issue": 156,
+      "milestone": "M4",
+      "title": "feat(consent): 현재 컨텍스트·만료와 탭 철회 경계",
+      "requirements": "FR01/10/11/13, NFR01/02/05/06/07/08",
+      "scenarios": "TS18/19/20/24/26/29/31/35/36",
+      "deps": [
+        "purpose-consent-port",
+        "offline-fetch-diagnostics"
+      ],
+      "acceptance": "ADR0073·메모리context/currentrevision/만료·시계역행·계정탭/복원취소·invalidatesignalonly·timer/dispose·8언어미설정/연습·RedGreen/full/리뷰6CI/정확head병합CLOSED;실제CMP/서버proof/선택수집/147/21후속"
     }
   ]
 }

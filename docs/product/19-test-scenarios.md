@@ -394,3 +394,8 @@ TS24 확장(#152): fake CMP valid analytics-only/advertising-only→해당목적
 #154 FR10·NFR01/02/05/07/08·TS18/20/26 → [ADR0072](../adr/0072-offline-fetch-diagnostics.md) → fixture 전용 respondWith/handled 독립 수명·원본 Promise/stream/반환/예외 보존·닫힌 진단 → [검증154](../verification/154-offline-fetch-diagnostics.md). 제품 원인 #83은 별도 OPEN이다.
 
 TS18 확장(#154): 두 요청 응답 Promise의 역순 완료/거절과 handled·waitUntil의 독립 pending을 구분한다. native 동기 예외/반환값·원래 Promise를 보존하고 열린 ReadableStream body를 소비하거나 잠그지 않는다. 로그에 원시 URL/query/header/body가 없고 단조 시간을 유지한다. 실제 WASM PC/mobile 업데이트·캐시 삭제의 원래 인수 조건을 유지하며 성공 반복은 #83 원인 해결을 의미하지 않는다.
+
+
+#156 FR01/10/11/13·NFR01/02/05/06/07/08·TS18/19/20/24/26/29/31/35/36 → [ADR0073](../adr/0073-consent-context-and-expiry.md) → 메모리 현재 context/revision/만료·계정탭/복원 취소·시계/타이머 정리 → [검증156](../verification/156-consent-context-and-expiry.md). 실제 CMP/서버 proof/선택 수집·외부147/상위21은 후속이다.
+
+TS24 확장(#156): 검증 시작 때 capture한 현재 token과 목적별 receipt만 허용한다. 만료 경계·미래/잘못된 시각·시계 역행·낮은 revision/같은 revision 변조를 차단하고 이전 grant를 복원하지 않는다. 계정/세션/peer/숨김/복원·명시 reopen에서 token교체/진행abort/late차단을 관측한다. 만료 UI갱신·긴timer/cleanup·채널불가failclosed와무계정게임무차단을 확인한다.

@@ -8,6 +8,79 @@ const messages = (locale: string): Record<string, string> =>
     readFileSync(`apps/web/src/locales/${locale}/common.json`, "utf8"),
   );
 
+test("unconfigured consent ignores delivered peer grants and invalidation while local play remains available", async ({
+  page,
+  context,
+}) => {
+  const requests: string[] = [];
+  context.on("request", (request) => requests.push(request.url()));
+  await context.addInitScript(() =>
+    localStorage.setItem("liar.tutorial.v1", '"skipped"'),
+  );
+  await page.goto("/en/settings");
+  await page.evaluate(() => {
+    const probe = {
+      channel: new BroadcastChannel("liar.consent.v1"),
+      received: 0,
+    };
+    probe.channel.onmessage = () => {
+      probe.received++;
+    };
+    (window as Window & { consentTestProbe?: typeof probe }).consentTestProbe =
+      probe;
+  });
+  const peer = await context.newPage();
+  await peer.goto("/en/settings");
+  await peer.evaluate(() => {
+    const channel = new BroadcastChannel("liar.consent.v1");
+    channel.postMessage({
+      status: "valid",
+      analytics: true,
+      advertising: true,
+      context: {},
+      revision: 1,
+      validFrom: 0,
+      expiresAt: Number.MAX_SAFE_INTEGER,
+    });
+    channel.postMessage("invalidate");
+    channel.close();
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { consentTestProbe?: { received: number } })
+            .consentTestProbe?.received,
+      ),
+    )
+    .toBe(2);
+  const consent = page.getByRole("region", { name: "Consent settings" });
+  await expect(consent.getByRole("status")).toHaveText(
+    messages("en")["consent.state.unavailable"],
+  );
+  await expect(consent.locator("dd")).toHaveText([
+    messages("en")["consent.blocked"],
+    messages("en")["consent.blocked"],
+  ]);
+  await expect(
+    consent.getByRole("button", { name: "Reopen consent choices" }),
+  ).toBeDisabled();
+  await page.evaluate(() =>
+    (
+      window as Window & { consentTestProbe?: { channel: BroadcastChannel } }
+    ).consentTestProbe?.channel.close(),
+  );
+  await peer.close();
+  await page.getByRole("link", { name: "Liar Sweeper", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Practise locally", exact: true })
+    .click();
+  await expect(page.getByRole("gridcell")).toHaveCount(256);
+  expect(
+    requests.filter((url) => unrequestedServiceCall(url, page.url())),
+  ).toEqual([]);
+});
+
 test("storage purposes and clearing controls are readable in eight locales without optional requests", async ({
   page,
 }, info) => {

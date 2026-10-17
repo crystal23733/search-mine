@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -20,12 +21,21 @@ import { createPreferences } from "../services/preferences";
 import { createLearning } from "../services/learning";
 import type { AppServices } from "../services/ports";
 import { LOCALES, type Locale } from "../services/locale";
+import {
+  createBrowserConsent,
+  type ConsentAdapterFactory,
+} from "../services/consent-browser";
 const owned: ConsentPort[] = [];
 afterEach(() => {
   for (const consent of owned.splice(0)) consent.dispose();
 });
-async function setup(cmp?: CmpPort, locale: Locale = "en") {
-  const consent = createConsent(cmp);
+async function setup(
+  cmp?: CmpPort,
+  locale: Locale = "en",
+  provided?: ConsentPort,
+  beforeRender?: () => void,
+) {
+  const consent = provided ?? createConsent(cmp);
   owned.push(consent);
   const services: AppServices = {
     ...dailyTestPorts(),
@@ -44,6 +54,7 @@ async function setup(cmp?: CmpPort, locale: Locale = "en") {
       throw Error("unused");
     },
   };
+  beforeRender?.();
   const rendered = render(
     <Ui.Provider
       value={{
@@ -59,6 +70,88 @@ async function setup(cmp?: CmpPort, locale: Locale = "en") {
   );
   return { services, ...rendered };
 }
+
+function scopedSettings(lifetime = 60000) {
+  const channel = Object.assign(new EventTarget(), {
+    postMessage: vi.fn(),
+    close: vi.fn(),
+  });
+  const factory: ConsentAdapterFactory = (context) => {
+    const receipt = {
+      status: "valid",
+      analytics: true,
+      advertising: false,
+      context: context.capture(),
+      revision: 1,
+      validFrom: Date.now() - 10,
+      expiresAt: Date.now() + lifetime,
+    };
+    return {
+      read: () => receipt,
+      subscribe: () => () => {},
+      reopen: async () => {},
+      dispose() {},
+    };
+  };
+  const consent = createBrowserConsent(
+    window,
+    {
+      read: () => ({ status: "ready", account: null, working: false }),
+      revision: () => 1,
+      subscribe: () => () => {},
+    },
+    factory,
+    channel,
+  );
+  return { channel, consent };
+}
+
+test.each(LOCALES)(
+  "peer invalidation immediately blocks a scoped choice in the %s settings UI",
+  async (locale) => {
+    const scoped = scopedSettings();
+    const s = await setup(undefined, locale, scoped.consent);
+    const region = screen.getByRole("region", {
+      name: s.services.i18n.t(locale, "consent"),
+    });
+    expect(region.querySelectorAll("dd")[0].textContent).toBe(
+      s.services.i18n.t(locale, "consent.allowed"),
+    );
+    await act(() => {
+      scoped.channel.dispatchEvent(
+        new MessageEvent("message", { data: "invalidate" }),
+      );
+    });
+    expect(region.querySelectorAll("dd")[0].textContent).toBe(
+      s.services.i18n.t(locale, "consent.blocked"),
+    );
+    expect(region.querySelector("output")?.textContent).toBe(
+      s.services.i18n.t(locale, "consent.state.unknown"),
+    );
+    expect(s.services.activity.read()).toEqual({ busy: false, locked: false });
+  },
+);
+
+test("expiry updates the settings UI without a click or optional network request", async () => {
+  const scoped = scopedSettings();
+  try {
+    const s = await setup(undefined, "en", scoped.consent, () =>
+      vi.useFakeTimers(),
+    );
+    const region = screen.getByRole("region", { name: "Consent settings" });
+    expect(region.querySelectorAll("dd")[0].textContent).toBe("Allowed");
+    await act(() => {
+      vi.advanceTimersByTime(120000);
+    });
+    expect(region.querySelectorAll("dd")[0].textContent).toBe("Blocked");
+    expect(s.services.activity.read()).toEqual({ busy: false, locked: false });
+    scoped.consent.dispose();
+    expect(vi.getTimerCount()).toBe(0);
+  } finally {
+    scoped.consent.dispose();
+    vi.useRealTimers();
+  }
+});
 
 test("settings reopens a CMP explicitly, blocks purposes while pending and keeps revocation after completion", async () => {
   let choice: unknown = {

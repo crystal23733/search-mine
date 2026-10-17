@@ -17,6 +17,8 @@
 
 ## 요구사항 → 설계 → 시나리오 추적
 
+#159 FR10·NFR01/02/05/07/08 · TS18/20/26/30 → [ADR0075](../adr/0075-native-worker-restart-observation.md) → 앱 없는 native 재시작 대조·소유권 있는 bounded trace/CI 원자료 → [검증159](../verification/159-native-worker-restart-observation.md). 자연 요청자·제품 수정 #83은 미완료다.
+
 #141 NFR01/02/04/05/07/08 · TS15/16/20/21/27/31 → [ADR0074](../adr/0074-native-preparation-build-profile.md) → 실제 공개 tail의 고정8초 생성·dev/test 코어 빌드·실제 main/PG/계측 → [검증141](../verification/141-native-preparation-build-profile.md). 과거 모든 원인의 동일성·#83·미니 PC 성능과 구분한다.
 
 #109 CI 종료 경계 보정: NFR01/02/05/07/08·TS20/21/31/35/36 → [ADR0051](../adr/0051-fatal-runtime-shutdown.md) → actual BoardPool blocking 중 fatal 진입점 반환과 실제 PG owner-loss HTTP/WS 종료 → [검증109](../verification/109-bounded-native-daily-replay.md). 원격 관측과 deterministic 재현을 구분한다.

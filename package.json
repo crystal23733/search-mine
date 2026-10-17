@@ -12,6 +12,7 @@
     "typecheck": "pnpm -r typecheck && tsc --noEmit -p tsconfig.tools.json",
     "test": "pnpm --filter @liar/web test",
     "test:worker-probe": "node tests/fixtures/worker-update-producer.test.mjs",
+    "test:native-worker-trace": "node tests/fixtures/native-worker-trace.test.mjs",
     "test:e2e": "playwright test",
     "docs:check": "python scripts/validate_docs.py && node scripts/check_mermaid.mjs .",
     "types:generate": "cargo run --locked -p liar-protocol --bin export-types",

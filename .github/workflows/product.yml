@@ -96,6 +96,7 @@ jobs:
           --health-interval 2s --health-timeout 2s --health-retries 20
     env:
       DATABASE_URL: postgres://liar_test:development-only@localhost:5432/liar_test
+      LIAR_TRACE_SW_NATIVE: '1'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -116,6 +117,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm test:worker-probe
+      - run: pnpm test:native-worker-trace
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: MIGRATION_DATABASE_URL="$DATABASE_URL" cargo run --locked -p liar-server --bin migrate
@@ -148,4 +150,5 @@ jobs:
           path: |
             test-results/
             .tmp/offline-update-probes/
+            .tmp/native-worker-traces/
           retention-days: 7

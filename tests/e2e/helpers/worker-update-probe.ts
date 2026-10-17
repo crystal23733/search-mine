@@ -6,6 +6,8 @@ import type {
 } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
+import { observeNativeWorkerTrace } from "./native-worker-trace";
+import type { NativeWorkerTrace } from "./native-worker-trace";
 
 async function observeWithinBudget<T>(observation: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -50,6 +52,23 @@ export async function observeWorkerUpdate(
         events.push({ type: "native-worker", at: Date.now(), ...version });
   });
   await native.send("ServiceWorker.enable");
+  let finishTrace: (() => Promise<NativeWorkerTrace>) | undefined;
+  let browserVersion: object | null = null;
+  const tracingEnabled = Boolean(process.env.LIAR_TRACE_SW_NATIVE);
+  if (tracingEnabled) {
+    try {
+      const browser = context.browser();
+      if (browser) {
+        const traceSession = await browser.newBrowserCDPSession();
+        finishTrace = await observeNativeWorkerTrace(traceSession);
+        browserVersion = await traceSession
+          .send("Browser.getVersion")
+          .catch(() => null);
+      }
+    } catch {
+      /* Optional diagnostics must not change the product outcome. */
+    }
+  }
   await context.addInitScript(
     ({ prefix, origin }) => {
       if (location.origin !== origin) return;
@@ -142,6 +161,26 @@ export async function observeWorkerUpdate(
       .update(info.testId)
       .digest("hex")
       .slice(0, 16);
+    if (tracingEnabled) {
+      const trace = finishTrace
+        ? await finishTrace()
+        : {
+            events: [],
+            complete: false,
+            truncated: false,
+            issue: "start_unavailable",
+          };
+      const nativeBody = JSON.stringify({ browserVersion, ...trace }, null, 2);
+      await mkdir(".tmp/native-worker-traces", { recursive: true });
+      await writeFile(
+        `.tmp/native-worker-traces/${id}-${info.repeatEachIndex}-${info.retry}-${Date.now()}.json`,
+        nativeBody,
+      );
+      await info.attach("native-worker-trace.json", {
+        body: nativeBody,
+        contentType: "application/json",
+      });
+    }
     await mkdir(".tmp/offline-update-probes", { recursive: true });
     await writeFile(
       `.tmp/offline-update-probes/${id}-${info.repeatEachIndex}-${info.retry}-${Date.now()}.json`,

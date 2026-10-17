@@ -11,6 +11,8 @@ flowchart TD
 
 ## 테스트 경계
 
+#141의 고정 native 준비 예산은 [ADR0074](../adr/0074-native-preparation-build-profile.md)를 따른다. 공개 tail의 실제 생성 Red→Green과 liar-core dev/test opt1·debug assertion/overflow 유지, 실제 main/PG/계측을 대조한다. timeout/retry·OsSeedSource를 바꾸지 않고 미니 PC 성능과 구분한다.
+
 #82는 [ADR0039](../adr/0039-authenticated-personal-result-read.md)의 요청·투영 Red, HTTP Origin/CSRF·3단계 단일 기한·역순 세션·공유 취소·별도 WS/로비 권위·실제PG 양 좌석/봇/삭제·90일 경계를 검증한다. `scripts/check_auth_coverage.py`에 results/model.rs의95% line gate를 추가하고 누락된 도메인을 성공으로 세지 않는다.
 
 새 결과 단위 테스트 본문은 `crates/server/tests/unit/result_*.rs`에 두고 cfg(test)의 path module로 실행한다. 기존 coverage의 tests/examples 제외 패턴이 테스트 자체를 분모에서 제외하며 제품 도메인만 측정한다.

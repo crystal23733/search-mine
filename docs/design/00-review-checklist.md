@@ -17,6 +17,8 @@
 
 ## 요구사항 → 설계 → 시나리오 추적
 
+#141 NFR01/02/04/05/07/08 · TS15/16/20/21/27/31 → [ADR0074](../adr/0074-native-preparation-build-profile.md) → 실제 공개 tail의 고정8초 생성·dev/test 코어 빌드·실제 main/PG/계측 → [검증141](../verification/141-native-preparation-build-profile.md). 과거 모든 원인의 동일성·#83·미니 PC 성능과 구분한다.
+
 #109 CI 종료 경계 보정: NFR01/02/05/07/08·TS20/21/31/35/36 → [ADR0051](../adr/0051-fatal-runtime-shutdown.md) → actual BoardPool blocking 중 fatal 진입점 반환과 실제 PG owner-loss HTTP/WS 종료 → [검증109](../verification/109-bounded-native-daily-replay.md). 원격 관측과 deterministic 재현을 구분한다.
 
 #82: FR14/16·NFR01/02/05/07 → 설계06/07/12·[ADR0039](../adr/0039-authenticated-personal-result-read.md) → TS15/16/20/21/31/35/36 → [검증82](../verification/82-authenticated-personal-result-read.md). 최소 결과·본인 참여·전후 철회·uniform404·90일 조회·실DB/HTTP를 확인한다.

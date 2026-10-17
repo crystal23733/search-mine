@@ -1,5 +1,7 @@
 # 19. 테스트 시나리오
 
+TS21/27 확장(#141): 공개 tail seed5108을 실제 생성·인증하고 기존 main 캐시 준비8초 안에 완료한다. dev/test 빌드에서 코어만 opt1이며 debug assertion/overflow·RNG/규칙/실제 OsSeedSource를 유지한다. 실제 PG·native main 재시작/취소·계측을 확인하고 단위 준비 예산과 미니 PC 목표를 구분한다. [ADR0074](../adr/0074-native-preparation-build-profile.md).
+
 > 적용: pm-execution:test-scenarios · 입력: [Stories](17-stories.md), [PRD](16-PRD.md)
 > 설계 단계 시나리오이며 테스트 코드를 실행했다는 뜻이 아니다. 각 항목은 목적·전제·역할·행동·예상 결과·경계를 함께 정의한다.
 

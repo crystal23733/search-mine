@@ -15,7 +15,10 @@ class Session extends EventEmitter {
       throw Error("private vendor data");
     if (method === "Tracing.end") {
       if (this.mode === "end-error") throw Error("private vendor data");
-      if (this.mode === "sync") this.emit("Tracing.tracingComplete", {});
+      if (["sync", "data-loss"].includes(this.mode))
+        this.emit("Tracing.tracingComplete", {
+          dataLossOccurred: this.mode === "data-loss",
+        });
       if (this.mode === "hang")
         return new Promise((resolve) => {
           this.releaseEnd = resolve;
@@ -129,4 +132,14 @@ test("event memory is bounded and truncation is explicit", async () => {
   assert.equal(result.events.length, 50000);
   assert.equal(result.truncated, true);
   assert.equal(result.complete, true);
+});
+
+test("browser-reported data loss remains explicit below the collector cap", async () => {
+  const session = new Session("data-loss");
+  const finish = await observeNativeWorkerTrace(session);
+  session.emit("Tracing.dataCollected", { value: [{ name: "partial" }] });
+  const result = await finish();
+  assert.equal(result.complete, true);
+  assert.equal(result.events.length, 1);
+  assert.equal(result.truncated, true);
 });

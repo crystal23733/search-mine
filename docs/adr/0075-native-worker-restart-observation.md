@@ -22,6 +22,8 @@ collector는 시작 ACK를 받은 자신의 trace만 종료한다. 다른 trace�
 
 종료 예산 뒤 도착한 End 응답/실패·trace event는 이미 반환한 닫힌 종료 단계/자료를 바꾸지 못하게 한다. 실제 누락/멈춤 test의 late completion으로 확인한다.
 
+설치 revision의 Tracing handler가 완료 event에 제공하는 dataLossOccurred도 truncated에 반영한다. 50000개 상한 미달이어도 브라우저가 손실을 보고하면 온전한 자료로 해석하지 않는다. 종료 완료와 자료 손실은 별개다.
+
 5초·단계 보정 뒤 로컬8회도 제품8통과/native7완료·1 completion_pending/0event였다. 대기 상한만으로 관측 완료를 주장하지 않는다. 페이지 CDP 구독 세션 detach 전에 소유 Browser trace의 종료·자료 보존을 마치는 순서로 보정하고 실제 대조한다. 관측 경로 순서의 조사이며 #83 제품 원인 확정은 아니다.
 
 가짜 CDP 경계의 소유권/동기 완료/누락 완료/오류/중복 종료/구독 정리·상한을 실제 Red→Green으로 확인한다. 실제 PC/mobile 최소 대조와 production 두 탭·전체 회귀·문서/Mermaid·코드 리뷰·최신6checks/정확head를 기록한다. 첫 실패는 재시도 성공과 별도로 남기고 #83의 제품 수정 완료는 주장하지 않는다.

@@ -54,9 +54,12 @@ export async function observeNativeWorkerTrace(
     (finishing ??= (async () => {
       let timer: ReturnType<typeof setTimeout> | undefined;
       let settled = false;
-      let completed!: () => void;
+      let completed!: (event: { dataLossOccurred?: boolean }) => void;
       const completion = new Promise<void>((resolve) => {
-        completed = resolve;
+        completed = (event) => {
+          if (!settled) result.truncated ||= event.dataLossOccurred === true;
+          resolve();
+        };
       });
       session.once("Tracing.tracingComplete", completed);
       result.phase = "end_pending";

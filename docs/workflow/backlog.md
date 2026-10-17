@@ -16,6 +16,8 @@
 
 ## 이슈
 
+#159 FR10·NFR01/02/05/07/08 · TS18/20/26/30 → [ADR0075](../adr/0075-native-worker-restart-observation.md) → `spikes/` native 재시작 최소 대조·선택적 bounded CI trace → [검증159](../verification/159-native-worker-restart-observation.md). 상위83은 OPEN이다.
+
 #141 NFR01/02/04/05/07/08 · TS15/16/20/21/27/31 → [ADR0074](../adr/0074-native-preparation-build-profile.md) → 공개 tail의 실제 고정8초 생성 Red/Green·코어 dev/test opt1·실제 main/PG/계측 → [검증141](../verification/141-native-preparation-build-profile.md). 최초 관측 실패와 새 검증을 구분한다.
 
 | 작업 | 단계 | 선행 작업 | 요구 / 시나리오 | 인수 조건 |

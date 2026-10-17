@@ -411,3 +411,40 @@ test("failed synchronous setup cleans a timer and observer; invalid removers fai
   owned.push(() => invalid.dispose());
   expect(invalid.read()).toEqual({ status: "error" });
 });
+
+test.each(["read", "property"])(
+  "a context change during adapter %s cannot return an old grant",
+  (stage) => {
+    const s = fixture();
+    const old = s.choice();
+    if (stage === "property")
+      Object.defineProperty(old, "analytics", {
+        enumerable: true,
+        get() {
+          s.context.invalidate();
+          return true;
+        },
+      });
+    vi.mocked(s.cmp.read).mockImplementationOnce(() => {
+      if (stage === "read") s.context.invalidate();
+      return old;
+    });
+    expect(s.consent.read()).toMatchObject({
+      analytics: false,
+      advertising: false,
+    });
+    expect(vi.getTimerCount()).toBe(0);
+  },
+);
+
+test("a receipt that expires while the adapter is reading is blocked on that same read", () => {
+  const s = fixture();
+  const old = s.choice();
+  vi.mocked(s.cmp.read).mockImplementationOnce(() => {
+    s.time.wall = 2000;
+    s.time.monotonic = 1010;
+    return old;
+  });
+  expect(s.consent.read().analytics).toBe(false);
+  expect(vi.getTimerCount()).toBe(0);
+});

@@ -10,7 +10,7 @@
 
 추가 어댑터 factory는 ConsentContextPort를 받고 선택 검증을 시작할 때 capture한 메모리 token을 유지한다. 검증 결과는 닫힌 valid+analytics/advertising boolean+context token+양의 안전 정수 revision+validFrom/expiresAt(UTC ms)만 제공한다. token은 계정/credential을 담지 않는 메모리 참조이며 직렬화·재사용 가능한 서버 proof가 아니다. 늦은 결과에 새 token을 붙이지 않고 해당 작업을 시작한 token을 사용한다. SDK의 현재 선택을 새 컨텍스트에서 재검증한 결과만 새 token을 받을 수 있다.
 
-guard는 매 요청 직전 read에서 현재 token 동일성·시간 범위(validFrom≤now<expiresAt)·revision을 다시 검사한다. 같은 컨텍스트의 낮은 revision, 같은 revision의 선택/기간 변조, 잘못된 값/추가 필드는 차단한다. unknown/denied/error·만료 뒤에는 이전 revision이 다시 허용되지 않는다. 새 revision의 현재 검증 결과만 복구할 수 있다. 거부는 valid의 두 목적 false로도 표현하며 두 목적은 독립이다. UI에 vendor payload/token/계정/revision을 노출하지 않는다.
+guard는 매 요청 직전 read에서 현재 token 동일성·시간 범위(validFrom≤now<expiresAt)·revision을 다시 검사한다. 어댑터 read와 receipt 필드 접근 뒤 컨텍스트를 다시 확인하고 시각을 새로 읽어, 조회 중 컨텍스트 변경/만료도 같은 read에서 차단한다. 같은 컨텍스트의 낮은 revision, 같은 revision의 선택/기간 변조, 잘못된 값/추가 필드는 차단한다. unknown/denied/error·만료 뒤에는 이전 revision이 다시 허용되지 않는다. 새 revision의 현재 검증 결과만 복구할 수 있다. 거부는 valid의 두 목적 false로도 표현하며 두 목적은 독립이다. UI에 vendor payload/token/계정/revision을 노출하지 않는다.
 
 최초 receipt의 남은 유효시간을 monotonic deadline으로도 고정한다. 같은 revision의 반복 조회로 deadline을 연장하지 않고, wall/monotonic 시계 역행·잘못된 시각은 해당 컨텍스트에서 차단한다. browser clock은 서버 권위가 아니므로 이 추가 차단을 서버 동의 검증으로 해석하지 않는다. 만료 타이머는 현재 read를 재검사하고 구독을 갱신한다. 긴 기간은 최대2^31-1ms 단위로 나누고 dispose·컨텍스트 변경·차단 시 정리한다.
 

@@ -66,20 +66,6 @@ export function createConsentGuard(
     try {
       const owner = current();
       if (!owner || active) return stop("unknown");
-      const time = clock();
-      if (
-        !Number.isSafeInteger(time.wall) ||
-        time.wall < 0 ||
-        time.wall > 8640000000000000 ||
-        !Number.isFinite(time.monotonic) ||
-        time.monotonic < 0 ||
-        time.monotonic > Number.MAX_SAFE_INTEGER ||
-        (lastTime &&
-          (time.wall < lastTime.wall || time.monotonic < lastTime.monotonic))
-      )
-        clockBroken = true;
-      if (clockBroken) return stop("error");
-      lastTime = { ...time };
       const raw = cmp.read();
       if (!raw || typeof raw !== "object" || Array.isArray(raw))
         return stop("error");
@@ -129,7 +115,28 @@ export function createConsentGuard(
         typeof advertising !== "boolean"
       )
         return stop("error");
-      if (captured !== owner || revision < highest || revision <= retired)
+      if (current() !== owner) return stop("unknown");
+      const sampled = clock();
+      const time = { wall: sampled.wall, monotonic: sampled.monotonic };
+      if (
+        !Number.isSafeInteger(time.wall) ||
+        time.wall < 0 ||
+        time.wall > 8640000000000000 ||
+        !Number.isFinite(time.monotonic) ||
+        time.monotonic < 0 ||
+        time.monotonic > Number.MAX_SAFE_INTEGER ||
+        (lastTime &&
+          (time.wall < lastTime.wall || time.monotonic < lastTime.monotonic))
+      )
+        clockBroken = true;
+      if (clockBroken) return stop("error");
+      lastTime = time;
+      if (
+        current() !== owner ||
+        captured !== owner ||
+        revision < highest ||
+        revision <= retired
+      )
         return stop("unknown");
       const receipt: ConsentReceipt = {
         status: "valid",

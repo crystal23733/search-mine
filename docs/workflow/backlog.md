@@ -16,6 +16,8 @@
 
 ## 이슈
 
+#141 NFR01/02/04/05/07/08 · TS15/16/20/21/27/31 → [ADR0074](../adr/0074-native-preparation-build-profile.md) → 공개 tail의 실제 고정8초 생성 Red/Green·코어 dev/test opt1·실제 main/PG/계측 → [검증141](../verification/141-native-preparation-build-profile.md). 최초 관측 실패와 새 검증을 구분한다.
+
 | 작업 | 단계 | 선행 작업 | 요구 / 시나리오 | 인수 조건 |
 |---|---|---|---|---|
 | [#2 chore: 프로젝트 초기화와 설계 리뷰 준비](https://github.com/crystal23733/search-mine/issues/2) | M0 | 없음 | NFR08 / TS30 | 원문 보존·기존 프로젝트 삭제; 기획21·설계16·ADR8·에이전트 규칙; 링크/Mermaid 검사와 develop 검토 PR |

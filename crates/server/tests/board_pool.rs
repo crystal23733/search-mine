@@ -16,6 +16,31 @@ use std::{
 
 const WAIT: Duration = Duration::from_secs(2);
 
+#[tokio::test]
+async fn published_tail_board_certifies_within_the_main_cache_preparation_budget() {
+    // Keep the published slow seed and the existing real-main setup budget.
+    let generated = tokio::time::timeout(
+        Duration::from_secs(8),
+        tokio::task::spawn_blocking(|| {
+            BoardGenerator::generate(
+                RulesSnapshot::bundled().rules.board_spec(),
+                5108,
+                GenerationBudget::default(),
+            )
+        }),
+    )
+    .await
+    .expect("Actual certification must fit the existing main cache preparation budget")
+    .unwrap()
+    .unwrap();
+    assert!(liar_core::generator::verify_certificate(
+        &generated.board,
+        &generated.certificate,
+        SolverBudget::default(),
+    ));
+    assert_eq!(generated.board.safe_total(), 216);
+}
+
 fn small_rules() -> RulesSnapshot {
     let mut rules = RulesSnapshot::bundled().rules;
     rules.width = 3;

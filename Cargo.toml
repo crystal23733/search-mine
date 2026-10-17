@@ -13,6 +13,9 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = "warn"
 
+[profile.dev.package.liar-core]
+opt-level = 1
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

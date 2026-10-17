@@ -1050,6 +1050,18 @@
         "offline-fetch-diagnostics"
       ],
       "acceptance": "ADR0073·메모리context/currentrevision/만료·시계역행·계정탭/복원취소·invalidatesignalonly·timer/dispose·8언어미설정/연습·RedGreen/full/리뷰6CI/정확head병합CLOSED;실제CMP/서버proof/선택수집/147/21후속"
+    },
+    {
+      "key": "native-preparation-build-profile",
+      "issue": 141,
+      "milestone": "M3",
+      "title": "fix(test): native 준비 예산의 코어 개발 빌드 경계",
+      "requirements": "NFR01/02/04/05/07/08",
+      "scenarios": "TS15/16/20/21/27/31",
+      "deps": [
+        "consent-context-expiry"
+      ],
+      "acceptance": "ADR0074·공개tail실제인증8초RedGreen·코어dev/testopt1·debug검사/기존예산/OsSeedSource유지·실mainPG계측반복/full/리뷰6CI/정확head;과거원인동일성/83/미니PC목표와구분"
     }
   ]
 }

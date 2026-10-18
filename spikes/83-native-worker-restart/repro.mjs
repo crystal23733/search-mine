@@ -6,11 +6,17 @@ import { chromium, devices, expect } from "@playwright/test";
 import { observeNativeWorkerTrace } from "../../tests/e2e/helpers/native-worker-trace.ts";
 
 const { values } = parseArgs({
-  options: { attempts: { type: "string", default: "1" } },
+  options: {
+    attempts: { type: "string", default: "1" },
+    trigger: { type: "string", default: "cdp" },
+  },
 });
 if (!/^[1-8]$/.test(values.attempts))
   throw Error("--attempts must be an integer from 1 to 8");
 const attempts = Number(values.attempts);
+const requestedTrigger = values.trigger;
+if (!["cdp", "pointer"].includes(requestedTrigger))
+  throw Error("--trigger must be cdp or pointer");
 const outputBase = resolve(".tmp");
 await mkdir(outputBase, { recursive: true });
 const folder = await mkdtemp(join(outputBase, "sw-restart-"));
@@ -45,6 +51,7 @@ async function fixture() {
         "cache-control": "no-store",
       });
       response.end(`// revision ${revision}
+${requestedTrigger === "pointer" ? 'self.addEventListener("fetch", event => event.respondWith(fetch(event.request)));' : ""}
 self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
 self.addEventListener("message", event => {
   if (event.data === "update")
@@ -56,7 +63,8 @@ self.addEventListener("message", event => {
         "content-type": "text/html",
         "cache-control": "no-store",
       });
-      response.end(`<!doctype html><title>Native worker restart probe</title><h1>Native worker restart probe</h1><script>
+      response.end(`<!doctype html><title>Native worker restart probe</title><h1>Native worker restart probe</h1>${requestedTrigger === "pointer" ? '<a id="home" href="/home">Home</a>' : ""}<script>
+document.querySelector("#home")?.addEventListener("click", event => event.preventDefault());
 sessionStorage.setItem("boots", String(Number(sessionStorage.getItem("boots") || 0) + 1));
 let controlled = Boolean(navigator.serviceWorker.controller);
 navigator.serviceWorker.addEventListener("controllerchange", () => {
@@ -96,14 +104,17 @@ async function inspect(page) {
   });
 }
 
-async function collect(mobile, forceRestart, attempt) {
+async function collect(mobile, exerciseTrigger, attempt) {
   const host = await fixture();
   let context;
+  const trigger = exerciseTrigger ? requestedTrigger : "control";
   const record = {
     mobile,
-    forceRestart,
+    trigger,
     attempt,
     restartRequested: false,
+    inputClicksRequested: 0,
+    inputClicksCompleted: 0,
     restartedOldVersion: false,
     reloadedWithinBudget: false,
     stage: "initial",
@@ -135,7 +146,7 @@ async function collect(mobile, forceRestart, attempt) {
           if (!oldVersion && version.status === "activated")
             oldVersion = version.versionId;
           if (
-            forceRestart &&
+            trigger === "cdp" &&
             !record.restartRequested &&
             version.versionId === oldVersion &&
             version.status === "activated" &&
@@ -181,9 +192,25 @@ async function collect(mobile, forceRestart, attempt) {
         ),
       )
       .toBe("installed");
+    let input;
+    if (trigger === "pointer") {
+      const box = await other.locator("#home").boundingBox();
+      if (!box) throw Error("Home link has no bounding box");
+      record.inputClicksRequested = 8;
+      input = (async () => {
+        for (let index = 0; index < record.inputClicksRequested; index++) {
+          await other.mouse.click(
+            box.x + box.width / 2,
+            box.y + box.height / 2,
+          );
+          record.inputClicksCompleted++;
+        }
+      })();
+    }
     record.stage = "load";
     // Preserve the original product scenario's 10-second observation budget.
     await Promise.all([
+      input,
       page.waitForEvent("load", { timeout: 10000 }),
       other.waitForEvent("load", { timeout: 10000 }),
       page.evaluate(async () => {
@@ -201,6 +228,14 @@ async function collect(mobile, forceRestart, attempt) {
         : "fixture_error";
   } finally {
     const trace = finishTrace ? await finishTrace() : null;
+    record.warmUpStartRequests =
+      trace?.complete && !trace.truncated
+        ? trace.events.filter(
+            (event) =>
+              event.name === "ServiceWorkerVersion::StartWorkerRequested" &&
+              event.args?.Purpose === "Warm Up",
+          ).length
+        : null;
     try {
       const observed = versions.filter((version) => version.id === oldVersion);
       const stop = observed.findIndex(
@@ -217,7 +252,7 @@ async function collect(mobile, forceRestart, attempt) {
       record.states = await Promise.all((context?.pages() ?? []).map(inspect));
       record.versions = versions;
       await writeFile(
-        join(folder, `${mobile}-${forceRestart}-${attempt}.json`),
+        join(folder, `${mobile}-${trigger}-${attempt}.json`),
         JSON.stringify({ record, trace }, null, 2),
       );
     } finally {
@@ -243,8 +278,8 @@ try {
   await versionSession.detach();
   for (const mobile of [false, true])
     for (let attempt = 0; attempt < attempts; attempt++)
-      for (const forceRestart of [false, true]) {
-        const result = await collect(mobile, forceRestart, attempt);
+      for (const exerciseTrigger of [false, true]) {
+        const result = await collect(mobile, exerciseTrigger, attempt);
         results.push(result);
         await writeFile(
           join(folder, "results.json"),
@@ -253,9 +288,11 @@ try {
         console.log(
           JSON.stringify({
             mobile,
-            forceRestart,
+            trigger: result.trigger,
             attempt,
             restartRequested: result.restartRequested,
+            inputClicks: result.inputClicksCompleted,
+            warmUpStartRequests: result.warmUpStartRequests,
             restartedOldVersion: result.restartedOldVersion,
             reloadedWithinBudget: result.reloadedWithinBudget,
             error: result.error,
@@ -265,11 +302,12 @@ try {
 } finally {
   await browser.close();
 }
-const control = results.filter((result) => !result.forceRestart);
-const induced = results.filter((result) => result.forceRestart);
+const control = results.filter((result) => result.trigger === "control");
+const induced = results.filter((result) => result.trigger !== "control");
 console.log(
   JSON.stringify({
     folder,
+    trigger: requestedTrigger,
     control: {
       cases: control.length,
       reloaded: control.filter((result) => result.reloadedWithinBudget).length,

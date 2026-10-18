@@ -73,6 +73,8 @@
 | NFR07 홈서버/복구 | US10/US16 | [02](02-deployment-network.md), [07](07-database.md), [16](16-observability-ops.md) | TS16/TS18/TS28 |
 | NFR08 develop/승인 | US15 | [workflow](../workflow/git-workflow.md), [14](14-testing-strategy.md) | TS30 CI·approval record |
 
+#163의 FR08/11·NFR01/02/05/06/08·TS13/18/19/20/26/30 → [ADR0077](../adr/0077-beginner-tutorial-basics.md) →8언어 숫자/깃발/모드 기초·단계/locale/replay 보존·규칙 화면 공유 → [검증163](../verification/163-beginner-tutorial-basics.md). 실제 초보자 이해와30초는 #27의 미완료 관찰이다.
+
 코어 시나리오는 Clock/RNG fake로 제어하고, DB/WS는 실제 통합으로, UI/광고/언어는 DI port로 테스트한다. [백로그](../workflow/backlog.md)는 각 작업의 시나리오를 연결한다.
 
 OAuth 기반 FR01/NFR02·TS01/20/31/32/35 → [ADR0019](../adr/0019-auth-foundation-and-delivery.md) → #43(AuthStore/CredentialVault). 이후 #44 provider/HTTP, #45 계정 권리, #46 UI를 순차 병합하고 #42 실제 계정 검수는 별도 출시 조건이다.

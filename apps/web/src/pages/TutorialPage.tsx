@@ -8,6 +8,7 @@ import { MatchSummary } from "../ui/organisms/MatchSummary";
 import { MatchLayout } from "../ui/templates/MatchLayout";
 import { Button } from "../ui/atoms/Button";
 import { Card } from "../ui/atoms/Card";
+import { PlayBasics } from "../ui/molecules/PlayBasics";
 import { coordinate } from "../board/presentation";
 const returnPaths = new Set(["/", "/practice", "/friends", "/daily", "/queue"]);
 export function TutorialPage() {
@@ -53,6 +54,7 @@ export function TutorialPage() {
         </Button>
       </div>
       <p>{t("tutorial.trainingRules")}</p>
+      <p>{t("tutorial.guidedHint")}</p>
       {!services.learning.persistent() && (
         <output class="status-message">{t("tutorial.memory")}</output>
       )}
@@ -74,6 +76,7 @@ export function TutorialPage() {
         <MatchLayout
           guide={
             <Card class="lesson-card">
+              <PlayBasics key={round} collapse={view.stage !== "open"} />
               <h2 aria-live="polite">{t(`tutorial.${view.stage}.title`)}</h2>
               <p>{t(`tutorial.${view.stage}.hint`, { cell })}</p>
               {expected && view.stage !== "complete" && (

@@ -795,7 +795,8 @@ input[type="checkbox"]:checked::before {
 }
 .board-modes .button {
   flex: 1;
-  min-width: 64px;
+  min-width: max-content;
+  white-space: nowrap;
 }
 .board-map {
   position: relative;
@@ -904,6 +905,25 @@ input[type="checkbox"]:checked::before {
 .lesson-card .button {
   width: 100%;
   margin-top: 0.7rem;
+}
+.play-basics > summary {
+  min-height: 44px;
+  padding-block: var(--space-sm);
+  font-weight: 700;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.play-basics > summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.play-basics dt {
+  font-weight: 700;
+}
+.play-basics dd {
+  margin-inline-start: 0;
+  margin-block: var(--space-sm) var(--space-md);
+  overflow-wrap: anywhere;
 }
 @media (max-width: 800px) {
   .match-layout {

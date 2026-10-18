@@ -12,6 +12,23 @@ test("first visit runs actual WASM attack and accusation, preserves locale and c
   );
   await expect(page.getByRole("gridcell")).toHaveCount(9);
   await expect(page.getByTestId("gauge")).toHaveText("0 / 1");
+  const basics = page
+    .locator("details")
+    .filter({ hasText: "New to Minesweeper?" });
+  const basicsToggle = basics.locator("summary");
+  await expect(basics).toHaveJSProperty("open", true);
+  await basicsToggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(basics).toHaveJSProperty("open", false);
+  await page.keyboard.press("Enter");
+  await expect(basics).toHaveJSProperty("open", true);
+  if (info.project.name === "mobile") {
+    await basicsToggle.tap();
+    await expect(basics).toHaveJSProperty("open", false);
+    await basicsToggle.tap();
+    await expect(basics).toHaveJSProperty("open", true);
+  }
+  await expect(page.getByTestId("gauge")).toHaveText("0 / 1");
   await page.locator('[data-cell="2"]').click();
   await expect(
     page.getByText("Follow the current lesson action, then try again."),
@@ -24,12 +41,23 @@ test("first visit runs actual WASM attack and accusation, preserves locale and c
     page.getByRole("heading", { name: "2. Send an attack" }),
   ).toBeVisible();
   await expect(page.getByTestId("gauge")).toHaveText("1 / 1");
+  await expect(basics).toHaveJSProperty("open", false);
+  await basicsToggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(basics).toHaveJSProperty("open", true);
   await page.locator("header select").selectOption("ko");
   await expect(
     page.getByRole("heading", { name: "2. 공격 보내기" }),
   ).toBeVisible();
   await expect(page.getByTestId("gauge")).toHaveText("1 / 1");
+  const translatedBasics = page
+    .locator("details")
+    .filter({ hasText: "지뢰찾기가 처음인가요?" });
+  await expect(translatedBasics).toHaveJSProperty("open", true);
   await page.locator("header select").selectOption("en");
+  await basicsToggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(basics).toHaveJSProperty("open", false);
   await page.getByRole("button", { name: "Attack", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "3. Reveal the changed number" }),
@@ -69,6 +97,87 @@ test("first visit runs actual WASM attack and accusation, preserves locale and c
   );
   await page.goto("/en/tutorial");
   await expect(page.getByRole("button", { name: "Open C3" })).toBeVisible();
+  await expect(basics).toHaveJSProperty("open", true);
+});
+
+test("beginner guidance is readable in eight languages at 360px and shared with the rules page", async ({
+  page,
+}, info) => {
+  const titles = {
+    en: "New to Minesweeper?",
+    ko: "지뢰찾기가 처음인가요?",
+    ja: "マインスイーパーは初めてですか？",
+    "zh-CN": "第一次玩扫雷？",
+    es: "¿Es tu primera vez en Buscaminas?",
+    "pt-BR": "Primeira vez no Campo Minado?",
+    de: "Neu bei Minesweeper?",
+    fr: "Première partie de Démineur ?",
+  };
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/en/tutorial?code=ABCD1234#invite");
+  for (const [locale, title] of Object.entries(titles)) {
+    await page.locator("header select").selectOption(locale);
+    const basics = page.locator("details").filter({ hasText: title });
+    await expect(basics.locator("summary")).toBeVisible();
+    await expect(basics).toHaveJSProperty("open", true);
+    await expect(basics.getByRole("term")).toHaveCount(4);
+    await expect(page.getByRole("gridcell")).toHaveCount(9);
+    await expect(page.getByTestId("gauge")).toHaveText("0 / 1");
+    for (const button of await page.locator(".board-modes > button").all()) {
+      expect(
+        await button.evaluate((element) => {
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          const text = Array.from(range.getClientRects());
+          const button = element.getBoundingClientRect();
+          return (
+            text.length === 1 &&
+            text[0].left >= button.left &&
+            text[0].right <= button.right &&
+            button.width >= 44 &&
+            button.height >= 44
+          );
+        }),
+      ).toBe(true);
+    }
+    await expect(page).toHaveURL(
+      new RegExp(`/${locale}/tutorial\\?code=ABCD1234#invite$`),
+    );
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    expect(
+      await page.evaluate(() => localStorage.getItem("liar.tutorial.v1")),
+    ).toBe(null);
+    if (process.env.LIAR_CAPTURE_DESIGN && ["en", "ko"].includes(locale)) {
+      mkdirSync(".tmp/tutorial163", { recursive: true });
+      await page.screenshot({
+        path: `.tmp/tutorial163/basics-${info.project.name}-${locale}.png`,
+        fullPage: true,
+      });
+      await page.locator(".board-bottom").screenshot({
+        path: `.tmp/tutorial163/controls-${info.project.name}-${locale}.png`,
+      });
+    }
+  }
+  await page.goto("/en/rules");
+  const rulesBasics = page.locator("details").filter({ hasText: titles.en });
+  await expect(rulesBasics).toHaveJSProperty("open", true);
+  await expect(
+    rulesBasics.getByText(
+      /up to eight neighboring squares, including diagonals/,
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Replay tutorial" }),
+  ).toBeVisible();
+  expect(requests.some((uri) => unrequestedServiceCall(uri, page.url()))).toBe(
+    false,
+  );
 });
 test("skip retains invitation and blocks external tutorial redirects even without storage", async ({
   page,

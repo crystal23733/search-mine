@@ -18,3 +18,5 @@ new/skipped/complete만 필수 로컬 저장소에 남긴다. 손상/읽기·쓰
 manifest 정적 import closure의 초기 JS gzip28471byte, 선택 언어 추가 최대2988byte, 초기 상한31459byte다. 대전/학습 정적 추가6145/6131byte, Pixi 정적 추가108859byte, core adapter728byte이며 공유 dependency가 있으므로 이 값들을 단순 합산해 실제 요청량으로 쓰지 않는다. 전 backend·8locale·game assets 합219587byte는 보수적 전체 상한이다. WASM436234byte/gzip163295byte, glue16529byte/gzip2872byte는 별도다. 실제 단일 게임의 동적 요청 경로와 CPU/GPU/미니 PC 성능은 #26에서 측정하며 전체 game200KiB·60fps를 달성했다고 주장하지 않는다.
 
 실제 참여자의 30초 이해·재미 E1/E2는 미실행이다. [관찰 절차](12-tutorial-observation-guide.md)를 준비하고 #27에 추적했으며 M2의 해당 수동 출구 게이트는 유지한다. 코드/diff 리뷰에서는 비공개 DTO 제외·규칙 단일 원천·중복/거절 상한·CSPRNG 실패 전 Worker 생성 방지·async 정리·first visit/return·8언어117키·무광고/무계정을 확인했다. 최신 PR head의 필수6checks를 확인하고 위임에 따라 병합한다.
+
+후속 [#163 초보자 기초 안내](163-beginner-tutorial-basics.md)는 기존4단계를 유지하면서 숫자/깃발/모드 설명과 규칙 화면 공유,360px 모드 이름 표시를 보완한다. 실제 자동 검사와 사람의 이해를 구분하며 #27의 관찰 준비에는 경험 여부·기초 안내 사용·전체 소요 시간과 설명 정확도를 추가했다.

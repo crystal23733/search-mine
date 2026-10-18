@@ -152,3 +152,5 @@ PR137 최초 CI의 personal-export 시작 취소는 새 capture 이전의 준비
 #148 NFR01/02/05/07/08 · TS15/16/20/21/31 → [ADR0069](../adr/0069-main-preparation-diagnostics.md) → 실제 child별 고유 로그·단조 단계/실패 상태·재시작 보존 → [검증148](../verification/148-main-preparation-diagnostics.md). 상위141의 미확정 준비 원인과 진단 보존을 구분한다.
 
 #161의 기술 스파이크는 [ADR0076](../adr/0076-pointer-warmup-reproduction.md)에 따라 CDP 강제 시작과 일반 링크 입력을 분리한다. pointer 모드는 동일 fetch/anchor fixture의 입력 없는 control과8회 입력을 비교하며 heap 부하를 넣지 않는다. native가 불완전하면 Warm Up 시작 횟수를0으로 단정하지 않는다. 원래10초 timeout과 유발 결과를 기록하고 제품 E2E 성공 수에 합산하지 않는다.
+
+#163은 [ADR0077](../adr/0077-beginner-tutorial-basics.md)의 읽기 전용 기초 안내를 현재 TutorialView/학습 상태와 분리해 검사한다. DOM의 접기/재열기/locale/replay와 실제 WASM PC/mobile의 단계·반사·8언어/360px/키보드를 함께 검증한다. 추가 규칙 엔진이나 새 계정/동의/저장을 만들지 않는다. 초보자 경험·기초 읽기 시간과 이해 발언은 #27의 실제 관찰에 남긴다.

@@ -22,13 +22,13 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:5173", trace: "retain-on-failure" },
   webServer: [
     {
-      command: "pnpm --filter @liar/web dev",
+      command: "yarn workspace @liar/web dev",
       url: "http://127.0.0.1:5173",
       reuseExistingServer: !process.env.CI,
     },
     {
       command:
-        "pnpm --filter @liar/web exec vite preview --host 127.0.0.1 --port 4173 --strictPort",
+        "yarn workspace @liar/web vite preview --host 127.0.0.1 --port 4173 --strictPort",
       url: "http://127.0.0.1:4173",
       reuseExistingServer: !process.env.CI,
     },

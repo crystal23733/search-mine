@@ -14,7 +14,7 @@ run(cli, ['target/wasm32-unknown-unknown/release/liar_wasm.wasm', '--target', 'w
 const source = readFileSync(resolve(root, 'apps/web/public/core/liar_wasm.d.ts'), 'utf8');
 const target = resolve(root, 'packages/core-bridge/src/wasm-bindings.d.ts');
 if (process.argv.includes('--check')) {
-  if (!existsSync(target) || readFileSync(target, 'utf8') !== source) throw new Error('WASM declarations are stale; run pnpm wasm:generate');
+  if (!existsSync(target) || readFileSync(target, 'utf8') !== source) throw new Error('WASM declarations are stale; run yarn wasm:generate');
 } else {
   mkdirSync(resolve(target, '..'), { recursive: true });
   writeFileSync(target, source);

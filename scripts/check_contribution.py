@@ -52,8 +52,8 @@ def main():
             break
     else:
         raise ValueError("PR exceeds the supported 3000-file review boundary")
-    prefixes = ("crates/", "apps/", "packages/", "tests/", "deploy/", "config/", "spikes/")
-    manifests = {"Cargo.toml", "Cargo.lock", "package.json", "pnpm-workspace.yaml", "pnpm-lock.yaml", "Dockerfile", "compose.yml", "docker-compose.yml"}
+    prefixes = ("crates/", "apps/", "packages/", "tests/", "deploy/", "config/", "spikes/", "patches/")
+    manifests = {"Cargo.toml", "Cargo.lock", "package.json", ".yarnrc.yml", "yarn.lock", "Dockerfile", "compose.yml", "docker-compose.yml"}
     product = any(
         item["status"] != "removed" and (item["filename"].startswith(prefixes) or item["filename"] in manifests)
         for item in changed

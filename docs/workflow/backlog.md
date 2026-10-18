@@ -184,3 +184,6 @@
 #159/PR160은 developd43b91e에 병합·CLOSED했다. 다음 [#161 링크 입력 Warm Up 재현](https://github.com/crystal23733/search-mine/issues/161)은 [ADR0076](../adr/0076-pointer-warmup-reproduction.md)에 따라 앱 없는 일반 입력과 강제 시작을 구분해 보존한다. 자연 실패4건과 입력 prototype8건의 old재시작 근거가 있으며 제품 수정 #83은 OPEN이다.
 
 #161/PR162는 developbe4096c에 병합·CLOSED했다. 최신 사용자 요청의 [#163 초보자 튜토리얼 기초](https://github.com/crystal23733/search-mine/issues/163)는 완료된 #12의 독립 M2 보완이며 [ADR0077](../adr/0077-beginner-tutorial-basics.md)을 따른다. 숫자/깃발/모드의8언어 설명과 학습 수명을 검증한다. #27의 사람 이해/재미와 #83의 제품 복구, 실제 OAuth42/CMP147·운영은 별도 미완료다.
+
+
+#165 [Yarn 전환](https://github.com/crystal23733/search-mine/issues/165)은 2026-10-18 사용자 지시의 독립 M3 도구 변경이다. 선행 #4·#163/PR164 병합·CLOSED 뒤 [ADR0078](../adr/0078-yarn-workspace.md)에 따라 workspaces·기존 선언 패치/빌드 허용·immutable 설치·실제 전체 실행 경로와 CI를 검증한다. 과거 pnpm 실행 기록과 #83·실제 외부/운영 출구는 별도로 유지한다.

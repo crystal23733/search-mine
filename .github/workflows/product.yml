@@ -102,32 +102,32 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - uses: pnpm/action-setup@v6
+      - run: corepack enable
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - run: cargo install wasm-bindgen-cli --locked
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm wasm:build
-      - run: pnpm fixtures:check
-      - run: pnpm tokens:check
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm test:worker-probe
-      - run: pnpm test:native-worker-trace
-      - run: pnpm build
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: yarn install --immutable
+      - run: yarn wasm:build
+      - run: yarn fixtures:check
+      - run: yarn tokens:check
+      - run: yarn format:check
+      - run: yarn lint
+      - run: yarn typecheck
+      - run: yarn test
+      - run: yarn test:worker-probe
+      - run: yarn test:native-worker-trace
+      - run: yarn build
+      - run: yarn playwright install --with-deps chromium
       - run: MIGRATION_DATABASE_URL="$DATABASE_URL" cargo run --locked -p liar-server --bin migrate
-      - run: pnpm test:e2e
+      - run: yarn test:e2e
         id: browser
       - name: Compare offline worker network inspection after a failure
         if: failure() && steps.browser.outcome == 'failure'
         env:
           PLAYWRIGHT_DISABLE_SERVICE_WORKER_NETWORK: '1'
-        run: pnpm exec playwright test tests/e2e/offline.spec.ts --grep 'two-tab update' --project offline-chromium --project offline-mobile --repeat-each 4 --retries 0 --output test-results/offline-inspection-comparison
+        run: yarn playwright test tests/e2e/offline.spec.ts --grep 'two-tab update' --project offline-chromium --project offline-mobile --repeat-each 4 --retries 0 --output test-results/offline-inspection-comparison
       - uses: actions/upload-artifact@v7
         if: always()
         with:

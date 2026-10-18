@@ -88,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/native-wasm.json");
     if env::args().any(|arg| arg == "--check") {
         if fs::read_to_string(&target)? != source {
-            return Err("Native fixture is stale; run pnpm fixtures:generate".into());
+            return Err("Native fixture is stale; run yarn fixtures:generate".into());
         }
     } else {
         fs::create_dir_all(target.parent().ok_or("Invalid path")?)?;

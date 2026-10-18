@@ -41,28 +41,29 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 개발 실행
 
-Node.js 24.15 이상, 최신 Rust stable, pnpm을 사용합니다. 의존성 추가에는 버전을 붙이지 않고 최신 안정 릴리스를 받습니다. 설치 결과는 Cargo.lock/pnpm-lock.yaml에 기록하고 검증/CI는 locked/frozen으로 재현합니다.
+Node.js 24.15 이상, 최신 Rust stable, Yarn 4를 사용합니다. Corepack이 package.json의 packageManager 버전을 선택합니다. 의존성 추가에는 버전을 붙이지 않고 최신 안정 릴리스를 받습니다. 설치 결과는 Cargo.lock/yarn.lock에 기록하고 검증/CI는 locked/immutable로 재현합니다. 기존 Yarn 1을 사용하던 환경에서도 아래 corepack enable 뒤 yarn --version으로 프로젝트 버전을 확인합니다. Corepack이 없는 Node 배포판에서는 먼저 npm install --global corepack으로 설치합니다. [전환 결정과 호환성](docs/adr/0078-yarn-workspace.md)을 확인하세요.
 
 ```powershell
-npm install --global pnpm
-pnpm install --frozen-lockfile
+corepack enable
+yarn --version
+yarn install --immutable
 rustup update stable
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli --locked
-pnpm types:check
-pnpm wasm:build
-pnpm dev
+yarn types:check
+yarn wasm:build
+yarn dev
 # 다른 터미널: health 서버 (기본 127.0.0.1:3000)
 cargo run --locked -p liar-server
 ```
 
-현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·영속 장애 복구·고정 결과 조회를 제공하며 공식 데일리 도전·하트비트·첫 완료 검증·본인 결과/신뢰별 공유와 로그인 없는 두 순위 화면을 제공합니다. 정책·운영 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `pnpm tokens:generate`, 형식 검사는 `pnpm format:check`로 실행합니다.
+현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·영속 장애 복구·고정 결과 조회를 제공하며 공식 데일리 도전·하트비트·첫 완료 검증·본인 결과/신뢰별 공유와 로그인 없는 두 순위 화면을 제공합니다. 정책·운영 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `yarn tokens:generate`, 형식 검사는 `yarn format:check`로 실행합니다.
 
 ## 오프라인 확인
 
 처음 배우는 사용자는 `/{locale}/tutorial`(한국어 `/ko/tutorial`)에서 숫자·대각선 이웃·깃발·모드 조작의 기초를 읽고 실제 열기→공격→지목/반사를 연습할 수 있습니다. 첫 단계에는 설명이 펼쳐지고 진행 뒤 접히며, 다시 펼치기·재학습·건너뛰기를 지원합니다. `/ko/rules`의 규칙 화면에도 같은8언어 안내가 있습니다. 계정이나 광고 없이 이용하며 실제 초보자의 이해·30초 목표는 #27에서 관찰할 항목입니다. [초보자 안내 검증](docs/verification/163-beginner-tutorial-basics.md).
 
-`pnpm build` 뒤 `pnpm --filter @liar/web preview --port 4173`으로 production을 연다. 설정의 캐시 준비를 확인한 뒤 연결을 끊으면 저장된8언어·WASM·로컬 봇/데일리를 이용할 수 있다. 개발 서버5173에서는 SW를 켜지 않는다. 최초 미캐시 offline 방문은 지원하지 않으며 브라우저가 캐시를 지울 수 있다. 업데이트는 열린 모든 탭이 홈으로 돌아온 뒤 버튼으로 적용한다. 설정에서 공개 cache와 개인 기록/제출 대기를 각각 삭제할 수 있다. 제출 후보는 미검증이며 설정의 현재 계정 확인 후 명시 전송한다. 로그인/연결 복구만으로 자동 제출하지 않고 서버 검증 뒤 pending만 제거하며 개인 기록은 유지한다. 공식 도전은 데일리의 링크에서 계정을 명시 확인해 시작하며 완료 후보를 먼저 보존하고 자동 검증 제출한다. 실패하면 같은 시도를 명시 재전송하며 첫 서버 기록을 유지한다. 본인 완료·nullable 서버 시간과 로컬 시간을 구분한다. 공개 두 순위는 로그인 없이 조회한다.
+`yarn build` 뒤 `yarn workspace @liar/web preview --port 4173`으로 production을 연다. 설정의 캐시 준비를 확인한 뒤 연결을 끊으면 저장된8언어·WASM·로컬 봇/데일리를 이용할 수 있다. 개발 서버5173에서는 SW를 켜지 않는다. 최초 미캐시 offline 방문은 지원하지 않으며 브라우저가 캐시를 지울 수 있다. 업데이트는 열린 모든 탭이 홈으로 돌아온 뒤 버튼으로 적용한다. 설정에서 공개 cache와 개인 기록/제출 대기를 각각 삭제할 수 있다. 제출 후보는 미검증이며 설정의 현재 계정 확인 후 명시 전송한다. 로그인/연결 복구만으로 자동 제출하지 않고 서버 검증 뒤 pending만 제거하며 개인 기록은 유지한다. 공식 도전은 데일리의 링크에서 계정을 명시 확인해 시작하며 완료 후보를 먼저 보존하고 자동 검증 제출한다. 실패하면 같은 시도를 명시 재전송하며 첫 서버 기록을 유지한다. 본인 완료·nullable 서버 시간과 로컬 시간을 구분한다. 공개 두 순위는 로그인 없이 조회한다.
 
 ## 검증
 
@@ -71,7 +72,7 @@ cargo run --locked -p liar-server
 인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 네 제공자와 로그인 HTTP는 [#44 검증](docs/verification/44-oauth-providers-http.md)에 기록합니다. 계정 권리는 [#45 검증](docs/verification/45-account-rights-apple-revocation.md)에 기록하며 계정 화면은 [#46 검증](docs/verification/46-oauth-account-ui.md)을 확인합니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 아래는 격리된 테스트 DB 예시입니다.
 
 ```powershell
-pnpm exec playwright install chromium
+yarn playwright install chromium
 ./scripts/check.ps1
 # 실제 DB 통합 (개발용 loopback DB, 운영 DB는 host 포트 없음)
 docker compose -f tests/compose.postgres.yml up -d --wait
@@ -86,7 +87,7 @@ python scripts/check_auth_coverage.py .tmp/auth-coverage.json
 docker compose -f tests/compose.postgres.yml down
 ```
 
-`pnpm docs:check`, `pnpm lint/typecheck/test/build/test:e2e`는 각 script를 개별 실행합니다. `pnpm build`는 공개 WASM도 생성하며 `wasm:generate`/`fixtures:generate`는 Rust 계약 변경 시 생성 선언/재생 fixture를 갱신합니다. CI는 freshness와 실제 Chromium 재생을 검사합니다. GitHub Actions의 docs/contribution-gate/rust/web/database/coverage를 모두 확인한 뒤 develop에 병합합니다. DB 없는 기본 cargo test에서 무시되는 PostgreSQL 테스트를 통과로 계산하지 않습니다.
+`yarn docs:check`, `yarn lint/typecheck/test/build/test:e2e`는 각 script를 개별 실행합니다. `yarn build`는 공개 WASM도 생성하며 `wasm:generate`/`fixtures:generate`는 Rust 계약 변경 시 생성 선언/재생 fixture를 갱신합니다. CI는 freshness와 실제 Chromium 재생을 검사합니다. GitHub Actions의 docs/contribution-gate/rust/web/database/coverage를 모두 확인한 뒤 develop에 병합합니다. DB 없는 기본 cargo test에서 무시되는 PostgreSQL 테스트를 통과로 계산하지 않습니다.
 
 서버 사양·실측 요금·도메인·OAuth 키·광고/CMP 승인·정책 운영자 정보는 [외부 준비 목록](docs/workflow/external-inputs.md)에 기록합니다. 필요한 입력을 만들지 않고 독립적인 개발은 계속합니다.
 
@@ -113,8 +114,8 @@ cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](test
 $env:MIGRATION_DATABASE_URL = $env:DATABASE_URL
 cargo run --locked -p liar-server --bin migrate
 Remove-Item Env:MIGRATION_DATABASE_URL
-pnpm build
-pnpm exec playwright test --project auth
+yarn build
+yarn playwright test --project auth
 ```
 
 DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속·OS 재시작 후 새 브라우저 결과 발견·양쪽 이탈 시험을 포함한100개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md), [#72 친구 방](docs/verification/72-friends-room-ui.md), [#105 최신 결과 검증](docs/verification/105-latest-personal-result.md), [#107 통합 출구](docs/verification/107-reconnect-integration-exit.md)를 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.

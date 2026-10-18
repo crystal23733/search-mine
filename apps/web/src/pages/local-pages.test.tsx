@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/preact";
 import { beforeAll, expect, test, vi } from "vitest";
 import {
@@ -27,6 +28,7 @@ beforeAll(async () => {
     import("./MatchPage"),
     import("./DailyPage"),
     import("./TutorialPage"),
+    import("./RulesPage"),
   ]);
 });
 function fixture(): GameView {
@@ -180,6 +182,7 @@ test("training follows the public expected action, marks completion and replays 
     "/en/tutorial?return=%2Fpractice&difficulty=hard&code=ABCD1234#invite",
   );
   const allDispose: ReturnType<typeof vi.fn>[] = [];
+  const actions: LocalInput[] = [];
   ports.trainingCore = async () => {
     let view: TutorialView = {
       game: fixture(),
@@ -194,6 +197,7 @@ test("training follows the public expected action, marks completion and replays 
       advance: async () => view,
       dispose,
       step: async (input) => {
+        actions.push(input);
         view = { ...view, stage: "complete", expected: null };
         return {
           view,
@@ -209,19 +213,59 @@ test("training follows the public expected action, marks completion and replays 
     };
   };
   const mounted = render(<App services={ports} />);
+  const basics = await screen.findByText("New to Minesweeper?");
+  const details = basics.closest("details")!;
+  expect(details.open).toBe(true);
+  expect(
+    screen.getByText(/up to eight neighboring squares, including diagonals/),
+  ).toBeTruthy();
+  expect(screen.getByText(/Flags are notes/)).toBeTruthy();
+  fireEvent.click(basics);
+  await waitFor(() => expect(details.open).toBe(false));
+  fireEvent.click(basics);
+  await waitFor(() => expect(details.open).toBe(true));
+  expect(actions).toHaveLength(0);
+  expect(ports.learning.read()).toBe("skipped");
   fireEvent.click(await screen.findByRole("button", { name: "Open I1" }));
   expect(
     await screen.findByRole("heading", { name: "You reflected the attack!" }),
   ).toBeTruthy();
+  await waitFor(() => expect(details.open).toBe(false));
   await waitFor(() => expect(ports.learning.read()).toBe("complete"));
+  fireEvent.click(basics);
+  await waitFor(() => expect(details.open).toBe(true));
+  expect(actions).toHaveLength(1);
   fireEvent.click(screen.getByRole("button", { name: "Replay tutorial" }));
   await screen.findByRole("button", { name: "Open I1" });
+  expect(screen.getByText("New to Minesweeper?").closest("details")!.open).toBe(
+    true,
+  );
   expect(allDispose[0]).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("button", { name: "Skip tutorial" }));
   await waitFor(() => expect(window.location.pathname).toBe("/en/practice"));
   expect(ports.learning.read()).toBe("complete");
   expect(window.location.search).not.toContain("return=");
   expect(window.location.search).toContain("difficulty=hard");
+  mounted.unmount();
+});
+
+test("the rules page also explains numbers, flags and board modes before replay", async () => {
+  const ports = await services("/en/rules");
+  const mounted = render(<App services={ports} />);
+  const summary = await screen.findByText("New to Minesweeper?");
+  expect(summary.closest("details")!.open).toBe(true);
+  const basics = within(summary.closest("details")!);
+  expect(
+    basics.getByText(/up to eight neighboring squares, including diagonals/),
+  ).toBeTruthy();
+  expect(basics.getByText(/Flags are notes/)).toBeTruthy();
+  expect(
+    basics.getByText(/Choose Open, Flag or Accuse below the board/),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("link", { name: "Replay tutorial" }).getAttribute("href"),
+  ).toBe("/en/tutorial");
+  expect(ports.learning.read()).toBe("skipped");
   mounted.unmount();
 });
 test("failed local initialization stays recoverable by new match", async () => {

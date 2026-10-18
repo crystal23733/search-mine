@@ -1084,6 +1084,16 @@
         "native-worker-restart-observation"
       ],
       "acceptance": "ADR0076·heap없는fetch/anchor와8회입력/control·기존cdp기본CLI보존·입력/old재시작/native목적/완전성/10초결과분리·실제RedGreen/PCmobile/관련검사/리뷰6CI/정확head병합CLOSED;83OPEN"
+    },
+    {
+      "key": "beginner-tutorial-basics",
+      "issue": 163,
+      "milestone": "M2",
+      "title": "feat(tutorial): 처음 배우는 사용자를 위한 기초 안내",
+      "requirements": "FR08/11, NFR01/02/05/06/08",
+      "scenarios": "TS13/18/19/20/26/30",
+      "deps": ["tutorial", "pointer-warmup-reproduction"],
+      "acceptance": "ADR0077·8언어숫자/깃발/모드기초·규칙화면공유·펼침/단계/locale/replay/skip수명·행동RedGreen/실제WASM/PCmobile/360px/keyboard/관련전체/리뷰6CI/정확head병합CLOSED;사람이해27/83/외부별도"
     }
   ]
 }

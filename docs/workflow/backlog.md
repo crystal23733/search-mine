@@ -182,3 +182,5 @@
 #156 FR01/10/11/13·NFR01/02/05/06/07/08·TS18/19/20/24/26/29/31/35/36 → [ADR0073](../adr/0073-consent-context-and-expiry.md) → 메모리 현재 context/revision/만료·계정탭/복원 취소·시계/타이머 정리 → [검증156](../verification/156-consent-context-and-expiry.md). 실제 CMP/서버 proof/선택 수집·외부147/상위21은 후속이다.
 
 #159/PR160은 developd43b91e에 병합·CLOSED했다. 다음 [#161 링크 입력 Warm Up 재현](https://github.com/crystal23733/search-mine/issues/161)은 [ADR0076](../adr/0076-pointer-warmup-reproduction.md)에 따라 앱 없는 일반 입력과 강제 시작을 구분해 보존한다. 자연 실패4건과 입력 prototype8건의 old재시작 근거가 있으며 제품 수정 #83은 OPEN이다.
+
+#161/PR162는 developbe4096c에 병합·CLOSED했다. 최신 사용자 요청의 [#163 초보자 튜토리얼 기초](https://github.com/crystal23733/search-mine/issues/163)는 완료된 #12의 독립 M2 보완이며 [ADR0077](../adr/0077-beginner-tutorial-basics.md)을 따른다. 숫자/깃발/모드의8언어 설명과 학습 수명을 검증한다. #27의 사람 이해/재미와 #83의 제품 복구, 실제 OAuth42/CMP147·운영은 별도 미완료다.

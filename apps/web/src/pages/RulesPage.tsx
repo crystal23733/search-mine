@@ -2,6 +2,7 @@ import { DEFAULT_RULES } from "@liar/protocol";
 import { useUi } from "../ui/context";
 import { Card } from "../ui/atoms/Card";
 import { NavLink } from "../ui/molecules/NavLink";
+import { PlayBasics } from "../ui/molecules/PlayBasics";
 export function RulesPage() {
   const { t, locale } = useUi();
   const rules = DEFAULT_RULES.rules;
@@ -23,6 +24,9 @@ export function RulesPage() {
   return (
     <div class="reading-page">
       <h1>{t("rules.title")}</h1>
+      <Card>
+        <PlayBasics />
+      </Card>
       <Card>
         {(
           [

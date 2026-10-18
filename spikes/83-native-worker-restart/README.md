@@ -5,8 +5,8 @@
 루트에서 Node24·기존 frozen 설치·Playwright Chromium을 준비한 뒤 실행한다. 별도 DB·WASM·제품 서버는 필요 없다.
 
 ```powershell
-pnpm install --frozen-lockfile
-pnpm exec playwright install chromium
+yarn install --immutable
+yarn playwright install chromium
 node spikes/83-native-worker-restart/repro.mjs --attempts 2
 node spikes/83-native-worker-restart/repro.mjs --trigger pointer --attempts 2
 ```

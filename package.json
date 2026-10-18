@@ -6,11 +6,11 @@
     "node": ">=24.15.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @liar/web dev",
-    "build": "pnpm tokens:check && pnpm wasm:build && pnpm --filter @liar/web build",
+    "dev": "yarn workspace @liar/web dev",
+    "build": "yarn tokens:check && yarn wasm:build && yarn workspace @liar/web build",
     "lint": "oxlint apps packages scripts tests --deny-warnings",
-    "typecheck": "pnpm -r typecheck && tsc --noEmit -p tsconfig.tools.json",
-    "test": "pnpm --filter @liar/web test",
+    "typecheck": "yarn workspaces foreach -A --exclude liar-sweeper --topological run typecheck && tsc --noEmit -p tsconfig.tools.json",
+    "test": "yarn workspace @liar/web test",
     "test:worker-probe": "node tests/fixtures/worker-update-producer.test.mjs",
     "test:native-worker-trace": "node tests/fixtures/native-worker-trace.test.mjs",
     "test:e2e": "playwright test",
@@ -34,5 +34,21 @@
     "prettier": "^3.9.9",
     "typescript": "^7.0.2"
   },
-  "packageManager": "pnpm@12.9.1"
+  "packageManager": "yarn@4.18.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "dependenciesMeta": {
+    "esbuild": {
+      "built": true
+    },
+    "unrs-resolver": {
+      "built": true
+    }
+  },
+  "resolutions": {
+    "sharp-ico": "patch:sharp-ico@npm%3A0.1.5#./patches/sharp-ico.patch",
+    "unconfig": "patch:unconfig@npm%3A7.5.0#./patches/unconfig.patch"
+  }
 }

@@ -1,9 +1,0 @@
-packages:
-  - apps/*
-  - packages/*
-onlyBuiltDependencies:
-  - esbuild
-  - unrs-resolver
-patchedDependencies:
-  sharp-ico: patches/sharp-ico.patch
-  unconfig: patches/unconfig.patch

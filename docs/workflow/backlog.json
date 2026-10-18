@@ -1094,6 +1094,18 @@
       "scenarios": "TS13/18/19/20/26/30",
       "deps": ["tutorial", "pointer-warmup-reproduction"],
       "acceptance": "ADR0077·8언어숫자/깃발/모드기초·규칙화면공유·펼침/단계/locale/replay/skip수명·행동RedGreen/실제WASM/PCmobile/360px/keyboard/관련전체/리뷰6CI/정확head병합CLOSED;사람이해27/83/외부별도"
+    },
+    {
+      "key": "yarn-workspace",
+      "issue": 165,
+      "milestone": "M3",
+      "title": "build(yarn): pnpm 워크스페이스와 CI를 Yarn으로 전환",
+      "requirements": "NFR01/05/08",
+      "scenarios": "TS30",
+      "deps": [
+        "beginner-tutorial-basics"
+      ],
+      "acceptance": "ADR0078·Yarn최신안정/workspaces/node-modules/기존선언패치·빌드허용/immutable불변/실행경로·CI·기여게이트/실제전체검증·리뷰6checks/정확head병합CLOSED;83·외부별도"
     }
   ]
 }

@@ -18,7 +18,7 @@ M0 설계·작업 체계와 M1 코어, M2 웹 #10~14가 develop에 병합됐고 
 
 ## 설계와 구현
 
-한국어 대화/문서, 영어 식별자/코드 주석. SRP/SOLID·DIP, Rust struct/trait와 TS interface/DI, 도메인은 인프라를 모른다. Atomic Design+공통 디자인 토큰, 프로토콜 Rust 원천→생성 TS, 중복 규칙 금지. 설계 변경은 코드보다 먼저 문서/ADR/추적표에 반영한다. 의존성 추가는 cargo add / pnpm add 등 버전 인자 없이 최신 안정 버전을 받는다. 설치된 범위와 lockfile은 커밋하고 CI는 locked/frozen 설치를 사용한다. 호환성 문제는 실제 확인해서 해결하며 임의 구버전 pin으로 우회하지 않는다.
+한국어 대화/문서, 영어 식별자/코드 주석. SRP/SOLID·DIP, Rust struct/trait와 TS interface/DI, 도메인은 인프라를 모른다. Atomic Design+공통 디자인 토큰, 프로토콜 Rust 원천→생성 TS, 중복 규칙 금지. 설계 변경은 코드보다 먼저 문서/ADR/추적표에 반영한다. 2026-10-18 사용자 지시에 따라 Yarn 4 workspace를 사용한다. 의존성 추가는 cargo add / yarn add 등 버전 인자 없이 최신 안정 버전을 받는다. 설치된 범위와 lockfile은 커밋하고 CI는 locked/immutable 설치를 사용한다. 호환성 문제는 실제 확인해서 해결하며 임의 구버전 pin으로 우회하지 않는다.
 
 승인 후 모든 제품 변경은 시나리오→Red 실행 확인→Green→Refactor→관련 검증이다. 커버리지 목표 코어/도메인95%, 전체80%. 공정성·secret DTO·입력 idempotency·실DB·WS·오프라인·언어·광고 무차단의 의미 있는 행동을 검증한다. 미실행 테스트나 목표 성능을 달성했다고 보고하지 않는다.
 
@@ -36,6 +36,6 @@ develop이 기본 브랜치다. main은 선택적 release 대상이고 삭제·r
 
 ## 검사와 보고
 
-`python scripts/validate_docs.py`와 [Mermaid 검사 절차](CONTRIBUTING.md)를 실행한다. 제품 검사는 scripts/check.ps1, README의 실제 DB 명령, GitHub product workflow를 사용한다. 아직 수행하지 않은 cargo/pnpm/Playwright 검사를 통과했다고 주장하지 않는다. 비밀값·사용자 파일·보존 원문을 커밋에서 누락/노출하지 않게 diff를 검토한다.
+`python scripts/validate_docs.py`와 [Mermaid 검사 절차](CONTRIBUTING.md)를 실행한다. 제품 검사는 scripts/check.ps1, README의 실제 DB 명령, GitHub product workflow를 사용한다. 아직 수행하지 않은 cargo/yarn/Playwright 검사를 통과했다고 주장하지 않는다. 비밀값·사용자 파일·보존 원문을 커밋에서 누락/노출하지 않게 diff를 검토한다.
 
 2026-10-07 사용자 지시에 따라 작업일마다 로컬 `review/YYYY-MM-DD.md`에 이슈·변경 코드와 목적·실제 코드 리뷰 결과·실행 검증·미확인 사항·PR/병합 상태를 기록한다. 같은 날의 작업은 파일에 이어 쓰고 날짜는 Asia/Seoul 기준이다. `/review/`는 gitignore 대상으로 유지하며 리뷰 파일을 강제 추가하거나 커밋하지 않는다. 재개 시 당일 기록을 읽고 완료 상태를 실제 Git/이슈와 확인한다.

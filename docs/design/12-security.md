@@ -50,7 +50,7 @@ online 비밀 seed와 정답을 숨기고 상대 진행률만 공개한다. 동�
 
 ## 공급망과 운영
 
-lockfile·보안 감사(cargo audit/pnpm audit)·최소 CI permissions, PR에서 비밀값 접근 금지. secret은 gitignore+host 권한으로 관리, 유출시 commit 삭제만 하지 않고 토큰을 회전한다. 백업·DB 접근은 운영자만; Tunnel 토큰·DB 사용자 분리. 종속성 취약점 예외는 근거·기간·이슈를 명시하고 조용히 감사 실패를 무시하지 않는다.
+lockfile·보안 감사(cargo audit/yarn npm audit --all --recursive)·최소 CI permissions, PR에서 비밀값 접근 금지. secret은 gitignore+host 권한으로 관리, 유출시 commit 삭제만 하지 않고 토큰을 회전한다. 백업·DB 접근은 운영자만; Tunnel 토큰·DB 사용자 분리. 종속성 취약점 예외는 근거·기간·이슈를 명시하고 조용히 감사 실패를 무시하지 않는다.
 
 정책·지역 동의는 [11](11-ads-consent.md), 개인정보 보존은 [07](07-database.md)에 둔다. 위협 모델은 광고 공급자 추가·프로토콜 변경 때 갱신한다.
 

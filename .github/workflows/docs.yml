@@ -24,8 +24,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - uses: pnpm/action-setup@v6
-      - run: pnpm install --frozen-lockfile
+      - run: corepack enable
+      - run: yarn install --immutable
       - run: python scripts/validate_docs.py
       - run: node scripts/check_mermaid.mjs .
   contribution-gate:

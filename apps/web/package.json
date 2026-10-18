@@ -21,6 +21,7 @@
     "workbox-routing": "^7.4.1"
   },
   "devDependencies": {
+    "@babel/core": "npm:^7.22.1",
     "@preact/preset-vite": "^2.10.6",
     "@testing-library/preact": "^3.2.4",
     "@types/babel__core": "^7.20.5",

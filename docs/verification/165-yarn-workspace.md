@@ -8,7 +8,7 @@
 
 실제 pnpm lockfile/설치 manifest의 이행용 Classic seed를 Yarn으로 이행했다. npm 패키지719개 버전은 전부 유지·제거0, Yarn의 fsevents node-gyp 및 하위 빌드지원14개만 추가됐다. Babel7.29.7은 기존 자동 peer에서 명시 devDependency로 옮겼다. 최신8.0.7 설치는 실제 peer 지원 범위와 맞지 않았으며 단독 JSX 변환은 성공했음을 구분했다. 기존 타입 선언을 복원하고 prefresh의 누락된 preact 전달 metadata를 보충해 최종 peer 오류0을 확인했다.
 
-반복 yarn install --immutable Exit0과 yarn.lock SHA256 불변을 확인했다. 기본 Git 허용 목록[]·npm age gate1440분과 enableScripts=false를 유지한다. unconfig의 boolean 선언과 sharp-ico의 불필요한 type import 제거가 실제 node_modules에 적용됐다.
+반복 yarn install --immutable Exit0과 yarn.lock SHA256 불변을 확인했다. Yarn이 설치 시 정규화하는 protocol/package.json의 JSON 서식도 반영해 재설치 뒤 작업 파일이 바뀌지 않게 한다. 기본 Git 허용 목록[]·npm age gate1440분과 enableScripts=false를 유지한다. unconfig의 boolean 선언과 sharp-ico의 불필요한 type import 제거가 실제 node_modules에 적용됐다.
 
 ## 실제 로컬 검증
 

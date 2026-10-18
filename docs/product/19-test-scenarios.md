@@ -405,3 +405,5 @@ TS18 확장(#154): 두 요청 응답 Promise의 역순 완료/거절과 handled�
 #156 FR01/10/11/13·NFR01/02/05/06/07/08·TS18/19/20/24/26/29/31/35/36 → [ADR0073](../adr/0073-consent-context-and-expiry.md) → 메모리 현재 context/revision/만료·계정탭/복원 취소·시계/타이머 정리 → [검증156](../verification/156-consent-context-and-expiry.md). 실제 CMP/서버 proof/선택 수집·외부147/상위21은 후속이다.
 
 TS24 확장(#156): 검증 시작 때 capture한 현재 token과 목적별 receipt만 허용한다. 만료 경계·미래/잘못된 시각·시계 역행·낮은 revision/같은 revision 변조를 차단하고 이전 grant를 복원하지 않는다. 계정/세션/peer/숨김/복원·명시 reopen에서 token교체/진행abort/late차단을 관측한다. 만료 UI갱신·긴timer/cleanup·채널불가failclosed와무계정게임무차단을 확인한다.
+
+TS18/20/26/30 확장(#161): 진단 CLI의 기존 CDP 모드와 명시적 pointer 모드를 구분한다. pointer는 실제 링크8회 입력/control·동일 fetch fixture·old 정지/재시작·완전한 native의 Warm Up 목적·원래10초 reload를 각각 기록하고 worker 시작/정지 명령·heap 부하를 넣지 않는다. 불완전 trace의 목적 횟수는null이며 actual 입력/재시작과 혼동하지 않는다. 종료0/제품 수정/유발군 reload는 별개다.

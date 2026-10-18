@@ -1072,6 +1072,18 @@
       "scenarios": "TS18/20/26/30",
       "deps": ["native-preparation-build-profile"],
       "acceptance": "ADR0075·spikes앱없는실제2탭control/old재시작/10초관측·trace소유권/상한/정리RedGreen·선택적CI native자료·기존정책유지·실제반복/full/리뷰6CI/정확head병합CLOSED;83OPEN"
+    },
+    {
+      "key": "pointer-warmup-reproduction",
+      "issue": 161,
+      "milestone": "M3",
+      "title": "test(offline): 링크 입력 Warm Up 경합 최소 재현",
+      "requirements": "FR10, NFR01/02/05/07/08",
+      "scenarios": "TS18/20/26/30",
+      "deps": [
+        "native-worker-restart-observation"
+      ],
+      "acceptance": "ADR0076·heap없는fetch/anchor와8회입력/control·기존cdp기본CLI보존·입력/old재시작/native목적/완전성/10초결과분리·실제RedGreen/PCmobile/관련검사/리뷰6CI/정확head병합CLOSED;83OPEN"
     }
   ]
 }

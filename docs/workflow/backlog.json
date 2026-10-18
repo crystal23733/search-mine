@@ -1062,6 +1062,16 @@
         "consent-context-expiry"
       ],
       "acceptance": "ADR0074·공개tail실제인증8초RedGreen·코어dev/testopt1·debug검사/기존예산/OsSeedSource유지·실mainPG계측반복/full/리뷰6CI/정확head;과거원인동일성/83/미니PC목표와구분"
+    },
+    {
+      "key": "native-worker-restart-observation",
+      "issue": 159,
+      "milestone": "M3",
+      "title": "test(offline): native 재시작 경합 재현과 trace 보존",
+      "requirements": "FR10, NFR01/02/05/07/08",
+      "scenarios": "TS18/20/26/30",
+      "deps": ["native-preparation-build-profile"],
+      "acceptance": "ADR0075·spikes앱없는실제2탭control/old재시작/10초관측·trace소유권/상한/정리RedGreen·선택적CI native자료·기존정책유지·실제반복/full/리뷰6CI/정확head병합CLOSED;83OPEN"
     }
   ]
 }

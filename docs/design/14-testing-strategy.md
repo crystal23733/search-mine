@@ -11,6 +11,8 @@ flowchart TD
 
 ## 테스트 경계
 
+#159의 [native 관측](../adr/0075-native-worker-restart-observation.md)은 앱 없는 격리 스파이크와 선택적 Browser CDP trace다. 시작 ACK·다른 소유자 보호·동기/누락 완료·중복 종료·상한/정리를 Node Red→Green으로 검증하고 실제 PC/mobile·CI를 대조한다. 기존 timeout/retry/network manager는 유지한다.
+
 #141의 고정 native 준비 예산은 [ADR0074](../adr/0074-native-preparation-build-profile.md)를 따른다. 공개 tail의 실제 생성 Red→Green과 liar-core dev/test opt1·debug assertion/overflow 유지, 실제 main/PG/계측을 대조한다. timeout/retry·OsSeedSource를 바꾸지 않고 미니 PC 성능과 구분한다.
 
 #82는 [ADR0039](../adr/0039-authenticated-personal-result-read.md)의 요청·투영 Red, HTTP Origin/CSRF·3단계 단일 기한·역순 세션·공유 취소·별도 WS/로비 권위·실제PG 양 좌석/봇/삭제·90일 경계를 검증한다. `scripts/check_auth_coverage.py`에 results/model.rs의95% line gate를 추가하고 누락된 도메인을 성공으로 세지 않는다.

@@ -360,5 +360,6 @@
   "consent.state.unknown": "No hay una elección actual confirmada. El tratamiento opcional está bloqueado.",
   "consent.state.denied": "Se ha rechazado el tratamiento opcional.",
   "consent.state.error": "No se pudieron comprobar las opciones. El tratamiento opcional está bloqueado.",
-  "consent.state.valid": "Se han aplicado tus opciones actuales."
+  "consent.state.valid": "Se han aplicado tus opciones actuales.",
+  "tutorial.cellHint": "La casilla marcada {{cell}} está en la fila {{row}} desde arriba y la columna {{column}} desde la izquierda."
 }

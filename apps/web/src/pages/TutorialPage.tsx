@@ -38,6 +38,7 @@ export function TutorialPage() {
   };
   const view = state.view,
     expected = view?.expected;
+  const targetCell = expected && "cell" in expected ? expected.cell : undefined;
   const cell =
     expected && "cell" in expected && view
       ? coordinate(expected.cell, view.game.rules.rules.width)
@@ -53,8 +54,6 @@ export function TutorialPage() {
           {t("tutorial.skip")}
         </Button>
       </div>
-      <p>{t("tutorial.trainingRules")}</p>
-      <p>{t("tutorial.guidedHint")}</p>
       {!services.learning.persistent() && (
         <output class="status-message">{t("tutorial.memory")}</output>
       )}
@@ -73,45 +72,65 @@ export function TutorialPage() {
         <output class="status-message">{t("tutorial.wrongAction")}</output>
       )}
       {view && (
-        <MatchLayout
-          guide={
-            <Card class="lesson-card">
-              <PlayBasics key={round} collapse={view.stage !== "open"} />
-              <h2 aria-live="polite">{t(`tutorial.${view.stage}.title`)}</h2>
-              <p>{t(`tutorial.${view.stage}.hint`, { cell })}</p>
-              {expected && view.stage !== "complete" && (
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    void controller.submit(expected);
-                  }}
-                >
-                  {t(`tutorial.${view.stage}.action`, { cell })}
-                </Button>
-              )}
-              {view.stage === "complete" && (
-                <>
-                  <Button variant="primary" onClick={() => leave(false)}>
-                    {t("tutorial.continue")}
+        <div class="tutorial-layout">
+          <MatchLayout
+            guide={
+              <Card class="lesson-card">
+                <h2 aria-live="polite">{t(`tutorial.${view.stage}.title`)}</h2>
+                <p>{t(`tutorial.${view.stage}.hint`, { cell })}</p>
+                {targetCell !== undefined && (
+                  <p class="tutorial-cell-hint">
+                    {t("tutorial.cellHint", {
+                      cell,
+                      row:
+                        Math.floor(targetCell / view.game.rules.rules.width) +
+                        1,
+                      column: (targetCell % view.game.rules.rules.width) + 1,
+                    })}
+                  </p>
+                )}
+                {expected && view.stage !== "complete" && (
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      void controller.submit(expected);
+                    }}
+                  >
+                    {t(`tutorial.${view.stage}.action`, { cell })}
                   </Button>
-                  <Button onClick={() => setRound(round + 1)}>
-                    {t("tutorial.replay")}
-                  </Button>
-                </>
-              )}
-            </Card>
-          }
-          summary={<MatchSummary view={view.game} opponent={t("match.bot")} />}
-        >
-          <Board
-            key={round}
-            view={view.game}
-            createRenderer={services.boardRenderer}
-            onAction={(action) => {
-              void controller.submit(action);
-            }}
-          />
-        </MatchLayout>
+                )}
+                {view.stage === "complete" && (
+                  <>
+                    <Button variant="primary" onClick={() => leave(false)}>
+                      {t("tutorial.continue")}
+                    </Button>
+                    <Button onClick={() => setRound(round + 1)}>
+                      {t("tutorial.replay")}
+                    </Button>
+                  </>
+                )}
+              </Card>
+            }
+            summary={
+              <MatchSummary view={view.game} opponent={t("match.bot")} />
+            }
+          >
+            <Board
+              key={round}
+              view={view.game}
+              hintCell={targetCell}
+              createRenderer={services.boardRenderer}
+              onAction={(action) => {
+                void controller.submit(action);
+              }}
+            />
+          </MatchLayout>
+          <Card class="tutorial-reference">
+            <PlayBasics key={round} collapse={view.stage !== "open"} />
+            <p>{t("tutorial.guidedHint")}</p>
+            <p>{t("tutorial.trainingRules")}</p>
+          </Card>
+        </div>
       )}
     </>
   );

@@ -215,6 +215,15 @@ test("training follows the public expected action, marks completion and replays 
   const mounted = render(<App services={ports} />);
   const basics = await screen.findByText("New to Minesweeper?");
   const details = basics.closest("details")!;
+  const nextAction = await screen.findByRole("button", { name: "Open I1" });
+  expect(
+    nextAction.compareDocumentPosition(details) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).not.toBe(0);
+  const target = screen.getByRole("gridcell", { name: "I1, closed" });
+  expect(target.getAttribute("aria-current")).toBe("step");
+  expect(target.getAttribute("data-hint")).toBe("I1");
+  expect(screen.getByText(/row 1, column 9/)).toBeTruthy();
   expect(details.open).toBe(true);
   expect(
     screen.getByText(/up to eight neighboring squares, including diagonals/),
@@ -232,6 +241,7 @@ test("training follows the public expected action, marks completion and replays 
   ).toBeTruthy();
   await waitFor(() => expect(details.open).toBe(false));
   await waitFor(() => expect(ports.learning.read()).toBe("complete"));
+  expect(document.querySelector('[aria-current="step"]')).toBeNull();
   fireEvent.click(basics);
   await waitFor(() => expect(details.open).toBe(true));
   expect(actions).toHaveLength(1);

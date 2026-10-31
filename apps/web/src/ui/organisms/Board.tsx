@@ -19,6 +19,7 @@ export interface BoardProps {
   createRenderer: BoardRendererFactory;
   onAction(action: PublicAction): void;
   disabled?: boolean;
+  hintCell?: number;
 }
 type Mode = "open" | "flag" | "accuse";
 export function Board({
@@ -27,6 +28,7 @@ export function Board({
   onAction,
   allowedModes = ["open", "flag", "accuse"],
   disabled = false,
+  hintCell,
 }: BoardProps) {
   const { t, locale, preferences } = useUi();
   const { width, height } = view.rules.rules;
@@ -214,6 +216,9 @@ export function Board({
     applyZoom(preferences.zoom);
   }, [preferences.zoom]);
   useEffect(() => {
+    if (hintCell !== undefined) setSelected(hintCell);
+  }, [hintCell]);
+  useEffect(() => {
     measure();
     const observer =
       typeof ResizeObserver === "undefined"
@@ -365,6 +370,11 @@ export function Board({
                         key={cell.cell}
                         cell={cell}
                         label={label(cell)}
+                        hint={
+                          hintCell === cell.cell
+                            ? coordinate(cell.cell, width)
+                            : undefined
+                        }
                         selected={selected === cell.cell}
                         locked={locked}
                         ref={(element) => {

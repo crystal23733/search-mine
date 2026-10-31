@@ -360,5 +360,6 @@
   "consent.state.unknown": "No current choice is confirmed. Optional processing is blocked.",
   "consent.state.denied": "Optional processing is declined.",
   "consent.state.error": "Choices could not be checked. Optional processing is blocked.",
-  "consent.state.valid": "Your current choices are applied."
+  "consent.state.valid": "Your current choices are applied.",
+  "tutorial.cellHint": "The highlighted square {{cell}} is at row {{row}}, column {{column}}."
 }

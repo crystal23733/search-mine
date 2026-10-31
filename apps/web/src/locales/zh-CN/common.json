@@ -360,5 +360,6 @@
   "consent.state.unknown": "尚未确认当前选择，已阻止可选处理。",
   "consent.state.denied": "已拒绝可选处理。",
   "consent.state.error": "无法确认选项，已阻止可选处理。",
-  "consent.state.valid": "已应用当前选择。"
+  "consent.state.valid": "已应用当前选择。",
+  "tutorial.cellHint": "标出的 {{cell}} 格在从上往下第 {{row}} 行、从左往右第 {{column}} 列。"
 }

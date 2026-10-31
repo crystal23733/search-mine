@@ -106,3 +106,6 @@ PC 대전 우측은 상대 진행 요약만 공개한다. sheet/dialog는 초점
 
 
 #150 FR01/10/11/13·NFR01/02/06/07/08·TS18/19/24/26/31/35/36 → [ADR0070](../adr/0070-technical-storage-notice.md) → 읽기 전용8언어 실제 저장소/쿠키·footer/route/dialog·유지/삭제/메모리 대체 → [검증150](../verification/150-technical-storage-notice.md). 실제 CMP/전체 정책/외부147·상위21과83/141은 별도다.
+
+
+#167: [ADR0079](../adr/0079-action-first-tutorial.md)에 따라 튜토리얼은 PC/모바일 모두 현재 과제와 주요 버튼을 게임판 위, 기초 설명 앞에 배치한다. 공개 expected 대상 좌표/위치를 표시하며 일반 대전 화면 배치는 유지한다.

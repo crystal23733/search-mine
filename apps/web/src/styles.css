@@ -772,6 +772,22 @@ input[type="checkbox"]:checked::before {
 .board-cell[aria-disabled="true"] {
   cursor: default;
 }
+.board-cell[data-hint] {
+  position: relative;
+  box-shadow: inset 0 0 0 3px var(--color-accent);
+}
+.board-cell[data-hint]::after {
+  content: attr(data-hint);
+  position: absolute;
+  inset-inline-end: 3px;
+  bottom: 3px;
+  padding: 0 2px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  color: var(--color-background);
+  font-size: 11px;
+  line-height: 1.2;
+}
 .board-modes {
   display: flex;
   flex: 1;
@@ -960,6 +976,37 @@ input[type="checkbox"]:checked::before {
 }
 @media (max-width: 800px) {
   .match-layout--guided {
+    grid-template-areas: "guide" "board" "summary";
+  }
+}
+.tutorial-layout > .match-layout--guided {
+  grid-template-areas: "guide guide" "board summary";
+}
+.tutorial-layout .match-board {
+  width: 100%;
+  max-width: 32rem;
+  justify-self: center;
+}
+.tutorial-layout .board-viewport {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.tutorial-layout .lesson-card p {
+  max-width: 70ch;
+}
+.tutorial-layout .lesson-card .button {
+  max-width: 24rem;
+}
+.tutorial-cell-hint {
+  color: var(--color-text);
+}
+.tutorial-reference {
+  margin-top: var(--space-lg);
+  padding: 1.25rem;
+}
+@media (max-width: 800px) {
+  .tutorial-layout > .match-layout--guided {
     grid-template-areas: "guide" "board" "summary";
   }
 }

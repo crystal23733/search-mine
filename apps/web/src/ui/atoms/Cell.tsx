@@ -7,12 +7,14 @@ export function Cell({
   label,
   selected,
   locked,
+  hint,
   ...events
 }: {
   cell: PublicCell;
   label: string;
   selected: boolean;
   locked: boolean;
+  hint?: string;
 } & Pick<
   JSX.IntrinsicElements["td"],
   "onClick" | "onKeyDown" | "onContextMenu" | "onFocus" | "ref"
@@ -24,9 +26,11 @@ export function Cell({
       data-cell={cell.cell}
       data-state={cell.state}
       data-number={cell.state === "safe" ? (cell.number ?? "") : ""}
+      data-hint={hint}
       class="board-cell"
       aria-label={label}
       aria-selected={selected}
+      aria-current={hint ? "step" : undefined}
       aria-disabled={locked}
       tabIndex={selected ? 0 : -1}
     >

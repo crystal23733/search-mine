@@ -20,3 +20,7 @@ wasm-bindgen CLI는 버전 인자 없이 최신을 설치하고 crate와 호환 
 Atomic UI·보드 입력은 #10/#11, 로컬 봇/튜토리얼은 #12, daily/offline은 #13/#14, 인증/온라인 authority는 #15/#16에서 연결한다. production WASM/browser/native fixture·bundle 결과와 실호스트 성능을 구분한다.
 
 JS clock is validated as a finite integer in 0..u32::MAX before conversion; negative/fractional values cannot mutate the game clock. Latest generated Symbol.dispose declarations use ESNext.Disposable types; lifecycle uses explicit free/Worker terminate.
+
+## #168 최신 CLI와 저장된 라이브러리 정합성
+
+2026-10-31 사용자 실제 빌드에서 Cargo.lock의 wasm-bindgen0.2.129와 새 CLI0.2.130이 다른 스키마라 실패했다. 버전 인자 없이 cargo add로 의존성을 확인하고, 기존0.2.129 호환 범위 안의0.2.130 lock/생성 선언을 함께 검증한다. CLI 구버전 고정으로 우회하지 않는다. 사용자의 실제 schema mismatch 실행은 Red 근거이며, 도구 버전과 develop lock의 불일치를 별도로 확인한다. 최신 CLI 설치와 저장된 버전의 정합성은 앞으로도 WASM build에서 확인하고 사용하지 않은 도구/운영체제의 호환성을 주장하지 않는다. [검증168](../verification/168-wasm-schema-alignment.md).

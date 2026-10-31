@@ -360,5 +360,6 @@
   "consent.state.unknown": "Aucun choix actuel n’est confirmé. Le traitement facultatif est bloqué.",
   "consent.state.denied": "Le traitement facultatif est refusé.",
   "consent.state.error": "Impossible de vérifier les choix. Le traitement facultatif est bloqué.",
-  "consent.state.valid": "Vos choix actuels sont appliqués."
+  "consent.state.valid": "Vos choix actuels sont appliqués.",
+  "tutorial.cellHint": "La case indiquée {{cell}} est à la ligne {{row}} depuis le haut et à la colonne {{column}} depuis la gauche."
 }

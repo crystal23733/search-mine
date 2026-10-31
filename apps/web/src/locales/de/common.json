@@ -360,5 +360,6 @@
   "consent.state.unknown": "Keine aktuelle Auswahl bestätigt. Optionale Verarbeitung ist blockiert.",
   "consent.state.denied": "Optionale Verarbeitung wurde abgelehnt.",
   "consent.state.error": "Die Auswahl konnte nicht geprüft werden. Optionale Verarbeitung ist blockiert.",
-  "consent.state.valid": "Deine aktuelle Auswahl wird angewendet."
+  "consent.state.valid": "Deine aktuelle Auswahl wird angewendet.",
+  "tutorial.cellHint": "Das markierte Feld {{cell}} liegt in Zeile {{row}} von oben und Spalte {{column}} von links."
 }

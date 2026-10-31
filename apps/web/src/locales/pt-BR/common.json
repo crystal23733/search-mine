@@ -360,5 +360,6 @@
   "consent.state.unknown": "Nenhuma escolha atual foi confirmada. O tratamento opcional está bloqueado.",
   "consent.state.denied": "O tratamento opcional foi recusado.",
   "consent.state.error": "Não foi possível verificar as escolhas. O tratamento opcional está bloqueado.",
-  "consent.state.valid": "Suas escolhas atuais foram aplicadas."
+  "consent.state.valid": "Suas escolhas atuais foram aplicadas.",
+  "tutorial.cellHint": "A casa destacada {{cell}} está na linha {{row}} de cima para baixo e na coluna {{column}} da esquerda para a direita."
 }

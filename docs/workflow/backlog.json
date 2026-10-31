@@ -1070,7 +1070,9 @@
       "title": "test(offline): native 재시작 경합 재현과 trace 보존",
       "requirements": "FR10, NFR01/02/05/07/08",
       "scenarios": "TS18/20/26/30",
-      "deps": ["native-preparation-build-profile"],
+      "deps": [
+        "native-preparation-build-profile"
+      ],
       "acceptance": "ADR0075·spikes앱없는실제2탭control/old재시작/10초관측·trace소유권/상한/정리RedGreen·선택적CI native자료·기존정책유지·실제반복/full/리뷰6CI/정확head병합CLOSED;83OPEN"
     },
     {
@@ -1092,7 +1094,10 @@
       "title": "feat(tutorial): 처음 배우는 사용자를 위한 기초 안내",
       "requirements": "FR08/11, NFR01/02/05/06/08",
       "scenarios": "TS13/18/19/20/26/30",
-      "deps": ["tutorial", "pointer-warmup-reproduction"],
+      "deps": [
+        "tutorial",
+        "pointer-warmup-reproduction"
+      ],
       "acceptance": "ADR0077·8언어숫자/깃발/모드기초·규칙화면공유·펼침/단계/locale/replay/skip수명·행동RedGreen/실제WASM/PCmobile/360px/keyboard/관련전체/리뷰6CI/정확head병합CLOSED;사람이해27/83/외부별도"
     },
     {
@@ -1106,6 +1111,30 @@
         "beginner-tutorial-basics"
       ],
       "acceptance": "ADR0078·Yarn최신안정/workspaces/node-modules/기존선언패치·빌드허용/immutable불변/실행경로·CI·기여게이트/실제전체검증·리뷰6checks/정확head병합CLOSED;83·외부별도"
+    },
+    {
+      "key": "wasm-schema-alignment",
+      "issue": 168,
+      "milestone": "M3",
+      "title": "build(wasm): 최신 CLI와 라이브러리 스키마를 일치시킴",
+      "requirements": "NFR01/05/08",
+      "scenarios": "TS02/22/30",
+      "deps": [
+        "yarn-workspace"
+      ],
+      "acceptance": "최신 CLI0.2.130과 호환 lock/실제 생성 선언·WASM build/fixture/CI 검증; 관련 없는 사용자 Windows lock 참조 보존"
+    },
+    {
+      "key": "action-first-tutorial",
+      "milestone": "M2",
+      "title": "fix(tutorial): 첫 행동 안내와 한국어를 초보자 기준으로 개선",
+      "requirements": "FR08/11, NFR01/02/05/06/08",
+      "scenarios": "TS13/18/19/20/26/30",
+      "deps": [
+        "beginner-tutorial-basics"
+      ],
+      "acceptance": "과제/버튼 우선·공개 expected 좌표 강조·8언어 위치·실제 WASM/한국어/360px·skip/replay/복귀 보존",
+      "issue": 167
     }
   ]
 }

@@ -1,6 +1,61 @@
 import { expect, test } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { unrequestedServiceCall } from "./network";
+test("the next tutorial action and its target are clear before long instructions", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({
+    width: info.project.name === "mobile" ? 360 : 1280,
+    height: 800,
+  });
+  await page.goto("/ko/tutorial?return=%2Fdaily");
+  const action = page.getByRole("button", { name: /C3.*열기/ });
+  await expect(action).toBeInViewport({ ratio: 1 });
+  const target = page.getByRole("gridcell", { name: "C3, 닫힌 칸" });
+  await expect(target).toHaveAttribute("aria-current", "step");
+  await expect(target).toHaveAttribute("data-hint", "C3");
+  await expect(target).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByText(/위에서 3번째, 왼쪽에서 3번째/)).toBeVisible();
+  const basics = page.locator("details.play-basics");
+  const actionBounds = await action.boundingBox();
+  const basicsBounds = await basics.boundingBox();
+  expect(actionBounds!.y + actionBounds!.height).toBeLessThan(basicsBounds!.y);
+  expect(
+    await target.evaluate((cell) => getComputedStyle(cell, "::after").content),
+  ).toBe('"C3"');
+  if (process.env.LIAR_CAPTURE_DESIGN) {
+    mkdirSync(".tmp/tutorial-guidance", { recursive: true });
+    await page.screenshot({
+      path: `.tmp/tutorial-guidance/first-${info.project.name}.png`,
+      fullPage: true,
+    });
+  }
+  if (info.project.name === "mobile") await target.tap();
+  else await target.click();
+  await expect(
+    page.getByRole("heading", { name: "2. 공격 보내기" }),
+  ).toBeVisible();
+  await expect(page.locator('[aria-current="step"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "공격하기", exact: true }).click();
+  await expect(
+    page.getByRole("gridcell", { name: "C1, 닫힌 칸" }),
+  ).toHaveAttribute("data-hint", "C1");
+  await page.getByRole("button", { name: /C1.*열기/ }).click();
+  await expect(
+    page.getByRole("gridcell", { name: "C1, 숫자 2" }),
+  ).toHaveAttribute("data-hint", "C1");
+  await page.getByRole("button", { name: /C1.*지목/ }).click();
+  await expect(page.locator('[aria-current="step"]')).toHaveCount(0);
+  await expect(
+    page.getByRole("gridcell", { name: "C1, 숫자 1" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /다시/ }).click();
+  await expect(
+    page.getByRole("gridcell", { name: "C3, 닫힌 칸" }),
+  ).toHaveAttribute("data-hint", "C3");
+  await page.getByRole("button", { name: /건너뛰기/ }).click();
+  await expect(page).toHaveURL("/ko/daily");
+});
 test("first visit runs actual WASM attack and accusation, preserves locale and completes only training", async ({
   page,
 }, info) => {
@@ -125,6 +180,13 @@ test("beginner guidance is readable in eight languages at 360px and shared with 
     await expect(basics.getByRole("term")).toHaveCount(4);
     await expect(page.getByRole("gridcell")).toHaveCount(9);
     await expect(page.getByTestId("gauge")).toHaveText("0 / 1");
+    await expect(
+      page.locator('.board-cell[aria-current="step"]'),
+    ).toHaveAttribute("data-hint", "C3");
+    await expect(page.locator(".tutorial-cell-hint")).toContainText("3");
+    await expect(page.locator(".lesson-card .button--primary")).toBeInViewport({
+      ratio: 1,
+    });
     for (const button of await page.locator(".board-modes > button").all()) {
       expect(
         await button.evaluate((element) => {

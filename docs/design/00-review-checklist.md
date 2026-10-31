@@ -226,3 +226,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #156 FR01/10/11/13·NFR01/02/05/06/07/08·TS18/19/20/24/26/29/31/35/36 → [ADR0073](../adr/0073-consent-context-and-expiry.md) → 메모리 현재 context/revision/만료·계정탭/복원 취소·시계/타이머 정리 → [검증156](../verification/156-consent-context-and-expiry.md). 실제 CMP/서버 proof/선택 수집·외부147/상위21은 후속이다.
 
 #161 FR10·NFR01/02/05/07/08·TS18/20/26/30 → [ADR0076](../adr/0076-pointer-warmup-reproduction.md) → heap 없는 fetch/anchor·제한된 일반 입력/control·실제 old재시작/native 목적·원래10초 관측 → [검증161](../verification/161-pointer-warmup-reproduction.md). 제품 수정 #83과 외부147/42는 후속이다.
+
+
+#167 FR08/11·NFR01/02/05/06/08·TS13/18/19/20/26/30 → [ADR0079](../adr/0079-action-first-tutorial.md) → 현재 과제/버튼 우선·공개 expected 좌표 강조·한국어/8언어 위치 안내 → [검증167](../verification/167-action-first-tutorial.md). 실제 사람의 이해·30초 성취는 #27에서 확인한다.

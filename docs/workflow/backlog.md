@@ -187,3 +187,9 @@
 
 
 #165 [Yarn 전환](https://github.com/crystal23733/search-mine/issues/165)은 2026-10-18 사용자 지시의 독립 M3 도구 변경이다. 선행 #4·#163/PR164 병합·CLOSED 뒤 [ADR0078](../adr/0078-yarn-workspace.md)에 따라 workspaces·기존 선언 패치/빌드 허용·immutable 설치·실제 전체 실행 경로와 CI를 검증한다. 과거 pnpm 실행 기록과 #83·실제 외부/운영 출구는 별도로 유지한다.
+
+
+[#167 첫 행동 안내·한국어 개선](https://github.com/crystal23733/search-mine/issues/167)은 #163 종료 뒤 사용자의 실제 화면 피드백을 반영한다. [ADR0079](../adr/0079-action-first-tutorial.md)의 FR08/11·TS13/18/19/20/26/30에 따라 과제/버튼 우선·좌표 강조·한국어와8언어 위치 안내를 검증한다. 실제 사람의 이해는 #27과 구분한다.
+
+
+#168/PR170은 최신 WASM CLI와 관련 lock/생성 선언의 정합성을 별도 검증해 develop a674fc8에 병합·CLOSED를 확인했다. #167의 사용자 화면 수정은 별도 PR로 검증하며 사용자의 Windows lock 참조 변경은 로컬에 보존한다.

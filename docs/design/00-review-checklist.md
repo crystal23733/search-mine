@@ -237,3 +237,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #176 설계 변경 · FR01/09/11/13/16 · NFR01/02/05/06/08 · TS17~22/24/26/29/34~36 → [ADR0081](../adr/0081-my-info-and-export-removal.md) → [설계 검토176](../verification/176-my-info-design.md) → #177 조회 API→#178 내 정보/파일 다운로드 제거. 현재 코드의 제거 완료는 #178에서 검증한다.
+
+
+#177 FR01/09/11/13/16·NFR01/02/05/07/08·TS17/19/20/21/22/24/29/34/35/36 → [ADR0082](../adr/0082-self-only-me-read-api.md) → 본인overview/history·90일/전체요약/20개·현재동의view·권한/철회/2초/실PG → [검증177](../verification/177-my-info-read-api.md). 화면과파일제거는178이다.

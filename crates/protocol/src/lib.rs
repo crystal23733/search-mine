@@ -3,6 +3,7 @@ pub mod auth;
 pub mod daily;
 pub mod game;
 pub mod lobby;
+pub mod me;
 pub mod online;
 pub mod privacy;
 pub mod results;
@@ -44,6 +45,7 @@ pub fn public_types() -> String {
     declarations.extend(online::declarations(&config));
     declarations.extend(lobby::declarations(&config));
     declarations.extend(results::declarations(&config));
+    declarations.extend(me::declarations(&config));
     declarations.extend(tutorial::declarations(&config));
     declarations.extend(daily::declarations(&config));
     declarations.extend(auth::declarations(&config));

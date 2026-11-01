@@ -428,3 +428,6 @@ TS13/18/19/20/26/30 확장(#167): [ADR0079](../adr/0079-action-first-tutorial.md
 전적20개 경계/다음 cursor·타인/변조 cursor·정확90일·안정 최신순·기간/필터 전체 요약·0표본·승패/무승부와abort/cancel·사람/봇/확인 불가·통계null·공식/기기 연습을 구분한다. 클라이언트가 승률 규칙이나 공식 판정을 복제하지 않는다.
 
 파일 다운로드 버튼/Blob/일괄collector/구DTO는 제거하고 세 public export/replay API는404여야 한다. 실제HTTPS에서 파일 다운로드 이벤트0·내 정보 화면조회·8언어/360px/PC·키보드·계정 삭제·공개캐시와무계정CMP재열기/철회를검증한다. 개인응답no-store/화면noindex·선택수집차단과기존게임/데일리공유는유지한다. 새제품검사는시나리오→실제Red→Green→Refactor→실PG/HTTP/E2E·coverage로검증하며설계검토로대체하지않는다.
+
+
+#177 FR01/09/11/13/16·NFR01/02/05/07/08·TS17/19/20/21/22/24/29/34/35/36 → [ADR0082](../adr/0082-self-only-me-read-api.md) → 본인overview/history·90일/전체요약/20개·현재동의view·권한/철회/2초/실PG → [검증177](../verification/177-my-info-read-api.md). 화면과파일제거는178이다.

@@ -4,6 +4,7 @@ pub mod consent;
 pub mod daily;
 pub mod events;
 pub mod lobby;
+pub mod me;
 pub mod online;
 pub mod privacy;
 pub mod results;
@@ -24,6 +25,7 @@ pub fn app(pool: Option<PgPool>) -> Router {
         auth::disabled_auth_router()
             .merge(lobby::disabled_lobby_router())
             .merge(results::disabled_result_router())
+            .merge(me::disabled_me_router())
             .merge(privacy::disabled_privacy_router())
             .merge(daily::disabled_daily_router()),
     )

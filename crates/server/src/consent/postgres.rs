@@ -156,6 +156,17 @@ async fn load(
     })
     .transpose()
 }
+/// Reads within the caller's already authorized account/session transaction.
+pub(crate) async fn current_in_transaction(
+    tx: &mut Transaction<'_, Postgres>,
+    subject: Uuid,
+    now: i64,
+    session_expiry: i64,
+) -> Result<Option<CurrentConsent>, ConsentError> {
+    let current = load(tx, subject).await?;
+    model::validate(subject, current, now, session_expiry)?;
+    Ok(current)
+}
 async fn save(
     tx: &mut Transaction<'_, Postgres>,
     value: CurrentConsent,

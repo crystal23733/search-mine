@@ -5,6 +5,7 @@ use liar_server::events::{
     PgEventRetention, PgMetricReader,
 };
 use liar_server::lobby::*;
+use liar_server::me::*;
 use liar_server::online::*;
 use liar_server::privacy::*;
 use liar_server::results::*;
@@ -63,6 +64,9 @@ async fn serve() -> ServerResult {
         let privacy_authorities = AuthorityRegistry::new(privacy_config.authorities)
             .map_err(|_| "Privacy capacity is invalid")?;
         let export_workers = ExportWorkers::default();
+        let me_workers = MeWorkers::default();
+        let me_authorities =
+            AuthorityRegistry::new(64).map_err(|_| "My info capacity is invalid")?;
         let result_authorities = AuthorityRegistry::new(result_config.authorities)
             .map_err(|_| "Result capacity is invalid")?;
         let authorities =
@@ -145,7 +149,10 @@ async fn serve() -> ServerResult {
                         result_authorities.clone(),
                         Arc::new(CombinedSessionInvalidator::new(
                             privacy_authorities.clone(),
-                            daily_tickets.clone(),
+                            Arc::new(CombinedSessionInvalidator::new(
+                                me_authorities.clone(),
+                                daily_tickets.clone(),
+                            )),
                         )),
                     )),
                 )),
@@ -214,6 +221,22 @@ async fn serve() -> ServerResult {
             privacy_config.requests,
         )
         .map_err(|_| "Privacy HTTP initialization failed")?;
+        let me = me_router(
+            Arc::new(PgMeReader::with_workers(
+                auth_pool.clone(),
+                auth_clock.clone(),
+                me_workers.clone(),
+            )),
+            sessions.clone(),
+            runtime.security.clone(),
+            MeAuthentication {
+                authorities: me_authorities,
+                clock: auth_clock.clone(),
+                workers: me_workers,
+            },
+            4,
+        )
+        .map_err(|_| "My info HTTP initialization failed")?;
         let daily_repository = Arc::new(PgDailyRepository::new(auth_pool, auth_clock.clone()));
         let daily_workers = BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier));
         let rankings = daily_rankings_router(
@@ -240,6 +263,7 @@ async fn serve() -> ServerResult {
             .merge(lobby)
             .merge(results)
             .merge(privacy)
+            .merge(me)
             .merge(daily)
             .merge(rankings)
     } else {
@@ -247,6 +271,7 @@ async fn serve() -> ServerResult {
             .merge(disabled_lobby_router())
             .merge(disabled_result_router())
             .merge(disabled_privacy_router())
+            .merge(disabled_me_router())
             .merge(disabled_daily_router())
     };
     let bind = env::var("LIAR_BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());

@@ -1,5 +1,7 @@
 # 17. OAuth 인증·개인정보 최소 수집
 
+> 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md): 사용자 지시로 내 정보 화면 중심의 조회로 변경하고 파일 다운로드는 제거한다. 아래 과거 #114 등의 export 기록은 당시 실행 이력이다. 계정 소유권·철회·최소 수집·삭제·보존 원칙은 유지한다.
+
 #78의 [ADR0037](../adr/0037-session-recovery-candidate.md)은 연결 장애 시 공개 계정·요청 권한을 지운 뒤 메모리에만30초 비권위 복구 후보를 보존한다. 같은 account/session의 전/후 fresh proof에 성공할 때만 복원한다. recoveryOwner는 최소 accountId/revision이며 private session/CSRF를 노출하지 않는다. 후보는 권한이나 자격 증명이 아니다.
 
 구현 상세: [ADR0021 계정 권리·Apple 철회](../adr/0021-account-rights-and-apple-revocation.md)는 #45의 최근 재인증, 세션에 고정된 연결, 원자 credential 저장/계정 삭제와 목적 제한 queue를 구체화한다. 실제 제공자 검수는 #42에 남긴다.
@@ -96,11 +98,11 @@ subject는 길이 구분된(provider, issuer, sub)을 서버 비밀키 HMAC-SHA2
 
 Apple 토큰은 비밀번호가 아니다. [TN3194](https://developer.apple.com/documentation/technotes/tn3194-handling-account-deletions-and-revoking-tokens-for-sign-in-with-apple)에 맞춰 철회에 필요한 refresh token 하나만 AEAD 암호화하여 보관하고 encryption key는 DB/백업 밖에서 관리한다. AAD로 identity/provider를 묶고 토큰 읽기는 인증 서버/철회 worker에만 허용한다. ID token 전체·이메일 claim을 장기 저장하지 않는다. 제공자별 서버 알림의 서명/issuer/audience를 검증하고 철회 시 세션을 종료한다. Apple credential 없는 삭제 요청도 로컬 삭제를 완료하고 제공자 수동 해제 방법을 안내한다.
 
-## 계정 연결·내보내기·삭제
+## 내 정보·계정 연결·삭제
 
 같은 이메일/닉네임을 이유로 계정을 합치지 않는다. 연결은 기존 서비스 세션의 최근 재인증 + 새 제공자 인증 + 동일 브라우저 link intent를 모두 검증한다. 이미 다른 계정에 연결된 subject는 conflict로 거절하며 마지막 로그인 수단은 계정 삭제 외에는 해제하지 않는다. 신규 제공자 로그인은 기본적으로 별도 계정이고 사용자가 명시적으로 연결해야 같은 계정이 된다.
 
-내보내기/삭제는 최근 재인증을 요구하고 CSRF/Origin을 검사한다. 추가 이메일/전화/본인확인 정보를 수집하지 않는다. 삭제는 모든 서비스 세션 즉시 철회, 계정/identity/동의/개인 기록 식별자 삭제, 로컬 계정 데이터 제거로 이어진다. 공개 순위에서도 연결·닉네임을 제거한다. 게임용 닉네임을 결과 snapshot에 영구 복사하지 않는다. 내보내기에는 provider subject·OAuth credential·session token·다른 사용자 정보·숨은 판을 제외한다.
+내 정보의 일반 조회는 현재 유효 세션과 CSRF/Origin·응답 전후 동일 소유권을 확인하며 반복 재로그인을 요구하지 않는다. 연결/해제·삭제 등 민감 변경은 최근 재인증을 요구한다. 파일 다운로드 UI·collector·공개 export/replay API는 제거하는 방향으로 [ADR0081](../adr/0081-my-info-and-export-removal.md)의 #177→#178에서 전환한다. 추가 이메일/전화/본인확인 정보를 수집하지 않는다. 삭제는 모든 서비스 세션 즉시 철회, 계정/identity/동의/개인 기록 식별자 삭제, 로컬 계정 데이터 제거로 이어진다. 공개 순위에서도 연결·닉네임을 제거한다. 게임용 닉네임을 결과 snapshot에 영구 복사하지 않는다. 본인 조회 DTO에는 provider subject·OAuth credential·session token·다른 사용자 정보·숨은 판을 제외한다. 현재 동의 view와 민감 변경은 내 정보의 개인정보 관리에서 제공하며, 실CMP 미설정은 기본 차단·미설정으로 표시한다.
 
 제공자 revoke 실패가 로컬 계정 삭제를 막아서는 안 된다. 철회 retry에는 계정 대신 암호화 credential만 목적 제한 queue에 최대24시간 보관 후 제거하고 실패 안내/수동 해제를 제공한다. 백업은 현재 최대28일 rolling 정책이며 복구 직후 삭제 tombstone을 재적용하기 전 서비스 접근을 열지 않는다. tombstone은 복구 식별에 필요한 최소 가명 ID와 시각만 백업 주기 동안 보관한다. 이 기간과 처리 근거를 정책에 고지한다.
 

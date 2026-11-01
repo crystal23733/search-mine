@@ -2,6 +2,10 @@
 
 > 기본 브랜치 develop. 작업은 선행 PR 병합/이슈 종료 후 시작하고 사용자 위임에 따라 에이전트 리뷰·검사를 마친 PR을 병합한다.
 
+## 2026-11-01 최신 사용자 변경
+
+[ADR0081](../adr/0081-my-info-and-export-removal.md)에 따라 **#176 내 정보 설계→#177 본인 조회 API→#178 화면 전환/파일 다운로드 제거**를 진행한다. #174/PR175는 병합·종료됐다. 기존 동의 export 후속 계획은 현재 동의의 화면 조회/관리로 대체한다. 과거 완료 이슈의 내보내기 인수 조건은 당시 이력이며 새 다운로드 기능 요구가 아니다. 실제 CMP/외부147·83은 별도로 유지한다.
+
 ## 마일스톤
 
 | 마일스톤 | 출구 결과 |
@@ -35,7 +39,7 @@
 | [#12 feat(web): 튜토리얼과 로컬 봇 대전](https://github.com/crystal23733/search-mine/issues/12) | M2 | [#11](https://github.com/crystal23733/search-mine/issues/11) | FR06/08 / TS11/13 | 공격/지목 각1회; skip/replay와 초대 유지; 3난이도 local·E1 관찰 준비(실측 #27/M2 출구 조건) |
 | [#13 feat(web): UTC 데일리·개인 기록·공유 카드](https://github.com/crystal23733/search-mine/issues/13) | M2 | [#12](https://github.com/crystal23733/search-mine/issues/12) | FR09 / TS17/18 | UTC/버전 재현; 정답·닉네임 없는 공유; 개인/unverified 결과 구분 |
 | [#14 feat(web): 오프라인 캐시와 대기 제출 저장](https://github.com/crystal23733/search-mine/issues/14) | M2 | [#13](https://github.com/crystal23733/search-mine/issues/13) | FR10 / TS18 | shell/core/locale/daily cache; 저장소 실패 fallback; 온라인 권위 이관 금지·업데이트 경계 |
-| [#15 feat(server): 4개 OAuth 인증과 최소 계정·PostgreSQL 저장 경계](https://github.com/crystal23733/search-mine/issues/15) | M3 | [#14](https://github.com/crystal23733/search-mine/issues/14) | FR01/16, NFR02 / TS01/20/29/31~36 | Google·Apple·카카오·네이버 실제 연동; provider port/adapter; 최소 scope·claim whitelist·비밀번호 없음; 거래 바인딩/JWKS·HttpOnly·CSRF; 명시적 연결/export/delete·Apple 암호화 credential/철회; sqlx migration·실DB·E2E |
+| [#15 feat(server): 4개 OAuth 인증과 최소 계정·PostgreSQL 저장 경계](https://github.com/crystal23733/search-mine/issues/15) | M3 | [#14](https://github.com/crystal23733/search-mine/issues/14) | FR01/16, NFR02 / TS01/20/29/31~36 | Google·Apple·카카오·네이버 실제 연동; provider port/adapter; 최소 scope·claim whitelist·비밀번호 없음; 거래 바인딩/JWKS·HttpOnly·CSRF; 명시적 연결·본인 정보 조회·삭제; 파일 다운로드 제거 #177/#178·Apple 암호화 credential/철회; sqlx migration·실DB·E2E |
 | [#16 feat(server): 권위 매치 actor와 WebSocket 계약](https://github.com/crystal23733/search-mine/issues/16) | M3 | [#46](https://github.com/crystal23733/search-mine/issues/46) | FR02~05/15 / TS14/20/21/22 | 직렬입력·deadline·공개DTO; frame/rate/capacity; 결과 transaction 1회 |
 | [#17 feat(server): 빠른 대전 백필과 친구 방](https://github.com/crystal23733/search-mine/issues/17) | M3 | [#16](https://github.com/crystal23733/search-mine/issues/16) | FR06/07 / TS10/12 | 10초 원자 백필·봇표시; 만료8문자 코드·2seat; cancel/ready/열거제한; OAuth 왕복 초대 코드의 서버 거래 보존·nickname/tutorial 뒤 방 복귀 |
 | [#18 feat(server): 재접속·중복 명령·장애 판정](https://github.com/crystal23733/search-mine/issues/18) | M3 | [#17](https://github.com/crystal23733/search-mine/issues/17) | FR14 / TS15/16 | 30초유예·epoch·snapshot; duplicate ack; forfeit/abandon/abort 구분 |
@@ -196,3 +200,6 @@
 
 
 #174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 실제 CMP/본인 export HTTP/선택 이벤트 저장·상위21과83은 별도 미완료다.
+
+
+#176 설계 변경 · FR01/09/11/13/16 · NFR01/02/05/06/08 · TS17~22/24/26/29/34~36 → [ADR0081](../adr/0081-my-info-and-export-removal.md) → [설계 검토176](../verification/176-my-info-design.md) → #177 조회 API→#178 내 정보/파일 다운로드 제거. 현재 코드의 제거 완료는 #178에서 검증한다.

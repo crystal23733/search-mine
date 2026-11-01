@@ -1,5 +1,7 @@
 # 19. 테스트 시나리오
 
+> 2026-11-01 최신 변경: [ADR0081](../adr/0081-my-info-and-export-removal.md)의 내 정보/파일 다운로드 제거가 현행 목표다. 아래 #114 등 과거 export 실행 기록은 당시 구현 이력이며 새 다운로드 기능의 요구가 아니다.
+
 TS18/20/26/30 확장(#159): 앱 없는 두 탭의 첫 제어권 준비 후 동일workerURL bytes를 갱신한다. control과 stopping 직후 재시작 요청/실제old재시작/원래10초reload를 구분한다. Browser trace의 다른 소유자 보호·동기/누락 완료·상한/중복 정리를 확인하고 자연 E2E의 최초 실패·native 자료를 CI에 보존한다. [ADR0075](../adr/0075-native-worker-restart-observation.md). #83 제품 수정 완료를 주장하지 않는다.
 
 TS18/20 진단 확장(#159): 실제 Linux 최초 CI의 빈 trace를 성공 자료로 세지 않는다. 진단 종료에만5초 상한을 두고 End의 미응답/거절과 완료 event 누락을 닫힌 단계로 구분한다. 원래 load10초·제품 예산·재시도·network manager는 유지한다.
@@ -285,11 +287,11 @@ TS26 추가(#163):360px의8언어 보드 모드/도움말 버튼은 글자 전�
 - 예외: link 시작 시 계정과 intent 고정, 중도 세션 변경은 거절, 성공 후 세션 회전.
 - 경계·계층: AuthService / AuthIdentityRepository / 실DB+E2E.
 
-## TS35: 내보내기·계정 삭제·토큰 철회 (US01/16)
+## TS35: 내 정보 조회·계정 삭제·토큰 철회 (US01/16)
 
-- 목적: 추가 개인정보 없이 본인 데이터를 내보내고 목적 종료 시 삭제한다.
+- 목적: 추가 개인정보 없이 내 정보에서 본인 계정·전적·현재 동의를 확인하고 목적 종료 시 삭제한다. 파일 다운로드는 제거한다.
 - 전제·역할: 여러 세션/제공자/순위/이벤트/백업, revoke 실패 fixture.
-- 단계와 각 결과: 재인증 export → 본인 최소 데이터, credential/subject/숨은 판 제외; delete → 전 세션·identity·닉네임/순위 연결 제거; Apple revoke → credential 제거; 공급자 장애 → 로컬 삭제 완료, 제한 retry/수동 안내; 백업 restore → 삭제 tombstone 재적용 후 ready.
+- 단계와 각 결과: 일반 유효 세션의 내 정보 조회 → 본인 최소 view, credential/subject/숨은 판 제외; 파일 버튼/다운로드0·구 export/replay API404; 민감 변경 재인증 후 delete → 전 세션·identity·닉네임/순위 연결 제거; Apple revoke → credential 제거; 공급자 장애 → 로컬 삭제 완료, 제한 retry/수동 안내; 백업 restore → 삭제 tombstone 재적용 후 ready.
 - 예외: 철회 queue 최대24h·백업 최대28일 고지, 서명 없는 Apple 알림 거절, 삭제 완료 여부를 정확히 표시.
 - 경계·계층: AccountService / CredentialVault / RetentionService / 실DB+E2E+복구훈련.
 
@@ -417,3 +419,12 @@ TS13/18/19/20/26/30 확장(#167): [ADR0079](../adr/0079-action-first-tutorial.md
 
 
 #174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 실제 CMP/본인 export HTTP/선택 이벤트 저장·상위21과83은 별도 미완료다.
+
+
+## TS35 내 정보 전환 확장 · #177/#178
+
+[ADR0081](../adr/0081-my-info-and-export-removal.md)에 따라 현재 인증 사용자가 내 정보에서 본인 계정·보관 전적·현재 동의를 조회한다. 일반 조회의 반복 OAuth 재인증은 없고 민감 변경의 최근 재인증은 유지한다. 닉네임 없음·비로그인·오프라인·세션 교체/삭제·역순 응답에서 개인 자료가 노출되거나 복원되지 않는다.
+
+전적20개 경계/다음 cursor·타인/변조 cursor·정확90일·안정 최신순·기간/필터 전체 요약·0표본·승패/무승부와abort/cancel·사람/봇/확인 불가·통계null·공식/기기 연습을 구분한다. 클라이언트가 승률 규칙이나 공식 판정을 복제하지 않는다.
+
+파일 다운로드 버튼/Blob/일괄collector/구DTO는 제거하고 세 public export/replay API는404여야 한다. 실제HTTPS에서 파일 다운로드 이벤트0·내 정보 화면조회·8언어/360px/PC·키보드·계정 삭제·공개캐시와무계정CMP재열기/철회를검증한다. 개인응답no-store/화면noindex·선택수집차단과기존게임/데일리공유는유지한다. 새제품검사는시나리오→실제Red→Green→Refactor→실PG/HTTP/E2E·coverage로검증하며설계검토로대체하지않는다.

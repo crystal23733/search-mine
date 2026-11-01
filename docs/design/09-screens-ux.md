@@ -1,5 +1,7 @@
 # 09. 화면·조작·접근성
 
+> 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md): 내 정보에서 본인 전적·계정·현재 동의를 확인하고 기기 설정으로 연결한다. 파일 다운로드 UI/API는 #178에서 제거한다. 일반 조회와 민감 변경 재인증을 구분하며 8언어·계정 전환/오프라인·보관 기간을 검증한다.
+
 #80의 [ADR0038](../adr/0038-bounded-online-reconnect.md)은 본인 복구 중 읽기 전용 보드와 보드 앞8언어 안내를 유지한다. 표시하는30초는 로컬 시도 예산이고 상대 유예와 구분한다. 새 권위 snapshot 뒤에만 입력을 다시 켜며 자체 승패/저장 성공을 만들지 않는다.
 
 #76의 상대 재연결 상태는 [ADR0036](../adr/0036-opponent-reconnect-grace.md)과 디자인15를 따른다. 보드 앞의 공통 ReconnectNotice 카드에서 양수 유예의 안내·남은 초·진행 막대를8언어로 제공한다.0은 “서버 결과를 기다리는 중”이며 클라이언트가 승패를 선언하지 않는다. 상대 복귀/서버 종료/본인 연결 종료 때 안내가 사라지고 본인 연결이 유지된 동안 계속 플레이할 수 있다.
@@ -22,7 +24,12 @@ flowchart TD
   Home --> Quick[빠른 대전 대기]
   Home --> Friend[친구 방]
   Home --> Daily[데일리]
-  Home --> Settings[설정과 접근성]
+  Home --> Me[내 정보]
+  Me --> History[본인 전적]
+  Me --> Account[계정 관리]
+  Me --> Privacy[현재 동의와 개인정보]
+  Me --> Settings[설정과 접근성]
+  Home --> Settings
   Quick --> Match[대전]
   Friend --> Match
   Match --> Result[결과]

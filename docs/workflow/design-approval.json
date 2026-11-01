@@ -4,5 +4,5 @@
   "approved_at": "2026-10-06T14:56:08Z",
   "evidence": "docs/workflow/approval-record.md",
   "reviewed_commit": "813d13f5886246f9055cc3a72f0bc4e0c3595e66",
-  "scope": "OAuth/minimal data and design references; user delegated all sequential work, code review, checks, PR merges and issue closure on 2026-10-07. Missing external keys deferred."
+  "scope": "OAuth/minimal data and design references; user delegated all sequential work, code review, checks, PR merges and issue closure on 2026-10-07. Missing external keys deferred. 2026-11-01 user directed My Info views and explicitly selected removal of file downloads; see ADR0081 and approval-record.md."
 }

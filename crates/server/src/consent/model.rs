@@ -74,13 +74,7 @@ pub(super) fn refreshed(
     now: i64,
     session_expiry: i64,
 ) -> Result<CurrentConsent, ConsentError> {
-    validate(subject, current, now, session_expiry)?;
-    if expected.is_some_and(|id| id.is_nil()) {
-        return Err(ConsentError::Invalid);
-    }
-    if current.map(|value| value.revision) != expected {
-        return Err(ConsentError::Conflict);
-    }
+    check_revision(subject, expected, current, now, session_expiry)?;
     if evidence.subject != subject
         || evidence.expires_at <= now
         || evidence.expires_at > MAX_EVENT_TIMESTAMP
@@ -95,6 +89,44 @@ pub(super) fn refreshed(
         analytics: evidence.analytics,
         advertising: evidence.advertising,
     })
+}
+fn check_revision(
+    subject: Uuid,
+    expected: Option<Uuid>,
+    current: Option<CurrentConsent>,
+    now: i64,
+    session_expiry: i64,
+) -> Result<(), ConsentError> {
+    validate(subject, current, now, session_expiry)?;
+    if expected.is_some_and(|id| id.is_nil()) {
+        return Err(ConsentError::Invalid);
+    }
+    if current.map(|value| value.revision) != expected {
+        return Err(ConsentError::Conflict);
+    }
+    Ok(())
+}
+pub(super) fn suspended(
+    subject: Uuid,
+    expected: Option<Uuid>,
+    current: Option<CurrentConsent>,
+    now: i64,
+    session_expiry: i64,
+) -> Result<Option<CurrentConsent>, ConsentError> {
+    check_revision(subject, expected, current, now, session_expiry)?;
+    current
+        .map(|value| {
+            let mut denied = withdrawn(
+                subject,
+                Some(value),
+                OptionalPurpose::Analytics,
+                now,
+                session_expiry,
+            )?;
+            denied.advertising = false;
+            Ok(denied)
+        })
+        .transpose()
 }
 pub(super) fn withdrawn(
     subject: Uuid,

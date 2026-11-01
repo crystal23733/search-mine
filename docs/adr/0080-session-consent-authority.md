@@ -12,7 +12,7 @@
 
 세션당 현재 행 하나만 저장한다. subject는 기존 auth_sessions.id, revision은 서버 UUID, checked_at/expiry와 두 목적 boolean만 둔다. 토큰·이메일·TC 문자열·추가 개인 식별자는 저장하지 않는다. 행은 세션 logout/회전/계정 삭제에 cascade하고 만료된 세션의 기존 cleanup을 따른다. 만료 후 조회는 기간 정보를 유지하되 두 목적을 허용하지 않는다. 별도 동의 이력/영구 식별자를 만들지 않는다.
 
-검증 IO는 DB 잠금을 잡기 전에 수행한다. 결과를 저장할 때 account→session 순으로 잠그고 실제 token hash/account/session revision과 시각을 다시 확인한다. 검증 대기 중 철회·로그아웃·계정 삭제는 권한을 만들지 못한다. 전체 요청은2초이며 DB 대기·검증·commit 전의 시계 역행/세션 만료/증거 만료도 거절한다. 증거 유효 기간은 세션 expiry를 넘지 못한다.
+재검증 전에는 account→session 순으로 잠그고 실제 token hash/account/session revision과 기대 동의 revision을 확인한다. 기존 행이 있으면 두 목적 false와 새 서버 revision의 차단 상태를 먼저 commit한다. 최초 행이 없을 때는 불필요한 차단 행을 만들지 않는다. DB 잠금을 놓은 뒤 verifier IO를 수행하고, 성공 결과는 차단 revision이 그대로인 경우에만 새 허용으로 저장한다. 실패·시간 초과·취소 뒤에도 기존 허용은 되살아나지 않는다. 검증 대기 중 철회·로그아웃·계정 삭제는 권한을 만들지 못한다. 전체 요청은2초이며 DB 대기·검증·commit 전의 시계 역행/세션 만료/증거 만료도 거절한다. 증거 유효 기간은 세션 expiry를 넘지 못한다.
 
 refresh는 기대 revision과 현재 행의 revision을 비교한 뒤 새 서버 revision으로 바꾼다. 최초 None도 현재 행이 없어야 하므로 늦은 최초 grant가 앞선 철회를 덮지 못한다. withdraw는 현재 인증 세션의 선택한 목적만 false로 바꾸고 항상 새 revision을 발급한다. 만료/시계 역행은 grant로 복구하지 않는다. 다른 목적의 원래 유효 기한을 연장하지 않으며, 기존 행이 없을 때 철회는 두 목적 false인 행을 세션 기한까지 남겨 지연된 최초 grant를 막는다.
 

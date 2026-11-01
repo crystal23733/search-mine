@@ -330,9 +330,9 @@ impl AuthClock for SequenceClock {
 async fn refresh_carries_the_latest_preflight_clock_and_rolls_back_expiry_before_commit() {
     let pool = auth_pool().await;
     let own = session(super::privacy::participant(&pool, 1000).await);
-    // refresh start, read start, two authorization pairs, then verifier boundary.
+    // Refresh start, two preflight authorization pairs, then verifier boundary.
     let clock = SequenceClock(std::sync::Mutex::new(
-        [1100, 1100, 1100, 1100, 1200, 1200, 1199].into(),
+        [1100, 1100, 1100, 1200, 1200, 1199].into(),
     ));
     let store = PgConsentStore::new(pool.clone(), Arc::new(clock));
     assert_eq!(
@@ -409,5 +409,76 @@ async fn actual_session_rotation_erases_the_old_consent_and_does_not_grant_the_n
             .unwrap(),
         0
     );
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn failed_reverification_suspends_previous_grants_during_io_and_after_timeout() {
+    let pool = auth_pool().await;
+    let own = session(super::privacy::participant(&pool, 1000).await);
+    let store = Arc::new(PgConsentStore::new(
+        pool.clone(),
+        Arc::new(Clock(AtomicI64::new(1100))),
+    ));
+    let first = store.refresh(own, None, &grant()).await.unwrap();
+    assert_eq!(
+        store
+            .refresh(own, Some(first.revision), &DisabledConsentVerifier)
+            .await,
+        Err(ConsentError::Unavailable)
+    );
+    let blocked = store.read(own).await.unwrap().unwrap();
+    assert!(!blocked.analytics && !blocked.advertising);
+    assert_ne!(blocked.revision, first.revision);
+    let next = store
+        .refresh(own, Some(blocked.revision), &grant())
+        .await
+        .unwrap();
+    let verifier = Arc::new(DelayedVerifier {
+        entered: tokio::sync::Notify::new(),
+        release: tokio::sync::Notify::new(),
+    });
+    let task = {
+        let store = store.clone();
+        let verifier = verifier.clone();
+        tokio::spawn(async move {
+            store
+                .refresh(own, Some(next.revision), verifier.as_ref())
+                .await
+        })
+    };
+    tokio::time::timeout(Duration::from_secs(2), verifier.entered.notified())
+        .await
+        .unwrap();
+    let during = store.read(own).await.unwrap().unwrap();
+    assert!(!during.analytics && !during.advertising);
+    assert_ne!(during.revision, next.revision);
+    assert_eq!(task.await.unwrap(), Err(ConsentError::Unavailable));
+    assert_eq!(store.read(own).await, Ok(Some(during)));
+    let restored = store
+        .refresh(own, Some(during.revision), &grant())
+        .await
+        .unwrap();
+    let verifier = Arc::new(DelayedVerifier {
+        entered: tokio::sync::Notify::new(),
+        release: tokio::sync::Notify::new(),
+    });
+    let task = {
+        let store = store.clone();
+        let verifier = verifier.clone();
+        tokio::spawn(async move {
+            store
+                .refresh(own, Some(restored.revision), verifier.as_ref())
+                .await
+        })
+    };
+    tokio::time::timeout(Duration::from_secs(2), verifier.entered.notified())
+        .await
+        .unwrap();
+    task.abort();
+    assert!(task.await.unwrap_err().is_cancelled());
+    let cancelled = store.read(own).await.unwrap().unwrap();
+    assert!(!cancelled.analytics && !cancelled.advertising);
     close_auth_pool(pool).await;
 }

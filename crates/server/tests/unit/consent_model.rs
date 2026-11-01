@@ -215,3 +215,34 @@ fn server_clock_bounds_are_checked_without_overflow() {
     assert_eq!(checked_now(&clock, 1001), Err(ConsentError::Invalid));
     assert_eq!(checked_now(&clock, 1000), Ok(1000));
 }
+
+#[test]
+fn reverification_fences_existing_grants_without_creating_unused_initial_rows() {
+    assert_eq!(suspended(SUBJECT, None, None, 1000, 3000), Ok(None));
+    let first = refreshed(
+        SUBJECT,
+        None,
+        None,
+        VerifiedConsent {
+            advertising: true,
+            ..evidence()
+        },
+        1000,
+        3000,
+    )
+    .unwrap();
+    let blocked = suspended(SUBJECT, Some(first.revision), Some(first), 1100, 3000)
+        .unwrap()
+        .unwrap();
+    assert_ne!(blocked.revision, first.revision);
+    assert!(!blocked.analytics && !blocked.advertising);
+    assert_eq!(blocked.expires_at, first.expires_at);
+    assert_eq!(
+        suspended(SUBJECT, Some(first.revision), Some(blocked), 1100, 3000),
+        Err(ConsentError::Conflict)
+    );
+    assert_eq!(
+        suspended(SUBJECT, None, None, -1, 3000),
+        Err(ConsentError::Invalid)
+    );
+}

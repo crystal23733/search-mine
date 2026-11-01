@@ -12,7 +12,9 @@ FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-
 
 리뷰에서 preflight의 마지막 관측 시각이 후속 verifier 전 검사에 전달되지 않는 점을 보완했다. SQL 조회 뒤 시각을 확인하고, 시간열1100→1200→1199를 실제 PG 회귀로 거절한다. 검증 IO 전후와 commit 전의 session/account를 같은 잠금 순서로 다시 확인한다. CAS는 account 잠금 하에서 읽은 현재 revision과 비교한다. 임의 UUID/hash, token·TC 문자열 저장, 공개 grant API, main에 테스트 verifier를 주입하는 경로를 추가하지 않았다.
 
-최종 로컬 PG18 일반 회귀는157개/14.33초 통과했다. 도메인5개·workspace fmt/clippy·WASM check·Rust→TS freshness·문서219/추적36·Mermaid34/실패0도 실행했다. 전체 Rust/CI의 최종 head·coverage 결과는 완료 후 추가한다. 로컬 첫 workspace 실행의 loopback bind EPERM은 샌드박스 제한이었고 실제 TCP 권한으로 재실행했다. PowerShell이 없는 로컬에서는 check.ps1 자체를 실행했다고 보고하지 않는다.
+초기 후보 aa5215e의 로컬 PG18 일반 회귀는157개/14.33초 통과했다. 도메인5개·workspace fmt/clippy·WASM check·Rust→TS freshness·문서219/추적36·Mermaid34/실패0도 실행했다. 후속 리뷰 보완과 최종 head·coverage 결과는 아래에 구분한다. 로컬 첫 workspace 실행의 loopback bind EPERM은 샌드박스 제한이었고 실제 TCP 권한으로 재실행했다. PowerShell이 없는 로컬에서는 check.ps1 자체를 실행했다고 보고하지 않는다.
+
+추가 리뷰에서 기존 grant의 재검증 실패가 이전 허용을 남기는 경계를 발견했다. 실제 PG의 실패/지연/시간 초과 시나리오1개 Red를 확인한 뒤, 기존 행은 verifier IO 전에 두 목적 false·새 서버 revision을 먼저 commit하도록 보완했다. 초기 행이 없으면 차단 행도 만들지 않는다. 성공은 이 차단 revision이 그대로인 경우에만 새 grant로 바꾼다. 따라서 IO 중 read도 차단이고 verifier 오류·전체2초 timeout 뒤에도 이전 허용을 복원하지 않는다. 모델6개·실PG8개를 보강하며, 최초 aa5215e CI의 성공을 이 보완의 검증으로 계산하지 않는다.
 
 ## #83 확인과 별도 한계
 

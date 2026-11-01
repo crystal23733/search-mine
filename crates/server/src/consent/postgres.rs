@@ -82,11 +82,8 @@ impl PgConsentStore {
     ) -> Result<CurrentConsent, ConsentError> {
         bounded(async {
             let started = model::checked_now(&self.clock, 0)?;
-            // Authorize before contacting an external verifier, without holding DB locks during IO.
-            let (current, observed_at) = self.read_at(session, started).await?;
-            if current.map(|value| value.revision) != expected {
-                return Err(ConsentError::Conflict);
-            }
+            // Commit a blocked revision before verifier IO so failure cannot preserve an old grant.
+            let (expected, observed_at) = self.begin_refresh(session, expected, started).await?;
             let before_verify = model::checked_now(&self.clock, observed_at)?;
             let evidence = verifier.verify(session.revision, before_verify).await?;
             let after_verify = model::checked_now(&self.clock, before_verify)?;
@@ -104,6 +101,23 @@ impl PgConsentStore {
             Ok(value)
         })
         .await
+    }
+    async fn begin_refresh(
+        &self,
+        session: ConsentSession,
+        expected: Option<Uuid>,
+        previous: i64,
+    ) -> Result<(Option<Uuid>, i64), ConsentError> {
+        let mut tx = self.pool.begin().await.map_err(db)?;
+        let (now, expiry) = self.authorize(&mut tx, session, previous).await?;
+        let current = load(&mut tx, session.revision).await?;
+        let blocked = model::suspended(session.revision, expected, current, now, expiry)?;
+        if let Some(value) = blocked {
+            save(&mut tx, value).await?;
+        }
+        let (finish, _) = self.authorize(&mut tx, session, now).await?;
+        tx.commit().await.map_err(db)?;
+        Ok((blocked.map(|value| value.revision), finish))
     }
     pub async fn withdraw(
         &self,

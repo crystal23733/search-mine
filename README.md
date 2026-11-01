@@ -6,13 +6,13 @@
 
 ## 먼저 읽을 문서
 
-[#140 원시 이벤트 물리 보존](docs/verification/140-bounded-raw-event-retention.md)은 원래30일 만료·bounded 삭제와 별도 maintenance 출구다. first-normal/NSM·D7/anonymous13개월·운영조회는후속20이다.
+필수 이벤트의 원본 transaction 수집·원시30일 보존·NSM/D7·익명13개월 보존·내부 운영 조회는 [#145의 #20 통합 감사](docs/verification/145-anonymous-metrics-retention-and-operations.md)까지 완료했다. 실제 사용 지표 달성·선택 수집·운영 장비 실측은 별도다.
 
-[#138 자동 필수 이벤트](docs/verification/138-atomic-essential-event-producers.md)는 온라인/데일리 원본 transaction과 함께 수집하는 출구다. 물리 보존·first-normal/NSM/D7·운영 조회는 후속20이다.
+[#174 인증 세션별 동의 기반](docs/verification/174-session-consent-authority.md)은 서버 검증 포트·현재 revision/목적별 철회·PostgreSQL 저장 경계다. main/HTTP에는 연결하지 않으며 실제 CMP·본인 동의 내보내기 HTTP·선택 이벤트 저장은 #21의 필수 후속이다. 실행 앱의 선택 분석/광고는 계속 차단한다.
 
-[#134 이벤트 도메인 계약](docs/verification/134-event-domain-contracts.md)은 목적별 동의·재전송 동일성·보존 경계와 bounded NSM/D7 계산을 Rust로 정의한다. 필수 저장·권리는 #136에 연결하며 자동 수집·물리 보존·집계는 후속 #20이고 비필수 수집은 #21의 실제 동의 연결 전까지 켜지 않는다.
+[#134 이벤트 도메인 계약](docs/verification/134-event-domain-contracts.md)은 목적별 동의·재전송 동일성·보존 경계와 bounded NSM/D7 계산을 Rust로 정의한다. [#138 자동 필수 수집](docs/verification/138-atomic-essential-event-producers.md)과 [#140 원시 물리 보존](docs/verification/140-bounded-raw-event-retention.md)을 연결했고 비필수 수집은 #21의 실제 동의 연결 전까지 켜지 않는다.
 
-[#136 필수 이벤트 저장·본인 권리](docs/verification/136-essential-event-store-and-rights.md)는 committed 서버 기록의 최소 PG 저장과 기존 명시 내보내기의 event 스트림을 제공한다. 자동 수집·물리 보존·운영 집계는 후속 #20이며 선택 이벤트 저장은 차단한다.
+[#136 필수 이벤트 저장·본인 권리](docs/verification/136-essential-event-store-and-rights.md)는 committed 서버 기록의 최소 PG 저장과 기존 명시 내보내기의 event 스트림을 제공한다. 선택 이벤트 저장은 차단한다.
 
 - [PRD: 범위와 인수 조건](docs/product/16-PRD.md)
 - [설계 검토·승인 항목·요구 추적표](docs/design/00-review-checklist.md)

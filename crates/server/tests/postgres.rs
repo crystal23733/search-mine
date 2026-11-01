@@ -18,6 +18,8 @@ struct HttpClock;
 mod admission_restart;
 #[path = "postgres/anonymous_metrics.rs"]
 mod anonymous_metrics;
+#[path = "postgres/consent.rs"]
+mod consent;
 #[path = "postgres/daily.rs"]
 mod daily;
 #[path = "postgres/daily_http.rs"]

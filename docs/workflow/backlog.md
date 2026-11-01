@@ -193,3 +193,6 @@
 
 
 #168/PR170은 최신 WASM CLI와 관련 lock/생성 선언의 정합성을 별도 검증해 develop a674fc8에 병합·CLOSED를 확인했다. #167의 사용자 화면 수정은 별도 PR로 검증하며 사용자의 Windows lock 참조 변경은 로컬에 보존한다.
+
+
+#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 실제 CMP/본인 export HTTP/선택 이벤트 저장·상위21과83은 별도 미완료다.

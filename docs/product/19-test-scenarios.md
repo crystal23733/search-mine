@@ -414,3 +414,6 @@ TS18/20/26/30 확장(#161): 진단 CLI의 기존 CDP 모드와 명시적 pointer
 
 
 TS13/18/19/20/26/30 확장(#167): [ADR0079](../adr/0079-action-first-tutorial.md)의 현재 과제/버튼 우선·공개 expected 좌표 강조·8언어 위치 안내를 확인한다. PC/360px 첫 버튼은 스크롤 없이 보이고 기초 설명보다 앞에 있다. 실제 보드/안내 버튼·공격/지목/반사·완료/replay·언어/기초 펼침·잘못된 입력 거절·복귀 URL을 유지하며 사람이 이해했다는 판단은 #27에 남긴다.
+
+
+#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 실제 CMP/본인 export HTTP/선택 이벤트 저장·상위21과83은 별도 미완료다.

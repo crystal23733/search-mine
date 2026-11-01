@@ -1135,6 +1135,18 @@
       ],
       "acceptance": "과제/버튼 우선·공개 expected 좌표 강조·8언어 위치·실제 WASM/한국어/360px·skip/replay/복귀 보존",
       "issue": 167
+    },
+    {
+      "key": "session-consent-authority",
+      "issue": 174,
+      "milestone": "M4",
+      "title": "feat(consent): 인증 세션별 현재 동의 저장·철회 기반",
+      "requirements": "FR01/13/16, NFR01/02/05/07/08",
+      "scenarios": "TS20/21/24/29/31/35/36",
+      "deps": [
+        "consent-context-and-expiry"
+      ],
+      "acceptance": "ADR0080·서버검증port/비활성기본·현재세션/목적분리/서버revisionCAS·원자철회/같은tx권한/2초/시계·실PG/삭제cascade/95·80coverage/리뷰6CI/정확head병합;실CMP/HTTPexport/선택저장/21별도"
     }
   ]
 }

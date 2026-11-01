@@ -229,3 +229,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #167 FR08/11·NFR01/02/05/06/08·TS13/18/19/20/26/30 → [ADR0079](../adr/0079-action-first-tutorial.md) → 현재 과제/버튼 우선·공개 expected 좌표 강조·한국어/8언어 위치 안내 → [검증167](../verification/167-action-first-tutorial.md). 실제 사람의 이해·30초 성취는 #27에서 확인한다.
+
+
+#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 실제 CMP/본인 export HTTP/선택 이벤트 저장·상위21과83은 별도 미완료다.

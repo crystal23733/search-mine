@@ -18,7 +18,7 @@ overview는 최소 계정/제공자 연결 시각·현재90일 온라인 요약�
 
 전용 MeReader/PG adapter와HTTP권위를둔다. account→session잠금을잡고현재세션revision/hash/시각을확인한다. 같은transaction의계정·기록·현재동의를읽고잠금대기/읽기/반환전시각을다시검사한다. DB 오류·손상·한도 초과를 빈 기록이나 부분 요약으로 바꾸지 않는다. 집계에 기여한 가장 이른 기록/현재 동의의 만료와 세션 만료 중 최소 시각을 응답 유효 기한으로 전달한다. CPU 작업이나 응답 직전에 이 기한을 넘으면 재조회가 필요한 unavailable로 닫아 오래된 요약/동의 허용을 반환하지 않는다.
 
-정확한기존projection검증과기간전체집계를위해조회종류당최대10000개원천행을허용하고10001번째는unavailable이다. 최신20개만합쳐전체전적으로표시하지않는다. 원천조회·CPU·응답을포함해전체2초,요청동시4·CPU동시2·권위64·session/account20/s·4096-key/60초다. CPU작업은실제worker가permit을소유하여timeout/caller취소가자리를먼저돌려주지않는다. 이는개발한도이며미니PC출시성능이나무제한전적조회보장이아니다.
+정확한기존projection검증과기간전체집계를위해조회종류당최대10000개원천행을허용하고10001번째는unavailable이다. 최신20개만 합쳐 전체 전적으로 표시하지 않는다. 온라인의 두 seat 관계는 self/상대 seat의 bounded LEFT JOIN으로 읽고, 같은 본인 계정이 양쪽 seat를 차지한 오염을 boolean으로 거부한다. 행마다 account index를 다시 탐색하는 correlated count/subquery는 사용하지 않는다. 본인 account+match 복합 partial index를 migration으로 추가해 결과를 바깥쪽에서 탐색하는 실행 계획에서도 매번 전체 account bitmap을 만들지 않게 한다. 행/정답/개인정보 계약은 바꾸지 않는다. 원천조회·CPU·응답을포함해전체2초,요청동시4·CPU동시2·권위64·session/account20/s·4096-key/60초다. CPU작업은실제worker가permit을소유하여timeout/caller취소가자리를먼저돌려주지않는다. 이는개발한도이며미니PC출시성능이나무제한전적조회보장이아니다.
 
 HTTP는전후실제session과취소/철회authority를검사하고응답직전guard로철회와선형화한다. 응답은no-store/no-referrer/nosniff·64KiB상한이다. main/실제HTTPSfixture는동일router/PG구성을사용하고별도invalidator를조합한다. 미설정실행은두route를503/no-store로닫는다.
 

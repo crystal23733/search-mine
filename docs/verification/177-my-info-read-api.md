@@ -18,3 +18,11 @@ FR01/09/11/13/16·NFR01/02/05/07/08·TS17/19/20/21/22/24/29/34/35/36 → [ADR008
 실제 코드 리뷰는 본인 식별을 SQL/세션에서만 결정하는지, 원천행 검증·전 기간 요약·저장 정렬·유효 기한·account→session 잠금·전후 세션/철회 guard·2초/동시/CPU/rate/64KiB 응답 상한을 대조했다. 원천 조회에서 board/secret seed/raw replay/상대 식별자/credential을 선택하지 않는다. 의존성·새 개인정보·설정 동기화·수집은 추가하지 않았다.
 
 새 Me domain을95% gate에 포함했다. 현재 파일 기능은 #178 새 화면 전환과 같은 PR에서 제거한다. 이 작업은 새 UI·파일 제거·실제 CMP·운영 admin·전용403/404 화면이나 #83 해결 완료가 아니다.
+
+## 최초 CI에서 발견한 조회 계획 보완
+
+최초 source bf6b792 / Product41305957378의 DB 일반 검사는164통과/1실패였다. 10000행 조회의2초 기한이 CI에서 초과돼 계측 단계에 도달하지 못했다. 이를 coverage 통과로 보고하지 않는다.
+
+동일 임시10k행/트랜잭션의 실제 EXPLAIN ANALYZE에서 기존 SQL은 account bitmap을 행마다10000번 만들고 두 correlated subplan을 반복했다(1324.963ms). 두 seat LEFT JOIN은662.578ms였고, 본인 account+match partial 복합 index를 추가하면 해당 index scan으로 바뀌어30.037ms였다. 전체 SQL/계획을 로컬 .tmp에 보존했고 트랜잭션을 ROLLBACK했다. 이는 로컬 한 번의 SQL 계획 비교이며 제품 전체 응답시간/미니PC 출시 성능 보장이 아니다.
+
+ADR0082를 먼저 보완한 뒤 JOIN과 새 index migration을 적용했다. 2초 기한·10000/10001행 한도·같은 테스트의 성공/거부 기대값을 유지하며, 최신 CI를 다시 확인한다.

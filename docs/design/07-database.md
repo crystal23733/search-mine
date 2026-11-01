@@ -1,5 +1,7 @@
 # 07. PostgreSQL 모델
 
+> 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md): 본인 기록의 표시를 내 정보 조회로 전환하고 파일 export를 제거한다. 기존90일/원시 보존·동의 현재1행·계정/세션 cascade는 유지한다. 전적을 위해 새 영구 누적·개인정보나 동의 이력을 추가하지 않는다.
+
 #82의 [ADR0039](../adr/0039-authenticated-personal-result-read.md)은 ResultReader/Pg의 account+match 참여 조건과90일 미만 조회, 중복 seat/오염 fail-closed를 정의한다. seed를 선택하지 않으며 삭제 참여 행/없는 결과/다른 계정은 같은404다. 기존 migration과 저장 retry의 삭제 비복원 계약을 유지한다. 물리 정리 #25는 별도 출구다.
 
 #16의 [ADR0023](../adr/0023-authoritative-match-actor.md)은 `online_match_results`의 match UUID unique·rules hash·서버 전용8byte seed·종료 elapsed/reason/저장 시각과 `online_match_players`의 seat0/1·account FK cascade(봇은 null)·최종 outcome/집계를 별도 transaction에 저장한다. 닉네임/세션/identity는 복사하지 않는다. 계정 삭제는 참여 행을 제거하고 식별자 없는 매치 부모만 남긴다. 저장 전에 account key-share lock으로 존재를 확인하며 이미 삭제된 인간의 참여 행은 생성하지 않는다. 중복 부모는 참여 행을 재삽입하지 않으므로 삭제된 개인정보를 retry로 복원하지 않는다. 이전 migration checksum은 바꾸지 않는다.

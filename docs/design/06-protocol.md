@@ -1,5 +1,7 @@
 # 06. HTTP·WebSocket 프로토콜
 
+> 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md)이 본인 파일 export 계약을 대체한다. 새 overview/history는 #177 구현 대상이며 아래 기존 `/me/export`, `/me/games/export`, `/me/games/replay`는 #178에서 제거할 legacy 경로다. 현재 코드에서 이미 제거됐다는 뜻은 아니다.
+
 #82의 [ADR0039](../adr/0039-authenticated-personal-result-read.md)은 `POST /api/v1/results`의 strict256byte `{v:1,match_id}`와 본인 최소 결과 DTO를 정의한다. actor와 독립된 저장 결과 조회이며 uniform404를 진행/승패로 해석하지 않는다. 저장 hash에 현재 rules를 붙이지 않는다.
 
 #80의 [ADR0038](../adr/0038-bounded-online-reconnect.md)은 진행 중 연결 상실의 단조30초 backoff·새 connection lease/epoch/snapshot과 메모리 원본 UUID/seq/action/known revision 재전송을 정의한다. 권위 결과는 서버만 결정하며 로컬 예산을 grace/승패로 해석하지 않는다.

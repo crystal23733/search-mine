@@ -1,5 +1,7 @@
 # 문서 안내
 
+현재 설계 변경은 [ADR0081 내 정보·파일 다운로드 제거](adr/0081-my-info-and-export-removal.md)와 [#176 검토](verification/176-my-info-design.md)를 따른다. #177 조회 API→#178 화면/구 export 제거를 구현하며 아래의 export 문서는 과거 구현 근거로 보존한다.
+
 1. [제품 비전](product/01-vision.md)과 [PRD](product/16-PRD.md)로 범위·성공 기준을 읽는다.
 2. [설계 리뷰·요구 추적표](design/00-review-checklist.md)에서 승인할 제안을 확인한다.
 3. [시스템 구조](design/01-architecture.md), [규칙](design/04-game-rules-spec.md), [간파 알고리즘](design/05-algorithms.md), [프로토콜](design/06-protocol.md)을 검토한다.

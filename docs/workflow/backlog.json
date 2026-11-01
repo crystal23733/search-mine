@@ -207,7 +207,7 @@
       "deps": [
         "offline"
       ],
-      "acceptance": "Google·Apple·카카오·네이버 실제 연동; provider port/adapter; 최소 scope·claim whitelist·비밀번호 없음; 거래 바인딩/JWKS·HttpOnly·CSRF; 명시적 연결/export/delete·Apple 암호화 credential/철회; sqlx migration·실DB·E2E",
+      "acceptance": "Google·Apple·카카오·네이버 실제 연동; provider port/adapter; 최소 scope·claim whitelist·비밀번호 없음; 거래 바인딩/JWKS·HttpOnly·CSRF; 명시적 연결·본인 정보 조회·삭제; 파일 다운로드 제거는 #177/#178·Apple 암호화 credential/철회; sqlx migration·실DB·E2E",
       "issue": 15
     },
     {
@@ -1147,6 +1147,43 @@
         "consent-context-and-expiry"
       ],
       "acceptance": "ADR0080·서버검증port/비활성기본·현재세션/목적분리/서버revisionCAS·원자철회/같은tx권한/2초/시계·실PG/삭제cascade/95·80coverage/리뷰6CI/정확head병합;실CMP/HTTPexport/선택저장/21별도"
+    },
+    {
+      "key": "my-info-design",
+      "issue": 176,
+      "milestone": "M4",
+      "title": "docs(account): 내 정보 중심 조회와 파일 다운로드 제거 설계",
+      "requirements": "FR01/09/11/13/16, NFR01/02/05/06/08",
+      "scenarios": "TS17/18/19/20/21/22/24/26/29/34/35/36",
+      "deps": [
+        "session-consent-authority"
+      ],
+      "acceptance": "ADR0081·사용자 파일제거 선택·내 정보/90일전적/계정/기기설정/현재동의·UI/API 제거순서·PRD/TS/설계/추적·원본/과거검증보존·문서/Mermaid/리뷰/CI/병합/CLOSED;제품177→178"
+    },
+    {
+      "key": "my-info-read-api",
+      "issue": 177,
+      "milestone": "M4",
+      "title": "feat(account): 내 정보 요약·전적·현재 동의 조회 API",
+      "requirements": "FR01/09/11/13/16, NFR01/02/05/07/08",
+      "scenarios": "TS17/19/20/21/22/24/29/34/35/36",
+      "deps": [
+        "my-info-design",
+        "session-consent-authority"
+      ],
+      "acceptance": "ADR0081·본인overview/history·Rust DTO/TS·90일서버요약/20개최신순cursor·사람/봇/abort/null·현재동의view·정상세션/전후권한/2초/no-store·행동TDD/실PG/HTTP/95-80/CI/리뷰/병합CLOSED;파일API제거는178"
+    },
+    {
+      "key": "my-info-web-and-export-removal",
+      "issue": 178,
+      "milestone": "M4",
+      "title": "feat(account): 내 정보 화면 연결과 파일 내보내기 제거",
+      "requirements": "FR01/09/11/13/16, NFR01/02/05/06/08",
+      "scenarios": "TS17/18/19/20/21/22/24/26/29/34/35/36",
+      "deps": [
+        "my-info-read-api"
+      ],
+      "acceptance": "ADR0081·me/history/account/privacy/기기설정재사용·8언어/360px/PC/키보드/계정전환/오프라인·파일UI/collector/export port/DTO/public3API삭제404·기록/삭제/동의/공유유지·TDD/PG/HTTPS/full/coverage/CI/리뷰/병합CLOSED"
     }
   ]
 }

@@ -3,6 +3,7 @@ import { Ui } from "./ui/context";
 import { AppShell } from "./ui/templates/AppShell";
 import { HomePage } from "./pages/HomePage";
 import { LatestResultPage } from "./pages/LatestResultPage";
+import { MyInfoPage } from "./pages/MyInfoPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StoragePage } from "./pages/StoragePage";
 import { RulesPage } from "./pages/RulesPage";
@@ -98,6 +99,18 @@ export function App({ services }: { services: AppServices }) {
       <HomePage />
     ) : route === "/results" ? (
       <LatestResultPage />
+    ) : ["/me", "/me/history", "/me/account", "/me/privacy"].includes(route) ? (
+      <MyInfoPage
+        section={
+          route === "/me/history"
+            ? "history"
+            : route === "/me/account"
+              ? "account"
+              : route === "/me/privacy"
+                ? "privacy"
+                : "overview"
+        }
+      />
     ) : route === "/settings" ? (
       <SettingsPage />
     ) : route === "/storage" ? (

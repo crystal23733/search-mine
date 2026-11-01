@@ -12,12 +12,7 @@ pub struct LinkedIdentity {
     pub provider: Provider,
     pub linked_at: i64,
 }
-pub struct AccountExport {
-    pub account: Account,
-    pub created_at: i64,
-    pub last_seen_at: i64,
-    pub identities: Vec<LinkedIdentity>,
-}
+
 pub struct ErasureResult {
     pub manual_apple_disconnect: bool,
 }
@@ -33,10 +28,6 @@ pub trait AccountStore: AccountErasure {
         &self,
         authority: SessionAuthority,
     ) -> impl Future<Output = Result<Vec<LinkedIdentity>, AuthError>> + Send;
-    fn export(
-        &self,
-        authority: SessionAuthority,
-    ) -> impl Future<Output = Result<AccountExport, AuthError>> + Send;
     fn unlink(
         &self,
         authority: SessionAuthority,

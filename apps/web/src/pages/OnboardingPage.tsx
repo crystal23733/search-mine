@@ -12,7 +12,12 @@ export function OnboardingPage() {
       "return_path",
     ),
   );
-  const path = destination === "home" ? "/" : `/${destination}`;
+  const path =
+    destination === "home"
+      ? "/"
+      : destination === "account"
+        ? "/me/account"
+        : `/${destination}`;
   return (
     <div class="auth-page reading-page">
       <div class="auth-step">

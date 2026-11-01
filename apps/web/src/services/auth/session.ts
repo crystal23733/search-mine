@@ -1,9 +1,4 @@
-import type {
-  AuthAccount,
-  AuthErasure,
-  PersonalDataExport,
-} from "@liar/protocol";
-import { collectGameExport } from "./game-export";
+import type { AuthAccount, AuthErasure } from "@liar/protocol";
 import { createAuthenticatedRequests } from "./requests";
 import { SessionRecovery } from "./recovery";
 import {
@@ -36,6 +31,7 @@ export function createAuth(
     error: null,
     notice: null,
     manualAppleDisconnect: false,
+    appleRevokePending: false,
   };
   let csrf: string | null = null,
     sessionId: string | null = null,
@@ -94,6 +90,7 @@ export function createAuth(
       error,
       notice: null,
       manualAppleDisconnect: false,
+      appleRevokePending: false,
     });
   }
   function begin(preserveRecovery = false) {
@@ -185,6 +182,7 @@ export function createAuth(
       error: null,
       notice: null,
       manualAppleDisconnect: false,
+      appleRevokePending: false,
     });
     try {
       const fresh = await transport.bootstrap(request.signal);
@@ -229,6 +227,7 @@ export function createAuth(
   async function erased(
     completion: Completion<AuthErasure>,
     notice: "deleted" | "unlinked",
+    hadApple: boolean,
   ): Promise<AuthResult<AuthErasure>> {
     const result = checked(completion);
     if (!result.ok) return result;
@@ -242,13 +241,17 @@ export function createAuth(
         publish({
           notice,
           manualAppleDisconnect: result.value.manual_apple_disconnect,
+          appleRevokePending: hadApple && !result.value.manual_apple_disconnect,
         });
     }
     return result;
   }
   const requests = createAuthenticatedRequests({
-    authority: () =>
-      connected() && state.account?.nickname && sessionId
+    authority: (scope) =>
+      connected() &&
+      state.account &&
+      (scope === "self" || state.account.nickname) &&
+      sessionId
         ? {
             accountId: state.account.id,
             revision,
@@ -285,36 +288,7 @@ export function createAuth(
     begin(true);
     clear("unavailable", "auth_unavailable");
   }
-  async function exportData(
-    expected: string,
-  ): Promise<Completion<PersonalDataExport>> {
-    return await operate<PersonalDataExport>(
-      expected,
-      async (proof, signal) => {
-        const revision = sessionId;
-        if (!revision) throw new OwnershipChanged();
-        const value = await transport.export(proof, signal);
-        requireOwner(value.account, expected);
-        const collected = await collectGameExport(
-          transport,
-          value,
-          revision,
-          proof,
-          signal,
-        );
-        const final = await transport.bootstrap(signal);
-        if (
-          final.account?.id !== expected ||
-          final.session_revision !== revision ||
-          !final.csrf ||
-          signal.aborted
-        )
-          throw new OwnershipChanged();
-        csrf = final.csrf;
-        return collected;
-      },
-    );
-  }
+
   return {
     execute: requests.execute,
     read: () => ({
@@ -389,31 +363,26 @@ export function createAuth(
       }
       return result;
     },
-    export: async (expected) => checked(await exportData(expected)),
-    async exportTo(expected, sink) {
-      const completion = await exportData(expected);
-      const result = checked(completion);
-      if (!result.ok) return result;
-      try {
-        await sink(result.value);
-      } catch {
-        return { ok: false, code: "auth_unavailable" };
-      }
-      return checked(completion);
-    },
-    erase: async (expected) =>
-      erased(
+
+    erase: async (expected) => {
+      const hadApple = state.identities.some(
+        (identity) => identity.provider === "apple",
+      );
+      return erased(
         await operate(expected, (proof, signal) =>
           transport.erase(proof, signal),
         ),
         "deleted",
-      ),
+        hadApple,
+      );
+    },
     unlink: async (provider, expected) =>
       erased(
         await operate(expected, (proof, signal) =>
           transport.unlink(provider, proof, signal),
         ),
         "unlinked",
+        provider === "apple",
       ),
     async logout() {
       const completion = await operate(undefined, (proof, signal) =>

@@ -117,7 +117,8 @@ fn online(row: PgRow, account: Uuid) -> Result<MeOnlineRow, MeError> {
 }
 fn daily(row: PgRow, now: i64) -> Result<MeDailyRow, MeError> {
     let primary = row.try_get("completed_us").map_err(db)?;
-    let (_, receipt) = crate::daily::export_receipt(&row, now).map_err(|_| MeError::Unavailable)?;
+    let (_, receipt) =
+        crate::daily::accepted_receipt(&row, now).map_err(|_| MeError::Unavailable)?;
     Ok(MeDailyRow {
         key: MeKey {
             primary,

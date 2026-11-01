@@ -17,7 +17,7 @@ pub use config::*;
 pub use http::*;
 pub use model::{PublishedDaily, ReplayError, ReplayEvidence, ReplayOutcome, ReplayVerifier};
 pub use postgres::PgDailyRepository;
-pub(crate) use postgres::export_receipt;
+pub(crate) use postgres::accepted_receipt;
 pub use rankings::*;
 pub use rankings_http::daily_rankings_router;
 pub use records::*;

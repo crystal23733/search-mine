@@ -1,4 +1,4 @@
-use super::http::{Context, account, base_routes, failure, no_store, set_cookie};
+use super::http::{Context, base_routes, failure, no_store, set_cookie};
 use super::*;
 use axum::{
     Json, Router,
@@ -8,7 +8,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{delete, get, post},
 };
-use liar_protocol::auth::{AuthErasure, AuthExport, AuthIdentity, AuthStart};
+use liar_protocol::auth::{AuthErasure, AuthIdentity, AuthStart};
 use std::sync::Arc;
 pub fn account_auth_router<
     S: AppleMaintenanceStore + 'static,
@@ -39,7 +39,6 @@ pub fn account_auth_router<
             "/api/v1/me/identities/{provider}",
             delete(unlink::<S, V, D, P>),
         )
-        .route("/api/v1/me/export", post(export::<S, V, D, P>))
         .route("/api/v1/me", delete(erase::<S, V, D, P>))
         .layer(DefaultBodyLimit::max(4096))
         .route(
@@ -181,28 +180,7 @@ async fn reauth<S: AccountStore, V: CredentialVault, D: SubjectDigester, P: OAut
         .await
         .unwrap_or_else(failure)
 }
-async fn export<S: AccountStore, V: CredentialVault, D: SubjectDigester, P: OAuthProvider>(
-    State(ctx): State<Arc<Context<S, V, D, P>>>,
-    headers: HeaderMap,
-    body: Result<Json<EmptyBody>, JsonRejection>,
-) -> Response {
-    let result = async {
-        let (_, auth) = authority(&ctx, &headers, true).await?;
-        let _ = body.map_err(|_| AuthError::Invalid)?;
-        let data = ctx.service.store.export(auth).await?;
-        Ok::<_, AuthError>(
-            Json(AuthExport {
-                account: account(&data.account),
-                created_at: data.created_at,
-                last_seen_at: data.last_seen_at,
-                identities: data.identities.into_iter().map(identity_dto).collect(),
-            })
-            .into_response(),
-        )
-    }
-    .await;
-    result.unwrap_or_else(failure)
-}
+
 fn erased_response(result: ErasureResult) -> Result<Response, AuthError> {
     let mut response = Json(AuthErasure {
         manual_apple_disconnect: result.manual_apple_disconnect,

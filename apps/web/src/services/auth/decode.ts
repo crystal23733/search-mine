@@ -2,7 +2,6 @@ import type {
   AuthAccount,
   AuthBootstrap,
   AuthErasure,
-  AuthExport,
   AuthIdentity,
   AuthProviderStatus,
   AuthStart,
@@ -118,23 +117,7 @@ export function decodeStart(value: unknown, provider: AuthProvider): AuthStart {
     return invalid();
   return { authorize_url: url.href };
 }
-export function decodeExport(value: unknown): AuthExport {
-  const v = object(value, [
-    "account",
-    "created_at",
-    "last_seen_at",
-    "identities",
-  ]);
-  const created_at = time(v.created_at),
-    last_seen_at = time(v.last_seen_at);
-  if (last_seen_at < created_at) return invalid();
-  return {
-    account: decodeAccount(v.account),
-    created_at,
-    last_seen_at,
-    identities: decodeIdentities(v.identities),
-  };
-}
+
 export function decodeErasure(value: unknown): AuthErasure {
   const v = object(value, ["manual_apple_disconnect"]);
   if (typeof v.manual_apple_disconnect !== "boolean") return invalid();

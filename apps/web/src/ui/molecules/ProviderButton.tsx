@@ -43,11 +43,13 @@ export function ProviderButton({
   const return_path =
     destination === "daily" ||
     destination === "friends" ||
-    destination === "settings"
+    destination === "settings" ||
+    destination === "me" ||
+    destination === "account"
       ? destination
       : intent === "login"
         ? "home"
-        : "settings";
+        : "account";
   return (
     <div class="provider-option">
       <Button

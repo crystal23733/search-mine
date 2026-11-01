@@ -23,7 +23,6 @@ pub use metrics::*;
 pub use model::*;
 pub use pg_aggregates::*;
 pub use pg_metrics::*;
-pub(crate) use pg_records::export_events;
 pub use policy::*;
 pub use postgres::*;
 pub(crate) use producers::{collect_daily, collect_online};

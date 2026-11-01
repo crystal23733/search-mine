@@ -87,6 +87,16 @@ render(
       },
       dailyRankings: async (...args) => (await getDailyApi()).rankings(...args),
       auth: account.auth,
+      me: {
+        overview: async (...args) =>
+          (await import("./services/me/http"))
+            .createMeHttp(account.auth, window.fetch.bind(window))
+            .overview(...args),
+        history: async (...args) =>
+          (await import("./services/me/http"))
+            .createMeHttp(account.auth, window.fetch.bind(window))
+            .history(...args),
+      },
       online: {
         latestResult: async (...args) =>
           (

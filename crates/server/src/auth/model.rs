@@ -129,6 +129,8 @@ pub enum ReturnPath {
     Friends,
     FriendsInvite(crate::room_code::RoomCode),
     Settings,
+    Me,
+    Account,
 }
 impl ReturnPath {
     pub fn as_str(self) -> &'static str {
@@ -137,6 +139,8 @@ impl ReturnPath {
             Self::Daily => "daily",
             Self::Friends | Self::FriendsInvite(_) => "friends",
             Self::Settings => "settings",
+            Self::Me => "me",
+            Self::Account => "account",
         }
     }
     pub fn parse(value: &str) -> Result<Self, AuthError> {
@@ -145,6 +149,8 @@ impl ReturnPath {
             "daily" => Ok(Self::Daily),
             "friends" => Ok(Self::Friends),
             "settings" => Ok(Self::Settings),
+            "me" => Ok(Self::Me),
+            "account" => Ok(Self::Account),
             _ => Err(AuthError::Invalid),
         }
     }

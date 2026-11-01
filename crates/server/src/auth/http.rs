@@ -152,7 +152,6 @@ pub fn disabled_auth_router() -> Router {
             "/api/v1/me/identities/{provider}",
             axum::routing::delete(unavailable),
         )
-        .route("/api/v1/me/export", post(unavailable))
         .route("/api/v1/auth/apple/notifications", post(unavailable))
         .route("/api/v1/auth/logout", post(unavailable))
         .layer(middleware::map_response(no_store))
@@ -377,6 +376,7 @@ async fn callback<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuth
 fn return_url(locale: &str, destination: ReturnPath) -> String {
     match destination {
         ReturnPath::Home => format!("/{locale}/"),
+        ReturnPath::Account => format!("/{locale}/me/account"),
         ReturnPath::FriendsInvite(code) => format!("/{locale}/friends?code={}", code.as_str()),
         _ => format!("/{locale}/{}", destination.as_str()),
     }

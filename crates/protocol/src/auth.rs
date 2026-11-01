@@ -44,7 +44,6 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         AuthLoginRequest::decl(config),
         AuthFailure::decl(config),
         AuthIdentity::decl(config),
-        AuthExport::decl(config),
         AuthErasure::decl(config),
     ]
 }
@@ -53,15 +52,6 @@ pub struct AuthIdentity {
     pub provider: String,
     #[ts(type = "number")]
     pub linked_at: i64,
-}
-#[derive(Debug, Serialize, TS)]
-pub struct AuthExport {
-    pub account: AuthAccount,
-    #[ts(type = "number")]
-    pub created_at: i64,
-    #[ts(type = "number")]
-    pub last_seen_at: i64,
-    pub identities: Vec<AuthIdentity>,
 }
 #[derive(Debug, Serialize, TS)]
 pub struct AuthErasure {

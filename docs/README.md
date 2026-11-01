@@ -1,6 +1,6 @@
 # 문서 안내
 
-현재 설계 변경은 [ADR0081 내 정보·파일 다운로드 제거](adr/0081-my-info-and-export-removal.md)와 [#176 검토](verification/176-my-info-design.md)를 따른다. #177 조회 API→#178 화면/구 export 제거를 구현하며 아래의 export 문서는 과거 구현 근거로 보존한다.
+현재 본인 정보는 [#177 조회 API](verification/177-my-info-read-api.md)와 [#178 내 정보 화면·파일 제공 제거](verification/178-my-info-pages.md)를 따른다. [ADR0081](adr/0081-my-info-and-export-removal.md)·[ADR0083](adr/0083-my-info-client-and-export-removal.md)이 현재 계약이며 아래 export 문서는 당시 구현/검증 근거로 보존한다.
 
 1. [제품 비전](product/01-vision.md)과 [PRD](product/16-PRD.md)로 범위·성공 기준을 읽는다.
 2. [설계 리뷰·요구 추적표](design/00-review-checklist.md)에서 승인할 제안을 확인한다.

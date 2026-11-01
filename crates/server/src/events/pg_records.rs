@@ -1,12 +1,5 @@
-use super::{
-    model::EventContent,
-    postgres::{db, policy},
-    *,
-};
-use liar_protocol::{
-    daily::DailyTrust,
-    privacy::{EventOpponent, ExportEventFact, ExportRecord},
-};
+use super::{model::EventContent, postgres::db, *};
+use liar_protocol::daily::DailyTrust;
 use sqlx::{Postgres, Row, Transaction, postgres::PgRow};
 use uuid::Uuid;
 
@@ -142,40 +135,7 @@ pub(super) async fn insert(
     stored.inserted = inserted;
     Ok(stored)
 }
-fn export(stored: StoredEvent) -> Result<ExportRecord, EventStoreError> {
-    let fact = match stored.event.content {
-        EventContent::Server(ServerFact::MatchEnd {
-            match_id,
-            opponent,
-            reason,
-        }) => ExportEventFact::MatchEnd {
-            match_id: match_id.uuid().to_string(),
-            opponent: match opponent {
-                OpponentKind::Human => EventOpponent::Human,
-                OpponentKind::Bot => EventOpponent::Bot,
-            },
-            reason,
-        },
-        EventContent::Server(ServerFact::DailyVerified {
-            completion_id,
-            date,
-            mistakes,
-            trust,
-        }) => ExportEventFact::DailyVerified {
-            completion_id: completion_id.uuid().to_string(),
-            date,
-            mistakes,
-            trust,
-        },
-        _ => return Err(EventStoreError::Unavailable),
-    };
-    Ok(ExportRecord::Event {
-        event_id: stored.event.event_id.uuid().to_string(),
-        occurred_at: stored.event.occurred_at,
-        received_at: stored.received_at,
-        fact,
-    })
-}
+
 pub(super) async fn metric_events(
     tx: &mut Transaction<'_, Postgres>,
     start: i64,
@@ -199,40 +159,6 @@ pub(super) async fn metric_events(
                 return Err(super::EventError::Invalid.into());
             }
             Ok(stored.event)
-        })
-        .collect()
-}
-pub(crate) async fn export_events(
-    tx: &mut Transaction<'_, Postgres>,
-    account: Uuid,
-    after: Option<Uuid>,
-    now: i64,
-) -> Result<Vec<ExportRecord>, EventStoreError> {
-    valid_timestamp(now).map_err(policy)?;
-    let mut query = sqlx::QueryBuilder::new("SELECT ");
-    let rows = query
-        .push(COLUMNS)
-        .push(" FROM product_events WHERE account_id=")
-        .push_bind(account)
-        .push(" AND (")
-        .push_bind(after)
-        .push("::uuid IS NULL OR id>")
-        .push_bind(after)
-        .push(") AND occurred_at>")
-        .push_bind(now - RAW_EVENT_SECONDS)
-        .push(" ORDER BY id LIMIT 51")
-        .build()
-        .fetch_all(&mut **tx)
-        .await
-        .map_err(db)?;
-    rows.iter()
-        .map(|row| {
-            let stored = hydrate(row)?;
-            raw_event_alive(stored.event.occurred_at(), now).map_err(policy)?;
-            if stored.received_at > now {
-                return Err(EventStoreError::Invalid);
-            }
-            export(stored)
         })
         .collect()
 }

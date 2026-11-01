@@ -1,4 +1,4 @@
-use liar_protocol::auth::{AuthAccount, AuthExport, AuthIdentity};
+use liar_protocol::me::{MeAccount, MeIdentity};
 
 #[test]
 fn login_request_has_one_rust_contract_with_an_optional_invitation_and_closed_fields() {
@@ -27,14 +27,12 @@ fn login_request_has_one_rust_contract_with_an_optional_invitation_and_closed_fi
 
 #[test]
 fn auth_epoch_seconds_agree_between_json_and_generated_types() {
-    let value = AuthExport {
-        account: AuthAccount {
-            id: "fixture-account".into(),
-            nickname: None,
-        },
+    let value = MeAccount {
+        id: "fixture-account".into(),
+        nickname: None,
         created_at: 1,
         last_seen_at: 253_402_300_799,
-        identities: vec![AuthIdentity {
+        identities: vec![MeIdentity {
             provider: "google".into(),
             linked_at: 2,
         }],

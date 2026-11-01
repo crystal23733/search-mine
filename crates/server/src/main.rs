@@ -7,7 +7,6 @@ use liar_server::events::{
 use liar_server::lobby::*;
 use liar_server::me::*;
 use liar_server::online::*;
-use liar_server::privacy::*;
 use liar_server::results::*;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
@@ -55,15 +54,10 @@ async fn serve() -> ServerResult {
             .map_err(|_| "Lobby limits are invalid")?;
         let result_config = load_result_config(|name| env::var(name).ok())
             .map_err(|_| "Result limits are invalid")?;
-        let privacy_config = load_privacy_config(|name| env::var(name).ok())
-            .map_err(|_| "Privacy limits are invalid")?;
         let daily_config = load_daily_config(|name| env::var(name).ok())
             .map_err(|_| "Daily limits are invalid")?;
         let daily_authorities = AuthorityRegistry::new(daily_config.authorities)
             .map_err(|_| "Daily capacity is invalid")?;
-        let privacy_authorities = AuthorityRegistry::new(privacy_config.authorities)
-            .map_err(|_| "Privacy capacity is invalid")?;
-        let export_workers = ExportWorkers::default();
         let me_workers = MeWorkers::default();
         let me_authorities =
             AuthorityRegistry::new(64).map_err(|_| "My info capacity is invalid")?;
@@ -148,11 +142,8 @@ async fn serve() -> ServerResult {
                     Arc::new(CombinedSessionInvalidator::new(
                         result_authorities.clone(),
                         Arc::new(CombinedSessionInvalidator::new(
-                            privacy_authorities.clone(),
-                            Arc::new(CombinedSessionInvalidator::new(
-                                me_authorities.clone(),
-                                daily_tickets.clone(),
-                            )),
+                            me_authorities.clone(),
+                            daily_tickets.clone(),
                         )),
                     )),
                 )),
@@ -205,22 +196,6 @@ async fn serve() -> ServerResult {
             result_config.requests,
         )
         .map_err(|_| "Result HTTP initialization failed")?;
-        let privacy = privacy_router(
-            Arc::new(PgGameExportReader::with_workers(
-                auth_pool.clone(),
-                auth_clock.clone(),
-                export_workers.clone(),
-            )),
-            sessions.clone(),
-            runtime.security.clone(),
-            PrivacyAuthentication {
-                authorities: privacy_authorities,
-                clock: auth_clock.clone(),
-                workers: export_workers,
-            },
-            privacy_config.requests,
-        )
-        .map_err(|_| "Privacy HTTP initialization failed")?;
         let me = me_router(
             Arc::new(PgMeReader::with_workers(
                 auth_pool.clone(),
@@ -262,7 +237,6 @@ async fn serve() -> ServerResult {
             .merge(ws)
             .merge(lobby)
             .merge(results)
-            .merge(privacy)
             .merge(me)
             .merge(daily)
             .merge(rankings)
@@ -270,7 +244,6 @@ async fn serve() -> ServerResult {
         disabled_auth_router()
             .merge(disabled_lobby_router())
             .merge(disabled_result_router())
-            .merge(disabled_privacy_router())
             .merge(disabled_me_router())
             .merge(disabled_daily_router())
     };

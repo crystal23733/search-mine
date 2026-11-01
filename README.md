@@ -1,20 +1,20 @@
 # Liar Sweeper · search-mine
 
-**2026-11-01 설계 변경:** [내 정보에서 전적·계정·설정·현재 동의 조회](docs/adr/0081-my-info-and-export-removal.md)를 제공하고 파일 다운로드는 제거하기로 했다. 현재 코드의 전환은 #177 조회 API→#178 화면 연결/파일 기능 제거로 진행한다. 아래 내보내기 설명은 전환 전 구현 이력이다.
+**내 정보:** `/{locale}/me`에서 최근90일 전적을 확인하고, `/me/history`·`/me/account`·`/me/privacy`에서 기록·계정·현재 동의를 관리합니다. [조회 API 검증 #177](docs/verification/177-my-info-read-api.md)과 [화면·파일 제거 검증 #178](docs/verification/178-my-info-pages.md)을 확인하세요. 개인 데이터 파일 다운로드와 구 export/replay API는 제거하며, 이 기기 설정은 로그인 없이 `/settings`에서 사용합니다.
 
 상대 숫자를 속이고, 논리로 간파해 반격하는 웹 1:1 지뢰찾기 프로젝트입니다. PC·모바일, 최소 정보 OAuth 계정, 봇·친구 대전, 데일리와 8언어 지원을 설계합니다.
 
-**현재 상태: M0/M1과 #4~14·#43~46·#16~17 병합 완료. 빠른/친구 대전·재접속·영속 장애 복구·본인 최신 결과와 #18 통합 출구를 완료했고 #109 replay 검증과 #112 데일리 첫 완료 PostgreSQL 저장을 완료했고 #114 본인 게임기록 내보내기를 병합·종료했고 #116 인증 데일리 제출 API를 병합·종료했고 #118 시간 티켓/하트비트 기반을 병합·종료했고 #120 본인 export·서버 시간 영속화를 병합·종료했고 #122 인증 시간 시작·하트비트·제출 HTTP를 병합·종료했고 #124 공개 두 순위와 #126 accepted 규칙 초기화를 병합·종료했고 #128 typed daily client·설정의 명시적 대기 제출을 병합·종료했고 #130 로그인 없는 두 순위 화면과 #132 공식 도전·본인 결과·검증 공유를 연결했습니다.** [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
+**현재 상태:** 코어·웹 shell·OAuth 계정·온라인 대전/재접속·영속 복구·공식 데일리/순위/공유·필수 지표 기반과 내 정보 화면을 구현했습니다. 실제 제공자/CMP 운영 검수·외부 설정과 관찰/출시 조건은 백로그에서 구분합니다. [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
 ## 먼저 읽을 문서
 
 필수 이벤트의 원본 transaction 수집·원시30일 보존·NSM/D7·익명13개월 보존·내부 운영 조회는 [#145의 #20 통합 감사](docs/verification/145-anonymous-metrics-retention-and-operations.md)까지 완료했다. 실제 사용 지표 달성·선택 수집·운영 장비 실측은 별도다.
 
-[#174 인증 세션별 동의 기반](docs/verification/174-session-consent-authority.md)은 서버 검증 포트·현재 revision/목적별 철회·PostgreSQL 저장 경계다. main/HTTP에는 연결하지 않으며 실제 CMP·본인 동의 내보내기 HTTP·선택 이벤트 저장은 #21의 필수 후속이다. 실행 앱의 선택 분석/광고는 계속 차단한다.
+[#174 인증 세션별 동의 기반](docs/verification/174-session-consent-authority.md)은 서버 검증 포트·현재 revision/목적별 철회·PostgreSQL 저장 경계다. 현재 동의 view는 #177/#178의 내 정보에서 읽는다. 검증/갱신 HTTP·실제 CMP·선택 이벤트 저장은 #21의 필수 후속이다. 실행 앱의 선택 분석/광고는 계속 차단한다.
 
 [#134 이벤트 도메인 계약](docs/verification/134-event-domain-contracts.md)은 목적별 동의·재전송 동일성·보존 경계와 bounded NSM/D7 계산을 Rust로 정의한다. [#138 자동 필수 수집](docs/verification/138-atomic-essential-event-producers.md)과 [#140 원시 물리 보존](docs/verification/140-bounded-raw-event-retention.md)을 연결했고 비필수 수집은 #21의 실제 동의 연결 전까지 켜지 않는다.
 
-[#136 필수 이벤트 저장·본인 권리](docs/verification/136-essential-event-store-and-rights.md)는 committed 서버 기록의 최소 PG 저장과 기존 명시 내보내기의 event 스트림을 제공한다. 선택 이벤트 저장은 차단한다.
+[#136 필수 이벤트 저장·본인 권리](docs/verification/136-essential-event-store-and-rights.md)는 committed 서버 기록의 최소 PG 저장·보존·삭제를 제공한다. 당시 event 파일 제공은 #178에서 제거한다. 선택 이벤트 저장은 차단한다.
 
 - [PRD: 범위와 인수 조건](docs/product/16-PRD.md)
 - [설계 검토·승인 항목·요구 추적표](docs/design/00-review-checklist.md)

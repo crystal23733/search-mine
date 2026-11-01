@@ -38,8 +38,8 @@ mod latest_results;
 mod main_observation;
 #[path = "postgres/me.rs"]
 mod me;
-#[path = "postgres/privacy.rs"]
-mod privacy;
+#[path = "postgres/personal.rs"]
+mod personal;
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn invitation_transactions_preserve_canonical_codes_consume_once_and_expire_without_accounts()

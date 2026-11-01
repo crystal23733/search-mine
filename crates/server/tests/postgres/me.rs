@@ -8,7 +8,7 @@ impl AuthClock for Clock {
         self.0.load(Ordering::SeqCst)
     }
 }
-fn owner(value: liar_server::privacy::ExportSession) -> MeSession {
+fn owner(value: liar_server::me::MeSession) -> MeSession {
     MeSession {
         account: value.account,
         revision: value.revision,
@@ -20,12 +20,12 @@ fn owner(value: liar_server::privacy::ExportSession) -> MeSession {
 async fn me_pages_are_self_only_newest_first_and_do_not_require_nickname_or_recent_reauthentication()
  {
     let pool = auth_pool().await;
-    let own = owner(super::privacy::participant(&pool, 1000).await);
-    let other = owner(super::privacy::participant(&pool, 1000).await);
+    let own = owner(super::personal::participant(&pool, 1000).await);
+    let other = owner(super::personal::participant(&pool, 1000).await);
     for i in 1..=21 {
-        super::privacy::seed_online(&pool, own.account, Uuid::from_u128(i), 1000 + i as i64).await;
+        super::personal::seed_online(&pool, own.account, Uuid::from_u128(i), 1000 + i as i64).await;
     }
-    super::privacy::seed_online(&pool, other.account, Uuid::from_u128(22), 1099).await;
+    super::personal::seed_online(&pool, other.account, Uuid::from_u128(22), 1099).await;
     let reader = PgMeReader::new(pool.clone(), Arc::new(Clock(AtomicI64::new(1500))));
     let read = reader.read(own, MeQuery::Overview).await.unwrap();
     let MePayload::Overview(view) = read.payload else {
@@ -84,8 +84,8 @@ fn history(kind: MeKind, opponent: MeOpponentFilter) -> MeQuery {
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn me_rejects_foreign_changed_revoked_and_expired_sessions_without_partial_data() {
     let pool = auth_pool().await;
-    let own = owner(super::privacy::participant(&pool, 1000).await);
-    let other = owner(super::privacy::participant(&pool, 1000).await);
+    let own = owner(super::personal::participant(&pool, 1000).await);
+    let other = owner(super::personal::participant(&pool, 1000).await);
     let clock = Arc::new(Clock(AtomicI64::new(1500)));
     let reader = PgMeReader::new(pool.clone(), clock.clone());
     for wrong in [
@@ -141,10 +141,10 @@ async fn me_rejects_foreign_changed_revoked_and_expired_sessions_without_partial
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn me_online_filters_unknown_stats_exact_retention_and_fractional_cursor_order() {
     let pool = auth_pool().await;
-    let own = owner(super::privacy::participant(&pool, 1000).await);
-    let other = owner(super::privacy::participant(&pool, 1000).await);
+    let own = owner(super::personal::participant(&pool, 1000).await);
+    let other = owner(super::personal::participant(&pool, 1000).await);
     for i in 1..=23 {
-        super::privacy::seed_online(&pool, own.account, Uuid::from_u128(i), 1000).await;
+        super::personal::seed_online(&pool, own.account, Uuid::from_u128(i), 1000).await;
     }
     sqlx::query("UPDATE online_match_results SET recorded_at=recorded_at+(id::text::uuid= $1)::int*interval '1 microsecond',retention_started_at=to_timestamp(1000) WHERE id=$1").bind(Uuid::from_u128(1)).execute(&pool).await.unwrap();
     sqlx::query(
@@ -203,9 +203,9 @@ async fn me_online_filters_unknown_stats_exact_retention_and_fractional_cursor_o
             assert_eq!(last.items.len(), 3);
         }
     }
-    super::privacy::fresh(
+    super::personal::fresh(
         &pool,
-        liar_server::privacy::ExportSession {
+        liar_server::me::MeSession {
             account: own.account,
             revision: own.revision,
             hash: own.hash,
@@ -230,7 +230,7 @@ async fn me_daily_uses_accepted_receipts_and_session_current_consent_without_exp
     use liar_server::{consent::*, daily::*};
     let pool = auth_pool().await;
     let at = 1791331200 + 60;
-    let own = owner(super::privacy::participant(&pool, at).await);
+    let own = owner(super::personal::participant(&pool, at).await);
     let clock = Arc::new(Clock(AtomicI64::new(at)));
     let daily = PgDailyRepository::new(pool.clone(), clock.clone());
     daily.publish(super::daily::definition()).await.unwrap();
@@ -301,7 +301,7 @@ async fn me_daily_uses_accepted_receipts_and_session_current_consent_without_exp
         assert!(!text.contains(excluded));
     }
     // A verified-time receipt is created through the real immutable submission path.
-    let timed = owner(super::privacy::participant(&pool, at).await);
+    let timed = owner(super::personal::participant(&pool, at).await);
     PgAuthStore::new(pool.clone())
         .nickname(timed.account, Nickname::parse("Timed player").unwrap())
         .await
@@ -397,7 +397,7 @@ async fn waiting(pool: &sqlx::PgPool, pid: i32) {
 async fn me_waiting_for_an_account_lock_resamples_time_and_rejects_revocation() {
     let pool = auth_pool().await;
     for change in 0..5 {
-        let own = owner(super::privacy::participant(&pool, 1000).await);
+        let own = owner(super::personal::participant(&pool, 1000).await);
         let clock = Arc::new(Clock(AtomicI64::new(1500)));
         let (single, pid) = single(&pool).await;
         let reader = PgMeReader::new(single.clone(), clock.clone());
@@ -459,7 +459,7 @@ async fn me_waiting_for_an_account_lock_resamples_time_and_rejects_revocation() 
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn me_deadlines_cancellation_sql_failure_and_capacity_never_report_empty_success() {
     let pool = auth_pool().await;
-    let own = owner(super::privacy::participant(&pool, 1000).await);
+    let own = owner(super::personal::participant(&pool, 1000).await);
     let (single, pid) = single(&pool).await;
     let reader = Arc::new(PgMeReader::new(
         single.clone(),
@@ -537,9 +537,9 @@ async fn me_deadlines_cancellation_sql_failure_and_capacity_never_report_empty_s
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn me_future_rows_are_excluded_and_corrupt_own_results_never_become_zero_stats() {
     let pool = auth_pool().await;
-    let own = owner(super::privacy::participant(&pool, 1000).await);
+    let own = owner(super::personal::participant(&pool, 1000).await);
     let id = Uuid::new_v4();
-    super::privacy::seed_online(&pool, own.account, id, 1501).await;
+    super::personal::seed_online(&pool, own.account, id, 1501).await;
     let reader = PgMeReader::new(pool.clone(), Arc::new(Clock(AtomicI64::new(1500))));
     let MePayload::Overview(view) = reader.read(own, MeQuery::Overview).await.unwrap().payload
     else {

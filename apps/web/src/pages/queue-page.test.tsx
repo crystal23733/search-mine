@@ -30,22 +30,7 @@ async function queueScenario() {
     nickname: async () => {
       throw Error();
     },
-    gameExport: async (input) => ({
-      v: 1,
-      account_id: input.account_id,
-      stream: input.stream,
-      records: [],
-      next: null,
-    }),
-    replayExport: async (input) => ({
-      v: 1,
-      account_id: input.account_id,
-      completion_id: input.completion_id,
-      replay: null,
-    }),
-    export: async () => {
-      throw Error();
-    },
+
     erase: async () => {
       throw Error();
     },

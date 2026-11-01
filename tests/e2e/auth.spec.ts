@@ -10,7 +10,7 @@ import { registerPersonalResultTests } from "./helpers/personal-result";
 import { registerLatestResultTests } from "./helpers/latest-result";
 import { registerOnlineAbandonTests } from "./helpers/online-abandon";
 import { registerMyInfoApiTests } from "./helpers/my-info-api";
-import { registerPersonalExportTests } from "./helpers/personal-export";
+import { registerMyInfoTests } from "./helpers/my-info";
 import { registerDailyHttpTests } from "./helpers/daily-http";
 import { registerDailyTimingHttpTests } from "./helpers/daily-timing-http";
 import { registerDailyClientTests } from "./helpers/daily-client";
@@ -27,7 +27,7 @@ registerOnlineRecoveryTests(approve, login);
 registerPersonalResultTests(approve, login);
 registerLatestResultTests(approve, login);
 registerOnlineAbandonTests(approve, login);
-registerPersonalExportTests(approve, login);
+registerMyInfoTests(approve, login);
 registerMyInfoApiTests(approve, login);
 registerDailyHttpTests(approve, login);
 registerDailyTimingHttpTests(approve, login);
@@ -191,9 +191,9 @@ async function login(page: Page, provider = "Google", capture?: number) {
     });
   await page.getByRole("button", { name: "Save and skip tutorial" }).click();
   await expect(page).toHaveURL(`${origin}/en/`);
-  await page.goto("/en/settings");
+  await page.goto("/en/me/account");
   await expect(
-    page.getByRole("button", { name: "Download my data" }),
+    page.getByRole("button", { name: "Change nickname" }),
   ).toBeVisible();
 }
 test("four providers work through real SQL, HTTPS cookies and authoritative Unicode nickname on desktop/mobile", async ({
@@ -306,43 +306,51 @@ test("four providers work through real SQL, HTTPS cookies and authoritative Unic
     }
   }
 });
-test("export, linking, last-provider guard and unlink session revocation use production routes", async ({
+test("my account removes file routes, protects the last provider and revokes an unlinked session", async ({
   page,
   context,
 }) => {
   await approve(context);
   await login(page);
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download my data" }).click();
-  const artifact = await download;
-  const stream = await artifact.createReadStream();
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
-  const exported = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-  expect(Object.keys(exported).sort()).toEqual([
-    "account",
-    "games",
-    "replays",
-    "v",
-  ]);
-  expect(exported.v).toBe(1);
-  expect(exported.games).toEqual([]);
-  expect(exported.replays).toEqual([]);
-  expect(exported.account.account.nickname).toBe("é探偵");
-  expect(JSON.stringify(exported)).not.toMatch(
-    /subject|digest|credential|csrf|password|email/,
-  );
+  let downloads = 0;
+  page.on("download", () => downloads++);
+  const bootstrap = await page.request
+    .get("/api/v1/auth/bootstrap")
+    .then((r) => r.json());
+  for (const path of [
+    "/api/v1/me/export",
+    "/api/v1/me/games/export",
+    "/api/v1/me/games/replay",
+  ]) {
+    expect(
+      (
+        await page.request.post(path, {
+          headers: { Origin: origin, "x-liar-csrf": bootstrap.csrf },
+          data: {},
+        })
+      ).status(),
+    ).toBe(404);
+  }
+  expect(downloads).toBe(0);
   await expect(
     page.getByRole("button", { name: "Disconnect Google" }),
   ).toBeDisabled();
   await page.getByRole("button", { name: "Connect Apple" }).click();
-  await expect(page).toHaveURL(`${origin}/en/settings`);
+  await expect(page).toHaveURL(`${origin}/en/me/account`);
   await expect(
     page.getByRole("button", { name: "Disconnect Apple" }),
   ).toBeEnabled();
   await page.getByRole("button", { name: "Disconnect Apple" }).click();
   await page.getByRole("button", { name: "Disconnect and sign out" }).click();
-  await expect(page.locator("a.account-card")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Sign in", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Apple connection revocation may be retried for up to 24 hours. The requested local action is already complete.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   expect(
     (await context.cookies()).some((c) => c.name === "__Host-liar_session"),
   ).toBe(false);
@@ -355,11 +363,15 @@ test("signing out invalidates a second tab without persisting account credential
   await approve(context);
   await login(page);
   const peer = await context.newPage();
-  await peer.goto("/en/settings");
+  await peer.goto("/en/me/account");
   await expect(peer.getByText("é探偵", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(peer.locator("a.account-card")).toBeVisible();
-  await expect(page.locator("a.account-card")).toBeVisible();
+  await expect(
+    peer.getByRole("link", { name: "Sign in", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Sign in", exact: true }),
+  ).toBeVisible();
   expect(
     (await context.cookies()).some((c) => c.name === "__Host-liar_session"),
   ).toBe(false);
@@ -468,7 +480,7 @@ test("expired authentication requires a fresh provider proof and a new explicit 
   ).toBeVisible();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await page.getByRole("button", { name: "Confirm with Google" }).click();
-  await expect(page).toHaveURL(`${origin}/en/settings`);
+  await expect(page).toHaveURL(`${origin}/en/me/account`);
   await expect(page.getByText("é探偵", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Delete account" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
@@ -479,7 +491,9 @@ test("expired authentication requires a fresh provider proof and a new explicit 
   await page
     .getByRole("button", { name: "Delete account permanently" })
     .click();
-  await expect(page.locator("a.account-card")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Sign in", exact: true }),
+  ).toBeVisible();
   expect(
     (await page.request.get("/api/v1/auth/bootstrap").then((r) => r.json()))
       .account,

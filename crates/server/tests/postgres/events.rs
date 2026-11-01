@@ -1,7 +1,5 @@
 use super::*;
-use liar_protocol::{daily::DailyTrust, privacy::*};
 use liar_server::events::*;
-use liar_server::privacy::*;
 use std::sync::atomic::{AtomicI64, Ordering};
 struct Clock(i64);
 impl AuthClock for Clock {
@@ -16,9 +14,9 @@ fn id(value: Uuid) -> EventId {
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn committed_own_source_is_captured_as_a_minimal_essential_fact() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     let match_id = Uuid::new_v4();
-    super::privacy::seed_online(&pool, owner.account, match_id, 1000).await;
+    super::personal::seed_online(&pool, owner.account, match_id, 1000).await;
     let result = PgEventStore::new(pool.clone(), Arc::new(Clock(1001)))
         .capture(
             id(Uuid::new_v4()),
@@ -43,23 +41,9 @@ async fn committed_own_source_is_captured_as_a_minimal_essential_fact() {
     ] {
         assert!(!text.contains(secret));
     }
-    let reader = PgGameExportReader::new(pool.clone(), Arc::new(Clock(1001)));
-    let page = reader.page(owner, ExportStream::Event, None).await.unwrap();
-    assert_eq!(page.records.len(), 1);
-    let ExportRecord::Event {
-        event_id,
-        occurred_at,
-        received_at,
-        fact,
-    } = &page.records[0]
-    else {
-        panic!()
-    };
-    assert_eq!(event_id, &result.event.id().uuid().to_string());
-    assert_eq!((*occurred_at, *received_at), (1000, 1001));
-    assert!(
-        matches!(fact,ExportEventFact::MatchEnd{match_id: saved,opponent:EventOpponent::Bot,..} if saved==&match_id.to_string())
-    );
+    let fact = serde_json::to_value(&result.event).unwrap();
+    assert_eq!(fact["content"]["fact"]["match_id"], match_id.to_string());
+    assert_eq!(fact["content"]["fact"]["opponent"], "bot");
     close_auth_pool(pool).await;
 }
 fn online(account: Uuid, match_id: Uuid) -> EventSource {
@@ -78,9 +62,9 @@ async fn count(pool: &sqlx::PgPool) -> i64 {
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn concurrent_ids_and_source_retries_return_the_original_accepted_identity() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     let game = Uuid::new_v4();
-    super::privacy::seed_online(&pool, owner.account, game, 1000).await;
+    super::personal::seed_online(&pool, owner.account, game, 1000).await;
     let store = PgEventStore::new(pool.clone(), Arc::new(Clock(1001)));
     let event_id = id(Uuid::new_v4());
     let source = online(owner.account, game);
@@ -101,14 +85,14 @@ async fn concurrent_ids_and_source_retries_return_the_original_accepted_identity
     assert_eq!(retry.received_at, 1001);
     assert_eq!(count(&pool).await, 1);
     let second = Uuid::new_v4();
-    super::privacy::seed_online(&pool, owner.account, second, 1000).await;
+    super::personal::seed_online(&pool, owner.account, second, 1000).await;
     assert_eq!(
         store.capture(event_id, online(owner.account, second)).await,
         Err(EventStoreError::Conflict)
     );
-    let other = super::privacy::participant(&pool, 1000).await;
+    let other = super::personal::participant(&pool, 1000).await;
     let third = Uuid::new_v4();
-    super::privacy::seed_online(&pool, other.account, third, 1000).await;
+    super::personal::seed_online(&pool, other.account, third, 1000).await;
     assert_eq!(
         store.capture(event_id, online(other.account, third)).await,
         Err(EventStoreError::Conflict)
@@ -129,8 +113,8 @@ async fn concurrent_ids_and_source_retries_return_the_original_accepted_identity
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn missing_foreign_uncommitted_and_duplicate_seat_sources_cannot_be_claimed() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
-    let other = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
+    let other = super::personal::participant(&pool, 1000).await;
     let store = PgEventStore::new(pool.clone(), Arc::new(Clock(1000)));
     let game = Uuid::new_v4();
     assert_eq!(
@@ -174,7 +158,7 @@ async fn missing_foreign_uncommitted_and_duplicate_seat_sources_cannot_be_claime
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn daily_events_derive_committed_date_mistakes_trust_and_own_identity() {
     let pool = auth_pool().await;
-    let (owner, completion) = super::privacy::completed(&pool).await;
+    let (owner, completion) = super::personal::completed(&pool).await;
     let at = 1791331260;
     let store = PgEventStore::new(pool.clone(), Arc::new(Clock(at)));
     let source = EventSource::Daily {
@@ -183,20 +167,15 @@ async fn daily_events_derive_committed_date_mistakes_trust_and_own_identity() {
     };
     let saved = store.capture(id(Uuid::new_v4()), source).await.unwrap();
     assert_eq!(saved.event.occurred_at(), at);
-    let reader = PgGameExportReader::new(pool.clone(), Arc::new(Clock(at)));
-    let page = reader.page(owner, ExportStream::Event, None).await.unwrap();
-    assert!(
-        matches!(&page.records[0],ExportRecord::Event{fact:ExportEventFact::DailyVerified{completion_id,date,mistakes:0,trust:DailyTrust::VerifiedCompletion},..} if completion_id==&completion.to_string()&&date=="2026-10-07")
+    let fact = serde_json::to_value(&saved.event).unwrap();
+    assert_eq!(
+        fact["content"]["fact"]["completion_id"],
+        completion.to_string()
     );
-    let other = super::privacy::participant(&pool, at).await;
-    assert!(
-        reader
-            .page(other, ExportStream::Event, None)
-            .await
-            .unwrap()
-            .records
-            .is_empty()
-    );
+    assert_eq!(fact["content"]["fact"]["date"], "2026-10-07");
+    assert_eq!(fact["content"]["fact"]["mistakes"], 0);
+    assert_eq!(fact["content"]["fact"]["trust"], "verified_completion");
+    let other = super::personal::participant(&pool, at).await;
     assert_eq!(
         store
             .capture(
@@ -225,9 +204,9 @@ async fn daily_events_derive_committed_date_mistakes_trust_and_own_identity() {
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn original_thirty_days_future_time_and_deleted_accounts_never_extend_or_restore_raw() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     let game = Uuid::new_v4();
-    super::privacy::seed_online(&pool, owner.account, game, 1000).await;
+    super::personal::seed_online(&pool, owner.account, game, 1000).await;
     let source = online(owner.account, game);
     let event_id = id(Uuid::new_v4());
     let expiry = 1000 + RAW_EVENT_SECONDS;
@@ -237,24 +216,6 @@ async fn original_thirty_days_future_time_and_deleted_accounts_never_extend_or_r
     assert_eq!(
         expired.capture(event_id, source).await,
         Err(EventStoreError::Expired)
-    );
-    super::privacy::fresh(&pool, owner, expiry - 1).await;
-    assert_eq!(
-        PgGameExportReader::new(pool.clone(), Arc::new(Clock(expiry - 1)))
-            .page(owner, ExportStream::Event, None)
-            .await
-            .unwrap()
-            .records
-            .len(),
-        1
-    );
-    assert!(
-        PgGameExportReader::new(pool.clone(), Arc::new(Clock(expiry)))
-            .page(owner, ExportStream::Event, None)
-            .await
-            .unwrap()
-            .records
-            .is_empty()
     );
     for now in [999, -1, MAX_EVENT_TIMESTAMP + 1] {
         assert_eq!(
@@ -269,13 +230,14 @@ async fn original_thirty_days_future_time_and_deleted_accounts_never_extend_or_r
         );
     }
     let fresh_game = Uuid::new_v4();
-    super::privacy::seed_online(&pool, owner.account, fresh_game, expiry + 1).await;
+    super::personal::seed_online(&pool, owner.account, fresh_game, expiry + 1).await;
     assert_eq!(
         expired
             .capture(id(Uuid::new_v4()), online(owner.account, fresh_game))
             .await,
         Err(EventStoreError::Invalid)
     );
+    super::personal::fresh(&pool, owner, expiry - 1).await;
     PgAuthStore::new(pool.clone())
         .erase_authorized(SessionAuthority {
             account: owner.account,
@@ -289,21 +251,15 @@ async fn original_thirty_days_future_time_and_deleted_accounts_never_extend_or_r
         before.capture(event_id, source).await,
         Err(EventStoreError::Missing)
     );
-    assert!(
-        PgGameExportReader::new(pool.clone(), Arc::new(Clock(expiry)))
-            .page(owner, ExportStream::Event, None)
-            .await
-            .is_err()
-    );
     close_auth_pool(pool).await;
 }
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn essential_schema_is_immutable_and_has_no_optional_or_sensitive_payload() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     let game = Uuid::new_v4();
-    super::privacy::seed_online(&pool, owner.account, game, 1000).await;
+    super::personal::seed_online(&pool, owner.account, game, 1000).await;
     let saved = PgEventStore::new(pool.clone(), Arc::new(Clock(1001)))
         .capture(id(Uuid::new_v4()), online(owner.account, game))
         .await
@@ -368,76 +324,14 @@ async fn essential_schema_is_immutable_and_has_no_optional_or_sensitive_payload(
     assert_eq!(count(&pool).await, 1);
     close_auth_pool(pool).await;
 }
-#[tokio::test]
-#[ignore = "requires real PostgreSQL18; executed in database CI"]
-async fn own_event_pages_are_bounded_ordered_and_do_not_export_another_account() {
-    let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
-    let other = super::privacy::participant(&pool, 1000).await;
-    let store = PgEventStore::new(pool.clone(), Arc::new(Clock(1001)));
-    for n in 1..=52 {
-        let account = if n == 52 {
-            other.account
-        } else {
-            owner.account
-        };
-        let game = Uuid::new_v4();
-        super::privacy::seed_online(&pool, account, game, 1000).await;
-        store
-            .capture(id(Uuid::from_u128(n)), online(account, game))
-            .await
-            .unwrap();
-    }
-    let reader = PgGameExportReader::new(pool.clone(), Arc::new(Clock(1001)));
-    let first = reader.page(owner, ExportStream::Event, None).await.unwrap();
-    assert_eq!(first.records.len(), 50);
-    assert_eq!(first.next, Some(Uuid::from_u128(50).to_string()));
-    let second = reader
-        .page(owner, ExportStream::Event, Some(Uuid::from_u128(50)))
-        .await
-        .unwrap();
-    assert_eq!(second.records.len(), 1);
-    assert_eq!(second.next, None);
-    assert!(
-        reader
-            .page(owner, ExportStream::Event, Some(Uuid::from_u128(52)))
-            .await
-            .unwrap()
-            .records
-            .is_empty()
-    );
-    let wrong = ExportSession {
-        revision: Uuid::new_v4(),
-        ..owner
-    };
-    assert_eq!(
-        reader.page(wrong, ExportStream::Event, None).await,
-        Err(ExportError::Unauthorized)
-    );
-    assert_eq!(
-        PgGameExportReader::new(pool.clone(), Arc::new(Clock(1300)))
-            .page(owner, ExportStream::Event, None)
-            .await,
-        Err(ExportError::Reauth)
-    );
-    sqlx::query("DELETE FROM auth_sessions WHERE id=$1")
-        .bind(owner.revision)
-        .execute(&pool)
-        .await
-        .unwrap();
-    assert_eq!(
-        reader.page(owner, ExportStream::Event, None).await,
-        Err(ExportError::Unauthorized)
-    );
-    close_auth_pool(pool).await;
-}
+
 struct MovingClock(AtomicI64);
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn a_sealed_time_completion_produces_the_verified_time_fact_without_copying_replay() {
     use liar_server::daily::*;
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1791331260).await;
+    let owner = super::personal::participant(&pool, 1791331260).await;
     PgAuthStore::new(pool.clone())
         .nickname(owner.account, Nickname::parse("Timed Event").unwrap())
         .await
@@ -471,32 +365,20 @@ async fn a_sealed_time_completion_produces_the_verified_time_fact_without_copyin
         account: id(owner.account),
         completion_id: id(receipt.id),
     };
-    PgEventStore::new(pool.clone(), Arc::new(Clock(1791331260)))
+    let captured = PgEventStore::new(pool.clone(), Arc::new(Clock(1791331260)))
         .capture(id(Uuid::new_v4()), source)
         .await
         .unwrap();
-    let page = PgGameExportReader::new(pool.clone(), Arc::new(Clock(1791331260)))
-        .page(owner, ExportStream::Event, None)
-        .await
-        .unwrap();
-    assert!(matches!(
-        &page.records[0],
-        ExportRecord::Event {
-            fact: ExportEventFact::DailyVerified {
-                trust: DailyTrust::VerifiedTime,
-                ..
-            },
-            ..
-        }
-    ));
-    assert!(!serde_json::to_string(&page).unwrap().contains("replay"));
+    let fact = serde_json::to_value(&captured.event).unwrap();
+    assert_eq!(fact["content"]["fact"]["trust"], "verified_time");
+    assert!(!serde_json::to_string(&fact).unwrap().contains("replay"));
     close_auth_pool(pool).await;
 }
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn an_invalid_daily_receipt_cannot_be_relabelled_as_a_verified_time_event() {
     let pool = auth_pool().await;
-    let (owner, completion) = super::privacy::completed(&pool).await;
+    let (owner, completion) = super::personal::completed(&pool).await;
     sqlx::query("ALTER TABLE daily_completions DISABLE TRIGGER daily_completion_immutable")
         .execute(&pool)
         .await
@@ -506,10 +388,10 @@ async fn an_invalid_daily_receipt_cannot_be_relabelled_as_a_verified_time_event(
         .execute(&pool)
         .await
         .unwrap();
-    let reader = PgGameExportReader::new(pool.clone(), Arc::new(Clock(1791331260)));
+    let reader = liar_server::me::PgMeReader::new(pool.clone(), Arc::new(Clock(1791331260)));
     assert_eq!(
-        reader.page(owner, ExportStream::Daily, None).await,
-        Err(ExportError::Unavailable)
+        crate::personal::daily_history(&reader, owner).await,
+        Err(liar_protocol::me::MeError::Unavailable)
     );
     let captured = PgEventStore::new(pool.clone(), Arc::new(Clock(1791331260)))
         .capture(
@@ -576,9 +458,9 @@ pub(super) async fn blocked(pool: &sqlx::PgPool, pid: i32) {
 async fn blocked_capture_observes_deletion_clock_rollback_expiry_and_actual_io_timeout() {
     let pool = auth_pool().await;
     for change in 0..4 {
-        let owner = super::privacy::participant(&pool, 1000).await;
+        let owner = super::personal::participant(&pool, 1000).await;
         let game = Uuid::new_v4();
-        super::privacy::seed_online(&pool, owner.account, game, 1000).await;
+        super::personal::seed_online(&pool, owner.account, game, 1000).await;
         let (single, pid) = single_pool(&pool).await;
         let clock = Arc::new(MovingClock(AtomicI64::new(1000)));
         let store = PgEventStore::new(single.clone(), clock.clone());

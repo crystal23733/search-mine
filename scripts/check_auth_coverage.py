@@ -13,10 +13,11 @@ daily_domain = [f for f in server if f["filename"].replace("\\", "/").endswith((
 privacy_domain = [f for f in server if f["filename"].replace("\\", "/").endswith("/privacy/model.rs")]
 event_domain = [f for f in server if f["filename"].replace("\\", "/").endswith(("/events/model.rs", "/events/policy.rs", "/events/metrics.rs", "/events/metric_reader.rs", "/events/aggregates.rs"))]
 consent_domain = [f for f in server if f["filename"].replace("\\", "/").endswith("/consent/model.rs")]
-if len(domain) != 2 or len(match_domain) != 1 or len(lobby_domain) != 1 or len(result_domain) != 1 or len(daily_domain) != 7 or len(privacy_domain) != 1 or len(event_domain) != 5 or len(consent_domain) != 1 or not any(f["filename"].endswith("main.rs") for f in server) or not any(f["filename"].endswith("migrate.rs") for f in server) or not any(f["filename"].replace("\\", "/").endswith("/bin/metrics.rs") for f in server):
+me_domain = [f for f in server if f["filename"].replace("\\", "/").endswith("/me/model.rs")]
+if len(me_domain) != 1 or len(domain) != 2 or len(match_domain) != 1 or len(lobby_domain) != 1 or len(result_domain) != 1 or len(daily_domain) != 7 or len(privacy_domain) != 1 or len(event_domain) != 5 or len(consent_domain) != 1 or not any(f["filename"].endswith("main.rs") for f in server) or not any(f["filename"].endswith("migrate.rs") for f in server) or not any(f["filename"].replace("\\", "/").endswith("/bin/metrics.rs") for f in server):
     raise SystemExit("Coverage is missing domain or executable entry points")
 failed = False
-for name, files, minimum in [("Auth domain", domain, 95), ("Match domain", match_domain, 95), ("Lobby domain", lobby_domain, 95), ("Result domain", result_domain, 95), ("Daily domain", daily_domain, 95), ("Privacy domain", privacy_domain, 95), ("Event domain", event_domain, 95), ("Consent domain", consent_domain, 95), ("Whole server", server, 80)]:
+for name, files, minimum in [("Auth domain", domain, 95), ("Match domain", match_domain, 95), ("Lobby domain", lobby_domain, 95), ("Result domain", result_domain, 95), ("Daily domain", daily_domain, 95), ("Privacy domain", privacy_domain, 95), ("Event domain", event_domain, 95), ("Consent domain", consent_domain, 95), ("Me domain", me_domain, 95), ("Whole server", server, 80)]:
     count = sum(f["summary"]["lines"]["count"] for f in files)
     covered = sum(f["summary"]["lines"]["covered"] for f in files)
     percent = covered * 100 / count if count else 0

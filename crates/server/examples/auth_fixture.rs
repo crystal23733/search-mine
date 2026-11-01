@@ -13,6 +13,7 @@ use liar_core::{
 };
 use liar_server::auth::*;
 use liar_server::daily::*;
+use liar_server::me::*;
 use liar_server::privacy::*;
 use liar_server::results::{PgResultReader, ResultAuthentication, result_router};
 use liar_server::{lobby::*, online::*};
@@ -114,6 +115,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let privacy_authorities =
         AuthorityRegistry::new(32).map_err(|_| "fixture privacy authorities")?;
     let export_workers = ExportWorkers::default();
+    let me_workers = MeWorkers::default();
+    let me_authorities = AuthorityRegistry::new(64).map_err(|_| "My info capacity is invalid")?;
     let daily_authorities = AuthorityRegistry::new(32).map_err(|_| "fixture daily authorities")?;
     let initial_utc: i64 = std::env::var("LIAR_FIXTURE_UTC")
         .unwrap_or_else(|_| "1800000000".into())
@@ -139,7 +142,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 result_authorities.clone(),
                 Arc::new(CombinedSessionInvalidator::new(
                     privacy_authorities.clone(),
-                    daily_tickets.clone(),
+                    Arc::new(CombinedSessionInvalidator::new(
+                        me_authorities.clone(),
+                        daily_tickets.clone(),
+                    )),
                 )),
             )),
         ),
@@ -239,6 +245,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map_err(|_| "fixture result HTTP")?,
         )
         .merge(privacy_router(Arc::new(PgGameExportReader::with_workers(pool.clone(),clock.clone(),export_workers.clone())),sessions.clone(),security.clone(),PrivacyAuthentication {authorities:privacy_authorities,clock:clock.clone(),workers:export_workers},4).map_err(|_| "fixture privacy HTTP")?)
+        .merge(me_router(Arc::new(PgMeReader::with_workers(pool.clone(),clock.clone(),me_workers.clone())),sessions.clone(),security.clone(),MeAuthentication{authorities:me_authorities,clock:clock.clone(),workers:me_workers},4).map_err(|_| "fixture my info HTTP")?)
         .merge(daily_router(daily_repository,daily_workers,sessions.clone(),security,DailyAuthentication::new(daily_tickets,clock.clone()),4).map_err(|_| "fixture daily HTTP")?)
         .merge(rankings)
         .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)

@@ -34,4 +34,4 @@ MePort와 HTTP adapter는 Rust 원천의 Me DTO를 strict decode하고 응답의
 
 문서→행동 Red→Green→Refactor. 일반 self scope의 닉네임 없음/오래된 인증, game scope 유지, 전후 소유권/취소·역순 응답·필터/페이지·오프라인·계정 전환/삭제·null/0표본·noindex/no-store를 검증한다. 실제 PG/HTTPS의 내 정보 조회·8언어·360px/PC·키보드·개인 파일 다운로드0·세 구 API404, 기존 대전/데일리/공유 회귀와 최신 coverage gate를 확인한다. 실제 CMP/OAuth 운영 연결·admin·전역403/404·#83 해결로 보고하지 않는다.
 
-최초 CI의 `Network.getResponseBody` 오류를 조사하면서 브라우저 내 임시 fetch 관찰로 동일 필터의 요청2개를 발견했다. 실제 호출 stack은 filter 조회 뒤 mount 조회가 실행되는 경합을 확인했다. 임시 관찰·abort wrapper는 제거하고 원래 실제 응답 JSON·DOM·본인 소유권·공식 시간·비밀 제외 단언을 유지한다. 도메인 행동 Red→Green과 원래 HTTPS/최신 CI로 초기 조회 보완을 검증하며 timeout/retry/SW/브라우저 flags는 변경하지 않는다. #83 해결과 구분한다.
+최초 CI의 `Network.getResponseBody` 오류를 조사하면서 브라우저 내 임시 fetch 관찰로 동일 필터의 요청2개를 발견했다. 실제 호출 stack은 filter 조회 뒤 mount 조회가 실행되는 경합을 확인했다. 이 중복을 수정한 뒤에도 CI의 본문 디버깅 조회 오류가 남아, 테스트는 브라우저 안에서 해당 fetch 응답을 clone하여 같은 실제 JSON을 관찰한다. 원래 Promise/Response/취소를 앱에 그대로 반환하고 별도 재요청하지 않는다. 같은 요청 본문에 관찰1개만 허용하며 누락/중복/복사 읽기 실패도 실패다. 메모리 관찰은 화면당32개로 제한하고 제품에 포함하지 않는다. 상태·no-store·DOM·본인 소유권·공식 시간·비밀 제외 단언은 유지한다. 초기 조회의 제품 보완과 본문 관찰을 별도 검증하며 임시 stack/abort wrapper는 제거한다. timeout/retry/SW/브라우저 flags는 변경하지 않고 #83 해결과 구분한다.

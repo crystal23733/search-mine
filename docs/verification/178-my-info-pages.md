@@ -24,7 +24,7 @@
 | Rust workspace | 440 passed, 실DB156 ignored (별도 실행) |
 | PostgreSQL18 전체 통합 | 156 passed / 15.48초 |
 | 웹 전체 단위 | 초기 조회 경합 보완 후52파일·372 passed, line3444/3770=91.35% |
-| 실제 HTTPS auth 전체 | 초기 조회 경합 보완 후61 passed / 2.9분; 임시 관찰 없이 원래 응답 JSON 검사 |
+| 실제 HTTPS auth 전체 | 초기 조회·같은 응답 관찰 보완 후61 passed / 2.9분; 실제 JSON·단일 요청 관찰 검사 |
 | 최종 HTTPS 대상 | 4 passed / 18.5초; 8언어×4화면×1440/360px·긴 닉네임·키보드·다운로드0·구 API404, 닉네임 전/301초 경과 조회, 보류 응답 후 peer logout, Apple 안내 |
 | 정적/생성 검사 | fmt·clippy·WASM check·생성 TS freshness·Yarn format/typecheck/lint/build 통과 |
 | 문서 | 225 Markdown·제품21·설계18·시나리오36, Mermaid35/오류0 (최종 CI로 다시 확인) |
@@ -37,6 +37,10 @@ source60287d1 / PR181 / Product41315556086의 Rust440 passed/156 ignored·실PG1
 
 기존 #83 mobile two-tab의224행 load10000ms는 최초·retry1 모두 실패했다. 새 daily history1440도 retry1에서 `Network.getResponseBody` 본문 미보존으로 실패했고 MyInfo1440은 최초 같은 오류 뒤 retry에서 통과했다. 원본 로그·trace4·error context·probe11/native11(비교8개 포함)·layout을 `.tmp/me178-first-ci-*`에 보존했다. 별도 network-inspection 비교8개/57.8초 통과를 제품 설정의 해결 근거로 사용하지 않는다.
 
-같은 trace에서 정상 표시된 overview 응답에도200/ERR_ABORTED가 있어 진단 기록만으로 앱의 본문 수신 실패를 추정하지 않았다. 임시 브라우저 fetch 복사본 관찰8개/34.9초 통과 뒤, 정확한 요청 연결을 위해 관찰1개 조건을 추가하자 전체auth에서34 passed/1 failed/26 not run으로 중복을 발견했다. 추가 단독 호출 stack은 filter 조회 뒤 초기 mount effect의 start가 같은 요청을 취소·재실행하는 순서를 확인했다. controller 행동 검사에서 실제2회 요청 Red를 재현하고 [ADR0083](../adr/0083-my-info-client-and-export-removal.md)의 idle 전용 mount로 수정했다. 임시 복사본/abort wrapper는 전부 제거하고 원래 응답 JSON·DOM·본인 기록·공식 시간·비밀 제외 단언을 유지한다. 기존 DB의 불변 publication 시각과 새 fixture 초기 Clock 충돌로 발생한 별도503은 본문 오류 재현으로 계산하지 않는다. 최종 검증은 새 격리 DB와 원래 HTTPS 검사/최신 CI로 확인한다. timeout/retry/SW/브라우저 flags는 변경하지 않았다.
+같은 trace에서 정상 표시된 overview 응답에도200/ERR_ABORTED가 있어 진단 기록만으로 앱의 본문 수신 실패를 추정하지 않았다. 실제 브라우저 호출 관찰은 filter 조회 뒤 초기 mount effect가 같은 요청을 취소·재실행하는 순서를 확인했다. controller 행동 검사에서 실제2회 요청 Red를 재현하고 [ADR0083](../adr/0083-my-info-client-and-export-removal.md)의 idle 전용 mount로 수정했다. 초기 조회 경합 보완 후 controller6개·웹 전체372개와 원래 응답 JSON을 사용한 HTTPS auth61개/2.9분이 통과했다.
 
-보완 후 controller6개·웹 전체372개와 새 전용 DB의 실제 HTTPS auth61개/2.9분을 통과했다. 전적·completion-only/verified-time·8언어·PC/mobile·계정 변경/삭제·세션 복구를 원래 검사로 실행했고 임시 진단의 제품/테스트 잔존이 없음을 검색했다. format/typecheck/lint/build·문서225/Mermaid35오류0도 통과했다. 최신 소스 전체 CI의 결과와 #83 한계는 PR181에 별도 기록한다.
+그러나 sourcebcb8397 / Product41450727961에서는97 passed/1 failed/1 flaky/26 not run(6.3분)으로 전적 CDP 본문 조회 오류가 재발했다. 기존 #83은 첫 시도 통과했고, 이 결과를 원인 해결로 표현하지 않는다. 로그·trace2·probe10/native10(비교8개 포함)·layout·실측 JSON을 `.tmp/me178-final-ci-*`에 보존했다. 별도 비교8개/48.6초도 제품 검사와 구분한다.
+
+최종 E2E는 브라우저 안에서 같은 fetch 응답의 복사본을 읽어 JSON을 확인하고 원래 Promise/Response/취소를 앱에 그대로 반환한다. 별도 재요청하지 않으며 같은 요청 본문의 관찰1개만 허용한다. 메모리32개 한도·누락/중복/읽기 실패 거절·status/no-store·DOM·본인 기록·completion-only/verified-time·비밀 제외 단언을 유지한다. 이 관찰 코드는 테스트 전용이고 임시 stack/abort wrapper는 제거했다. 제품의 초기 조회 보완과 관찰 보완을 함께 전체 HTTPS/최신 CI로 검증하며 timeout/retry/SW/브라우저 flags는 변경하지 않는다. 기존 DB의 불변 publication 시각과 새 fixture Clock 충돌로 발생한 별도503은 본문 오류 재현으로 계산하지 않는다. 최신 결과와 #83 한계는 PR181에 별도 기록한다.
+
+두 보완을 함께 적용한 새 전용 DB의 로컬 HTTPS auth61개/2.9분이 통과했다. typecheck/lint/format·문서225/Mermaid35오류0도 통과했다. CI의 전체 브라우저/최신 head 결과와 이 로컬 실행을 구분한다.

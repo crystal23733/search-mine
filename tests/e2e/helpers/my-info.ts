@@ -1,10 +1,8 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { mkdir, readFile } from "node:fs/promises";
-import type {
-  MeHistory,
-  AuthBootstrap,
-} from "../../../packages/protocol/src/index";
+import type { AuthBootstrap } from "../../../packages/protocol/src/index";
 import { advance, stream } from "./online-quick";
+import { observeMeHistory, observedMeHistory } from "./me-history-observation";
 type Approve = (context: BrowserContext) => Promise<void>;
 type Login = (page: Page) => Promise<void>;
 const origin = "https://localhost:8443";
@@ -25,6 +23,7 @@ export function registerMyInfoTests(approve: Approve, login: Login) {
       try {
         await approve(a);
         await approve(b);
+        await observeMeHistory(a);
         const one = await a.newPage(),
           two = await b.newPage();
         await login(one);
@@ -150,7 +149,7 @@ export function registerMyInfoTests(approve: Approve, login: Login) {
           const response = await received;
           expect(response.status()).toBe(200);
           expect(response.headers()["cache-control"]).toBe("no-store");
-          const value = (await response.json()) as MeHistory;
+          const value = await observedMeHistory(one, response);
           expect(value.total).toBe(1);
           expect(value.items).toHaveLength(1);
           expect(value.items[0].kind).toBe("online");

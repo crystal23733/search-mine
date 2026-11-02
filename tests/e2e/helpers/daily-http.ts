@@ -1,13 +1,13 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { advance } from "./online-quick";
+import { observeMeHistory, observedMeHistory } from "./me-history-observation";
 import type {
   AuthBootstrap,
   DailyReplay,
   DailyView,
   DailyStep,
   LocalInput,
-  MeHistory,
 } from "../../../packages/protocol/src/index";
 type Approve = (context: BrowserContext) => Promise<void>;
 type Login = (page: Page) => Promise<void>;
@@ -23,6 +23,7 @@ export function registerDailyHttpTests(approve: Approve, login: Login) {
       });
       try {
         await approve(context);
+        await observeMeHistory(context);
         const page = await context.newPage();
         await login(page);
         const bootstrap = (await page.request
@@ -153,7 +154,7 @@ export function registerDailyHttpTests(approve: Approve, login: Login) {
           const response = await waiting;
           expect(response.status()).toBe(200);
           expect(response.headers()["cache-control"]).toBe("no-store");
-          const value = (await response.json()) as MeHistory;
+          const value = await observedMeHistory(page, response);
           expect(value.total).toBe(1);
           expect(value.items).toHaveLength(1);
           expect(value.items[0]).toMatchObject({

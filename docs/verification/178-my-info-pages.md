@@ -44,3 +44,7 @@ source60287d1 / PR181 / Product41315556086의 Rust440 passed/156 ignored·실PG1
 최종 E2E는 브라우저 안에서 같은 fetch 응답의 복사본을 읽어 JSON을 확인하고 원래 Promise/Response/취소를 앱에 그대로 반환한다. 별도 재요청하지 않으며 같은 요청 본문의 관찰1개만 허용한다. 메모리32개 한도·누락/중복/읽기 실패 거절·status/no-store·DOM·본인 기록·completion-only/verified-time·비밀 제외 단언을 유지한다. 이 관찰 코드는 테스트 전용이고 임시 stack/abort wrapper는 제거했다. 제품의 초기 조회 보완과 관찰 보완을 함께 전체 HTTPS/최신 CI로 검증하며 timeout/retry/SW/브라우저 flags는 변경하지 않는다. 기존 DB의 불변 publication 시각과 새 fixture Clock 충돌로 발생한 별도503은 본문 오류 재현으로 계산하지 않는다. 최신 결과와 #83 한계는 PR181에 별도 기록한다.
 
 두 보완을 함께 적용한 새 전용 DB의 로컬 HTTPS auth61개/2.9분이 통과했다. typecheck/lint/format·문서225/Mermaid35오류0도 통과했다. CI의 전체 브라우저/최신 head 결과와 이 로컬 실행을 구분한다.
+
+source1f952d2 / Product41452943352에서 본문 관찰은 통과했으나 계정 교체 검사의 오래된 `toBeDisabled` 기대가 실패했다(120 passed/1 failed/1 flaky/3 not run,15.7분). 승인된 동작은 권한 상실 시 확인 폼 제거다. 테스트를 working 순간의 비활성 버튼 대신 소유권 거절 피드백·확인창/버튼0개·DELETE0회·별도 유효 세션에서 이전/새 계정 모두 보존으로 보완한다. #83은 첫 실패 후 재시도에서 통과했다. 원본 로그·최초/재시도 trace·비교 진단은 `.tmp/me178-latest-ci-*`에 보존했다. 최신 검사 없이 이 실행을 전체 통과로 보고하지 않는다.
+
+계정 교체의 최종 검사는 숨겨진 확인창/버튼까지 제거되는 조건으로 실제 HTTPS5회/8.8초를 통과했다. typecheck/lint/format·문서/Mermaid 검사도 통과했다. 제품 변경이나 timeout/retry 완화 없이 승인된 완료 상태를 검사한다.

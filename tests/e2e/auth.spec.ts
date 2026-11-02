@@ -384,6 +384,10 @@ test("a cookie account switch cannot delete the account named in a stale confirm
 }) => {
   await approve(context);
   await login(page);
+  const accountA = (
+    await page.request.get("/api/v1/auth/bootstrap").then((r) => r.json())
+  ).account;
+  const cookiesA = await context.cookies();
   await page.getByRole("button", { name: "Delete account" }).click();
   const other = await browser.newContext({
     baseURL: origin,
@@ -396,6 +400,7 @@ test("a cookie account switch cannot delete the account named in a stale confirm
     const accountB = (
       await (await otherPage.request.get("/api/v1/auth/bootstrap")).json()
     ).account;
+    expect(accountB.id).not.toBe(accountA.id);
     await context.addCookies([
       (await other.cookies()).find((c) => c.name === "__Host-liar_session")!,
     ]);
@@ -411,13 +416,41 @@ test("a cookie account switch cannot delete the account named in a stale confirm
       .getByRole("button", { name: "Delete account permanently" })
       .click();
     await expect(
-      page.getByRole("button", { name: "Delete account permanently" }),
-    ).toBeDisabled();
+      page.getByText(
+        "Check the input or refresh your account status before trying again.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole("dialog", { includeHidden: true })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByRole("button", {
+        name: "Delete account permanently",
+        includeHidden: true,
+      }),
+    ).toHaveCount(0);
     expect(deletions).toBe(0);
     expect(
       (await (await otherPage.request.get("/api/v1/auth/bootstrap")).json())
         .account.id,
     ).toBe(accountB.id);
+    const preserved = await browser.newContext({
+      baseURL: origin,
+      ignoreHTTPSErrors: true,
+    });
+    try {
+      await preserved.addCookies(cookiesA);
+      expect(
+        (
+          await preserved.request
+            .get("/api/v1/auth/bootstrap")
+            .then((r) => r.json())
+        ).account.id,
+      ).toBe(accountA.id);
+    } finally {
+      await preserved.close();
+    }
   } finally {
     await other.close();
   }

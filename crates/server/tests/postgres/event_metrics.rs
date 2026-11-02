@@ -12,7 +12,7 @@ fn id(value: Uuid) -> EventId {
 }
 async fn normal(pool: &sqlx::PgPool, account: Uuid, at: i64) {
     let game = Uuid::new_v4();
-    super::privacy::seed_online(pool, account, game, at).await;
+    super::personal::seed_online(pool, account, game, at).await;
     PgEventStore::new(pool.clone(), Arc::new(Clock(at)))
         .capture(
             id(Uuid::new_v4()),
@@ -34,7 +34,7 @@ async fn authoritative_week_and_d7_use_the_same_normal_history() {
         .initialize()
         .await
         .unwrap();
-    let owner = super::privacy::participant(&pool, start).await;
+    let owner = super::personal::participant(&pool, start).await;
     normal(&pool, owner.account, start + 10).await;
     normal(&pool, owner.account, start + 20).await;
     normal(&pool, owner.account, start + 7 * 86400 + 10).await;
@@ -79,7 +79,7 @@ async fn old_history_gap_is_incomplete_and_an_earlier_source_proves_nonmembershi
     let cohort = UtcDay::parse("2026-10-05").unwrap();
     let at = cohort.start();
     initialized(&pool, at).await;
-    let old = super::privacy::participant(&pool, at - 100 * 86400).await;
+    let old = super::personal::participant(&pool, at - 100 * 86400).await;
     normal(&pool, old.account, at + 10).await;
     let now = at + 8 * 86400;
     assert_eq!(
@@ -88,7 +88,7 @@ async fn old_history_gap_is_incomplete_and_an_earlier_source_proves_nonmembershi
     );
     // The old retained source is evidence of nonmembership even when its raw has expired.
     let prior = Uuid::new_v4();
-    super::privacy::seed_online(&pool, old.account, prior, at - 40 * 86400).await;
+    super::personal::seed_online(&pool, old.account, prior, at - 40 * 86400).await;
     let report = reader(&pool, now).d7(cohort).await.unwrap();
     assert_eq!(
         (report.sample_size, report.retained, report.rate()),
@@ -176,10 +176,10 @@ async fn only_normal_human_and_bot_games_count_and_d7_waits_for_the_entire_retur
     let day = UtcDay::parse("2026-10-05").unwrap();
     let at = day.start();
     initialized(&pool, at).await;
-    let a = super::privacy::participant(&pool, at).await;
-    let b = super::privacy::participant(&pool, at).await;
+    let a = super::personal::participant(&pool, at).await;
+    let b = super::personal::participant(&pool, at).await;
     let game = Uuid::new_v4();
-    super::privacy::seed_online(&pool, a.account, game, at + 1).await;
+    super::personal::seed_online(&pool, a.account, game, at + 1).await;
     sqlx::query(
         "UPDATE online_match_players SET account_id=$2,is_bot=false WHERE match_id=$1 AND seat=1",
     )
@@ -202,7 +202,7 @@ async fn only_normal_human_and_bot_games_count_and_d7_waits_for_the_entire_retur
     }
     normal(&pool, a.account, at + 2).await;
     let aborted = Uuid::new_v4();
-    super::privacy::seed_online(&pool, b.account, aborted, at + 3).await;
+    super::personal::seed_online(&pool, b.account, aborted, at + 3).await;
     sqlx::query("UPDATE online_match_results SET reason='forfeit' WHERE id=$1")
         .bind(aborted)
         .execute(&pool)
@@ -311,7 +311,7 @@ async fn clocks_and_corrupt_sources_are_never_turned_into_successful_zero() {
             Err(MetricReadError::Policy(EventError::Invalid))
         );
     }
-    let owner = super::privacy::participant(&pool, at).await;
+    let owner = super::personal::participant(&pool, at).await;
     normal(&pool, owner.account, at + 10).await;
     assert_eq!(
         reader(&pool, at + 9).weekly(day).await,
@@ -339,7 +339,7 @@ async fn repeatable_read_keeps_raw_and_first_proof_consistent_during_account_del
     let day = UtcDay::parse("2026-10-05").unwrap();
     let at = day.start();
     initialized(&pool, at).await;
-    let owner = super::privacy::participant(&pool, at).await;
+    let owner = super::personal::participant(&pool, at).await;
     normal(&pool, owner.account, at + 1).await;
     let (single, pid) = super::events::single_pool(&pool).await;
     let mut held = pool.begin().await.unwrap();
@@ -434,7 +434,7 @@ async fn raw_and_history_queries_detect_the_extra_row_instead_of_truncating_coun
     let day = UtcDay::parse("2026-10-05").unwrap();
     let at = day.start();
     initialized(&pool, at).await;
-    let owner = super::privacy::participant(&pool, at).await;
+    let owner = super::personal::participant(&pool, at).await;
     many_sources(&pool, owner.account, at + 1, "forfeit").await;
     sqlx::query("INSERT INTO product_events(id,account_id,occurred_at,received_at,online_match_id,opponent_type,end_reason) SELECT md5('event'||id::text)::uuid,$1,$2,$2,id,'human','forfeit' FROM online_match_results")
         .bind(owner.account).bind(at+1).execute(&pool).await.unwrap();
@@ -457,7 +457,7 @@ async fn raw_and_history_queries_detect_the_extra_row_instead_of_truncating_coun
     close_auth_pool(pool).await;
     let pool = auth_pool().await;
     initialized(&pool, at).await;
-    let owner = super::privacy::participant(&pool, at).await;
+    let owner = super::personal::participant(&pool, at).await;
     many_sources(&pool, owner.account, at + 1, "timeout").await;
     let game: Uuid = sqlx::query_scalar("SELECT id FROM online_match_results LIMIT 1")
         .fetch_one(&pool)

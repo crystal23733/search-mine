@@ -48,7 +48,7 @@ pub(super) async fn load(
         } => {
             let row = sqlx::query("SELECT c.id,c.daily_id,c.attempt_id,c.replay_digest,c.opened_safe,c.mistakes,c.replayed_elapsed_ms,c.verified_elapsed_ms,EXTRACT(EPOCH FROM c.completed_at)::bigint AS completed_at,EXTRACT(EPOCH FROM c.replay_expires_at)::bigint AS replay_expires_at,EXTRACT(EPOCH FROM c.record_expires_at)::bigint AS record_expires_at,d.id AS definition_id,to_char(d.utc_date,'YYYY-MM-DD') AS utc_date,d.seed_version,d.rules_snapshot::text AS rules_snapshot,EXTRACT(EPOCH FROM d.published_at)::bigint AS published_at,EXTRACT(EPOCH FROM d.verification_expires_at)::bigint AS verification_expires_at,EXTRACT(EPOCH FROM (d.utc_date::timestamp AT TIME ZONE 'UTC'))::bigint AS starts_at FROM daily_completions c JOIN daily_definitions d ON d.id=c.daily_id WHERE c.id=$1 AND c.account_id=$2 FOR SHARE OF c,d")
                 .bind(completion_id.uuid()).bind(account.uuid()).fetch_optional(&mut **tx).await.map_err(db)?.ok_or(EventStoreError::Missing)?;
-            let (_, receipt) = crate::daily::export_receipt(&row, now)
+            let (_, receipt) = crate::daily::accepted_receipt(&row, now)
                 .map_err(|_| EventStoreError::Unavailable)?;
             (
                 receipt.completed_at,

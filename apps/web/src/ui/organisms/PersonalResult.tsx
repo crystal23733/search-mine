@@ -8,11 +8,13 @@ export function PersonalResult({
   ownName,
   onAgain,
   againLabel,
+  historyLink = true,
 }: {
   result: StoredResult;
   ownName: string;
   onAgain(): void;
   againLabel?: string;
+  historyLink?: boolean;
 }) {
   const { t, locale } = useUi();
   const number = (value: number) => new Intl.NumberFormat(locale).format(value);
@@ -44,6 +46,11 @@ export function PersonalResult({
         <output data-testid="recording">{t("queue.recording.saved")}</output>
       </Card>
       <div class="result-actions">
+        {historyLink && (
+          <NavLink path="/me/history" class="button">
+            {t("me.history")}
+          </NavLink>
+        )}
         <Button variant="primary" onClick={onAgain}>
           {againLabel ?? t("queue.again")}
         </Button>

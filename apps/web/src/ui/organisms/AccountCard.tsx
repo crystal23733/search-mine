@@ -7,12 +7,7 @@ export function AccountCard() {
   const auth = useSnapshot(services.auth);
   const account = auth.account;
   return (
-    <NavLink
-      path={
-        account ? (account.nickname ? "/settings" : "/onboarding") : "/login"
-      }
-      class="account-card card"
-    >
+    <NavLink path={account ? "/me" : "/login"} class="account-card card">
       <span class="avatar">
         <Icon name="users" />
       </span>
@@ -26,7 +21,7 @@ export function AccountCard() {
             auth.status === "loading"
               ? "auth.loading"
               : account
-                ? "auth.account"
+                ? "me.title"
                 : "home.accountHint",
           )}
         </span>

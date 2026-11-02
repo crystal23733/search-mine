@@ -111,3 +111,6 @@ PC 대전 우측은 상대 진행 요약만 공개한다. sheet/dialog는 초점
 
 
 #167: [ADR0079](../adr/0079-action-first-tutorial.md)에 따라 튜토리얼은 PC/모바일 모두 현재 과제와 주요 버튼을 게임판 위, 기초 설명 앞에 배치한다. 공개 expected 대상 좌표/위치를 표시하며 일반 대전 화면 배치는 유지한다.
+
+
+#178 FR01/09/11/13/16 · NFR01/02/05/06/07/08 · TS17~22/24/26/29/34~36 → [ADR0083](../adr/0083-my-info-client-and-export-removal.md) → 내 정보4화면·공통 기기 설정·game/self 인증 scope·메모리/취소·파일 UI/DTO/3 API 제거 → [검증178](../verification/178-my-info-pages.md).

@@ -66,4 +66,4 @@ CMP 자체 로딩 등 필수 동의 처리와 광고 SDK를 분리한다. 분석
 #156 FR01/10/11/13·NFR01/02/05/06/07/08·TS18/19/20/24/26/29/31/35/36 → [ADR0073](../adr/0073-consent-context-and-expiry.md) → 메모리 현재 context/revision/만료·계정탭/복원 취소·시계/타이머 정리 → [검증156](../verification/156-consent-context-and-expiry.md). 실제 CMP/서버 proof/선택 수집·외부147/상위21은 후속이다.
 
 
-#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 실제 CMP/본인 export HTTP/선택 이벤트 저장·상위21과83은 별도 미완료다.
+#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 현재 동의 조회는177/178에서 연결하며 파일 제공은 제거한다. 실제 CMP/선택 이벤트 저장·상위21과83은 별도 미완료다.

@@ -4,7 +4,7 @@ import { Card } from "../ui/atoms/Card";
 import { Button } from "../ui/atoms/Button";
 import { Dialog } from "../ui/atoms/Dialog";
 import { LanguageSelect } from "../ui/molecules/LanguageSelect";
-import { AccountSettings } from "../ui/organisms/AccountSettings";
+import { NavLink } from "../ui/molecules/NavLink";
 import { PendingSubmission } from "../ui/organisms/PendingSubmission";
 import { StorageNotice } from "../ui/organisms/StorageNotice";
 import { ConsentSettings } from "../ui/organisms/ConsentSettings";
@@ -36,7 +36,10 @@ export function SettingsPage() {
     <div class="reading-page">
       <h1>{t("settings")}</h1>
       <ConsentSettings />
-      <AccountSettings />
+      <p>{t("me.deviceOnly")}</p>
+      <NavLink path="/me" class="button">
+        {t("me.title")}
+      </NavLink>
       <h2>{t("offline.title")}</h2>
       <Card>
         <p>

@@ -233,10 +233,13 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #167 FR08/11·NFR01/02/05/06/08·TS13/18/19/20/26/30 → [ADR0079](../adr/0079-action-first-tutorial.md) → 현재 과제/버튼 우선·공개 expected 좌표 강조·한국어/8언어 위치 안내 → [검증167](../verification/167-action-first-tutorial.md). 실제 사람의 이해·30초 성취는 #27에서 확인한다.
 
 
-#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 실제 CMP/본인 export HTTP/선택 이벤트 저장·상위21과83은 별도 미완료다.
+#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 현재 동의 조회는177/178에서 연결하며 파일 제공은 제거한다. 실제 CMP/선택 이벤트 저장·상위21과83은 별도 미완료다.
 
 
 #176 설계 변경 · FR01/09/11/13/16 · NFR01/02/05/06/08 · TS17~22/24/26/29/34~36 → [ADR0081](../adr/0081-my-info-and-export-removal.md) → [설계 검토176](../verification/176-my-info-design.md) → #177 조회 API→#178 내 정보/파일 다운로드 제거. 현재 코드의 제거 완료는 #178에서 검증한다.
 
 
 #177 FR01/09/11/13/16·NFR01/02/05/07/08·TS17/19/20/21/22/24/29/34/35/36 → [ADR0082](../adr/0082-self-only-me-read-api.md) → 본인overview/history·90일/전체요약/20개·현재동의view·권한/철회/2초/실PG → [검증177](../verification/177-my-info-read-api.md). 화면과파일제거는178이다.
+
+
+#178 FR01/09/11/13/16 · NFR01/02/05/06/07/08 · TS17~22/24/26/29/34~36 → [ADR0083](../adr/0083-my-info-client-and-export-removal.md) → 내 정보4화면·공통 기기 설정·game/self 인증 scope·메모리/취소·파일 UI/DTO/3 API 제거 → [검증178](../verification/178-my-info-pages.md).

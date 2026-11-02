@@ -17,11 +17,13 @@ export interface RequestContext {
   sessionRevision: string;
   signal: AbortSignal;
 }
+export type RequestScope = "game" | "self";
 export interface AuthenticatedRequests {
   execute<T>(
     expected: RequestOwner,
     work: (context: RequestContext) => Promise<T>,
     signal?: AbortSignal,
+    scope?: RequestScope,
   ): Promise<T>;
 }
 interface Authority extends RequestOwner {
@@ -29,7 +31,7 @@ interface Authority extends RequestOwner {
   generation: number;
 }
 interface Dependencies {
-  authority(): Authority | null;
+  authority(scope: RequestScope): Authority | null;
   bootstrap(signal: AbortSignal): Promise<AuthBootstrap>;
   invalidated(code: AuthCode, retryable: boolean): void;
 }
@@ -44,8 +46,8 @@ export function createAuthenticatedRequests(
   dependencies: Dependencies,
 ): AuthenticatedRequests & { abortAll(): void } {
   const active = new Set<AbortController>();
-  function matches(owner: Authority): boolean {
-    const now = dependencies.authority();
+  function matches(owner: Authority, scope: RequestScope): boolean {
+    const now = dependencies.authority(scope);
     return (
       now !== null &&
       now.accountId === owner.accountId &&
@@ -55,9 +57,9 @@ export function createAuthenticatedRequests(
     );
   }
   return {
-    async execute(expected, work, signal) {
+    async execute(expected, work, signal, scope = "game") {
       if (signal?.aborted) throw new AuthenticatedRequestError("cancelled");
-      const authority = dependencies.authority();
+      const authority = dependencies.authority(scope);
       if (!authority) throw new AuthenticatedRequestError("unavailable");
       const owner = { ...authority };
       if (
@@ -84,7 +86,8 @@ export function createAuthenticatedRequests(
       );
       function assertCurrent() {
         if (controller.signal.aborted) throw controller.signal.reason;
-        if (!matches(owner)) throw new AuthenticatedRequestError("stale");
+        if (!matches(owner, scope))
+          throw new AuthenticatedRequestError("stale");
       }
       async function proof(): Promise<string> {
         assertCurrent();
@@ -98,7 +101,7 @@ export function createAuthenticatedRequests(
         assertCurrent();
         if (
           fresh.account?.id !== owner.accountId ||
-          !fresh.account.nickname ||
+          (scope === "game" && !fresh.account.nickname) ||
           fresh.session_revision !== owner.sessionId ||
           !fresh.csrf
         )
@@ -123,7 +126,7 @@ export function createAuthenticatedRequests(
       } catch (error) {
         if (
           !controller.signal.aborted &&
-          matches(owner) &&
+          matches(owner, scope) &&
           (error instanceof ProofFailure ||
             (error instanceof AuthError && error.code === "auth_required"))
         )

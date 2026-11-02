@@ -138,8 +138,8 @@ test("a blocked provider redirect reports a recoverable error", async () => {
   expect((await screen.findByRole("alert")).textContent).toContain("Retry");
   expect(ports.auth.read().account).toBeNull();
 });
-test("settings protect the last provider and an open deletion confirmation keeps its original owner", async () => {
-  const ports = await setup("/en/settings");
+test("my account protects the last provider and removes a stale deletion confirmation on account switch", async () => {
+  const ports = await setup("/en/me/account");
   expect(
     (
       (await screen.findByRole("button", {
@@ -165,18 +165,10 @@ test("settings protect the last provider and an open deletion confirmation keeps
     ],
   });
   await ports.auth.refresh();
-  await waitFor(() =>
-    expect(
-      (
-        screen.getByRole("button", {
-          name: "Delete account permanently",
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(true),
-  );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Delete account permanently" }),
-  );
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(
+    screen.queryByRole("button", { name: "Delete account permanently" }),
+  ).toBeNull();
   expect(ports.authTransport.erase).not.toHaveBeenCalled();
 });
 
@@ -220,24 +212,10 @@ test("a first nickname keeps invalid input editable and only a server-accepted n
   expect(ports.auth.read().account?.nickname).toBe("QuietSolver");
 });
 
-test("settings downloads a minimal export, changes the canonical nickname and explicitly connects a provider", async () => {
-  const ports = await setup("/en/settings");
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Download my data" }),
-  );
-  await waitFor(() =>
-    expect(ports.authEffects.download).toHaveBeenCalledWith({
-      v: 1,
-      account: {
-        account: TEST_ACCOUNT,
-        created_at: 1,
-        last_seen_at: 2,
-        identities: [{ provider: "google", linked_at: 1 }],
-      },
-      games: [],
-      replays: [],
-    }),
-  );
+test("my account removes downloads, changes the canonical nickname and explicitly connects a provider", async () => {
+  const ports = await setup("/en/me/account");
+  await screen.findByRole("button", { name: "Change nickname" });
+  expect(screen.queryByRole("button", { name: "Download my data" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Change nickname" }));
   const input = screen.getByRole("textbox", { name: "Nickname" });
   fireEvent.input(input, { target: { value: "e\u0301探偵" } });
@@ -249,7 +227,7 @@ test("settings downloads a minimal export, changes the canonical nickname and ex
     expect(ports.authTransport.start).toHaveBeenCalledWith(
       "naver",
       "link",
-      { locale: "en", return_path: "settings" },
+      { locale: "en", return_path: "account" },
       "fixture-memory-csrf",
       expect.any(AbortSignal),
     ),
@@ -257,7 +235,7 @@ test("settings downloads a minimal export, changes the canonical nickname and ex
 });
 
 test("reauthentication closes deletion confirmation and never repeats deletion automatically", async () => {
-  const ports = await setup("/en/settings");
+  const ports = await setup("/en/me/account");
   vi.mocked(ports.authTransport.erase).mockRejectedValueOnce(
     new AuthError("reauth_required"),
   );
@@ -275,7 +253,7 @@ test("reauthentication closes deletion confirmation and never repeats deletion a
     expect(ports.authTransport.start).toHaveBeenCalledWith(
       "google",
       "reauth",
-      { locale: "en", return_path: "settings" },
+      { locale: "en", return_path: "account" },
       "fixture-memory-csrf",
       expect.any(AbortSignal),
     ),
@@ -284,7 +262,7 @@ test("reauthentication closes deletion confirmation and never repeats deletion a
 });
 
 test("an explicit deletion ends account authority and presents manual Apple disconnection when returned by the server", async () => {
-  const ports = await setup("/en/settings");
+  const ports = await setup("/en/me/account");
   const original = vi
     .mocked(ports.authTransport.erase)
     .getMockImplementation()!;
@@ -304,4 +282,41 @@ test("an explicit deletion ends account authority and presents manual Apple disc
   expect(screen.getByText(/Open your Apple account settings/)).toBeTruthy();
   expect(ports.auth.account()).toBeNull();
   expect(ports.auth.connected()).toBe(false);
+});
+
+test("Apple revocation retry guidance survives the account view closing after unlink", async () => {
+  const ports = await setup("/en/me/account");
+  vi.mocked(ports.authTransport.identities).mockResolvedValue([
+    { provider: "google", linked_at: 1 },
+    { provider: "apple", linked_at: 2 },
+  ]);
+  await ports.auth.refresh();
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: "Disconnect Apple",
+      exact: true,
+    }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Disconnect and sign out",
+      exact: true,
+    }),
+  );
+  await screen.findByText(
+    "The sign-in method was disconnected. Sign in with a remaining method.",
+  );
+  expect(
+    await screen.findByText(
+      "Apple connection revocation may be retried for up to 24 hours. The requested local action is already complete.",
+    ),
+  ).toBeTruthy();
+  expect(ports.auth.read().appleRevokePending).toBe(true);
+  await ports.auth.refresh();
+  expect(ports.auth.read().appleRevokePending).toBe(false);
+  expect(
+    screen.queryByText(
+      "Apple connection revocation may be retried for up to 24 hours. The requested local action is already complete.",
+    ),
+  ).toBeNull();
 });

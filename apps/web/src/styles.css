@@ -1358,3 +1358,105 @@ input[type="checkbox"]:checked::before {
     width: 100%;
   }
 }
+
+.me-nav,
+.me-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+.me-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.me-filters label {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  min-width: 180px;
+}
+.me-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 20px;
+  margin: 0;
+}
+.me-summary dt,
+.me-details dt {
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+.me-summary dd {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 8px 0 0;
+}
+.me-details {
+  display: grid;
+  gap: 16px;
+}
+.me-details dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.me-records {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.me-record summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  cursor: pointer;
+  min-height: 44px;
+  align-items: center;
+}
+.me-record summary > span:first-child {
+  font-weight: 700;
+}
+.me-record summary > span:nth-child(2) {
+  flex: 1;
+  min-width: 150px;
+}
+.me-record summary > span:last-child {
+  text-decoration: underline;
+}
+.me-record[open] summary {
+  margin-bottom: 16px;
+}
+.me-record .online-result {
+  margin-top: 16px;
+}
+.me-period p,
+.me-identities {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.me-page > .card {
+  margin: 16px 0;
+}
+.me-page .account-settings {
+  margin-top: 24px;
+}
+@media (max-width: 380px) {
+  .header {
+    gap: 8px;
+  }
+  .header-controls {
+    gap: 4px;
+  }
+  .brand {
+    font-size: 1.125rem;
+    gap: 6px;
+  }
+}
+.me-page .card {
+  overflow-wrap: anywhere;
+}

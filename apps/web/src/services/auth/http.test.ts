@@ -139,7 +139,7 @@ test("stable errors and stalled fetch have bounded completion without echoing pr
       .fn<typeof fetch>()
       .mockResolvedValue(json({ code: "auth_required" }, 401)),
   );
-  await expect(unauthorized.export("csrf")).rejects.toEqual(
+  await expect(unauthorized.nickname("Renamed", "csrf")).rejects.toEqual(
     new AuthError("auth_required"),
   );
   vi.useFakeTimers();
@@ -171,7 +171,7 @@ test("a malformed reconciliation response revokes authority", async () => {
   const auth = createAuth(createAuthHttp(fetcher));
   await auth.refresh();
   malformed = true;
-  expect((await auth.export(account.id)).ok).toBe(false);
+  expect((await auth.nickname("Renamed", account.id)).ok).toBe(false);
   expect(auth.connected()).toBe(false);
 });
 

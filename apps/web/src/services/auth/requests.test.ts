@@ -36,20 +36,6 @@ async function fixture(online: () => boolean = () => true) {
     identities: vi.fn().mockResolvedValue([]),
     start: vi.fn(),
     nickname: vi.fn().mockResolvedValue(a),
-    gameExport: async (input) => ({
-      v: 1,
-      account_id: input.account_id,
-      stream: input.stream,
-      records: [],
-      next: null,
-    }),
-    replayExport: async (input) => ({
-      v: 1,
-      account_id: input.account_id,
-      completion_id: input.completion_id,
-      replay: null,
-    }),
-    export: vi.fn(),
     erase: vi.fn(),
     unlink: vi.fn(),
     logout: vi.fn(),
@@ -373,4 +359,23 @@ test("timeout before proof returns never starts a target even if the transport i
   );
   expect(vi.getTimerCount()).toBe(0);
   auth.dispose();
+});
+
+test("ordinary self reads allow an unset nickname while default game requests still require it", async () => {
+  const { t, auth } = await fixture();
+  const unset = { id: a.id, nickname: null };
+  vi.mocked(t.bootstrap).mockResolvedValue(snapshot(unset));
+  await auth.refresh();
+  const owner = { accountId: a.id, revision: auth.revision() };
+  const work = vi.fn(async () => "own-info");
+  await expect(auth.execute(owner, work)).rejects.toBeInstanceOf(
+    AuthenticatedRequestError,
+  );
+  expect(work).not.toHaveBeenCalled();
+  vi.mocked(t.bootstrap).mockClear();
+  await expect(auth.execute(owner, work, undefined, "self")).resolves.toBe(
+    "own-info",
+  );
+  expect(t.bootstrap).toHaveBeenCalledTimes(2);
+  expect(auth.read().account).toEqual(unset);
 });

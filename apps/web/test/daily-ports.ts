@@ -10,6 +10,14 @@ export function dailyTestPorts() {
   const records = createDailyRecords();
   return {
     consent: createConsent(),
+    me: {
+      overview: async () => {
+        throw Error("unavailable");
+      },
+      history: async () => {
+        throw Error("unavailable");
+      },
+    },
     dailyChallenge: {
       start: async () => {
         throw Error("unavailable");

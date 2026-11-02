@@ -268,3 +268,20 @@ fn opaque_tokens_are_random_canonical_and_redacted() {
         assert!(SecretToken::parse(value).is_err());
     }
 }
+
+#[test]
+fn my_info_returns_are_fixed_tokens_and_cannot_carry_an_invitation_or_url() {
+    use liar_server::auth::ReturnPath;
+    for token in ["me", "account"] {
+        assert_eq!(ReturnPath::parse(token).unwrap().as_str(), token);
+        assert!(ReturnPath::parse_invite(token, Some("ABCD2345")).is_err());
+    }
+    for target in [
+        "/me",
+        "/me/account",
+        "https://evil.example/me",
+        "me?next=evil",
+    ] {
+        assert!(ReturnPath::parse(target).is_err());
+    }
+}

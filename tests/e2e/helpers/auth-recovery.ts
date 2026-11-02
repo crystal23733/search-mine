@@ -29,13 +29,16 @@ export function registerAuthRecoveryTests(approve: Approve, login: Login) {
         page.on("request", (request) => {
           if (
             new URL(request.url()).pathname.startsWith("/api/") &&
-            request.method() !== "GET"
+            request.method() !== "GET" &&
+            !["/api/v1/me/overview", "/api/v1/me/history"].includes(
+              new URL(request.url()).pathname,
+            )
           )
             writes++;
         });
-        const download = page.getByRole("button", { name: "Download my data" });
+        const profile = page.getByRole("button", { name: "Change nickname" });
         await context.setOffline(true);
-        await expect(download).toHaveCount(0);
+        await expect(profile).toHaveCount(0);
         await expect(
           page.getByText(
             "The account service could not respond. Retry when connected.",
@@ -44,7 +47,7 @@ export function registerAuthRecoveryTests(approve: Approve, login: Login) {
         ).toBeVisible();
         expect(writes).toBe(0);
         await context.setOffline(false);
-        await expect(download).toBeVisible();
+        await expect(profile).toBeVisible();
         await expect(page.getByText("é探偵", { exact: true })).toBeVisible();
         const accepted = await (
           await context.request.get("/api/v1/auth/bootstrap")
@@ -74,7 +77,7 @@ export function registerAuthRecoveryTests(approve: Approve, login: Login) {
           storageState: await context.storageState(),
         });
         await context.setOffline(true);
-        await expect(download).toHaveCount(0);
+        await expect(profile).toHaveCount(0);
         const proof = await (
           await revoker.request.get("/api/v1/auth/bootstrap")
         ).json();
@@ -119,7 +122,7 @@ export function registerAuthRecoveryTests(approve: Approve, login: Login) {
             { exact: true },
           ),
         ).toBeVisible();
-        await expect(download).toHaveCount(0);
+        await expect(profile).toHaveCount(0);
         expect(
           (await (await context.request.get("/api/v1/auth/bootstrap")).json())
             .account,

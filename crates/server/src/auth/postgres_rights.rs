@@ -1,4 +1,4 @@
-use super::postgres::{account_row, database_error, timestamp};
+use super::postgres::{database_error, timestamp};
 use super::postgres_accounts::authorize;
 use super::*;
 use sqlx::{Postgres, Row, Transaction};
@@ -21,18 +21,7 @@ impl AccountStore for PgAuthStore {
         tx.commit().await.map_err(database_error)?;
         Ok(result)
     }
-    async fn export(&self, auth: SessionAuthority) -> Result<AccountExport, AuthError> {
-        let mut tx = self.pool.begin().await.map_err(database_error)?;
-        let row = authorize(&mut tx, auth, true).await?;
-        let result = AccountExport {
-            account: account_row(&row)?,
-            created_at: row.try_get("created_at").map_err(database_error)?,
-            last_seen_at: row.try_get("last_seen_at").map_err(database_error)?,
-            identities: identities(&mut tx, auth.account).await?,
-        };
-        tx.commit().await.map_err(database_error)?;
-        Ok(result)
-    }
+
     async fn unlink(
         &self,
         auth: SessionAuthority,

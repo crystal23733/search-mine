@@ -19,6 +19,9 @@ export function AuthFeedback() {
       )}
       {state.notice && <output>{t(notices[state.notice])}</output>}
       {state.manualAppleDisconnect && <p>{t("auth.manualApple")}</p>}
+      {state.appleRevokePending && state.notice && (
+        <p class="muted">{t("auth.appleRetry")}</p>
+      )}
       {state.status === "unavailable" && (
         <>
           <p class="muted">{t("auth.unavailable")}</p>

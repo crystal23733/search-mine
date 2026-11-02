@@ -36,29 +36,32 @@ test("normalization comes from the nickname response and unauthorized writes rev
     value: { ...a, nickname: "é探偵" },
   });
   expect(auth.read().account?.nickname).toBe("é探偵");
-  vi.mocked(t.export).mockRejectedValue(new AuthError("auth_required"));
-  expect(await auth.export(a.id)).toEqual({ ok: false, code: "auth_required" });
+  vi.mocked(t.nickname).mockRejectedValue(new AuthError("auth_required"));
+  expect(await auth.nickname("renamed", a.id)).toEqual({
+    ok: false,
+    code: "auth_required",
+  });
   expect(auth.account()).toBeNull();
   expect(auth.connected()).toBe(false);
 });
-test("an old ownership-mismatched export reply cannot clear a newer account", async () => {
+test("an old ownership-mismatched mutation reply cannot clear a newer account", async () => {
   const t = transport(),
     auth = createAuth(t);
   await auth.refresh();
-  let reply!: (value: Awaited<ReturnType<AuthTransport["export"]>>) => void;
-  vi.mocked(t.export).mockImplementationOnce(
+  let reply!: (value: Awaited<ReturnType<AuthTransport["nickname"]>>) => void;
+  vi.mocked(t.nickname).mockImplementationOnce(
     () =>
       new Promise((r) => {
         reply = r;
       }),
   );
-  const old = auth.export(a.id);
-  await vi.waitFor(() => expect(t.export).toHaveBeenCalledTimes(1));
+  const old = auth.nickname("renamed", a.id);
+  await vi.waitFor(() => expect(t.nickname).toHaveBeenCalledTimes(1));
   vi.mocked(t.bootstrap).mockResolvedValue(
     snapshot(b, "b0000000-0000-4000-8000-000000000002"),
   );
   await auth.refresh();
-  reply({ account: b, created_at: 1, last_seen_at: 2, identities: [] });
+  reply(b);
   expect(await old).toEqual({ ok: false, code: "auth_invalid" });
   expect(auth.read().account).toEqual(b);
   expect(auth.connected()).toBe(true);
@@ -85,25 +88,6 @@ function transport(): AuthTransport {
       authorize_url: "https://accounts.google.com/o/oauth2/v2/auth",
     }),
     nickname: vi.fn().mockResolvedValue({ ...a, nickname: "é探偵" }),
-    gameExport: async (input) => ({
-      v: 1,
-      account_id: input.account_id,
-      stream: input.stream,
-      records: [],
-      next: null,
-    }),
-    replayExport: async (input) => ({
-      v: 1,
-      account_id: input.account_id,
-      completion_id: input.completion_id,
-      replay: null,
-    }),
-    export: vi.fn().mockResolvedValue({
-      account: a,
-      created_at: 1,
-      last_seen_at: 2,
-      identities: [{ provider: "google", linked_at: 1 }],
-    }),
     erase: vi.fn().mockResolvedValue({ manual_apple_disconnect: true }),
     unlink: vi.fn().mockResolvedValue({ manual_apple_disconnect: false }),
     logout: vi.fn().mockResolvedValue(undefined),

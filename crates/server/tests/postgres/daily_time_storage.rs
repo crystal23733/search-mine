@@ -1,8 +1,8 @@
 use super::*;
-use liar_protocol::privacy::{ExportRecord, ExportStream};
+use liar_protocol::me::*;
 use liar_server::{
+    me::{MeSession, PgMeReader},
     online::{AuthorityRegistry, MatchClock},
-    privacy::{ExportSession, GameExportReader, PgGameExportReader},
 };
 use std::sync::atomic::AtomicU64;
 
@@ -48,7 +48,7 @@ pub(crate) fn sealed(
         .unwrap()
         .unwrap()
 }
-async fn export_session(pool: &sqlx::PgPool, session: DailySession) -> ExportSession {
+async fn me_session(pool: &sqlx::PgPool, session: DailySession) -> MeSession {
     let revision =
         sqlx::query_scalar("SELECT id FROM auth_sessions WHERE account_id=$1 AND token_hash=$2")
             .bind(session.account)
@@ -56,7 +56,7 @@ async fn export_session(pool: &sqlx::PgPool, session: DailySession) -> ExportSes
             .fetch_one(pool)
             .await
             .unwrap();
-    ExportSession {
+    MeSession {
         account: session.account,
         hash: session.hash,
         revision,
@@ -65,7 +65,7 @@ async fn export_session(pool: &sqlx::PgPool, session: DailySession) -> ExportSes
 
 #[tokio::test]
 #[ignore = "requires real PostgreSQL; executed in database CI"]
-async fn sealed_first_time_is_exported_and_never_improved_by_retry_or_practice() {
+async fn sealed_first_time_is_read_and_never_improved_by_retry_or_practice() {
     let pool = auth_pool().await;
     let clock = Arc::new(Clock(AtomicI64::new(START + 60)));
     let store = PgDailyRepository::new(pool.clone(), clock.clone());
@@ -107,31 +107,28 @@ async fn sealed_first_time_is_exported_and_never_improved_by_retry_or_practice()
         store.own(session, definition().metadata()).await.unwrap(),
         Some(first.clone())
     );
-    let reader = PgGameExportReader::new(pool.clone(), clock.clone());
-    let owner = export_session(&pool, session).await;
-    let exported = reader.page(owner, ExportStream::Daily, None).await.unwrap();
+    let reader = PgMeReader::new(pool.clone(), clock.clone());
+    let owner = me_session(&pool, session).await;
+    let exported = crate::personal::daily_history(&reader, owner)
+        .await
+        .unwrap();
     assert!(matches!(
-        exported.records[0],
-        ExportRecord::Daily {
+        exported.items[0],
+        MeRecord::Daily(MeDailyRecord {
             verified_elapsed_ms: Some(9000),
             ..
-        }
+        })
     ));
     assert_eq!(
-        serde_json::to_value(&exported).unwrap()["records"][0]["verified_elapsed_ms"],
+        serde_json::to_value(&exported).unwrap()["items"][0]["entry"]["verified_elapsed_ms"],
         9000
     );
     let other = participant(&pool, START + 60).await;
     assert!(
-        reader
-            .page(
-                export_session(&pool, other).await,
-                ExportStream::Daily,
-                None
-            )
+        crate::personal::daily_history(&reader, me_session(&pool, other).await)
             .await
             .unwrap()
-            .records
+            .items
             .is_empty()
     );
     for query in [
@@ -147,8 +144,14 @@ async fn sealed_first_time_is_exported_and_never_improved_by_retry_or_practice()
     clock.0.store(START + 60 + 604800, Ordering::SeqCst);
     sqlx::query("UPDATE auth_sessions SET created_at=to_timestamp($1::double precision),authenticated_at=to_timestamp($1::double precision),expires_at=to_timestamp($2::double precision) WHERE account_id=$3")
         .bind(START+60+604800).bind(START+60+604860).bind(session.account).execute(&pool).await.unwrap();
-    let expired_raw = reader.replay(owner, first.id).await.unwrap();
-    assert!(expired_raw.replay.is_none());
+    assert_eq!(
+        crate::personal::daily_history(&reader, owner)
+            .await
+            .unwrap()
+            .items
+            .len(),
+        1
+    );
     assert_eq!(
         store
             .own(session, definition().metadata())
@@ -162,11 +165,10 @@ async fn sealed_first_time_is_exported_and_never_improved_by_retry_or_practice()
     sqlx::query("UPDATE auth_sessions SET created_at=to_timestamp($1::double precision),authenticated_at=to_timestamp($1::double precision),expires_at=to_timestamp($2::double precision) WHERE account_id=$3")
         .bind(START+60+7776000).bind(START+60+7776060).bind(session.account).execute(&pool).await.unwrap();
     assert!(
-        reader
-            .page(owner, ExportStream::Daily, None)
+        crate::personal::daily_history(&reader, owner)
             .await
             .unwrap()
-            .records
+            .items
             .is_empty()
     );
     assert!(
@@ -274,18 +276,13 @@ async fn forward_migration_preserves_old_completion_as_explicit_null() {
             .unwrap(),
         DailySubmission::Official(original)
     );
-    let reader = PgGameExportReader::new(pool.clone(), Arc::new(Clock(AtomicI64::new(START + 60))));
-    let page = reader
-        .page(
-            export_session(&pool, session).await,
-            ExportStream::Daily,
-            None,
-        )
+    let reader = PgMeReader::new(pool.clone(), Arc::new(Clock(AtomicI64::new(START + 60))));
+    let page = crate::personal::daily_history(&reader, me_session(&pool, session).await)
         .await
         .unwrap();
     let json = serde_json::to_value(page).unwrap();
     assert!(
-        json["records"][0]
+        json["items"][0]["entry"]
             .get("verified_elapsed_ms")
             .is_some_and(serde_json::Value::is_null)
     );
@@ -294,8 +291,7 @@ async fn forward_migration_preserves_old_completion_as_explicit_null() {
 
 #[tokio::test]
 #[ignore = "requires real PostgreSQL; executed in database CI"]
-async fn timed_corruption_and_db_bounds_fail_closed_for_own_and_export() {
-    use liar_server::privacy::ExportError;
+async fn timed_corruption_and_db_bounds_fail_closed_for_own_and_my_info() {
     let pool = auth_pool().await;
     let clock = Arc::new(Clock(AtomicI64::new(START + 60)));
     let store = PgDailyRepository::new(pool.clone(), clock.clone());
@@ -329,8 +325,8 @@ async fn timed_corruption_and_db_bounds_fail_closed_for_own_and_export() {
         .execute(&pool)
         .await
         .unwrap();
-    let reader = PgGameExportReader::new(pool.clone(), clock.clone());
-    let owner = export_session(&pool, session).await;
+    let reader = PgMeReader::new(pool.clone(), clock.clone());
+    let owner = me_session(&pool, session).await;
     for bad in [
         -1i64,
         3199,
@@ -352,12 +348,8 @@ async fn timed_corruption_and_db_bounds_fail_closed_for_own_and_export() {
             Err(DailyStoreError::Unavailable)
         );
         assert_eq!(
-            reader.page(owner, ExportStream::Daily, None).await,
-            Err(ExportError::Unavailable)
-        );
-        assert_eq!(
-            reader.replay(owner, first.id).await,
-            Err(ExportError::Unavailable)
+            crate::personal::daily_history(&reader, owner).await,
+            Err(MeError::Unavailable)
         );
     }
     assert_eq!(count(&pool).await, 1);

@@ -200,7 +200,7 @@ async fn initialize(pool: &sqlx::PgPool, at: i64) {
 }
 async fn normal(pool: &sqlx::PgPool, account: Uuid, at: i64) {
     let game = Uuid::new_v4();
-    super::privacy::seed_online(pool, account, game, at).await;
+    super::personal::seed_online(pool, account, game, at).await;
     let id = |value: Uuid| EventId::parse(&value.to_string()).unwrap();
     PgEventStore::new(pool.clone(), Arc::new(Clock(at)))
         .capture(
@@ -226,7 +226,7 @@ async fn current_account_deletion_recalculates_counts_without_a_historical_perso
     let week = day("2026-10-05");
     let at = week.start();
     initialize(&pool, at).await;
-    let owner = super::privacy::participant(&pool, at).await;
+    let owner = super::personal::participant(&pool, at).await;
     normal(&pool, owner.account, at + 10).await;
     normal(&pool, owner.account, at + 20).await;
     normal(&pool, owner.account, at + 7 * 86400 + 10).await;
@@ -678,7 +678,7 @@ async fn capacity_rejection_keeps_the_previous_report_and_rr_deletion_preserves_
         .refresh(MetricKind::WeeklyNsm, week, Duration::from_secs(2))
         .await
         .unwrap();
-    let owner = super::privacy::participant(&pool, at).await;
+    let owner = super::personal::participant(&pool, at).await;
     super::event_metrics::many_sources(&pool, owner.account, at + 2, "forfeit").await;
     sqlx::query("INSERT INTO product_events(id,account_id,occurred_at,received_at,online_match_id,opponent_type,end_reason) SELECT md5('event'||id::text)::uuid,$1,$2,$2,id,'human','forfeit' FROM online_match_results").bind(owner.account).bind(at+2).execute(&pool).await.unwrap();
     assert_eq!(
@@ -697,7 +697,7 @@ async fn capacity_rejection_keeps_the_previous_report_and_rr_deletion_preserves_
     close_auth_pool(pool).await;
     let pool = auth_pool().await;
     initialize(&pool, at).await;
-    let owner = super::privacy::participant(&pool, at).await;
+    let owner = super::personal::participant(&pool, at).await;
     normal(&pool, owner.account, at + 1).await;
     let (single, pid) = super::events::single_pool(&pool).await;
     let mut held = pool.begin().await.unwrap();

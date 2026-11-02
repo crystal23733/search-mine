@@ -11,20 +11,17 @@ import { AuthFeedback } from "./AuthFeedback";
 import { NicknameForm } from "./NicknameForm";
 import { ProviderButton, providerName } from "../molecules/ProviderButton";
 type Confirmation =
-  | { kind: "delete"; account: AuthAccount; apple: boolean }
-  | { kind: "nickname"; account: AuthAccount; apple: boolean }
+  | { kind: "delete"; account: AuthAccount }
+  | { kind: "nickname"; account: AuthAccount }
   | {
       kind: "unlink";
       account: AuthAccount;
       provider: AuthProvider;
-      apple: boolean;
     };
 export function AccountSettings() {
   const { t, services } = useUi(),
     state = useSnapshot(services.auth);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
-  const [download, setDownload] = useState<"idle" | "ready" | "error">("idle"),
-    [appleRetry, setAppleRetry] = useState(false);
   const account = state.account;
   const confirmCurrent =
     confirmation !== null &&
@@ -39,7 +36,6 @@ export function AccountSettings() {
         ? await services.auth.erase(target.account.id)
         : await services.auth.unlink(target.provider, target.account.id);
     if (result.ok) {
-      setAppleRetry(target.apple && !result.value.manual_apple_disconnect);
       setConfirmation(null);
     } else if (result.code === "reauth_required") setConfirmation(null);
   };
@@ -47,9 +43,6 @@ export function AccountSettings() {
     <section class="account-settings">
       <h2>{t("auth.account")}</h2>
       {!confirmation && <AuthFeedback />}
-      {appleRetry && state.notice && (
-        <p class="muted">{t("auth.appleRetry")}</p>
-      )}
       {!account ? (
         <AccountCard />
       ) : (
@@ -62,7 +55,6 @@ export function AccountSettings() {
                 setConfirmation({
                   kind: "nickname",
                   account: { ...account },
-                  apple: false,
                 })
               }
             >
@@ -86,7 +78,6 @@ export function AccountSettings() {
                           kind: "unlink",
                           provider: provider.id,
                           account: { ...account },
-                          apple: provider.id === "apple",
                         })
                       }
                     >
@@ -108,25 +99,6 @@ export function AccountSettings() {
             <Button
               disabled={state.working}
               onClick={() => {
-                const owner = account.id;
-                setDownload("idle");
-                void services.auth
-                  .exportTo(owner, (value) =>
-                    services.authEffects.download(value),
-                  )
-                  .then((result) => {
-                    if (result.ok) setDownload("ready");
-                    else if (result.code === "auth_unavailable")
-                      setDownload("error");
-                  })
-                  .catch(() => setDownload("error"));
-              }}
-            >
-              {t("auth.export")}
-            </Button>
-            <Button
-              disabled={state.working}
-              onClick={() => {
                 void services.auth.logout();
               }}
             >
@@ -139,22 +111,12 @@ export function AccountSettings() {
                 setConfirmation({
                   kind: "delete",
                   account: { ...account },
-                  apple: state.identities.some((i) => i.provider === "apple"),
                 })
               }
             >
               {t("auth.delete")}
             </Button>
           </Card>
-          {download !== "idle" && (
-            <output>
-              {t(
-                download === "ready"
-                  ? "auth.exported"
-                  : "auth.error.auth_unavailable",
-              )}
-            </output>
-          )}
         </>
       )}
       <Dialog

@@ -1,5 +1,7 @@
 # #136 필수 이벤트 저장과 본인 권리
 
+> #178/ADR0083에서 파일 제공 경로를 제거했다. 아래 실행 결과와 외부 permalink는 당시 구현의 이력이며, 현재 본인 조회는 #177/#178 검증을 따른다.
+
 [이슈136](https://github.com/crystal23733/search-mine/issues/136) · [ADR0064](../adr/0064-essential-event-store-and-rights.md) · 상위20/M3.
 
 선행134 CLOSED·PR135/develop0155012 병합과 clean 최신 develop을 실제 확인하고 feature/136-essential-event-store로 분기했다. 제품 코드 전에 ADR0064/TS29·권위·dedup·30일·본인 권리·default-deny를 정의했다. 자동 수집/물리 retention/집계/CMP는 후속이며 이 하위로 #20 전체를 종료하지 않는다.
@@ -14,7 +16,7 @@
 | 목적·필드→DB | essential CHECK·두 fact의 XOR/필수 nullable CHECK·FK cascade. JSON payload·seed/보드·IP/토큰/OAuth/nickname 미보관. optional API 부재 |
 | own export→웹 | 최근 재인증/현재 revision·Origin/CSRF/전후 proof·2초·50개/페이지. Rust→TS event DTO/세 스트림·2048페이지/32MiB/100ms pacing/취소·명시 파일 다운로드 |
 
-[PG 행동 테스트](../../crates/server/tests/postgres/events.rs)는 source 미확정/외부계정·중복 seat, 동시 event ID/계정 충돌, 원본 재시도, 원래30일과 삭제·실제 잠금/IO timeout, 불변/목적/민감 CHECK, 51개 본인 페이지·철회/reauth, plain/sealed daily와 손상된 시간 거절을 확인한다. [privacy pure 검증](../../crates/server/tests/unit/privacy_model.rs), [웹](../../apps/web/src/services/auth/export.test.ts), [HTTPS8언어 다운로드](../../tests/e2e/helpers/personal-export.ts)를 연결한다. `__fixture/events/{id}`는 loopback browser example의 명시 제어이며 production 수집 API나 자동 producer가 아니다.
+[PG 행동 테스트](../../crates/server/tests/postgres/events.rs)는 source 미확정/외부계정·중복 seat, 동시 event ID/계정 충돌, 원본 재시도, 원래30일과 삭제·실제 잠금/IO timeout, 불변/목적/민감 CHECK, 51개 본인 페이지·철회/reauth, plain/sealed daily와 손상된 시간 거절을 확인한다. [privacy pure 검증](https://github.com/crystal23733/search-mine/blob/6efec66272aa10eeae0ad4dcec799dbce81f9f5a/crates/server/tests/unit/privacy_model.rs), [웹](https://github.com/crystal23733/search-mine/blob/6efec66272aa10eeae0ad4dcec799dbce81f9f5a/apps/web/src/services/auth/export.test.ts), [HTTPS8언어 다운로드](https://github.com/crystal23733/search-mine/blob/6efec66272aa10eeae0ad4dcec799dbce81f9f5a/tests/e2e/helpers/personal-export.ts)를 연결한다. `__fixture/events/{id}`는 loopback browser example의 명시 제어이며 production 수집 API나 자동 producer가 아니다.
 
 ## 실제 Red→Green과 계측
 

@@ -326,7 +326,7 @@ TS17/18의 #109 foundation은 [ADR0050](../adr/0050-bounded-native-daily-replay.
 #114 FR01/09/10/16·NFR01/02/05/07·TS17/18/20/29/31/34/35/36 → [ADR0053](../adr/0053-personal-game-data-export.md) → 본인 game export bounded pages/raw·기존 auth transaction/fresh proof·삭제/만료/CPU 수명·명시 다운로드 → [검증114](../verification/114-personal-game-data-export.md). 공식 데일리 수집/timing/순위는 다음 하위다.
 
 
-TS35 확장(#114): 본인에 속한51개 이상 online/daily 기록과 타인/만료/손상 기록을 실제PG에 준비한다. nickname 없는 최근 인증도 페이지/내보내기를 허용하며 다른 account/session revision·300초 경계·동시 삭제/철회는 거절한다. record UUID tie/커서 진행·raw exact7일/NULL/metadata-digest 결합과 record90일을 검사한다. HTTP가 데이터를 얻은 뒤 실제 session이 바뀌거나 barrier가 철회되면 응답을 commit하지 않는다. 실제 HTTPS 설정 버튼으로 PC/mobile·8언어에서 파일의 본인 기록/비밀 제외를 검사하고, 중간 page/raw 실패·반복 cursor·상한 초과·응답 직전 계정 전환은 파일이 생기지 않는지 확인한다. 정상 빈 목록과 upstream/DB 실패를 구분한다.
+TS35 과거 검증 이력(#114, 현재 화면/제거는 ADR0081/83으로 대체): 본인에 속한51개 이상 online/daily 기록과 타인/만료/손상 기록을 실제PG에 준비한다. nickname 없는 최근 인증도 페이지/내보내기를 허용하며 다른 account/session revision·300초 경계·동시 삭제/철회는 거절한다. record UUID tie/커서 진행·raw exact7일/NULL/metadata-digest 결합과 record90일을 검사한다. HTTP가 데이터를 얻은 뒤 실제 session이 바뀌거나 barrier가 철회되면 응답을 commit하지 않는다. 실제 HTTPS 설정 버튼으로 PC/mobile·8언어에서 파일의 본인 기록/비밀 제외를 검사하고, 중간 page/raw 실패·반복 cursor·상한 초과·응답 직전 계정 전환은 파일이 생기지 않는지 확인한다. 정상 빈 목록과 upstream/DB 실패를 구분한다.
 
 
 #116 FR01/09/10/16·NFR01/02/05/07/08·TS17/18/20/21/31/35/36 → [ADR0054](../adr/0054-authenticated-daily-submission-http.md) → closed 인증 Daily definition/submit/own·accepted snapshot/공유 bounded CPU·첫 완료/Practice·현재 세션 응답 장벽 → [검증116](../verification/116-authenticated-daily-http.md). trust는 verified_completion이며 ticket/heartbeat/순위/명시 UI는 후속19다.
@@ -418,7 +418,7 @@ TS18/20/26/30 확장(#161): 진단 CLI의 기존 CDP 모드와 명시적 pointer
 TS13/18/19/20/26/30 확장(#167): [ADR0079](../adr/0079-action-first-tutorial.md)의 현재 과제/버튼 우선·공개 expected 좌표 강조·8언어 위치 안내를 확인한다. PC/360px 첫 버튼은 스크롤 없이 보이고 기초 설명보다 앞에 있다. 실제 보드/안내 버튼·공격/지목/반사·완료/replay·언어/기초 펼침·잘못된 입력 거절·복귀 URL을 유지하며 사람이 이해했다는 판단은 #27에 남긴다.
 
 
-#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 실제 CMP/본인 export HTTP/선택 이벤트 저장·상위21과83은 별도 미완료다.
+#174 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0080](../adr/0080-session-consent-authority.md) → 서버 검증 port/현재 세션·서버 revision CAS/목적별 철회·원자 권한/2초·실PG/삭제 cascade → [검증174](../verification/174-session-consent-authority.md). 현재 동의 조회는177/178에서 연결하며 파일 제공은 제거한다. 실제 CMP/선택 이벤트 저장·상위21과83은 별도 미완료다.
 
 
 ## TS35 내 정보 전환 확장 · #177/#178
@@ -431,3 +431,6 @@ TS13/18/19/20/26/30 확장(#167): [ADR0079](../adr/0079-action-first-tutorial.md
 
 
 #177 FR01/09/11/13/16·NFR01/02/05/07/08·TS17/19/20/21/22/24/29/34/35/36 → [ADR0082](../adr/0082-self-only-me-read-api.md) → 본인overview/history·90일/전체요약/20개·현재동의view·권한/철회/2초/실PG → [검증177](../verification/177-my-info-read-api.md). 화면과파일제거는178이다.
+
+
+#178 FR01/09/11/13/16 · NFR01/02/05/06/07/08 · TS17~22/24/26/29/34~36 → [ADR0083](../adr/0083-my-info-client-and-export-removal.md) → 내 정보4화면·공통 기기 설정·game/self 인증 scope·메모리/취소·파일 UI/DTO/3 API 제거 → [검증178](../verification/178-my-info-pages.md).

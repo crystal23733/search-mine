@@ -33,8 +33,8 @@ async fn allow_events(pool: &sqlx::PgPool) {
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn event_failure_rolls_back_both_humans_and_the_result_before_a_successful_retry() {
     let pool = auth_pool().await;
-    let a = super::privacy::participant(&pool, 1000).await;
-    let b = super::privacy::participant(&pool, 1000).await;
+    let a = super::personal::participant(&pool, 1000).await;
+    let b = super::personal::participant(&pool, 1000).await;
     let result = super::online::finished([Some(a.account), Some(b.account)]);
     // Fail after the first fact was inserted, proving the partial batch also rolls back.
     sqlx::raw_sql("CREATE FUNCTION reject_second_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF (SELECT count(*) FROM product_events)>0 THEN RAISE EXCEPTION 'injected second event failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER reject_second_event BEFORE INSERT ON product_events FOR EACH ROW EXECUTE FUNCTION reject_second_event();").execute(&pool).await.unwrap();
@@ -57,8 +57,8 @@ async fn event_failure_rolls_back_both_humans_and_the_result_before_a_successful
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn opposite_seats_and_shared_matches_serialize_before_fk_locks_without_deadlock() {
     let pool = auth_pool().await;
-    let a = super::privacy::participant(&pool, 1000).await;
-    let b = super::privacy::participant(&pool, 1000).await;
+    let a = super::personal::participant(&pool, 1000).await;
+    let b = super::personal::participant(&pool, 1000).await;
     let repo = PgResultRepository::new(pool.clone(), Arc::new(Clock(1001)));
     let one = super::online::finished([Some(a.account), Some(b.account)]);
     let two = super::online::finished([Some(b.account), Some(a.account)]);
@@ -80,8 +80,8 @@ async fn opposite_seats_and_shared_matches_serialize_before_fk_locks_without_dea
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn result_retries_after_raw_expiry_and_account_erasure_never_recreate_events() {
     let pool = auth_pool().await;
-    let a = super::privacy::participant(&pool, 1000).await;
-    let b = super::privacy::participant(&pool, 1000).await;
+    let a = super::personal::participant(&pool, 1000).await;
+    let b = super::personal::participant(&pool, 1000).await;
     let result = super::online::finished([Some(a.account), Some(b.account)]);
     let repo = PgResultRepository::new(pool.clone(), Arc::new(Clock(1001)));
     assert_eq!(repo.save(result.clone()).await, Ok(SaveResult::Saved));
@@ -256,8 +256,8 @@ fn admission(result: &liar_server::online::FinishedMatch) -> ActiveMatch {
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn journal_event_failure_rolls_back_finish_and_startup_recovery_until_atomic_success() {
     let pool = auth_pool().await;
-    let a = super::privacy::participant(&pool, 1000).await;
-    let b = super::privacy::participant(&pool, 1000).await;
+    let a = super::personal::participant(&pool, 1000).await;
+    let b = super::personal::participant(&pool, 1000).await;
     let clock = Arc::new(Clock(1001));
     let owner = claim(&pool, clock.clone()).await.unwrap();
     let result = super::online::finished([Some(a.account), Some(b.account)]);
@@ -292,7 +292,7 @@ async fn journal_event_failure_rolls_back_finish_and_startup_recovery_until_atom
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn original_ninety_day_journal_expiry_closes_finish_and_recovery_without_new_raw() {
     let pool = auth_pool().await;
-    let a = super::privacy::participant(&pool, 1000).await;
+    let a = super::personal::participant(&pool, 1000).await;
     let clock = Arc::new(MovingClock(AtomicI64::new(1001)));
     let owner = claim(&pool, clock.clone()).await.unwrap();
     let finish = super::online::finished([Some(a.account), None]);
@@ -314,8 +314,8 @@ async fn original_ninety_day_journal_expiry_closes_finish_and_recovery_without_n
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn direct_results_automatically_commit_one_essential_fact_per_live_human() {
     let pool = auth_pool().await;
-    let a = super::privacy::participant(&pool, 1000).await;
-    let b = super::privacy::participant(&pool, 1000).await;
+    let a = super::personal::participant(&pool, 1000).await;
+    let b = super::personal::participant(&pool, 1000).await;
     let result = super::online::finished([Some(a.account), Some(b.account)]);
     let repo = PgResultRepository::new(pool.clone(), Arc::new(Clock(1001)));
     assert_eq!(repo.save(result.clone()).await, Ok(SaveResult::Saved));

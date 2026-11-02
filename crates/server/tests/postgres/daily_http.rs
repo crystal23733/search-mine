@@ -1,6 +1,6 @@
 use super::*;
 use liar_protocol::daily::*;
-use liar_server::{daily::*, online::*, privacy::*};
+use liar_server::{daily::*, me::*, online::*};
 use serde_json::{Value, json};
 use std::sync::{
     Mutex,
@@ -58,6 +58,9 @@ fn replay() -> Value {
     fixture["daily"]["replay"].clone()
 }
 fn body(client: &Client, operation: &str) -> Value {
+    if operation == "history" {
+        return json!({"v":1,"kind":"daily","opponent":"all"});
+    }
     let mut body = json!({"v":1,"account_id":client.account.to_string(),"session_revision":client.revision.to_string()});
     match operation {
         "definition" => {
@@ -119,7 +122,7 @@ async fn response(app: axum::Router, request: Request<Body>) -> (StatusCode, Val
 
 #[tokio::test]
 #[ignore = "requires actual PostgreSQL; executed in database CI"]
-async fn stored_sealed_time_is_projected_by_real_own_retry_practice_and_owner_export_http() {
+async fn stored_sealed_time_is_projected_by_real_own_retry_practice_and_owner_history_http() {
     let pool = auth_pool().await;
     let clock = Arc::new(Clock(AtomicI64::new(NOW)));
     let auth = PgAuthStore::new(pool.clone());
@@ -144,6 +147,7 @@ async fn stored_sealed_time_is_projected_by_real_own_retry_practice_and_owner_ex
         .unwrap();
     let security = Arc::new(BrowserSecurity::new("https://game.example", [120; 32]).unwrap());
     let sessions = Arc::new(PgSessionReader::new(auth, clock.clone()));
+    let me_workers = MeWorkers::default();
     let app = daily_router(
         daily,
         BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
@@ -160,14 +164,18 @@ async fn stored_sealed_time_is_projected_by_real_own_retry_practice_and_owner_ex
     )
     .unwrap()
     .merge(
-        privacy_router(
-            Arc::new(PgGameExportReader::new(pool.clone(), clock.clone())),
+        me_router(
+            Arc::new(PgMeReader::with_workers(
+                pool.clone(),
+                clock.clone(),
+                me_workers.clone(),
+            )),
             sessions,
             security.clone(),
-            PrivacyAuthentication {
+            MeAuthentication {
                 authorities: AuthorityRegistry::new(64).unwrap(),
                 clock: clock.clone(),
-                workers: ExportWorkers::default(),
+                workers: me_workers.clone(),
             },
             4,
         )
@@ -213,23 +221,23 @@ async fn stored_sealed_time_is_projected_by_real_own_retry_practice_and_owner_ex
             request(
                 owner,
                 &security,
-                "/api/v1/me/games/export",
-                body(owner, "export"),
+                "/api/v1/me/history",
+                body(owner, "history"),
                 NOW,
             ),
         )
         .await;
         assert_eq!(status, StatusCode::OK);
-        assert_eq!(page["records"].as_array().unwrap().len(), expected);
+        assert_eq!(page["items"].as_array().unwrap().len(), expected);
         if expected == 1 {
-            assert_eq!(page["records"][0]["verified_elapsed_ms"], 9000);
+            assert_eq!(page["items"][0]["entry"]["verified_elapsed_ms"], 9000);
         }
     }
     close_auth_pool(pool).await;
 }
 #[tokio::test]
 #[ignore = "requires actual PostgreSQL; executed in database CI"]
-async fn production_http_native_verifier_pg_first_retry_practice_export_and_erasure_are_connected()
+async fn production_http_native_verifier_pg_first_retry_practice_history_and_erasure_are_connected()
 {
     let pool = auth_pool().await;
     let clock = Arc::new(Clock(AtomicI64::new(NOW)));
@@ -242,6 +250,7 @@ async fn production_http_native_verifier_pg_first_retry_practice_export_and_eras
     let other = participant(&store).await;
     let security = Arc::new(BrowserSecurity::new("https://game.example", [116; 32]).unwrap());
     let sessions = Arc::new(PgSessionReader::new(store.clone(), clock.clone()));
+    let me_workers = MeWorkers::default();
     let app = daily_router(
         Arc::new(PgDailyRepository::new(pool.clone(), clock.clone())),
         BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier)),
@@ -255,14 +264,18 @@ async fn production_http_native_verifier_pg_first_retry_practice_export_and_eras
     )
     .unwrap()
     .merge(
-        privacy_router(
-            Arc::new(PgGameExportReader::new(pool.clone(), clock.clone())),
+        me_router(
+            Arc::new(PgMeReader::with_workers(
+                pool.clone(),
+                clock.clone(),
+                me_workers.clone(),
+            )),
             sessions,
             security.clone(),
-            PrivacyAuthentication {
+            MeAuthentication {
                 authorities: rights,
                 clock: clock.clone(),
-                workers: ExportWorkers::default(),
+                workers: me_workers.clone(),
             },
             4,
         )
@@ -332,32 +345,30 @@ async fn production_http_native_verifier_pg_first_retry_practice_export_and_eras
         request(
             &client,
             &security,
-            "/api/v1/me/games/export",
-            body(&client, "export"),
+            "/api/v1/me/history",
+            body(&client, "history"),
             clock.now(),
         ),
     )
     .await;
     assert_eq!(page.0, StatusCode::OK);
-    assert_eq!(page.1["records"].as_array().unwrap().len(), 1);
+    assert_eq!(page.1["items"].as_array().unwrap().len(), 1);
     assert_eq!(
-        page.1["records"][0]["completion_id"],
+        page.1["items"][0]["entry"]["completion_id"],
         first["receipt"]["completion_id"]
     );
-    let raw = json!({"v":1,"account_id":client.account.to_string(),"session_revision":client.revision.to_string(),"completion_id":first["receipt"]["completion_id"]});
-    let raw = response(
-        app.clone(),
-        request(
-            &client,
-            &security,
-            "/api/v1/me/games/replay",
-            raw,
-            clock.now(),
-        ),
-    )
-    .await;
-    assert_eq!(raw.0, StatusCode::OK);
-    assert_eq!(raw.1["replay"], replay());
+    for path in [
+        "/api/v1/me/export",
+        "/api/v1/me/games/export",
+        "/api/v1/me/games/replay",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(request(&client, &security, path, json!({}), clock.now()))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
     let rows: i64 = sqlx::query_scalar("SELECT count(*) FROM daily_completions")
         .fetch_one(&pool)
         .await

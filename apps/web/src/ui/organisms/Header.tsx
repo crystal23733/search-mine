@@ -19,6 +19,9 @@ export function Header() {
         <NavLink path="/rules">{t("home.learn")}</NavLink>
       </nav>
       <div class="header-controls">
+        <NavLink path="/me" class="button icon-button" label={t("me.title")}>
+          <Icon name="users" />
+        </NavLink>
         <span class="language-control">
           <Icon name="globe" />
           <LanguageSelect />

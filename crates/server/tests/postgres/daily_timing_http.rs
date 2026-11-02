@@ -83,7 +83,7 @@ impl TimingHttp {
 
 #[tokio::test]
 #[ignore = "requires actual PostgreSQL; executed in database CI"]
-async fn timing_routes_native_pg_original_time_retry_export_and_delete_use_the_same_authority() {
+async fn timing_routes_native_pg_original_time_retry_history_and_delete_use_the_same_authority() {
     let f = TimingHttp::new().await;
     let client = participant(&f.store).await;
     let attempt = Uuid::new_v4();
@@ -132,20 +132,19 @@ async fn timing_routes_native_pg_original_time_retry_export_and_delete_use_the_s
     assert_eq!(practice.0, StatusCode::OK);
     assert_eq!(practice.1["disposition"], "practice");
     assert_eq!(practice.1["receipt"], saved["receipt"]);
-    let exported = PgGameExportReader::new(f.pool.clone(), f.clock.clone())
-        .page(
-            ExportSession {
-                account: client.account,
-                revision: client.revision,
-                hash: client.token.hash(),
-            },
-            liar_protocol::privacy::ExportStream::Daily,
-            None,
-        )
-        .await
-        .unwrap();
+    let reader = PgMeReader::new(f.pool.clone(), f.clock.clone());
+    let page = crate::personal::daily_history(
+        &reader,
+        MeSession {
+            account: client.account,
+            revision: client.revision,
+            hash: client.token.hash(),
+        },
+    )
+    .await
+    .unwrap();
     assert_eq!(
-        serde_json::to_value(&exported.records[0]).unwrap()["verified_elapsed_ms"],
+        serde_json::to_value(&page.items[0]).unwrap()["entry"]["verified_elapsed_ms"],
         9000
     );
     let barrier = f.tickets.account(client.account);

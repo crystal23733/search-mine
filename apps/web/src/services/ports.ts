@@ -15,7 +15,9 @@ import type { OnlinePort } from "./online/types";
 import type { DailyApi } from "./daily/types";
 import type { DailyChallengeApi } from "./daily/official";
 import type { ConsentPort } from "./consent";
+import type { MePort } from "./me/types";
 export interface AppServices {
+  me: MePort;
   consent: ConsentPort;
   dailyChallenge: DailyChallengeApi;
   dailyRankings: DailyApi["rankings"];

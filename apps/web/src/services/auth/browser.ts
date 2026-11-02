@@ -1,7 +1,5 @@
-import type { PersonalDataExport } from "@liar/protocol";
 import { createAuth } from "./session";
 import { decodeStart } from "./decode";
-import { decodePersonalDataExport } from "./game-export";
 import {
   AuthError,
   PROVIDERS,
@@ -10,7 +8,6 @@ import {
 } from "./types";
 export interface AuthEffects {
   redirect(url: string): void;
-  download(data: PersonalDataExport): Promise<void>;
 }
 export type AuthChannel = Pick<
   BroadcastChannel,
@@ -65,22 +62,6 @@ export function createBrowserAuth(
       browser.location.assign(
         decodeStart({ authorize_url: url }, provider.id).authorize_url,
       );
-    },
-    async download(data) {
-      const minimal = decodePersonalDataExport(data);
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(minimal, null, 2)], {
-          type: "application/json",
-        }),
-      );
-      try {
-        const link = browser.document.createElement("a");
-        link.href = url;
-        link.download = "liar-account.json";
-        link.click();
-      } finally {
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }
     },
   };
   return {

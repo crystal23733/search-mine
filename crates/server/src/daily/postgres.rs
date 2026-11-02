@@ -140,7 +140,7 @@ fn receipt(
     Ok(value)
 }
 
-pub(crate) fn export_receipt(
+pub(crate) fn accepted_receipt(
     row: &PgRow,
     now: i64,
 ) -> Result<(PublishedDaily, DailyReceipt), DailyStoreError> {

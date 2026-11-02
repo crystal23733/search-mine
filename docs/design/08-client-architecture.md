@@ -126,3 +126,6 @@ service worker는 versioned shell/locale/core 정적 asset만 캐시하고 공�
 
 
 #152 FR11/13·NFR01/02/06/07/08·TS19/24/26/29/31/36 → [ADR0071](../adr/0071-purpose-consent-port.md) → 목적별 닫힌 current CMP port/재열기수명·8언어설정·실행앱미설정차단 → [검증152](../verification/152-purpose-consent-port.md). 실제CMP/계정탭/서버동의·선택수집/외부147·상위21은후속이다.
+
+
+#178 → [ADR0083](../adr/0083-my-info-client-and-export-removal.md) → game/self 인증 scope·내 정보 메모리 조회·개인 파일 경로 제거 → [검증178](../verification/178-my-info-pages.md).

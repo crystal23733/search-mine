@@ -1,7 +1,5 @@
 use super::*;
-use liar_protocol::privacy::ExportStream;
 use liar_server::events::*;
-use liar_server::privacy::{GameExportReader, PgGameExportReader};
 use std::sync::atomic::{AtomicUsize, Ordering};
 pub(super) struct Clock(pub(super) i64);
 impl AuthClock for Clock {
@@ -16,9 +14,9 @@ fn id(value: Uuid) -> EventId {
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn expired_raw_is_physically_deleted_at_exact_thirty_days_without_deleting_source() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     let game = Uuid::new_v4();
-    super::privacy::seed_online(&pool, owner.account, game, 1000).await;
+    super::personal::seed_online(&pool, owner.account, game, 1000).await;
     PgEventStore::new(pool.clone(), Arc::new(Clock(1001)))
         .capture(
             id(Uuid::new_v4()),
@@ -38,15 +36,18 @@ async fn expired_raw_is_physically_deleted_at_exact_thirty_days_without_deleting
         })
     );
     let now = 1000 + RAW_EVENT_SECONDS;
-    super::privacy::fresh(&pool, owner, now).await;
-    let reader = PgGameExportReader::new(pool.clone(), Arc::new(Clock(now)));
-    assert!(
-        reader
-            .page(owner, ExportStream::Event, None)
-            .await
-            .unwrap()
-            .records
-            .is_empty()
+    super::personal::fresh(&pool, owner, now).await;
+    assert_eq!(
+        PgEventStore::new(pool.clone(), Arc::new(Clock(now)))
+            .capture(
+                id(Uuid::new_v4()),
+                EventSource::Online {
+                    account: id(owner.account),
+                    match_id: id(game)
+                }
+            )
+            .await,
+        Err(EventStoreError::Expired)
     );
     let count: i64 = sqlx::query_scalar("SELECT count(*) FROM product_events")
         .fetch_one(&pool)
@@ -73,15 +74,14 @@ async fn expired_raw_is_physically_deleted_at_exact_thirty_days_without_deleting
     .await
     .unwrap();
     assert_eq!(counts, (0, 1));
-    assert_eq!(
-        reader
-            .page(owner, ExportStream::Online, None)
-            .await
-            .unwrap()
-            .records
-            .len(),
-        1
-    );
+    let reader = liar_server::me::PgMeReader::new(pool.clone(), Arc::new(Clock(now)));
+    let read = liar_server::me::MeReader::read(&reader, owner, liar_server::me::MeQuery::Overview)
+        .await
+        .unwrap();
+    let liar_server::me::MePayload::Overview(view) = read.payload else {
+        panic!("overview")
+    };
+    assert_eq!(view.online.played, 1);
     assert_eq!(
         PgEventStore::new(pool.clone(), Arc::new(Clock(now)))
             .capture(
@@ -134,7 +134,7 @@ async fn count(pool: &sqlx::PgPool) -> i64 {
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn each_batch_stops_at_five_hundred_and_preserves_unexpired_and_future_rows() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     seed(
         &pool,
         owner.account,
@@ -178,7 +178,7 @@ async fn each_batch_stops_at_five_hundred_and_preserves_unexpired_and_future_row
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn locked_rows_are_skipped_and_concurrent_workers_never_double_count() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     let ids = seed(&pool, owner.account, 501, 1000, 1000).await;
     let mut held = pool.begin().await.unwrap();
     sqlx::query("SELECT id FROM product_events WHERE id=$1 FOR UPDATE")
@@ -234,7 +234,7 @@ impl AuthClock for Sequence {
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn clock_rollback_and_delete_failure_roll_back_the_whole_batch() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     seed(&pool, owner.account, 2, 1000, 1000).await;
     let now = 1000 + RAW_EVENT_SECONDS;
     for values in [
@@ -281,7 +281,7 @@ async fn clock_rollback_and_delete_failure_roll_back_the_whole_batch() {
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn pool_sql_deadline_and_cancellation_leave_no_partial_delete_or_session_timeout() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
     seed(&pool, owner.account, 1, 1000, 1000).await;
     let now = 1000 + RAW_EVENT_SECONDS;
     let (single, _) = super::events::single_pool(&pool).await;
@@ -350,7 +350,7 @@ async fn actual_main_startup_physically_reaps_expired_raw_and_keeps_source_and_r
     use super::result_owner::{Server, client, server_command, wait_ready};
     let pool = auth_pool().await;
     let now = SystemAuthClock.now();
-    let owner = super::privacy::participant(&pool, now - RAW_EVENT_SECONDS).await;
+    let owner = super::personal::participant(&pool, now - RAW_EVENT_SECONDS).await;
     seed(
         &pool,
         owner.account,
@@ -367,7 +367,7 @@ async fn actual_main_startup_physically_reaps_expired_raw_and_keeps_source_and_r
         now - RAW_EVENT_SECONDS + 60,
     )
     .await;
-    super::privacy::fresh(&pool, owner, now).await;
+    super::personal::fresh(&pool, owner, now).await;
     let (mut command, origin) = server_command(&pool).await;
     let mut server = Server(command.spawn().unwrap());
     wait_ready(&mut server, &origin).await;
@@ -392,26 +392,24 @@ async fn actual_main_startup_physically_reaps_expired_raw_and_keeps_source_and_r
         .await
         .unwrap();
     assert_eq!(source, 2);
-    super::privacy::fresh(&pool, owner, SystemAuthClock.now()).await;
-    let reader = PgGameExportReader::new(pool.clone(), Arc::new(SystemAuthClock));
-    assert_eq!(
-        reader
-            .page(owner, ExportStream::Event, None)
-            .await
-            .unwrap()
-            .records
-            .len(),
-        1
-    );
-    assert_eq!(
-        reader
-            .page(owner, ExportStream::Online, None)
-            .await
-            .unwrap()
-            .records
-            .len(),
-        2
-    );
+    super::personal::fresh(&pool, owner, SystemAuthClock.now()).await;
+    let identities = PgAuthStore::new(pool.clone())
+        .identities(SessionAuthority {
+            account: owner.account,
+            hash: owner.hash,
+            now: SystemAuthClock.now(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(identities.len(), 1);
+    let reader = liar_server::me::PgMeReader::new(pool.clone(), Arc::new(SystemAuthClock));
+    let view = liar_server::me::MeReader::read(&reader, owner, liar_server::me::MeQuery::Overview)
+        .await
+        .unwrap();
+    let liar_server::me::MePayload::Overview(view) = view.payload else {
+        panic!("overview")
+    };
+    assert_eq!(view.online.played, 2);
     drop(server);
     close_auth_pool(pool).await;
 }
@@ -419,8 +417,8 @@ async fn actual_main_startup_physically_reaps_expired_raw_and_keeps_source_and_r
 #[ignore = "requires real PostgreSQL; executed in database CI"]
 async fn account_cascade_and_cleanup_skip_each_others_locked_rows_without_restoration() {
     let pool = auth_pool().await;
-    let owner = super::privacy::participant(&pool, 1000).await;
-    let other = super::privacy::participant(&pool, 1000).await;
+    let owner = super::personal::participant(&pool, 1000).await;
+    let other = super::personal::participant(&pool, 1000).await;
     let owned = seed(&pool, owner.account, 1, 1000, 1000).await;
     seed(&pool, other.account, 1, 1000, 1000).await;
     let mut erasure = pool.begin().await.unwrap();

@@ -8,7 +8,7 @@ impl AuthClock for Clock {
         self.0.load(Ordering::SeqCst)
     }
 }
-fn session(value: liar_server::privacy::ExportSession) -> ConsentSession {
+fn session(value: liar_server::me::MeSession) -> ConsentSession {
     ConsentSession {
         account: value.account,
         revision: value.revision,
@@ -41,8 +41,8 @@ fn grant() -> Verifier {
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn current_consent_is_session_bound_separate_and_cascades_on_logout_and_deletion() {
     let pool = auth_pool().await;
-    let own = super::privacy::participant(&pool, 1000).await;
-    let other = super::privacy::participant(&pool, 1000).await;
+    let own = super::personal::participant(&pool, 1000).await;
+    let other = super::personal::participant(&pool, 1000).await;
     let clock = Arc::new(Clock(AtomicI64::new(1100)));
     let store = PgConsentStore::new(pool.clone(), clock.clone());
     assert_eq!(store.read(session(own)).await, Ok(None));
@@ -113,7 +113,7 @@ async fn current_consent_is_session_bound_separate_and_cascades_on_logout_and_de
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn concurrent_initial_refreshes_have_one_winner_and_revocation_is_authoritative() {
     let pool = auth_pool().await;
-    let own = session(super::privacy::participant(&pool, 1000).await);
+    let own = session(super::personal::participant(&pool, 1000).await);
     let store = PgConsentStore::new(pool.clone(), Arc::new(Clock(AtomicI64::new(1100))));
     let verifier = grant();
     let (left, right) = tokio::join!(
@@ -157,7 +157,7 @@ impl ConsentVerifier for DelayedVerifier {
 async fn a_late_verifier_cannot_overwrite_withdrawal_logout_deletion_or_time_boundaries() {
     let pool = auth_pool().await;
     for change in 0..6 {
-        let own = session(super::privacy::participant(&pool, 1000).await);
+        let own = session(super::personal::participant(&pool, 1000).await);
         let clock = Arc::new(Clock(AtomicI64::new(1100)));
         let store = Arc::new(PgConsentStore::new(pool.clone(), clock.clone()));
         let verifier = Arc::new(DelayedVerifier {
@@ -222,7 +222,7 @@ async fn a_late_verifier_cannot_overwrite_withdrawal_logout_deletion_or_time_bou
 async fn blocked_transactions_recheck_clock_session_expiry_and_real_two_second_deadline() {
     let pool = auth_pool().await;
     for change in 0..3 {
-        let own = session(super::privacy::participant(&pool, 1000).await);
+        let own = session(super::personal::participant(&pool, 1000).await);
         let (single, pid) = super::events::single_pool(&pool).await;
         let clock = Arc::new(Clock(AtomicI64::new(1100)));
         let store = PgConsentStore::new(single.clone(), clock.clone());
@@ -274,7 +274,7 @@ async fn blocked_transactions_recheck_clock_session_expiry_and_real_two_second_d
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn verifier_timeout_and_closed_store_fail_without_enabling_public_collection() {
     let pool = auth_pool().await;
-    let own = session(super::privacy::participant(&pool, 1000).await);
+    let own = session(super::personal::participant(&pool, 1000).await);
     let store = PgConsentStore::new(pool.clone(), Arc::new(Clock(AtomicI64::new(1100))));
     let verifier = DelayedVerifier {
         entered: tokio::sync::Notify::new(),
@@ -329,7 +329,7 @@ impl AuthClock for SequenceClock {
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn refresh_carries_the_latest_preflight_clock_and_rolls_back_expiry_before_commit() {
     let pool = auth_pool().await;
-    let own = session(super::privacy::participant(&pool, 1000).await);
+    let own = session(super::personal::participant(&pool, 1000).await);
     // Refresh start, two preflight authorization pairs, then verifier boundary.
     let clock = SequenceClock(std::sync::Mutex::new(
         [1100, 1100, 1100, 1200, 1200, 1199].into(),
@@ -416,7 +416,7 @@ async fn actual_session_rotation_erases_the_old_consent_and_does_not_grant_the_n
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn failed_reverification_suspends_previous_grants_during_io_and_after_timeout() {
     let pool = auth_pool().await;
-    let own = session(super::privacy::participant(&pool, 1000).await);
+    let own = session(super::personal::participant(&pool, 1000).await);
     let store = Arc::new(PgConsentStore::new(
         pool.clone(),
         Arc::new(Clock(AtomicI64::new(1100))),

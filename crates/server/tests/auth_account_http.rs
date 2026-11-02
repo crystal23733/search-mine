@@ -62,7 +62,6 @@ async fn rights_routes_require_authentication_origin_and_csrf_before_storage() {
     let r = router().await;
     for (method, path, expected) in [
         ("GET", "/api/v1/me/identities", StatusCode::UNAUTHORIZED),
-        ("POST", "/api/v1/me/export", StatusCode::BAD_REQUEST),
         ("DELETE", "/api/v1/me", StatusCode::BAD_REQUEST),
         (
             "DELETE",

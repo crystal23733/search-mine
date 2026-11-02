@@ -1,19 +1,19 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { advance } from "./online-quick";
+import { observeMeHistory, observedMeHistory } from "./me-history-observation";
 import { solveDaily } from "./daily-http";
 import type {
   AuthBootstrap,
   DailyStartResponse,
   DailyRankingsResponse,
-  PersonalDataExport,
 } from "../../../packages/protocol/src/index";
 type Approve = (context: BrowserContext) => Promise<void>;
 type Login = (page: Page) => Promise<void>;
 
 export function registerDailyTimingHttpTests(approve: Approve, login: Login) {
   for (const width of [1440, 390])
-    test(`daily timing HTTPS preserves server time and owner export at ${width}px`, async ({
+    test(`daily timing HTTPS preserves server time and owner history at ${width}px`, async ({
       browser,
     }) => {
       const context = await browser.newContext({
@@ -23,6 +23,7 @@ export function registerDailyTimingHttpTests(approve: Approve, login: Login) {
       });
       try {
         await approve(context);
+        await observeMeHistory(context);
         const page = await context.newPage();
         await login(page);
         const bootstrap = (await page.request
@@ -170,38 +171,39 @@ export function registerDailyTimingHttpTests(approve: Approve, login: Login) {
               "utf8",
             ),
           ) as Record<string, string>;
-          await page.goto(`/${locale}/settings`);
-          const button = page.getByRole("button", {
-            name: messages["auth.export"],
-            exact: true,
-          });
-          await expect(button).toBeEnabled();
-          const download = page.waitForEvent("download");
-          await button.click();
-          const path = await (await download).path();
-          expect(path).not.toBeNull();
-          const exported = JSON.parse(
-            await readFile(path!, "utf8"),
-          ) as PersonalDataExport;
-          expect(exported.games).toHaveLength(2);
-          expect(exported.games[0]).toMatchObject({
+          await page.goto(`/${locale}/me/history`);
+          const waiting = page.waitForResponse(
+            (r) =>
+              new URL(r.url()).pathname === "/api/v1/me/history" &&
+              r.request().postDataJSON()?.kind === "daily",
+          );
+          await page
+            .getByRole("combobox", { name: messages["me.kind"], exact: true })
+            .selectOption("daily");
+          const response = await waiting;
+          expect(response.status()).toBe(200);
+          expect(response.headers()["cache-control"]).toBe("no-store");
+          const value = await observedMeHistory(page, response);
+          expect(value.total).toBe(1);
+          expect(value.items).toHaveLength(1);
+          expect(value.items[0]).toMatchObject({
             kind: "daily",
-            completion_id: saved.receipt.completion_id,
-            verified_elapsed_ms: saved.receipt.verified_elapsed_ms,
-          });
-          expect(exported.games[1]).toMatchObject({
-            kind: "event",
-            fact: {
-              type: "daily_verified",
+            entry: {
               completion_id: saved.receipt.completion_id,
-              date: replay.metadata.date,
-              mistakes: saved.receipt.mistakes,
+              verified_elapsed_ms: saved.receipt.verified_elapsed_ms,
               trust: "verified_time",
             },
           });
-          expect(exported.replays[0].replay).toEqual(replay);
+          await expect(page.getByTestId("me-record")).toHaveCount(1);
+          await page.getByTestId("me-record").locator("summary").click();
+          await expect(
+            page.getByText(messages["me.serverTime"], { exact: true }),
+          ).toBeVisible();
+          expect(JSON.stringify(value)).not.toMatch(
+            /replay_json|replay_digest|"replay":|attempt_id|rules_snapshot/,
+          );
         }
-        await page.goto("/ko/settings");
+        await page.goto("/ko/me/account");
         await page
           .getByRole("button", { name: "로그아웃", exact: true })
           .click();

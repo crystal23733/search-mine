@@ -2,16 +2,10 @@ import type {
   AuthAccount,
   AuthBootstrap,
   AuthErasure,
-  AuthExport,
   AuthIdentity,
   AuthLoginRequest,
   AuthProviderStatus,
   AuthStart,
-  GameExportInput,
-  GameExportPage,
-  ReplayExportInput,
-  ReplayExport,
-  PersonalDataExport,
 } from "@liar/protocol";
 import type { Locale } from "../locale";
 import type { SubmissionSession } from "../pending-submissions";
@@ -44,7 +38,8 @@ export const PROVIDERS = [
 ] as const;
 export type AuthProvider = (typeof PROVIDERS)[number]["id"];
 export type AuthIntent = "login" | "link" | "reauth";
-export type AuthReturn = "home" | "daily" | "friends" | "settings";
+export type AuthReturn =
+  "home" | "daily" | "friends" | "settings" | "me" | "account";
 export type AuthCode =
   | "auth_required"
   | "auth_invalid"
@@ -73,6 +68,7 @@ export interface AuthState {
   error: AuthCode | null;
   notice: "logged_out" | "unlinked" | "deleted" | null;
   manualAppleDisconnect: boolean;
+  appleRevokePending: boolean;
 }
 export interface AuthTransport {
   bootstrap(signal?: AbortSignal): Promise<AuthBootstrap>;
@@ -89,17 +85,6 @@ export interface AuthTransport {
     csrf: string,
     signal?: AbortSignal,
   ): Promise<AuthAccount>;
-  export(csrf: string, signal?: AbortSignal): Promise<AuthExport>;
-  gameExport(
-    input: GameExportInput,
-    csrf: string,
-    signal?: AbortSignal,
-  ): Promise<GameExportPage>;
-  replayExport(
-    input: ReplayExportInput,
-    csrf: string,
-    signal?: AbortSignal,
-  ): Promise<ReplayExport>;
   erase(csrf: string, signal?: AbortSignal): Promise<AuthErasure>;
   unlink(
     provider: AuthProvider,
@@ -127,11 +112,6 @@ export interface AuthPort extends SubmissionSession, AuthenticatedRequests {
     value: string,
     expectedAccount: string,
   ): Promise<AuthResult<AuthAccount>>;
-  export(expectedAccount: string): Promise<AuthResult<PersonalDataExport>>;
-  exportTo(
-    expectedAccount: string,
-    sink: (data: PersonalDataExport) => Promise<void>,
-  ): Promise<AuthResult<PersonalDataExport>>;
   erase(expectedAccount: string): Promise<AuthResult<AuthErasure>>;
   unlink(
     provider: AuthProvider,
@@ -144,7 +124,11 @@ export function isProvider(value: unknown): value is AuthProvider {
   return PROVIDERS.some((p) => p.id === value);
 }
 export function authReturn(value: string | null): AuthReturn {
-  return value === "daily" || value === "friends" || value === "settings"
+  return value === "daily" ||
+    value === "friends" ||
+    value === "settings" ||
+    value === "me" ||
+    value === "account"
     ? value
     : "home";
 }

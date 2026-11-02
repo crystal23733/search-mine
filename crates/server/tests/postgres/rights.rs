@@ -421,7 +421,7 @@ async fn rights_authorize(
 }
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
-async fn account_http_links_reauthenticates_exports_whitelist_and_deletes_with_real_storage() {
+async fn account_http_links_reauthenticates_without_file_routes_and_deletes_with_real_storage() {
     let pool = auth_pool().await;
     let vault = Arc::new(AeadVault::new(1, vec![(1, [15; 32])]).unwrap());
     let store = PgAuthStore::with_vault(pool.clone(), vault.clone());
@@ -445,7 +445,7 @@ async fn account_http_links_reauthenticates_exports_whitelist_and_deletes_with_r
     );
     let mut cookies = format!("{SESSION_COOKIE}={}", token.expose().as_str());
     let csrf = rights_bootstrap(&router, &mut cookies).await;
-    let export = rights_request(
+    let removed = rights_request(
         &router,
         "POST",
         "/api/v1/me/export",
@@ -454,28 +454,11 @@ async fn account_http_links_reauthenticates_exports_whitelist_and_deletes_with_r
         "{}",
     )
     .await;
-    assert_eq!(export.status(), StatusCode::OK);
-    assert_eq!(export.headers()["cache-control"], "no-store");
-    let export: serde_json::Value =
-        serde_json::from_slice(&to_bytes(export.into_body(), 8192).await.unwrap()).unwrap();
-    let keys: Vec<_> = export
-        .as_object()
-        .unwrap()
-        .keys()
-        .map(String::as_str)
-        .collect();
-    assert_eq!(
-        keys,
-        vec!["account", "created_at", "identities", "last_seen_at"]
-    );
-    assert_eq!(export["account"]["id"], record.account.id.to_string());
-    assert_eq!(export["identities"][0]["provider"], "google");
-    assert_eq!(export["identities"][0].as_object().unwrap().len(), 2);
-    assert!(!export.to_string().contains(&subject));
+    assert_eq!(removed.status(), StatusCode::NOT_FOUND);
     let forbidden = rights_request(
         &router,
-        "POST",
-        "/api/v1/me/export",
+        "PATCH",
+        "/api/v1/me",
         &cookies,
         Some(&csrf),
         r#"{"account_id":"another"}"#,
@@ -588,7 +571,7 @@ async fn bound_links_reauthentication_and_subject_conflicts_cannot_switch_accoun
         Err(AuthError::Conflict)
     ));
     assert!(matches!(
-        store.export(authority(token.hash(), 8300)).await,
+        store.erase_authorized(authority(token.hash(), 8300)).await,
         Err(AuthError::ReauthenticationRequired)
     ));
     let foreign_subject = Uuid::new_v4().to_string();
@@ -715,7 +698,7 @@ async fn bound_links_reauthentication_and_subject_conflicts_cannot_switch_accoun
         .unwrap();
     assert!(
         store
-            .export(authority(reauthenticated.token.hash(), 8303))
+            .identities(authority(reauthenticated.token.hash(), 8303))
             .await
             .is_ok()
     );

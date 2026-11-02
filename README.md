@@ -106,9 +106,9 @@ cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](test
 
 [#66 OAuth 초대 복귀](docs/verification/66-oauth-invitation-return.md)는 `/{locale}/login?return_path=friends&code=ABCD2345`의 canonical 초대를 서버5분 인증 거래에 보존한다. callback·nickname·tutorial 뒤 같은 code로 friends에 돌아가고, 소비된 취소/실패에서도 안전한 새 로그인 재시도를 제공한다. 실제 로비/온라인 화면은 #70/#72에서 연결했다.
 
-`/{locale}/login`, `/onboarding`, `/settings`에서 네 제공자·닉네임·연결/해제·내보내기·로그아웃·삭제를 제공한다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 데일리의 공식 도전 또는 설정의 명시 대기 제출을 사용하며 친구 초대의 실제 OAuth 왕복은 #66/#72에서 검증했다.
+`/{locale}/login`, `/onboarding`, `/me/account`에서 네 제공자·닉네임·연결/해제·로그아웃·삭제를 제공한다. 본인 전적·현재 동의는 내 정보에서 확인하며 파일 다운로드는 제공하지 않는다. 실제 제공자 키/등록/계정 확인은 #42이며, 키가 없는 실행에서도 무계정 연습은 가능하다. 공식 제출은 데일리의 공식 도전 또는 설정의 명시 대기 제출을 사용하며 친구 초대의 실제 OAuth 왕복은 #66/#72에서 검증했다.
 
-설정의 명시적 내보내기는 최근 재인증 뒤 최소 계정 정보와 본인 온라인·데일리 기록, 보관 중인 본인 daily replay를 `liar-account.json`으로 내려받는다. 닉네임이 없어도 가능하다. 서버는50개 페이지·2초 요청·raw7일/기록90일·매 요청 현재 세션을 적용한다. 브라우저는2048페이지/32MiB 안에서 수집하며 오류·취소·계정 전환 시 완성 파일을 만들지 않는다. 여러 페이지를 단일 DB snapshot으로 보장하지 않는다. [ADR0053](docs/adr/0053-personal-game-data-export.md)·[실행 근거](docs/verification/114-personal-game-data-export.md)를 확인한다.
+내 정보는 유효한 현재 세션으로 최소 계정 정보·최근90일 본인 온라인/공식 데일리 기록·현재 동의 상태를 조회한다. 닉네임이 없어도 가능하고 일반 조회에는 반복 재인증이 필요하지 않다. 전적은 서버 전체 요약과20개 페이지로 표시하고 raw replay는 제공하지 않는다. 오류·취소·세션/계정 변경 시 개인 스냅샷을 비우며, 민감한 계정 변경의 최근 재인증은 유지한다. [ADR0081](docs/adr/0081-my-info-and-export-removal.md)·[조회 API 검증](docs/verification/177-my-info-read-api.md)·[화면 검증](docs/verification/178-my-info-pages.md)을 확인한다.
 
 위의 격리된 PostgreSQL 테스트 DB가 실행되고 `DATABASE_URL`이 설정된 환경에서 아래를 실행한다. 실제 제품 router와 DB를 사용하고 외부 제공자 proof만 시험 port로 대체한다. 저장소의 HTTPS 키는 공개된 loopback 시험 전용이며 운영 키로 사용하지 않는다.
 
@@ -120,7 +120,7 @@ yarn build
 yarn playwright test --project auth
 ```
 
-DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속·OS 재시작 후 새 브라우저 결과 발견·양쪽 이탈 시험을 포함한100개를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md), [#72 친구 방](docs/verification/72-friends-room-ui.md), [#105 최신 결과 검증](docs/verification/105-latest-personal-result.md), [#107 통합 출구](docs/verification/107-reconnect-integration-exit.md)를 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
+DB 환경변수가 없는 기본 로컬 실행은 DB 없는 브라우저 프로젝트만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·내 정보·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속·OS 재시작 후 새 브라우저 결과 발견·양쪽 이탈 시험을 포함한 전체 브라우저 프로젝트를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md), [#72 친구 방](docs/verification/72-friends-room-ui.md), [#105 최신 결과 검증](docs/verification/105-latest-personal-result.md), [#107 통합 출구](docs/verification/107-reconnect-integration-exit.md)를 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.
 
 단위 테스트는 순수 포트의 Node 환경과 실제 DOM의 jsdom 환경을 구분한다. [#84 준비·DOM 조회 검증](docs/verification/84-unit-arrangement-observation.md)은 기존 시간 제한과 접근성 단언을 유지한 실행 결과와 한계를 기록한다.
 
@@ -177,7 +177,7 @@ DB 환경변수가 없는 기본 로컬 실행은 browser50개만 검사하고 a
 [#107 양쪽 이탈 통합 검증](docs/verification/107-reconnect-integration-exit.md)은 실제 서버 EOF 둘을 관측한 뒤 abandoned 무승부를 SQL에 저장하고, 인증 쿠키만 받은 새 브라우저에서 본인 최신 결과를 찾는다. abandon은 기존 completed:true, 서버 장애 abort는 false다. 추가 clock·실제 OS 재시작 후에도 결과/시각/본인 통계가 유지되는지 검사하며, 상위18은 해당 PR 병합·이슈 종료 후 최종 종료한다. 원인 미확정83과 외부OAuth42/장비26/사람27·물리삭제/백업25는 별도다.
 
 
-[#120 서버 시간 영속화·본인 export](docs/verification/120-daily-time-persistence-and-export.md)는 sealed proof의 첫 서버 시간을 불변 저장하고 본인 nullable verified_elapsed_ms를 내보낸다. 기존 completion-only 기록은 NULL로 유지하며 새 time으로 승격하지 않는다. 인증 시간 HTTP는 #122, 공개 두 순위는 #124에서 이어진다. 명시 공식 도전·웹 제출은 후속이다.
+[#120 서버 시간 영속화·당시 파일 제공 검증](docs/verification/120-daily-time-persistence-and-export.md)은 sealed proof의 첫 서버 시간을 불변 저장한 근거다. 본인 nullable verified_elapsed_ms는 현재 #177/#178 조회에서 확인한다. 기존 completion-only 기록은 NULL로 유지하며 새 time으로 승격하지 않는다. 인증 시간 HTTP는 #122, 공개 두 순위는 #124에서 이어진다.
 
 
 #122의 [인증 데일리 시간 HTTP](docs/adr/0057-authenticated-daily-timing-http.md)는 고정 POST `/api/v1/daily/start`, `/heartbeat`, `/submit-timed`를 제공한다. 서버 현재 UTC/accepted snapshot·동일 세션 권위·15초 권장 heartbeat/45초 gap·단조 clock/TTL을 적용하고, 시간 proof 없는 유효 replay는 완료만 기록한다. 저장된 첫 nullable 시간은 retry/Practice에서 불변이다. `LIAR_DAILY_TICKETS`는 기본64/엄격1..20000이며 HTTP와 로그아웃/삭제는 같은 registry/barrier를 사용한다. migration을 먼저 적용하고 serving을 시작한다. [실행 검증122](docs/verification/122-authenticated-daily-timing-http.md).

@@ -27,7 +27,7 @@ export function MeContent({ section }: { section: MeSection }) {
   );
   const state = useSnapshot(controller);
   useEffect(() => {
-    void controller.start();
+    void controller.mount();
     return () => controller.dispose();
   }, [controller]);
   const value = state.overview;

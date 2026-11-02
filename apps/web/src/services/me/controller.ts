@@ -98,6 +98,9 @@ export class MeController {
     this.state = { ...this.state, status, overview, history, error };
     for (const listener of this.listeners) listener();
   }
+  async mount() {
+    if (this.state.status === "idle") await this.start();
+  }
   async start() {
     if (this.disposed) return;
     this.cancel();

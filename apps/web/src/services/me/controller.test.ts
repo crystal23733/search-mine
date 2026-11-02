@@ -155,3 +155,30 @@ test("an in-flight change clears the private snapshot and reloads after the same
   );
   f.controller.dispose();
 });
+
+test("a filter chosen before the mount effect retains its request without a duplicate or cancellation", async () => {
+  const f = await fixture("history");
+  const daily = {
+    ...history(),
+    kind: "daily" as const,
+    online: null,
+    items: [{ kind: "daily" as const, entry: overview().recent_daily[0] }],
+  };
+  let finish!: (value: typeof daily) => void;
+  vi.mocked(f.port.history).mockReturnValue(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  const selected = f.controller.filter("daily", "all");
+  const signal = vi.mocked(f.port.history).mock.calls[0][2];
+  const mounted = f.controller.mount();
+  const calls = vi.mocked(f.port.history).mock.calls.length;
+  const cancelled = signal.aborted;
+  finish(daily);
+  await Promise.all([selected, mounted]);
+  expect(calls).toBe(1);
+  expect(cancelled).toBe(false);
+  expect(f.controller.read().history).toEqual(daily);
+  f.controller.dispose();
+});

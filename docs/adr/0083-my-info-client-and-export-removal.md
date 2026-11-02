@@ -20,6 +20,8 @@ MePort와 HTTP adapter는 Rust 원천의 Me DTO를 strict decode하고 응답의
 
 컨트롤러는 메모리에만 개인 DTO를 가진다. 필터/페이지/화면 변경은 이전 요청을 취소하고 새 요청이 시작될 때 기존 개인 목록을 지운다. 계정·세션 revision·오프라인·로그아웃·삭제·peer invalidation 변화는 즉시 데이터와 선택 상세를 지우고 늦은 응답을 무시한다. 동일 계정의 명시 변경 중에는 관리 폼을 유지하고 조회 DTO를 비우며, 변경 완료 뒤 현재 권한으로 다시 읽는다. 계정/실제 세션 상실 때는 폼과 확인 창도 제거한다. Apple 철회 재시도/수동 안내는 인증 서비스의 작업별 메모리 상태와 공통 피드백으로 유지해 계정 폼이 닫힌 뒤에도 사라지지 않게 한다. 실패를 빈 목록으로 바꾸지 않으며 로딩/빈 전적/오류/로그인 필요를 구분한다. 개인 화면의 robots meta는 noindex이고, 공개 shell/WASM 캐시는 유지하되 개인 API/스냅샷을 SW/localStorage/IDB에 넣지 않는다.
 
+초기 화면의 지연된 mount effect는 아직 idle인 경우에만 첫 조회를 시작한다. 사용자가 effect 실행 전에 필터를 바꿔 이미 조회를 시작했다면 그 요청을 취소·중복 실행하지 않는다. 명시 재시도와 이후 필터/페이지 변경의 취소 정책은 유지한다. 실제 HTTPS 호출 stack에서 filter가 시작한 요청 뒤 mount effect가 같은 요청을 다시 시작하는 경합을 확인했으며, 이 순서를 도메인 controller 행동 검사와 전체 UI에서 검증한다.
+
 서버 현재 동의 view와 실제 브라우저 CMP 제어를 구분한다. 현재 선택/미확인/만료·확인/만료 시각·실CMP 미설정 상태를 표시한다. 저장 view는 선택 수집 권한이 아니며 새로운 수집을 활성화하지 않는다. 현재 동의의 만료 표시는 조회 시작 monotonic 시각과 서버 관측 시각부터의 잔여 시간을 사용해 응답/후속 proof 대기를 보수적으로 반영한다. 브라우저 시계나 이 표시는 서버 저장 권한을 발급하지 않는다. 기존 기기 ConsentSettings를 재사용해 비로그인 사용자도 계속 재열기·철회를 이용한다.
 
 ## 제거와 보존
@@ -31,3 +33,5 @@ MePort와 HTTP adapter는 Rust 원천의 Me DTO를 strict decode하고 응답의
 ## 검증
 
 문서→행동 Red→Green→Refactor. 일반 self scope의 닉네임 없음/오래된 인증, game scope 유지, 전후 소유권/취소·역순 응답·필터/페이지·오프라인·계정 전환/삭제·null/0표본·noindex/no-store를 검증한다. 실제 PG/HTTPS의 내 정보 조회·8언어·360px/PC·키보드·개인 파일 다운로드0·세 구 API404, 기존 대전/데일리/공유 회귀와 최신 coverage gate를 확인한다. 실제 CMP/OAuth 운영 연결·admin·전역403/404·#83 해결로 보고하지 않는다.
+
+최초 CI의 `Network.getResponseBody` 오류를 조사하면서 브라우저 내 임시 fetch 관찰로 동일 필터의 요청2개를 발견했다. 실제 호출 stack은 filter 조회 뒤 mount 조회가 실행되는 경합을 확인했다. 임시 관찰·abort wrapper는 제거하고 원래 실제 응답 JSON·DOM·본인 소유권·공식 시간·비밀 제외 단언을 유지한다. 도메인 행동 Red→Green과 원래 HTTPS/최신 CI로 초기 조회 보완을 검증하며 timeout/retry/SW/브라우저 flags는 변경하지 않는다. #83 해결과 구분한다.

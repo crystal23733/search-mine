@@ -5,7 +5,7 @@ use crate::{
 };
 use sqlx::PgPool;
 use std::{sync::Arc, time::Duration};
-use tokio::sync::Semaphore;
+use tokio::{sync::Semaphore, time::Instant};
 
 pub struct PgOptionalEventStore {
     pool: PgPool,
@@ -28,12 +28,25 @@ impl OptionalEventStore for PgOptionalEventStore {
             .clone()
             .try_acquire_owned()
             .map_err(|_| OptionalEventError::Unavailable)?;
-        tokio::time::timeout(Duration::from_secs(2), async {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        tokio::time::timeout_at(deadline, async {
             if input.expected_revision.is_nil() {
                 return Err(OptionalEventError::Invalid);
             }
             let started = postgres::checked_now(self.clock.as_ref(), 0).map_err(storage)?;
             let mut tx = self.pool.begin().await.map_err(db)?;
+            let remaining = deadline
+                .saturating_duration_since(Instant::now())
+                .as_millis();
+            if remaining == 0 {
+                return Err(OptionalEventError::Unavailable);
+            }
+            // Keep the backend transaction bounded even after this future is cancelled.
+            sqlx::query("SELECT set_config('transaction_timeout',$1,true)")
+                .bind(format!("{remaining}ms"))
+                .execute(&mut *tx)
+                .await
+                .map_err(db)?;
             let (now, expiry) =
                 consent::authorize_in_transaction(&mut tx, input.session, &self.clock, started)
                     .await

@@ -44,6 +44,26 @@ async fn rows(pool: &sqlx::PgPool) -> i64 {
         .await
         .unwrap()
 }
+async fn backend_stopped(pool: &sqlx::PgPool, pid: i32, budget: Duration) {
+    tokio::time::timeout(budget, async {
+        loop {
+            let gone: bool = sqlx::query_scalar(
+                "SELECT NOT EXISTS(SELECT 1 FROM pg_stat_activity WHERE pid=$1)",
+            )
+            .bind(pid)
+            .fetch_one(pool)
+            .await
+            .unwrap();
+            if gone {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("The backend must end without releasing its blocker after the original deadline");
+}
+
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn current_purpose_and_atomic_duplicate_receipts_never_reuse_withdrawn_permission() {
@@ -269,9 +289,11 @@ async fn blocked_insert_resamples_consent_session_and_clock_and_cancellation_nev
                         .unwrap(),
                     Err(OptionalEventError::Unavailable)
                 );
+                backend_stopped(&pool, pid, Duration::from_millis(500)).await;
             } else {
                 task.abort();
                 assert!(task.await.unwrap_err().is_cancelled());
+                backend_stopped(&pool, pid, Duration::from_secs(3)).await;
             }
             sqlx::query("SELECT pg_advisory_unlock(hashtextextended(current_schema(),0))")
                 .execute(&mut *held)
@@ -788,5 +810,106 @@ async fn duplicate_receipt_time_is_monotonic_across_requests_and_invalid_authori
         Err(OptionalEventError::Unauthorized)
     );
     assert_eq!(rows(&pool).await, 1);
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn pool_wait_is_subtracted_from_the_original_backend_deadline_and_clean_connections_recover()
+{
+    use futures_util::poll;
+    let pool = auth_pool().await;
+    let own = owner(super::personal::participant(&pool, 1000).await);
+    let clock = Arc::new(Clock(AtomicI64::new(1100)));
+    let grant = PgConsentStore::new(pool.clone(), clock.clone())
+        .refresh(
+            own,
+            None,
+            &Grant {
+                analytics: true,
+                advertising: true,
+            },
+        )
+        .await
+        .unwrap();
+    sqlx::raw_sql("CREATE FUNCTION pause_optional_insert() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(hashtextextended(current_schema(),0)); RETURN NEW; END $$; CREATE TRIGGER pause_optional_insert BEFORE INSERT ON optional_product_events FOR EACH ROW EXECUTE FUNCTION pause_optional_insert();").execute(&pool).await.unwrap();
+    let (single, pid) = super::events::single_pool(&pool).await;
+    let loaned = single.acquire().await.unwrap();
+    let mut held = pool.acquire().await.unwrap();
+    sqlx::query("SELECT pg_advisory_lock(hashtextextended(current_schema(),0))")
+        .execute(&mut *held)
+        .await
+        .unwrap();
+    let store = Arc::new(PgOptionalEventStore::new(single.clone(), clock));
+    let copy = store.clone();
+    let write = input(own, grant.revision);
+    let mut pending = Box::pin(async move { copy.capture(write).await });
+    assert!(poll!(pending.as_mut()).is_pending());
+    tokio::time::sleep(Duration::from_millis(750)).await;
+    drop(loaned);
+    let task = tokio::spawn(pending);
+    super::events::blocked(&pool, pid).await;
+    assert_eq!(task.await.unwrap(), Err(OptionalEventError::Unavailable));
+    backend_stopped(&pool, pid, Duration::from_millis(500)).await;
+    assert_eq!(rows(&pool).await, 0);
+    sqlx::query("SELECT pg_advisory_unlock(hashtextextended(current_schema(),0))")
+        .execute(&mut *held)
+        .await
+        .unwrap();
+    let timeout: String = sqlx::query_scalar("SELECT current_setting('transaction_timeout')")
+        .fetch_one(&single)
+        .await
+        .unwrap();
+    assert_eq!(timeout, "0");
+    assert!(
+        store
+            .capture(input(own, grant.revision))
+            .await
+            .unwrap()
+            .inserted
+    );
+    let timeout: String = sqlx::query_scalar("SELECT current_setting('transaction_timeout')")
+        .fetch_one(&single)
+        .await
+        .unwrap();
+    assert_eq!(timeout, "0");
+    sqlx::query("SELECT set_config('transaction_timeout','300ms',false)")
+        .execute(&single)
+        .await
+        .unwrap();
+    sqlx::query("SELECT pg_advisory_lock(hashtextextended(current_schema(),0))")
+        .execute(&mut *held)
+        .await
+        .unwrap();
+    let copy = store.clone();
+    let write = input(own, grant.revision);
+    let mut task = tokio::spawn(async move { copy.capture(write).await });
+    let result = tokio::time::timeout(Duration::from_millis(1500), &mut task).await;
+    if result.is_err() {
+        task.abort();
+        let _ = task.await;
+        sqlx::query("SELECT pg_advisory_unlock(hashtextextended(current_schema(),0))")
+            .execute(&mut *held)
+            .await
+            .unwrap();
+        panic!(
+            "A stricter existing transaction budget must not be extended to the request maximum"
+        );
+    }
+    assert_eq!(
+        result.unwrap().unwrap(),
+        Err(OptionalEventError::Unavailable)
+    );
+    let renewed_pid: i32 = sqlx::query_scalar("SELECT pg_backend_pid()")
+        .fetch_one(&single)
+        .await
+        .unwrap();
+    assert_ne!(renewed_pid, pid);
+    sqlx::query("SELECT pg_advisory_unlock(hashtextextended(current_schema(),0))")
+        .execute(&mut *held)
+        .await
+        .unwrap();
+    drop(held);
+    single.close().await;
     close_auth_pool(pool).await;
 }

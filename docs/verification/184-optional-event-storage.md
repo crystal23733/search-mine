@@ -6,7 +6,7 @@
 
 ## 변경과 실제 코드 리뷰
 
-OptionalEventStore port는 서버 ConsentSession·기대 동의 revision과 기존 검증된 ClientDraft를 받는다. adapter가 account→session 잠금 아래 token/account/현재 auth session과 session_consents를 읽고 목적·발생/현재 시각·revision을 검증한다. 저장 뒤 commit 전에도 같은 잠금 아래 세션·현재 동의·시계를 재확인한다. 전체2초/try4동시·기존 pool이며 verifier IO나 공개 collector를 추가하지 않는다.
+OptionalEventStore port는 서버 ConsentSession·기대 동의 revision과 기존 검증된 ClientDraft를 받는다. adapter가 account→session 잠금 아래 token/account/현재 auth session과 session_consents를 읽고 목적·발생/현재 시각·revision을 검증한다. 저장 뒤 commit 전에도 같은 잠금 아래 세션·현재 동의·시계를 재확인한다. pool 대기 시간을 뺀 원래 Instant deadline을 transaction-local PostgreSQL transaction_timeout에도 적용해 요청 종료 뒤 실제 SQL 대기가 무제한 남지 않게 한다. 전체2초/try4동시·기존 pool이며 verifier IO나 공개 collector를 추가하지 않는다.
 
 현재 서버 동의의 subject와 auth session ID가 같은지 먼저 확인한 뒤 별도 탭 상관키로 기존 admit_client 정책을 투영한다. auth session ID/토큰을 tab session_key로 복사하지 않는다. 내부 투영은 client snapshot이 아니고 기대 revision은 현재 권한 조건이다. 기존 Consent의 account/session SQL 검증은 공통 transaction helper로 그대로 추출했고, 목적/기간 규칙은 Rust 기존 도메인을 재사용했다. 새 pure optional 모델도 Event domain95% 그룹에 포함했다.
 
@@ -26,13 +26,22 @@ OptionalEventStore port는 서버 ConsentSession·기대 동의 revision과 기�
 
 | 검사 | 결과 |
 |---|---|
-| Rust workspace | 최종453 passed, 실DB173 ignored (별도 실행) |
-| PostgreSQL18 전체 | 최종173 passed / 19.97초; 새13개 포함 |
-| 목적/저장/권리9개 | grant 목적 분리·동시 동일ID/receipt 불변·stale/unknown/foreign·철회와 저장 두 잠금 순서·insert 대기 중 만료/역행/2초/취소·logout/회전/erase cascade·재동의/DB 제약·실제4대기/5th거절·제한 DML·다른 요청의 receipt 시계 역행 |
+| Rust workspace | 최종453 passed, 실DB174 ignored (별도 실행) |
+| PostgreSQL18 전체 | 최종174 passed / 20.33초; 새14개 포함 |
+| 목적/저장/권리10개 | grant 목적 분리·동시 동일ID/receipt 불변·stale/unknown/foreign·철회와 저장 두 잠금 순서·insert 대기 중 만료/역행/2초/취소·logout/회전/erase cascade·재동의/DB 제약·실제4대기/5th거절·제한 DML·다른 요청의 receipt 시계 역행 |
 | 선택 보존4개 | 정확30일·500+1/잠긴 행·기한/취소/역행 rollback·실제 main 즉시 정리/활성 세션 보존 |
-| 기존 보존 회귀 | 공유 helper 도입 뒤17 passed / 2.83초; 최종 전체173에도 포함 |
+| 기존 보존 회귀 | 공유 helper 도입 뒤17 passed / 2.83초; 최종 전체174에도 포함 |
 | 최소 권한 최종 | 제한 DML1 passed / 0.38초; auth/raw의 id 열 잠금만, payload/DDL/동의 발급 거절 |
 | 정적/생성 | fmt·clippy workspace/all-targets·WASM check·생성 TS freshness 통과 |
 | 문서 | 229 Markdown·제품21·설계18·시나리오36, Mermaid35/오류0 |
 
 소스 변경은 Rust/SQL/문서이며 이번 이슈의 로컬 웹 단위/전체 browser·PowerShell check.ps1 자체·LLVM coverage는 미실행이다. 정확 head의 CI로 전체 web/browser·기존 domain95/server80을 확인하고 실제 결과를 PR에 기록한다. 실제 CMP/운영/사람 검수를 대신하지 않는다. 로컬 Red/SQL·실제 main 진단과 검증 로그는 ignored .tmp/optional184-* 및 review/YYYY-MM-DD.md에 보존한다. 코드 리뷰·필수 CI·최신 head/base·PR 병합/이슈 종료는 실제 수행 결과를 PR에 기록한다.
+
+
+## 최초 CI와 실제 backend 기한 보완
+
+source e2ff7f8 / Product41633828173의 필수6종이 성공했다. Rust453/173ignored·실PG173(70.51초)/계측174(70.83초), Event509/510=99.80%·Consent167/167=100%·서버11997/12505=95.94%·core2338/2399=97.46%가 기존 기준을 통과했다. 웹 단위372, 전체 browser125 passed/1 flaky/10.0분이다. 기존83의 offline-mobile224행 load10000ms가 첫 시도 실패 후 retry에서 통과했고 trace1·로그/layout을 .tmp/optional184-first-ci-*에 보존했다. 이를83 해결이나 재시도 없는 성공으로 표현하지 않는다.
+
+이 green만으로 병합하지 않고 실제 backend 수명 검증을 추가했다. 요청이2초에 반환돼도 blocker를 해제하지 않으면 SQL 대기가 남는 것을 실PG Red1로 재현했다. 선택 transaction에만 남은 원래 기한의 transaction_timeout을 설정하고 같은 client timeout_at을 유지했다. 전역 DB 설정을 변경하지 않는다. 공식 PostgreSQL18 근거는 ADR0085에 연결했다. blocker 미해제 상태의 backend 종료·caller취소 뒤 원래기한 종료·750ms pool대기 예산 비연장·새 연결/정상 수집/기본설정0복귀·기존300ms기한비연장을 확인했다. 관련10개가4.90초에 통과했다.
+
+추가 pool 검사는 반환할 연결을 보유한 채 pool.close를 기다리는 fixture 종료 순서 오류로 처음 대기했다. 실제 DB에는 대기 SQL 없이 idle 연결만 남았음을 확인하고 해당 로컬 시험 프로세스2개만 종료한 뒤 연결을 먼저 반환하도록 고쳤다. 이 준비 오류나 기존 짧은 기한 검사를 행동 Red로 계산하지 않는다. 최종 전체/계측/CI는 이 보완을 포함한 새 source로 다시 확인하며 최초 CI와 구분한다.

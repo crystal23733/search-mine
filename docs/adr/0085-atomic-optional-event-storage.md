@@ -8,6 +8,8 @@
 
 OptionalEventStore port는 기존 검증된 ClientDraft, 서버가 도출한 ConsentSession(account/current session revision/token hash), 기대 동의 revision을 받는다. grant boolean/브라우저 snapshot/TC 문자열을 저장 권위로 받지 않는다. PostgreSQL adapter는 account→session 순서 잠금과 현재 token/account/session·생성 시각0 이상/인증 시각 순서·시계/기한 검증 뒤 같은 transaction에서 session_consents 현재 행을 읽는다. subject가 현재 auth session ID이고 revision이 기대값과 같으며 목적·발생 시각·현재 기한을 충족할 때만 저장한다. 저장 직전에도 같은 잠금 아래 현재 동의·세션·시각을 다시 검사한다. 전체2초·try4동시·기존 pool만 사용한다.
 
+요청 future의 timeout만으로 실제 SQL 대기가 끝나지 않는 것을 실PG Red로 확인했다. 선택 저장은 기존2초 Instant deadline에서 pool/BEGIN 소모분을 뺀 남은 시간을 transaction-local `transaction_timeout`으로 한 번 설정하고 같은 client deadline을 유지한다. [PostgreSQL18 공식 설명](https://www.postgresql.org/docs/18/runtime-config-client.html#GUC-TRANSACTION-TIMEOUT)에 따른 transaction 전체 기한이며 전역 설정을 바꾸지 않는다. 만료 시 해당 세션이 종료되어 미commit 기록/잠금이 해제되고 pool이 연결을 교체한다. timeout 뒤 blocker를 풀기 전의 실제 backend 종료·pool 대기 예산 비연장·정상 요청/기본 설정 복귀를 검증한다. caller 취소도 원래 backend 기한을 없애지 않는다.
+
 ADR0063의 draft.session_key는 탭 내 일시 opaque 상관키이며 auth session ID/토큰과 다르다. 서버 권위는 별도 검증한 ConsentSession/CurrentConsent에서만 온다. 현재 허용을 기존 admit_client 목적/기간 정책으로 투영할 때 snapshot subject는 그 draft의 탭 상관키로 지정한다. 이 투영은 내부 저장 경계에서만 수행하고 client가 작성한 snapshot을 받지 않는다. 인증 세션 ID를 탭 key로 복사하거나 공개하지 않는다. 계정/세션의 동의가 없는 다른 tabkey의 존재 자체는 허용을 만들지 못한다. 익명 subject·무계정 서버 계정은 만들지 않는다.
 
 ## 저장과 재시도

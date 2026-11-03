@@ -20,6 +20,8 @@ mod admission_restart;
 mod anonymous_metrics;
 #[path = "postgres/consent.rs"]
 mod consent;
+#[path = "postgres/consent_http.rs"]
+mod consent_http;
 #[path = "postgres/daily.rs"]
 mod daily;
 #[path = "postgres/daily_http.rs"]

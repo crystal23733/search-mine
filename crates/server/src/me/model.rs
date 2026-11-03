@@ -135,22 +135,10 @@ pub trait MeReader: Send + Sync {
     fn read(&self, session: MeSession, query: MeQuery) -> PortFuture<'_, Result<MeRead, MeError>>;
 }
 pub(super) fn valid_session(value: &Session, now: i64) -> bool {
-    !value.account.id.is_nil()
-        && !value.id.is_nil()
-        && (0..=MAX_ME_TIMESTAMP).contains(&now)
-        && value.created_at >= 0
-        && value.created_at <= value.authenticated_at
-        && value.authenticated_at <= now
-        && now < value.expires_at
-        && value.expires_at <= MAX_ME_TIMESTAMP
+    value.current_at(now)
 }
 pub(super) fn same_session(first: &Session, last: &Session, now: i64) -> bool {
-    valid_session(last, now)
-        && first.id == last.id
-        && first.account.id == last.account.id
-        && first.created_at == last.created_at
-        && first.authenticated_at == last.authenticated_at
-        && first.expires_at == last.expires_at
+    first.same_authority(last, now)
 }
 pub(super) fn summary(rows: &[MeOnlineRow]) -> Result<MeMatchSummary, MeError> {
     if rows.len() > MAX_ME_RECORDS {
@@ -185,47 +173,7 @@ pub(super) fn summary(rows: &[MeOnlineRow]) -> Result<MeMatchSummary, MeError> {
     Ok(value)
 }
 pub(super) fn consent_view(value: Option<CurrentConsent>, now: i64) -> Result<MeConsent, MeError> {
-    let Some(value) = value else {
-        return Ok(MeConsent {
-            cmp_available: false,
-            status: MeConsentStatus::Unknown,
-            analytics: MeChoice::Unknown,
-            advertising: MeChoice::Unknown,
-            checked_at: None,
-            expires_at: None,
-        });
-    };
-    if value.subject.is_nil()
-        || value.revision.is_nil()
-        || value.checked_at < 0
-        || value.checked_at > now
-        || value.expires_at <= value.checked_at
-        || value.expires_at > MAX_ME_TIMESTAMP
-    {
-        return Err(MeError::Unavailable);
-    }
-    let live = now < value.expires_at;
-    let choice = |granted| {
-        if !live {
-            MeChoice::Unknown
-        } else if granted {
-            MeChoice::Granted
-        } else {
-            MeChoice::Denied
-        }
-    };
-    Ok(MeConsent {
-        cmp_available: false,
-        status: if live {
-            MeConsentStatus::Current
-        } else {
-            MeConsentStatus::Expired
-        },
-        analytics: choice(value.analytics),
-        advertising: choice(value.advertising),
-        checked_at: Some(value.checked_at),
-        expires_at: Some(value.expires_at),
-    })
+    crate::consent::view::project_current(value, now).map_err(|_| MeError::Unavailable)
 }
 pub(super) fn build(
     mut data: MeData,

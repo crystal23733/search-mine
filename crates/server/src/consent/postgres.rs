@@ -124,18 +124,57 @@ impl PgConsentStore {
         session: ConsentSession,
         purpose: OptionalPurpose,
     ) -> Result<CurrentConsent, ConsentError> {
+        self.withdraw_selected(session, Some(purpose)).await
+    }
+    pub async fn withdraw_all(
+        &self,
+        session: ConsentSession,
+    ) -> Result<CurrentConsent, ConsentError> {
+        self.withdraw_selected(session, None).await
+    }
+    async fn withdraw_selected(
+        &self,
+        session: ConsentSession,
+        purpose: Option<OptionalPurpose>,
+    ) -> Result<CurrentConsent, ConsentError> {
         bounded(async {
             let started = model::checked_now(&self.clock, 0)?;
             let mut tx = self.pool.begin().await.map_err(db)?;
             let (now, expiry) = self.authorize(&mut tx, session, started).await?;
             let current = load(&mut tx, session.revision).await?;
-            let value = model::withdrawn(session.revision, current, purpose, now, expiry)?;
+            let value = match purpose {
+                Some(purpose) => model::withdrawn(session.revision, current, purpose, now, expiry)?,
+                None => model::withdrawn_all(session.revision, current, now, expiry)?,
+            };
             save(&mut tx, value).await?;
             self.authorize(&mut tx, session, now).await?;
             tx.commit().await.map_err(db)?;
             Ok(value)
         })
         .await
+    }
+}
+impl ConsentStore for PgConsentStore {
+    async fn read(&self, session: ConsentSession) -> Result<Option<CurrentConsent>, ConsentError> {
+        PgConsentStore::read(self, session).await
+    }
+    async fn refresh(
+        &self,
+        session: ConsentSession,
+        expected: Option<Uuid>,
+        verifier: &impl ConsentVerifier,
+    ) -> Result<CurrentConsent, ConsentError> {
+        PgConsentStore::refresh(self, session, expected, verifier).await
+    }
+    async fn withdraw(
+        &self,
+        session: ConsentSession,
+        purpose: OptionalPurpose,
+    ) -> Result<CurrentConsent, ConsentError> {
+        PgConsentStore::withdraw(self, session, purpose).await
+    }
+    async fn withdraw_all(&self, session: ConsentSession) -> Result<CurrentConsent, ConsentError> {
+        PgConsentStore::withdraw_all(self, session).await
     }
 }
 async fn load(

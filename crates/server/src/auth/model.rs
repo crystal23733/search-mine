@@ -233,7 +233,26 @@ pub struct Session {
     pub expires_at: i64,
     pub authenticated_at: i64,
 }
+const MAX_SESSION_TIMESTAMP: i64 = 253402300799;
 impl Session {
+    pub(crate) fn current_at(&self, now: i64) -> bool {
+        !self.account.id.is_nil()
+            && !self.id.is_nil()
+            && (0..=MAX_SESSION_TIMESTAMP).contains(&now)
+            && self.created_at >= 0
+            && self.created_at <= self.authenticated_at
+            && self.authenticated_at <= now
+            && now < self.expires_at
+            && self.expires_at <= MAX_SESSION_TIMESTAMP
+    }
+    pub(crate) fn same_authority(&self, last: &Self, now: i64) -> bool {
+        last.current_at(now)
+            && self.id == last.id
+            && self.account.id == last.account.id
+            && self.created_at == last.created_at
+            && self.authenticated_at == last.authenticated_at
+            && self.expires_at == last.expires_at
+    }
     pub fn fresh(&self, now: i64, window: i64) -> bool {
         window > 0
             && now >= self.created_at

@@ -34,6 +34,27 @@ pub trait ConsentVerifier: Send + Sync {
         now: i64,
     ) -> impl Future<Output = Result<VerifiedConsent, ConsentError>> + Send;
 }
+pub trait ConsentStore: Send + Sync {
+    fn read(
+        &self,
+        session: ConsentSession,
+    ) -> impl Future<Output = Result<Option<CurrentConsent>, ConsentError>> + Send;
+    fn refresh(
+        &self,
+        session: ConsentSession,
+        expected: Option<Uuid>,
+        verifier: &impl ConsentVerifier,
+    ) -> impl Future<Output = Result<CurrentConsent, ConsentError>> + Send;
+    fn withdraw(
+        &self,
+        session: ConsentSession,
+        purpose: OptionalPurpose,
+    ) -> impl Future<Output = Result<CurrentConsent, ConsentError>> + Send;
+    fn withdraw_all(
+        &self,
+        session: ConsentSession,
+    ) -> impl Future<Output = Result<CurrentConsent, ConsentError>> + Send;
+}
 pub struct DisabledConsentVerifier;
 impl ConsentVerifier for DisabledConsentVerifier {
     async fn verify(&self, _: Uuid, _: i64) -> Result<VerifiedConsent, ConsentError> {
@@ -115,17 +136,7 @@ pub(super) fn suspended(
 ) -> Result<Option<CurrentConsent>, ConsentError> {
     check_revision(subject, expected, current, now, session_expiry)?;
     current
-        .map(|value| {
-            let mut denied = withdrawn(
-                subject,
-                Some(value),
-                OptionalPurpose::Analytics,
-                now,
-                session_expiry,
-            )?;
-            denied.advertising = false;
-            Ok(denied)
-        })
+        .map(|value| withdrawn_all(subject, Some(value), now, session_expiry))
         .transpose()
 }
 pub(super) fn withdrawn(
@@ -147,6 +158,22 @@ pub(super) fn withdrawn(
         advertising: purpose != OptionalPurpose::Advertising
             && live.is_some_and(|value| value.advertising),
     })
+}
+pub(super) fn withdrawn_all(
+    subject: Uuid,
+    current: Option<CurrentConsent>,
+    now: i64,
+    session_expiry: i64,
+) -> Result<CurrentConsent, ConsentError> {
+    let mut value = withdrawn(
+        subject,
+        current,
+        OptionalPurpose::Analytics,
+        now,
+        session_expiry,
+    )?;
+    value.advertising = false;
+    Ok(value)
 }
 pub(super) fn validate(
     subject: Uuid,

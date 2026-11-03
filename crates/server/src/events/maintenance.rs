@@ -18,6 +18,12 @@ impl EventRetentionMaintenance {
             component: "event_retention",
         }
     }
+    pub fn optional(store: Arc<dyn EventRetentionStore>) -> Self {
+        Self {
+            store,
+            component: "optional_event_retention",
+        }
+    }
     pub fn anonymous(store: Arc<dyn EventRetentionStore>) -> Self {
         Self {
             store,

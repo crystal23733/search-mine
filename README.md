@@ -10,11 +10,11 @@
 
 필수 이벤트의 원본 transaction 수집·원시30일 보존·NSM/D7·익명13개월 보존·내부 운영 조회는 [#145의 #20 통합 감사](docs/verification/145-anonymous-metrics-retention-and-operations.md)까지 완료했다. 실제 사용 지표 달성·선택 수집·운영 장비 실측은 별도다.
 
-[#174 인증 세션별 동의 기반](docs/verification/174-session-consent-authority.md)은 서버 검증 포트·현재 revision/목적별 철회·PostgreSQL 저장 경계다. 현재 동의 view는 #177/#178의 내 정보에서 읽으며, [#182 현재 세션 HTTP](docs/verification/182-consent-control-http.md)는 조회·서버 재검증·목적별/전체 철회를 연결한다. 실제 CMP와 선택 이벤트의 저장 시점 권한 검사는 #21의 필수 후속이다. 실제 CMP 없는 재검증은503이며 실행 앱의 선택 분석/광고는 계속 차단한다.
+[#174 인증 세션별 동의 기반](docs/verification/174-session-consent-authority.md)은 서버 검증 포트·현재 revision/목적별 철회·PostgreSQL 저장 경계다. 현재 동의 view는 #177/#178의 내 정보에서 읽으며, [#182 현재 세션 HTTP](docs/verification/182-consent-control-http.md)는 조회·서버 재검증·목적별/전체 철회를 연결한다. [#184 선택 저장 경계](docs/verification/184-optional-event-storage.md)는 현재 세션/목적/동의 revision을 같은 저장 transaction에서 확인하고 중복·철회 경합·30일 물리 보존을 처리한다. 실제 CMP와 공개 collector 연결은 #21의 필수 후속이다. 실제 CMP 없는 재검증은503이며 실행 앱의 선택 분석/광고는 계속 차단한다.
 
 [#134 이벤트 도메인 계약](docs/verification/134-event-domain-contracts.md)은 목적별 동의·재전송 동일성·보존 경계와 bounded NSM/D7 계산을 Rust로 정의한다. [#138 자동 필수 수집](docs/verification/138-atomic-essential-event-producers.md)과 [#140 원시 물리 보존](docs/verification/140-bounded-raw-event-retention.md)을 연결했고 비필수 수집은 #21의 실제 동의 연결 전까지 켜지 않는다.
 
-[#136 필수 이벤트 저장·본인 권리](docs/verification/136-essential-event-store-and-rights.md)는 committed 서버 기록의 최소 PG 저장·보존·삭제를 제공한다. 당시 event 파일 제공은 #178에서 제거한다. 선택 이벤트 저장은 차단한다.
+[#136 필수 이벤트 저장·본인 권리](docs/verification/136-essential-event-store-and-rights.md)는 committed 서버 기록의 최소 PG 저장·보존·삭제를 제공한다. 당시 event 파일 제공은 #178에서 제거했다. 선택 저장 adapter는 #184에서 별도로 구현하며 실행 앱의 선택 수집은 실제 CMP/collector 연결 전까지 차단한다.
 
 - [PRD: 범위와 인수 조건](docs/product/16-PRD.md)
 - [설계 검토·승인 항목·요구 추적표](docs/design/00-review-checklist.md)
@@ -71,7 +71,7 @@ cargo run --locked -p liar-server
 
 [OAuth 운영 설정](docs/workflow/oauth-configuration.md)은 키 없는 비활성 실행·secret 변수·최소 callback/권한과 실제 계정 검수의 한계를 기록합니다. 실계정 검수 #42를 테스트 fixture 성공으로 대체하지 않습니다.
 
-인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 네 제공자와 로그인 HTTP는 [#44 검증](docs/verification/44-oauth-providers-http.md)에 기록합니다. 계정 권리는 [#45 검증](docs/verification/45-account-rights-apple-revocation.md)에 기록하며 계정 화면은 [#46 검증](docs/verification/46-oauth-account-ui.md)을 확인합니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 아래는 격리된 테스트 DB 예시입니다.
+인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 네 제공자와 로그인 HTTP는 [#44 검증](docs/verification/44-oauth-providers-http.md)에 기록합니다. 계정 권리는 [#45 검증](docs/verification/45-account-rights-apple-revocation.md)에 기록하며 계정 화면은 [#46 검증](docs/verification/46-oauth-account-ui.md)을 확인합니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 필수/선택 raw 정리의 SKIP LOCKED에는 각 raw 테이블의 SELECT/DELETE와 최소 UPDATE(id) 열 권한이 필요합니다. payload UPDATE·DDL 권한은 주지 않고 id 변경도 불변 trigger가 거절합니다. 아래는 격리된 테스트 DB 예시입니다.
 
 ```powershell
 yarn playwright install chromium

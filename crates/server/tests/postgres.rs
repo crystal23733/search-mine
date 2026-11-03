@@ -40,6 +40,10 @@ mod latest_results;
 mod main_observation;
 #[path = "postgres/me.rs"]
 mod me;
+#[path = "postgres/optional_events.rs"]
+mod optional_events;
+#[path = "postgres/optional_retention.rs"]
+mod optional_retention;
 #[path = "postgres/personal.rs"]
 mod personal;
 #[tokio::test]

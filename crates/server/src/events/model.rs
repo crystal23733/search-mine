@@ -116,7 +116,7 @@ pub struct ClientDraft {
     event_id: EventId,
     pub(super) session_key: EventId,
     pub(super) occurred_at: i64,
-    locale: String,
+    pub(super) locale: String,
     pub(super) event: ClientAction,
 }
 #[derive(Deserialize)]

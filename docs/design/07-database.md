@@ -183,7 +183,7 @@ sqlx 바인딩만 사용, 앱 계정은 필요한 DML만, migration 계정은 �
 
 #138 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/29/31/35/36 → [ADR0065](../adr/0065-atomic-essential-event-producers.md) → 원본 transaction 안의 자동 essential 수집·UUID순 계정 잠금·공동 rollback·재전송 비복원·unknown OS 복구/본인 HTTPS 다운로드 → [검증138](../verification/138-atomic-essential-event-producers.md). 물리 보존·first-normal/NSM/D7·상위20 통합 출구는 후속이다.
 
-#138 serving DML 권한은 기존 source/account DML과 product_events의 SELECT/INSERT/DELETE를 포함한다. 이벤트 UPDATE·DDL·_sqlx_migrations 권한은 필요하지 않다. 실제 제한 역할로 결과+event commit와 account 삭제 cascade를 검증하며 migration은 별도 DDL 계정으로 수행한다.
+#138 serving DML 권한은 기존 source/account DML과 product_events의 SELECT/INSERT/DELETE를 포함한다. 이벤트 payload UPDATE·DDL·_sqlx_migrations 권한은 필요하지 않다. #184에서 확인한 bounded raw 정리의 FOR UPDATE SKIP LOCKED에는 필수/선택 raw 테이블 각각 UPDATE(id) 열 권한이 필요하다. id 변경은 불변 trigger로 거절하며 전체 UPDATE 권한을 부여하지 않는다. 실제 제한 역할로 결과+event commit와 account 삭제 cascade를 검증하며 migration은 별도 DDL 계정으로 수행한다.
 
 #140 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/35 → [ADR0066](../adr/0066-bounded-raw-event-retention.md) → 원래 occurred_at30일 물리 삭제·500개/transaction·2초/SKIP LOCKED·최소 row-lock 권한·main 별도 maintenance → [검증140](../verification/140-bounded-raw-event-retention.md). calendar13개월/first-normal/NSM·D7와상위20은후속이다.
 
@@ -198,3 +198,6 @@ metric_collection은 singleton=true와 최초 started_at/단조 증가 coverage_
 #145 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0068](../adr/0068-anonymous-metrics-retention-and-operations.md) → same-RR 익명 scalar 집계·원래13달력개월/500개2초 정리·자동주기/로컬운영·계정삭제·상위20 감사 → [검증145](../verification/145-anonymous-metrics-retention-and-operations.md). optional21/외부42·25/26·27·미확정83/141은 별도다.
 
 product_metric_aggregates는 metric+UTC period 키, computed_at/observed_through/expires_at/complete와 닫힌 NSM 또는 D7 counter만 저장한다. 임의payload/개인FK/식별자/명단이 없으며 원래13달력개월 expiry는 Rust에서 검증한다. forward migration202610160002의 trigger가 period/expiry 변경과시각/완결성후퇴·같은시각다른내용을막는다. TTL index로500개씩 물리삭제하며계정삭제는다음RR재계산에반영하고기존익명과거집계에는개인mapping을두지않는다.
+
+
+#184 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0085](../adr/0085-atomic-optional-event-storage.md) → 현재 세션/목적/revision의 같은 transaction 저장·별도 탭 상관키·불변 재시도·선택 raw30일/보존 → [검증184](../verification/184-optional-event-storage.md). 실제 CMP/공개 collector·외부147·상위21은 후속이다.

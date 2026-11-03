@@ -449,3 +449,8 @@ TS20/21/22/24/29/31/35/36 확장(#184): 검증된 ClientDraft와 서버 현재 �
 #186 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0086](../adr/0086-consent-operation-deadline.md) → 동의 HTTP/전후세션/검증IO/두transaction의 동일 deadline·실제 backend 종료·공통 PG 기한 → [검증186](../verification/186-consent-operation-deadline.md). 실제 CMP/수집기·상위21/외부147·83은 후속이다.
 
 TS20/21/24/29/31/35/36 확장(#186): 원래2초를 본문750ms·전후세션 확인·pool·verifier IO/두transaction에 새로 부여하지 않는다. 실제PG blocker를 해제하지 않은 상태에서 조회/갱신/목적별·전체 철회와 caller취소의 backend가 종료돼야 한다. 검증IO는잠금밖/사전차단commit·늦은CAS거절을유지하고 정상 연결/설정복귀·기존더짧은DB기한을확인한다. 다른API/공개DTO/기한·retry·브라우저flags를완화하지않는다.
+
+
+#188 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0087](../adr/0087-optional-event-http.md) → 폐쇄 단건/최소receipt·현재세션/같은transaction동의·원래기한/실제backend·실HTTPS → [검증188](../verification/188-optional-event-http.md). 실제CMP/브라우저자동수집·외부147·상위21/83은 후속이다.
+
+TS20/21/22/24/29/31/35/36 확장(#188): 단건 선택수집은 현재cookie/Origin/CSRF·8locale/폐쇄입력·본문2048/draft1024·4동시/속도/no-store를검사한다. 서버가owner를선택하며같은transaction의현재동의/목적/revision·철회/만료/다른계정/동일ID불변receipt/충돌을확인한다. 전후권한/취소/clock역행과본문·세션·pool·실DB의원래2초/backend종료를확인한다. 실행verifierDisabled·실HTTPS미동의차단·브라우저자동수집0을유지한다.

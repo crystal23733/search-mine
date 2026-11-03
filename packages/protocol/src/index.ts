@@ -108,4 +108,13 @@ export type ConsentRefreshInput = { v: number, expected_revision: string | null,
 export type ConsentWithdrawal = "analytics" | "advertising" | "all";
 export type ConsentWithdrawInput = { v: number, purpose: ConsentWithdrawal, };
 export type ConsentSnapshot = { v: number, account_id: string, observed_at: number, revision: string | null, consent: MeConsent, };
+export type LandingRoute = "home" | "daily" | "rules" | "tutorial";
+export type ShareChannel = "copy" | "native" | "png";
+export type Placement = "menu" | "result";
+export type AdFailure = "unavailable" | "no_fill" | "cancelled";
+export type OptionalEventAction<I> = { "type": "landing_view", route: LandingRoute, } | { "type": "invite_open", } | { "type": "tutorial_start", run_id: I, } | { "type": "tutorial_complete", run_id: I, duration_ms: number, skipped: boolean, } | { "type": "rematch_selected", previous_match_id: I, } | { "type": "share_click", date: string, channel: ShareChannel, } | { "type": "ad_request", placement: Placement, } | { "type": "ad_impression", placement: Placement, } | { "type": "ad_failed", placement: Placement, reason: AdFailure, };
+export type OptionalEventDraft<I = string> = { event_version: number, event_id: I, session_key: I, occurred_at: number, locale: string, event: OptionalEventAction<I>, };
+export type OptionalEventCaptureInput = { v: number, expected_revision: string, draft: OptionalEventDraft<string>, };
+export type OptionalEventReceipt = { v: number, event_id: string, received_at: number, };
+export type OptionalEventApiError = "malformed" | "unsupported_version" | "unauthorized" | "consent" | "conflict" | "rate_limited" | "unavailable";
 export const DEFAULT_RULES: RulesSnapshot = {"rules":{"version":1,"width":16,"height":16,"mines":40,"opening":0,"duration_ms":240000,"countdown_ms":3000,"mine_stun_ms":3000,"wrong_accuse_stun_ms":3000,"reflect_stun_ms":2000,"gauge_capacity":20,"safe_gain":1,"max_lies":2,"reconnect_grace_ms":30000,"room_expiry_ms":600000,"max_commands_per_seat":8192,"attack_strategy":"known-neighborhood-v1","bots":{"easy":{"decision_ms":900,"accusation_ms":1500,"max_nodes":5000,"max_component_cells":12,"max_constraints":256},"normal":{"decision_ms":500,"accusation_ms":800,"max_nodes":50000,"max_component_cells":18,"max_constraints":512},"hard":{"decision_ms":180,"accusation_ms":250,"max_nodes":200000,"max_component_cells":22,"max_constraints":1024}}},"hash":"9f34faecb9419fd6014d8ff36e54aabd47b5bb8392b98af36a1405b2e2479ba6","solver_version":1,"rng_version":1};

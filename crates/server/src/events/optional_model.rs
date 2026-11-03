@@ -22,6 +22,16 @@ pub trait OptionalEventStore: Send + Sync {
     fn capture(
         &self,
         input: OptionalCapture,
+    ) -> impl Future<Output = Result<StoredEvent, OptionalEventError>> + Send {
+        self.capture_until(
+            input,
+            std::time::Instant::now() + crate::consent::CONSENT_REQUEST_TIMEOUT,
+        )
+    }
+    fn capture_until(
+        &self,
+        input: OptionalCapture,
+        deadline: std::time::Instant,
     ) -> impl Future<Output = Result<StoredEvent, OptionalEventError>> + Send;
 }
 pub(super) fn admit_current(

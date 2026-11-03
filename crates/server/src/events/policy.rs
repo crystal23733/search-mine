@@ -1,4 +1,4 @@
-use super::{ClientDraft, EventError, EventId, ProductEvent, Purpose};
+use super::{ClientActionPurpose, ClientDraft, EventError, EventId, ProductEvent, Purpose};
 use chrono::{DateTime, Datelike, Months, NaiveDate};
 use serde::Serialize;
 use uuid::Uuid;

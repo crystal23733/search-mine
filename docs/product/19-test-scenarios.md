@@ -439,3 +439,8 @@ TS13/18/19/20/26/30 확장(#167): [ADR0079](../adr/0079-action-first-tutorial.md
 #182 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0084](../adr/0084-bounded-consent-control-http.md) → 현재 cookie 세션의 동의 조회/서버 CAS 재검증·목적별/전체 철회 HTTP·기본 verifier 차단 → [검증182](../verification/182-consent-control-http.md). 선택 이벤트 at-write·실제 CMP/외부147·상위21은 후속이다.
 
 TS20/21/24/29/31/35/36 확장(#182): v1 폐쇄4KiB 입력의 현재 조회/expected revision 재검증/목적별·전체 철회를 현재 cookie·Origin/CSRF로만 허용한다. 닉네임 없음/301초 일반 조회·client account/grant/TC 필드 거절·정상 unknown과실패구분·no-store/최소 projection을 검사한다. 서버 verifier 실패/timeout/caller취소는 기존 허용을 먼저 차단하고, 전체 철회는 한 revision/transaction으로 두 목적을 차단한다. 실제PG의 CAS/늦은 grant/다른세션/기한·역행/철회·동시자원한도와 실제HTTPS의같은운영adapter/미설정refresh503/권리/Meview연결을 검증한다. 선택 수집과실CMP활성화는 하지 않는다.
+
+
+#184 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0085](../adr/0085-atomic-optional-event-storage.md) → 현재 세션/목적/revision의 같은 transaction 저장·별도 탭 상관키·불변 재시도·선택 raw30일/보존 → [검증184](../verification/184-optional-event-storage.md). 실제 CMP/공개 collector·외부147·상위21은 후속이다.
+
+TS20/21/22/24/29/31/35/36 확장(#184): 검증된 ClientDraft와 서버 현재 세션/동의 revision을 같은 저장 transaction에서 검사한다. 탭 key와 auth session ID를 구분하고 client snapshot을 허용 권위로 받지 않는다. 목적 분리·발생 뒤 동의/기한/만료/역행·동일ID 한행/receipt 불변·다른 내용/owner 충돌·철회 뒤 duplicate 거절을 확인한다. 실제PG 잠금으로 철회/회전/logout/삭제·대기 중 시각/timeout/취소 경합과 cascade를 검증하며, 정확30일/500행·8batch·2초 보존과 제한 DML·UPDATE 불변·필수 이벤트 영향 없음을 확인한다. 실제 CMP/collector/광고는 활성화하지 않는다.

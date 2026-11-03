@@ -132,7 +132,12 @@ fn record(line: &str, elapsed: u64) -> Value {
     };
     if !matches!(
         component,
-        "board_pool" | "admission" | "event_retention" | "metric_retention" | "product_metrics"
+        "board_pool"
+            | "admission"
+            | "event_retention"
+            | "optional_event_retention"
+            | "metric_retention"
+            | "product_metrics"
     ) {
         return output;
     }

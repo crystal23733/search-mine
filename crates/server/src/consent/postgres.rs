@@ -18,38 +18,7 @@ impl PgConsentStore {
         session: ConsentSession,
         previous: i64,
     ) -> Result<(i64, i64), ConsentError> {
-        if session.account.is_nil() || session.revision.is_nil() {
-            return Err(ConsentError::Unauthorized);
-        }
-        let started = model::checked_now(&self.clock, previous)?;
-        authorize_account_transaction(
-            tx,
-            SessionAuthority {
-                account: session.account,
-                hash: session.hash,
-                now: started,
-            },
-            false,
-        )
-        .await
-        .map_err(auth)?;
-        let row = sqlx::query("SELECT id,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM authenticated_at)::bigint AS authenticated_at,EXTRACT(EPOCH FROM expires_at)::bigint AS expires_at FROM auth_sessions WHERE account_id=$1 AND token_hash=$2")
-            .bind(session.account).bind(session.hash.as_slice()).fetch_optional(&mut **tx).await.map_err(db)?.ok_or(ConsentError::Unauthorized)?;
-        let now = model::checked_now(&self.clock, started)?;
-        let id: Uuid = row.try_get("id").map_err(db)?;
-        let created: i64 = row.try_get("created_at").map_err(db)?;
-        let authenticated: i64 = row.try_get("authenticated_at").map_err(db)?;
-        let expiry: i64 = row.try_get("expires_at").map_err(db)?;
-        if id != session.revision
-            || created > now
-            || authenticated < created
-            || authenticated > now
-            || expiry <= now
-        {
-            return Err(ConsentError::Unauthorized);
-        }
-        model::validate(session.revision, None, now, expiry)?;
-        Ok((now, expiry))
+        authorize_in_transaction(tx, session, &self.clock, previous).await
     }
     async fn read_at(
         &self,
@@ -177,6 +146,48 @@ impl ConsentStore for PgConsentStore {
         PgConsentStore::withdraw_all(self, session).await
     }
 }
+/// Locks and validates the account/session shared by consent and optional writes.
+pub(crate) async fn authorize_in_transaction(
+    tx: &mut Transaction<'_, Postgres>,
+    session: ConsentSession,
+    clock: &Arc<dyn AuthClock>,
+    previous: i64,
+) -> Result<(i64, i64), ConsentError> {
+    if session.account.is_nil() || session.revision.is_nil() {
+        return Err(ConsentError::Unauthorized);
+    }
+    let started = model::checked_now(clock, previous)?;
+    authorize_account_transaction(
+        tx,
+        SessionAuthority {
+            account: session.account,
+            hash: session.hash,
+            now: started,
+        },
+        false,
+    )
+    .await
+    .map_err(auth)?;
+    let row = sqlx::query("SELECT id,EXTRACT(EPOCH FROM created_at)::bigint AS created_at,EXTRACT(EPOCH FROM authenticated_at)::bigint AS authenticated_at,EXTRACT(EPOCH FROM expires_at)::bigint AS expires_at FROM auth_sessions WHERE account_id=$1 AND token_hash=$2")
+            .bind(session.account).bind(session.hash.as_slice()).fetch_optional(&mut **tx).await.map_err(db)?.ok_or(ConsentError::Unauthorized)?;
+    let now = model::checked_now(clock, started)?;
+    let id: Uuid = row.try_get("id").map_err(db)?;
+    let created: i64 = row.try_get("created_at").map_err(db)?;
+    let authenticated: i64 = row.try_get("authenticated_at").map_err(db)?;
+    let expiry: i64 = row.try_get("expires_at").map_err(db)?;
+    if id != session.revision
+        || created < 0
+        || created > now
+        || authenticated < created
+        || authenticated > now
+        || expiry <= now
+    {
+        return Err(ConsentError::Unauthorized);
+    }
+    model::validate(session.revision, None, now, expiry)?;
+    Ok((now, expiry))
+}
+
 async fn load(
     tx: &mut Transaction<'_, Postgres>,
     subject: Uuid,

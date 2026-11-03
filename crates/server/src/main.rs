@@ -3,7 +3,7 @@ use liar_server::consent::*;
 use liar_server::daily::*;
 use liar_server::events::{
     AggregationMaintenance, EventRetentionMaintenance, PgAggregateRetention, PgAggregateStore,
-    PgEventRetention, PgMetricReader,
+    PgEventRetention, PgMetricReader, PgOptionalEventRetention,
 };
 use liar_server::lobby::*;
 use liar_server::me::*;
@@ -105,6 +105,13 @@ async fn serve() -> ServerResult {
             .map_err(|_| "Maintenance database configuration is invalid")?;
         tokio::spawn(
             EventRetentionMaintenance::new(Arc::new(PgEventRetention::new(
+                maintenance_pool.clone(),
+                auth_clock.clone(),
+            )))
+            .run(),
+        );
+        tokio::spawn(
+            EventRetentionMaintenance::optional(Arc::new(PgOptionalEventRetention::new(
                 maintenance_pool.clone(),
                 auth_clock.clone(),
             )))

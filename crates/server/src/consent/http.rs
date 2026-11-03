@@ -4,7 +4,7 @@ use crate::{
     online::{AuthorityRegistry, SessionReader},
 };
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     body::Bytes,
     extract::{DefaultBodyLimit, Request, State, rejection::BytesRejection},
     http::{HeaderMap, StatusCode, Uri, header},
@@ -13,11 +13,10 @@ use axum::{
     routing::post,
 };
 use liar_protocol::{consent::*, online::OnlineError, results::ResultError};
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
-use tokio::sync::Semaphore;
+use std::sync::{Arc, Mutex};
+use tokio::{sync::Semaphore, time::Instant};
+#[derive(Clone, Copy)]
+struct RequestDeadline(Instant);
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -132,39 +131,44 @@ pub fn consent_router<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
 }
 async fn bound<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
     State(ctx): State<Arc<Context<S, V>>>,
-    request: Request,
+    mut request: Request,
     next: Next,
 ) -> Response {
     let Ok(_permit) = ctx.requests.clone().try_acquire_owned() else {
         return unavailable().await;
     };
-    tokio::time::timeout(Duration::from_secs(2), next.run(request))
+    let deadline = Instant::now() + CONSENT_REQUEST_TIMEOUT;
+    request.extensions_mut().insert(RequestDeadline(deadline));
+    tokio::time::timeout_at(deadline, next.run(request))
         .await
         .unwrap_or_else(|_| failure(error(ConsentApiError::Unavailable)))
 }
 async fn read<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
     State(ctx): State<Arc<Context<S, V>>>,
+    Extension(RequestDeadline(deadline)): Extension<RequestDeadline>,
     uri: Uri,
     headers: HeaderMap,
     body: Result<Bytes, BytesRejection>,
 ) -> Response {
-    respond(ctx, uri, headers, body, Operation::Read).await
+    respond(ctx, uri, headers, body, Operation::Read, deadline).await
 }
 async fn refresh<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
     State(ctx): State<Arc<Context<S, V>>>,
+    Extension(RequestDeadline(deadline)): Extension<RequestDeadline>,
     uri: Uri,
     headers: HeaderMap,
     body: Result<Bytes, BytesRejection>,
 ) -> Response {
-    respond(ctx, uri, headers, body, Operation::Refresh).await
+    respond(ctx, uri, headers, body, Operation::Refresh, deadline).await
 }
 async fn withdraw<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
     State(ctx): State<Arc<Context<S, V>>>,
+    Extension(RequestDeadline(deadline)): Extension<RequestDeadline>,
     uri: Uri,
     headers: HeaderMap,
     body: Result<Bytes, BytesRejection>,
 ) -> Response {
-    respond(ctx, uri, headers, body, Operation::Withdraw).await
+    respond(ctx, uri, headers, body, Operation::Withdraw, deadline).await
 }
 enum Command {
     Read,
@@ -216,6 +220,7 @@ async fn respond<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
     headers: HeaderMap,
     body: Result<Bytes, BytesRejection>,
     operation: Operation,
+    deadline: Instant,
 ) -> Response {
     let result = async {
         let started = ctx.authentication.clock.now();
@@ -259,7 +264,7 @@ async fn respond<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
             .map_err(authority)?;
         let session = ctx
             .sessions
-            .read(token.hash())
+            .read_until(token.hash(), deadline.into_std())
             .await
             .map_err(authority)?
             .filter(|v| v.current_at(ctx.authentication.clock.now()))
@@ -292,33 +297,40 @@ async fn respond<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
                 hash: token.hash(),
             };
             let current = match command {
-                Command::Read => ctx.store.read(owner).await.map_err(domain)?,
+                Command::Read => ctx
+                    .store
+                    .read(owner, deadline.into_std())
+                    .await
+                    .map_err(domain)?,
                 Command::Refresh(expected) => Some(
                     ctx.store
-                        .refresh(owner, expected, ctx.verifier.as_ref())
+                        .refresh(owner, expected, ctx.verifier.as_ref(), deadline.into_std())
                         .await
                         .map_err(domain)?,
                 ),
                 Command::Withdraw(ConsentWithdrawal::Analytics) => Some(
                     ctx.store
-                        .withdraw(owner, OptionalPurpose::Analytics)
+                        .withdraw(owner, OptionalPurpose::Analytics, deadline.into_std())
                         .await
                         .map_err(domain)?,
                 ),
                 Command::Withdraw(ConsentWithdrawal::Advertising) => Some(
                     ctx.store
-                        .withdraw(owner, OptionalPurpose::Advertising)
+                        .withdraw(owner, OptionalPurpose::Advertising, deadline.into_std())
                         .await
                         .map_err(domain)?,
                 ),
-                Command::Withdraw(ConsentWithdrawal::All) => {
-                    Some(ctx.store.withdraw_all(owner).await.map_err(domain)?)
-                }
+                Command::Withdraw(ConsentWithdrawal::All) => Some(
+                    ctx.store
+                        .withdraw_all(owner, deadline.into_std())
+                        .await
+                        .map_err(domain)?,
+                ),
             };
             let observed = ctx.authentication.clock.now();
             let last = ctx
                 .sessions
-                .read(token.hash())
+                .read_until(token.hash(), deadline.into_std())
                 .await
                 .map_err(authority)?
                 .ok_or_else(|| error(ConsentApiError::Unauthorized))?;

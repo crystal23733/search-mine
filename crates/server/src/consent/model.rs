@@ -1,5 +1,10 @@
 use crate::{auth::AuthClock, events::MAX_EVENT_TIMESTAMP};
-use std::{future::Future, sync::Arc};
+use std::{
+    future::Future,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+pub const CONSENT_REQUEST_TIMEOUT: Duration = Duration::from_secs(2);
 use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -38,21 +43,25 @@ pub trait ConsentStore: Send + Sync {
     fn read(
         &self,
         session: ConsentSession,
+        deadline: Instant,
     ) -> impl Future<Output = Result<Option<CurrentConsent>, ConsentError>> + Send;
     fn refresh(
         &self,
         session: ConsentSession,
         expected: Option<Uuid>,
         verifier: &impl ConsentVerifier,
+        deadline: Instant,
     ) -> impl Future<Output = Result<CurrentConsent, ConsentError>> + Send;
     fn withdraw(
         &self,
         session: ConsentSession,
         purpose: OptionalPurpose,
+        deadline: Instant,
     ) -> impl Future<Output = Result<CurrentConsent, ConsentError>> + Send;
     fn withdraw_all(
         &self,
         session: ConsentSession,
+        deadline: Instant,
     ) -> impl Future<Output = Result<CurrentConsent, ConsentError>> + Send;
 }
 pub struct DisabledConsentVerifier;

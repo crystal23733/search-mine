@@ -1,16 +1,39 @@
 use super::*;
 use crate::auth::{AuthClock, AuthError, SessionAuthority, authorize_account_transaction};
 use sqlx::{PgPool, Postgres, Row, Transaction};
-use std::{future::Future, sync::Arc, time::Duration};
+use std::{future::Future, sync::Arc};
+use tokio::time::Instant;
 use uuid::Uuid;
 
 pub struct PgConsentStore {
     pool: PgPool,
     clock: Arc<dyn AuthClock>,
+    deadline: Option<Instant>,
 }
 impl PgConsentStore {
     pub fn new(pool: PgPool, clock: Arc<dyn AuthClock>) -> Self {
-        Self { pool, clock }
+        Self {
+            pool,
+            clock,
+            deadline: None,
+        }
+    }
+    fn for_deadline(&self, deadline: std::time::Instant) -> Self {
+        Self {
+            pool: self.pool.clone(),
+            clock: self.clock.clone(),
+            deadline: Some(Instant::from_std(deadline)),
+        }
+    }
+    async fn transaction(
+        &self,
+        deadline: Instant,
+    ) -> Result<Transaction<'static, Postgres>, ConsentError> {
+        let mut tx = self.pool.begin().await.map_err(db)?;
+        crate::postgres_deadline::arm(&mut tx, deadline)
+            .await
+            .map_err(|_| ConsentError::Unavailable)?;
+        Ok(tx)
     }
     async fn authorize(
         &self,
@@ -25,9 +48,9 @@ impl PgConsentStore {
         session: ConsentSession,
         previous: i64,
     ) -> Result<(Option<CurrentConsent>, i64), ConsentError> {
-        bounded(async {
+        bounded(self.deadline, |deadline| async move {
             let started = model::checked_now(&self.clock, previous)?;
-            let mut tx = self.pool.begin().await.map_err(db)?;
+            let mut tx = self.transaction(deadline).await?;
             let (now, expiry) = self.authorize(&mut tx, session, started).await?;
             let current = load(&mut tx, session.revision).await?;
             model::validate(session.revision, current, now, expiry)?;
@@ -49,14 +72,16 @@ impl PgConsentStore {
         expected: Option<Uuid>,
         verifier: &impl ConsentVerifier,
     ) -> Result<CurrentConsent, ConsentError> {
-        bounded(async {
+        bounded(self.deadline, |deadline| async move {
             let started = model::checked_now(&self.clock, 0)?;
             // Commit a blocked revision before verifier IO so failure cannot preserve an old grant.
-            let (expected, observed_at) = self.begin_refresh(session, expected, started).await?;
+            let (expected, observed_at) = self
+                .begin_refresh(session, expected, started, deadline)
+                .await?;
             let before_verify = model::checked_now(&self.clock, observed_at)?;
             let evidence = verifier.verify(session.revision, before_verify).await?;
             let after_verify = model::checked_now(&self.clock, before_verify)?;
-            let mut tx = self.pool.begin().await.map_err(db)?;
+            let mut tx = self.transaction(deadline).await?;
             let (now, expiry) = self.authorize(&mut tx, session, after_verify).await?;
             let current = load(&mut tx, session.revision).await?;
             let value =
@@ -76,8 +101,9 @@ impl PgConsentStore {
         session: ConsentSession,
         expected: Option<Uuid>,
         previous: i64,
+        deadline: Instant,
     ) -> Result<(Option<Uuid>, i64), ConsentError> {
-        let mut tx = self.pool.begin().await.map_err(db)?;
+        let mut tx = self.transaction(deadline).await?;
         let (now, expiry) = self.authorize(&mut tx, session, previous).await?;
         let current = load(&mut tx, session.revision).await?;
         let blocked = model::suspended(session.revision, expected, current, now, expiry)?;
@@ -106,9 +132,9 @@ impl PgConsentStore {
         session: ConsentSession,
         purpose: Option<OptionalPurpose>,
     ) -> Result<CurrentConsent, ConsentError> {
-        bounded(async {
+        bounded(self.deadline, |deadline| async move {
             let started = model::checked_now(&self.clock, 0)?;
-            let mut tx = self.pool.begin().await.map_err(db)?;
+            let mut tx = self.transaction(deadline).await?;
             let (now, expiry) = self.authorize(&mut tx, session, started).await?;
             let current = load(&mut tx, session.revision).await?;
             let value = match purpose {
@@ -124,26 +150,38 @@ impl PgConsentStore {
     }
 }
 impl ConsentStore for PgConsentStore {
-    async fn read(&self, session: ConsentSession) -> Result<Option<CurrentConsent>, ConsentError> {
-        PgConsentStore::read(self, session).await
+    async fn read(
+        &self,
+        session: ConsentSession,
+        deadline: std::time::Instant,
+    ) -> Result<Option<CurrentConsent>, ConsentError> {
+        self.for_deadline(deadline).read(session).await
     }
     async fn refresh(
         &self,
         session: ConsentSession,
         expected: Option<Uuid>,
         verifier: &impl ConsentVerifier,
+        deadline: std::time::Instant,
     ) -> Result<CurrentConsent, ConsentError> {
-        PgConsentStore::refresh(self, session, expected, verifier).await
+        self.for_deadline(deadline)
+            .refresh(session, expected, verifier)
+            .await
     }
     async fn withdraw(
         &self,
         session: ConsentSession,
         purpose: OptionalPurpose,
+        deadline: std::time::Instant,
     ) -> Result<CurrentConsent, ConsentError> {
-        PgConsentStore::withdraw(self, session, purpose).await
+        self.for_deadline(deadline).withdraw(session, purpose).await
     }
-    async fn withdraw_all(&self, session: ConsentSession) -> Result<CurrentConsent, ConsentError> {
-        PgConsentStore::withdraw_all(self, session).await
+    async fn withdraw_all(
+        &self,
+        session: ConsentSession,
+        deadline: std::time::Instant,
+    ) -> Result<CurrentConsent, ConsentError> {
+        self.for_deadline(deadline).withdraw_all(session).await
     }
 }
 /// Locks and validates the account/session shared by consent and optional writes.
@@ -234,10 +272,17 @@ fn auth(error: AuthError) -> ConsentError {
         _ => ConsentError::Unauthorized,
     }
 }
-async fn bounded<T>(
-    operation: impl Future<Output = Result<T, ConsentError>>,
+async fn bounded<T, F: Future<Output = Result<T, ConsentError>>>(
+    deadline: Option<Instant>,
+    operation: impl FnOnce(Instant) -> F,
 ) -> Result<T, ConsentError> {
-    tokio::time::timeout(Duration::from_secs(2), operation)
+    let now = Instant::now();
+    let limit = now + CONSENT_REQUEST_TIMEOUT;
+    let deadline = deadline.unwrap_or(limit);
+    if deadline <= now || deadline > limit {
+        return Err(ConsentError::Unavailable);
+    }
+    tokio::time::timeout_at(deadline, operation(deadline))
         .await
         .unwrap_or(Err(ConsentError::Unavailable))
 }

@@ -23,6 +23,28 @@ impl PgAuthStore {
             invalidations: std::sync::Arc::new(NoSessionInvalidator),
         }
     }
+    pub(crate) async fn session_until(
+        &self,
+        hash: [u8; 32],
+        now: i64,
+        deadline: std::time::Instant,
+    ) -> Result<Option<Session>, AuthError> {
+        let deadline = tokio::time::Instant::from_std(deadline);
+        if deadline <= tokio::time::Instant::now() {
+            return Err(AuthError::Unavailable);
+        }
+        tokio::time::timeout_at(deadline, async {
+            let mut tx = self.pool.begin().await.map_err(database_error)?;
+            crate::postgres_deadline::arm(&mut tx, deadline)
+                .await
+                .map_err(|_| AuthError::Unavailable)?;
+            let value = read_session(&mut *tx, hash, now).await?;
+            tx.commit().await.map_err(database_error)?;
+            Ok(value)
+        })
+        .await
+        .unwrap_or(Err(AuthError::Unavailable))
+    }
     pub fn pool(&self) -> &PgPool {
         &self.pool
     }
@@ -59,18 +81,7 @@ impl AuthStore for PgAuthStore {
         self.authenticate(value).await
     }
     async fn session(&self, hash: [u8; 32], now: i64) -> Result<Option<Session>, AuthError> {
-        let row=sqlx::query("SELECT s.id AS session_id,a.id,a.nickname,EXTRACT(EPOCH FROM s.created_at)::bigint AS created_at,EXTRACT(EPOCH FROM s.expires_at)::bigint AS expires_at,EXTRACT(EPOCH FROM s.authenticated_at)::bigint AS authenticated_at FROM auth_sessions s JOIN auth_accounts a ON a.id=s.account_id WHERE s.token_hash=$1 AND s.created_at<=to_timestamp($2) AND s.expires_at>to_timestamp($2)")
-            .bind(hash.as_slice()).bind(timestamp(now)?).fetch_optional(&self.pool).await.map_err(database_error)?;
-        row.map(|row| {
-            Ok(Session {
-                id: row.try_get("session_id").map_err(database_error)?,
-                account: account_row(&row)?,
-                created_at: row.try_get("created_at").map_err(database_error)?,
-                expires_at: row.try_get("expires_at").map_err(database_error)?,
-                authenticated_at: row.try_get("authenticated_at").map_err(database_error)?,
-            })
-        })
-        .transpose()
+        read_session(&self.pool, hash, now).await
     }
     async fn nickname(&self, account: Uuid, value: Nickname) -> Result<bool, AuthError> {
         Ok(
@@ -138,6 +149,24 @@ impl AuthStore for PgAuthStore {
     }
 }
 
+async fn read_session<'a, E: sqlx::Executor<'a, Database = sqlx::Postgres>>(
+    executor: E,
+    hash: [u8; 32],
+    now: i64,
+) -> Result<Option<Session>, AuthError> {
+    let row=sqlx::query("SELECT s.id AS session_id,a.id,a.nickname,EXTRACT(EPOCH FROM s.created_at)::bigint AS created_at,EXTRACT(EPOCH FROM s.expires_at)::bigint AS expires_at,EXTRACT(EPOCH FROM s.authenticated_at)::bigint AS authenticated_at FROM auth_sessions s JOIN auth_accounts a ON a.id=s.account_id WHERE s.token_hash=$1 AND s.created_at<=to_timestamp($2) AND s.expires_at>to_timestamp($2)")
+            .bind(hash.as_slice()).bind(timestamp(now)?).fetch_optional(executor).await.map_err(database_error)?;
+    row.map(|row| {
+        Ok(Session {
+            id: row.try_get("session_id").map_err(database_error)?,
+            account: account_row(&row)?,
+            created_at: row.try_get("created_at").map_err(database_error)?,
+            expires_at: row.try_get("expires_at").map_err(database_error)?,
+            authenticated_at: row.try_get("authenticated_at").map_err(database_error)?,
+        })
+    })
+    .transpose()
+}
 pub(super) fn database_error(error: sqlx::Error) -> AuthError {
     if error
         .as_database_error()

@@ -339,3 +339,71 @@ async fn actual_logout_invalidates_the_http_waiter_and_removes_its_current_row()
     );
     close_auth_pool(f.pool).await;
 }
+
+async fn original_deadline_case(session_phase: bool) {
+    let f = Fixture::new().await;
+    let (single, pid) = super::events::single_pool(&f.pool).await;
+    let mut held = f.pool.begin().await.unwrap();
+    if session_phase {
+        sqlx::query("LOCK TABLE auth_sessions IN ACCESS EXCLUSIVE MODE")
+            .execute(&mut *held)
+            .await
+            .unwrap();
+    } else {
+        sqlx::query("SELECT id FROM auth_accounts WHERE id=$1 FOR UPDATE")
+            .bind(f.owner.account)
+            .fetch_one(&mut *held)
+            .await
+            .unwrap();
+    }
+    let sessions = if session_phase {
+        PgAuthStore::new(single.clone())
+    } else {
+        f.sessions.clone()
+    };
+    let store_pool = if session_phase {
+        f.pool.clone()
+    } else {
+        single.clone()
+    };
+    let router = consent_router(
+        Arc::new(PgConsentStore::new(store_pool, f.clock.clone())),
+        Arc::new(DisabledConsentVerifier),
+        Arc::new(PgSessionReader::new(sessions, f.clock.clone())),
+        f.security.clone(),
+        ConsentAuthentication {
+            authorities: f.authorities.clone(),
+            clock: f.clock.clone(),
+        },
+        4,
+    )
+    .unwrap();
+    let mut request = f.request("/api/v1/me/consent", r#"{"v":1}"#);
+    *request.body_mut() = Body::from_stream(futures_util::stream::once(async {
+        tokio::time::sleep(Duration::from_millis(750)).await;
+        Ok::<_, std::io::Error>(axum::body::Bytes::from_static(br#"{"v":1}"#))
+    }));
+    let task = tokio::spawn(async move { router.oneshot(request).await.unwrap() });
+    super::events::blocked(&f.pool, pid).await;
+    let response = task.await.unwrap();
+    let gone = super::consent_deadline::stopped(&f.pool, pid, Duration::from_millis(500)).await;
+    held.rollback().await.unwrap();
+    single.close().await;
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(response.headers()["cache-control"], "no-store");
+    close_auth_pool(f.pool).await;
+    assert!(
+        gone,
+        "Body and session work must not grant the backend another two seconds"
+    );
+}
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn original_consent_deadline_includes_body_time_before_storage() {
+    original_deadline_case(false).await;
+}
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn original_consent_deadline_bounds_the_session_proof_query() {
+    original_deadline_case(true).await;
+}

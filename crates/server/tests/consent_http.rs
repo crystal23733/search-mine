@@ -24,6 +24,7 @@ struct Sessions {
     row: Mutex<Option<Session>>,
     reads: AtomicUsize,
     swap: AtomicBool,
+    deadlines: Mutex<Vec<std::time::Instant>>,
 }
 impl SessionReader for Sessions {
     fn read(&self, _: [u8; 32]) -> PortFuture<'_, Result<Option<Session>, OnlineError>> {
@@ -36,18 +37,28 @@ impl SessionReader for Sessions {
             Ok(row)
         })
     }
+    fn read_until(
+        &self,
+        hash: [u8; 32],
+        deadline: std::time::Instant,
+    ) -> PortFuture<'_, Result<Option<Session>, OnlineError>> {
+        self.deadlines.lock().unwrap().push(deadline);
+        self.read(hash)
+    }
 }
 #[derive(Default)]
 struct Store {
     current: Mutex<Option<CurrentConsent>>,
     calls: AtomicUsize,
     expected: Mutex<Option<Uuid>>,
+    deadlines: Mutex<Vec<std::time::Instant>>,
     pause: AtomicBool,
     entered: tokio::sync::Notify,
     resume: tokio::sync::Notify,
 }
 impl Store {
-    async fn touch(&self) {
+    async fn touch(&self, deadline: std::time::Instant) {
+        self.deadlines.lock().unwrap().push(deadline);
         self.calls.fetch_add(1, Ordering::SeqCst);
         self.entered.notify_one();
         if self.pause.load(Ordering::SeqCst) {
@@ -56,8 +67,12 @@ impl Store {
     }
 }
 impl ConsentStore for Store {
-    async fn read(&self, _: ConsentSession) -> Result<Option<CurrentConsent>, ConsentError> {
-        self.touch().await;
+    async fn read(
+        &self,
+        _: ConsentSession,
+        deadline: std::time::Instant,
+    ) -> Result<Option<CurrentConsent>, ConsentError> {
+        self.touch(deadline).await;
         Ok(*self.current.lock().unwrap())
     }
     async fn refresh(
@@ -65,8 +80,9 @@ impl ConsentStore for Store {
         s: ConsentSession,
         e: Option<Uuid>,
         v: &impl ConsentVerifier,
+        deadline: std::time::Instant,
     ) -> Result<CurrentConsent, ConsentError> {
-        self.touch().await;
+        self.touch(deadline).await;
         *self.expected.lock().unwrap() = e;
         v.verify(s.revision, 1500).await?;
         self.current
@@ -78,15 +94,20 @@ impl ConsentStore for Store {
         &self,
         _: ConsentSession,
         _: OptionalPurpose,
+        deadline: std::time::Instant,
     ) -> Result<CurrentConsent, ConsentError> {
-        self.touch().await;
+        self.touch(deadline).await;
         self.current
             .lock()
             .unwrap()
             .ok_or(ConsentError::Unavailable)
     }
-    async fn withdraw_all(&self, _: ConsentSession) -> Result<CurrentConsent, ConsentError> {
-        self.touch().await;
+    async fn withdraw_all(
+        &self,
+        _: ConsentSession,
+        deadline: std::time::Instant,
+    ) -> Result<CurrentConsent, ConsentError> {
+        self.touch(deadline).await;
         self.current
             .lock()
             .unwrap()
@@ -117,6 +138,7 @@ fn fixture() -> Fixture {
         })),
         reads: AtomicUsize::new(0),
         swap: AtomicBool::new(false),
+        deadlines: Mutex::new(vec![]),
     });
     let store = Arc::new(Store::default());
     let clock = Arc::new(Clock(AtomicI64::new(1500)));
@@ -480,5 +502,31 @@ async fn slow_bodies_consume_the_shared_budget_and_end_at_the_original_whole_req
             .unwrap()
             .status(),
         StatusCode::OK
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn body_and_both_session_proofs_and_store_share_one_original_deadline() {
+    use futures_util::poll;
+    let f = fixture();
+    let start = tokio::time::Instant::now();
+    let original = (start + CONSENT_REQUEST_TIMEOUT).into_std();
+    let mut request = f.request("/api/v1/me/consent", r#"{"v":1}"#);
+    *request.body_mut() = Body::from_stream(futures_util::stream::once(async {
+        tokio::time::sleep(std::time::Duration::from_millis(750)).await;
+        Ok::<_, std::io::Error>(axum::body::Bytes::from_static(br#"{"v":1}"#))
+    }));
+    let mut pending = Box::pin(f.router.clone().oneshot(request));
+    assert!(poll!(pending.as_mut()).is_pending());
+    tokio::time::advance(std::time::Duration::from_millis(750)).await;
+    assert_eq!(pending.await.unwrap().status(), StatusCode::OK);
+    assert_eq!(
+        *f.sessions.deadlines.lock().unwrap(),
+        vec![original, original]
+    );
+    assert_eq!(*f.store.deadlines.lock().unwrap(), vec![original]);
+    assert_eq!(
+        tokio::time::Instant::from_std(original) - tokio::time::Instant::now(),
+        std::time::Duration::from_millis(1250)
     );
 }

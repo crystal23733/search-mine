@@ -434,3 +434,8 @@ TS13/18/19/20/26/30 확장(#167): [ADR0079](../adr/0079-action-first-tutorial.md
 
 
 #178 FR01/09/11/13/16 · NFR01/02/05/06/07/08 · TS17~22/24/26/29/34~36 → [ADR0083](../adr/0083-my-info-client-and-export-removal.md) → 내 정보4화면·공통 기기 설정·game/self 인증 scope·메모리/취소·파일 UI/DTO/3 API 제거 → [검증178](../verification/178-my-info-pages.md).
+
+
+#182 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0084](../adr/0084-bounded-consent-control-http.md) → 현재 cookie 세션의 동의 조회/서버 CAS 재검증·목적별/전체 철회 HTTP·기본 verifier 차단 → [검증182](../verification/182-consent-control-http.md). 선택 이벤트 at-write·실제 CMP/외부147·상위21은 후속이다.
+
+TS20/21/24/29/31/35/36 확장(#182): v1 폐쇄4KiB 입력의 현재 조회/expected revision 재검증/목적별·전체 철회를 현재 cookie·Origin/CSRF로만 허용한다. 닉네임 없음/301초 일반 조회·client account/grant/TC 필드 거절·정상 unknown과실패구분·no-store/최소 projection을 검사한다. 서버 verifier 실패/timeout/caller취소는 기존 허용을 먼저 차단하고, 전체 철회는 한 revision/transaction으로 두 목적을 차단한다. 실제PG의 CAS/늦은 grant/다른세션/기한·역행/철회·동시자원한도와 실제HTTPS의같은운영adapter/미설정refresh503/권리/Meview연결을 검증한다. 선택 수집과실CMP활성화는 하지 않는다.

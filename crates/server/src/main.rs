@@ -1,4 +1,5 @@
 use liar_server::auth::*;
+use liar_server::consent::*;
 use liar_server::daily::*;
 use liar_server::events::{
     AggregationMaintenance, EventRetentionMaintenance, PgAggregateRetention, PgAggregateStore,
@@ -205,13 +206,25 @@ async fn serve() -> ServerResult {
             sessions.clone(),
             runtime.security.clone(),
             MeAuthentication {
-                authorities: me_authorities,
+                authorities: me_authorities.clone(),
                 clock: auth_clock.clone(),
                 workers: me_workers,
             },
             4,
         )
         .map_err(|_| "My info HTTP initialization failed")?;
+        let consent = consent_router(
+            Arc::new(PgConsentStore::new(auth_pool.clone(), auth_clock.clone())),
+            Arc::new(DisabledConsentVerifier),
+            sessions.clone(),
+            runtime.security.clone(),
+            ConsentAuthentication {
+                authorities: me_authorities,
+                clock: auth_clock.clone(),
+            },
+            4,
+        )
+        .map_err(|_| "Consent HTTP initialization failed")?;
         let daily_repository = Arc::new(PgDailyRepository::new(auth_pool, auth_clock.clone()));
         let daily_workers = BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier));
         let rankings = daily_rankings_router(
@@ -238,6 +251,7 @@ async fn serve() -> ServerResult {
             .merge(lobby)
             .merge(results)
             .merge(me)
+            .merge(consent)
             .merge(daily)
             .merge(rankings)
     } else {
@@ -245,6 +259,7 @@ async fn serve() -> ServerResult {
             .merge(disabled_lobby_router())
             .merge(disabled_result_router())
             .merge(disabled_me_router())
+            .merge(disabled_consent_router())
             .merge(disabled_daily_router())
     };
     let bind = env::var("LIAR_BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());

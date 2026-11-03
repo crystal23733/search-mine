@@ -225,3 +225,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 
 #177 FR01/09/11/13/16·NFR01/02/05/07/08·TS17/19/20/21/22/24/29/34/35/36 → [ADR0082](../adr/0082-self-only-me-read-api.md) → 본인overview/history·90일/전체요약/20개·현재동의view·권한/철회/2초/실PG → [검증177](../verification/177-my-info-read-api.md). 화면과파일제거는178이다.
+
+
+#182 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0084](../adr/0084-bounded-consent-control-http.md) → 현재 cookie 세션의 동의 조회/서버 CAS 재검증·목적별/전체 철회 HTTP·기본 verifier 차단 → [검증182](../verification/182-consent-control-http.md). 선택 이벤트 at-write·실제 CMP/외부147·상위21은 후속이다.

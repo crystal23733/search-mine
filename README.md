@@ -10,7 +10,7 @@
 
 필수 이벤트의 원본 transaction 수집·원시30일 보존·NSM/D7·익명13개월 보존·내부 운영 조회는 [#145의 #20 통합 감사](docs/verification/145-anonymous-metrics-retention-and-operations.md)까지 완료했다. 실제 사용 지표 달성·선택 수집·운영 장비 실측은 별도다.
 
-[#174 인증 세션별 동의 기반](docs/verification/174-session-consent-authority.md)은 서버 검증 포트·현재 revision/목적별 철회·PostgreSQL 저장 경계다. 현재 동의 view는 #177/#178의 내 정보에서 읽는다. 검증/갱신 HTTP·실제 CMP·선택 이벤트 저장은 #21의 필수 후속이다. 실행 앱의 선택 분석/광고는 계속 차단한다.
+[#174 인증 세션별 동의 기반](docs/verification/174-session-consent-authority.md)은 서버 검증 포트·현재 revision/목적별 철회·PostgreSQL 저장 경계다. 현재 동의 view는 #177/#178의 내 정보에서 읽으며, [#182 현재 세션 HTTP](docs/verification/182-consent-control-http.md)는 조회·서버 재검증·목적별/전체 철회를 연결한다. 실제 CMP와 선택 이벤트의 저장 시점 권한 검사는 #21의 필수 후속이다. 실제 CMP 없는 재검증은503이며 실행 앱의 선택 분석/광고는 계속 차단한다.
 
 [#134 이벤트 도메인 계약](docs/verification/134-event-domain-contracts.md)은 목적별 동의·재전송 동일성·보존 경계와 bounded NSM/D7 계산을 Rust로 정의한다. [#138 자동 필수 수집](docs/verification/138-atomic-essential-event-producers.md)과 [#140 원시 물리 보존](docs/verification/140-bounded-raw-event-retention.md)을 연결했고 비필수 수집은 #21의 실제 동의 연결 전까지 켜지 않는다.
 

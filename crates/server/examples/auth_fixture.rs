@@ -12,6 +12,7 @@ use liar_core::{
     rules::RulesSnapshot,
 };
 use liar_server::auth::*;
+use liar_server::consent::*;
 use liar_server::daily::*;
 use liar_server::me::*;
 use liar_server::results::{PgResultReader, ResultAuthentication, result_router};
@@ -237,7 +238,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .map_err(|_| "fixture result HTTP")?,
         )
-        .merge(me_router(Arc::new(PgMeReader::with_workers(pool.clone(),clock.clone(),me_workers.clone())),sessions.clone(),security.clone(),MeAuthentication{authorities:me_authorities,clock:clock.clone(),workers:me_workers},4).map_err(|_| "fixture my info HTTP")?)
+        .merge(me_router(Arc::new(PgMeReader::with_workers(pool.clone(),clock.clone(),me_workers.clone())),sessions.clone(),security.clone(),MeAuthentication{authorities:me_authorities.clone(),clock:clock.clone(),workers:me_workers},4).map_err(|_| "fixture my info HTTP")?)
+        .merge(consent_router(Arc::new(PgConsentStore::new(pool.clone(),clock.clone())),Arc::new(DisabledConsentVerifier),sessions.clone(),security.clone(),ConsentAuthentication{authorities:me_authorities,clock:clock.clone()},4).map_err(|_| "fixture consent HTTP")?)
         .merge(daily_router(daily_repository,daily_workers,sessions.clone(),security,DailyAuthentication::new(daily_tickets,clock.clone()),4).map_err(|_| "fixture daily HTTP")?)
         .merge(rankings)
         .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)

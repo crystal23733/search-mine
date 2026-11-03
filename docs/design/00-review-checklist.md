@@ -243,3 +243,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #178 FR01/09/11/13/16 · NFR01/02/05/06/07/08 · TS17~22/24/26/29/34~36 → [ADR0083](../adr/0083-my-info-client-and-export-removal.md) → 내 정보4화면·공통 기기 설정·game/self 인증 scope·메모리/취소·파일 UI/DTO/3 API 제거 → [검증178](../verification/178-my-info-pages.md).
+
+
+#182 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0084](../adr/0084-bounded-consent-control-http.md) → 현재 cookie 세션의 동의 조회/서버 CAS 재검증·목적별/전체 철회 HTTP·기본 verifier 차단 → [검증182](../verification/182-consent-control-http.md). 선택 이벤트 at-write·실제 CMP/외부147·상위21은 후속이다.

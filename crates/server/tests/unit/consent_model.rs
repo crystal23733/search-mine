@@ -1,5 +1,35 @@
 use super::*;
 const SUBJECT: Uuid = Uuid::from_u128(1);
+#[test]
+fn whole_withdrawal_denies_both_purposes_with_one_new_revision_without_extending_expiry() {
+    let first = refreshed(
+        SUBJECT,
+        None,
+        None,
+        VerifiedConsent {
+            advertising: true,
+            ..evidence()
+        },
+        1000,
+        3000,
+    )
+    .unwrap();
+    let denied = withdrawn_all(SUBJECT, Some(first), 1100, 3000).unwrap();
+    assert!(!denied.analytics && !denied.advertising);
+    assert_ne!(denied.revision, first.revision);
+    assert_eq!(denied.expires_at, first.expires_at);
+    let initial = withdrawn_all(SUBJECT, None, 1100, 3000).unwrap();
+    assert!(!initial.analytics && !initial.advertising);
+    assert_eq!(initial.expires_at, 3000);
+    assert_eq!(
+        refreshed(SUBJECT, None, Some(initial), evidence(), 1101, 3000),
+        Err(ConsentError::Conflict)
+    );
+    assert_eq!(
+        withdrawn_all(SUBJECT, Some(first), 999, 3000),
+        Err(ConsentError::Invalid)
+    );
+}
 fn evidence() -> VerifiedConsent {
     VerifiedConsent {
         subject: SUBJECT,

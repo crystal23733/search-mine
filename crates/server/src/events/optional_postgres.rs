@@ -35,18 +35,9 @@ impl OptionalEventStore for PgOptionalEventStore {
             }
             let started = postgres::checked_now(self.clock.as_ref(), 0).map_err(storage)?;
             let mut tx = self.pool.begin().await.map_err(db)?;
-            let remaining = deadline
-                .saturating_duration_since(Instant::now())
-                .as_millis();
-            if remaining == 0 {
-                return Err(OptionalEventError::Unavailable);
-            }
-            // Keep the backend transaction bounded even after this future is cancelled.
-            sqlx::query("SELECT set_config('transaction_timeout',$1,true)")
-                .bind(format!("{remaining}ms"))
-                .execute(&mut *tx)
+            crate::postgres_deadline::arm(&mut tx, deadline)
                 .await
-                .map_err(db)?;
+                .map_err(|_| OptionalEventError::Unavailable)?;
             let (now, expiry) =
                 consent::authorize_in_transaction(&mut tx, input.session, &self.clock, started)
                     .await

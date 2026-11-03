@@ -444,3 +444,8 @@ TS20/21/24/29/31/35/36 확장(#182): v1 폐쇄4KiB 입력의 현재 조회/expec
 #184 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0085](../adr/0085-atomic-optional-event-storage.md) → 현재 세션/목적/revision의 같은 transaction 저장·별도 탭 상관키·불변 재시도·선택 raw30일/보존 → [검증184](../verification/184-optional-event-storage.md). 실제 CMP/공개 collector·외부147·상위21은 후속이다.
 
 TS20/21/22/24/29/31/35/36 확장(#184): 검증된 ClientDraft와 서버 현재 세션/동의 revision을 같은 저장 transaction에서 검사한다. 탭 key와 auth session ID를 구분하고 client snapshot을 허용 권위로 받지 않는다. 목적 분리·발생 뒤 동의/기한/만료/역행·동일ID 한행/receipt 불변·다른 내용/owner 충돌·철회 뒤 duplicate 거절을 확인한다. 실제PG 잠금으로 철회/회전/logout/삭제·대기 중 시각/timeout/취소 경합과 cascade를 검증하며, 정확30일/500행·8batch·2초 보존과 제한 DML·UPDATE 불변·필수 이벤트 영향 없음을 확인한다. 실제 CMP/collector/광고는 활성화하지 않는다.
+
+
+#186 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0086](../adr/0086-consent-operation-deadline.md) → 동의 HTTP/전후세션/검증IO/두transaction의 동일 deadline·실제 backend 종료·공통 PG 기한 → [검증186](../verification/186-consent-operation-deadline.md). 실제 CMP/수집기·상위21/외부147·83은 후속이다.
+
+TS20/21/24/29/31/35/36 확장(#186): 원래2초를 본문750ms·전후세션 확인·pool·verifier IO/두transaction에 새로 부여하지 않는다. 실제PG blocker를 해제하지 않은 상태에서 조회/갱신/목적별·전체 철회와 caller취소의 backend가 종료돼야 한다. 검증IO는잠금밖/사전차단commit·늦은CAS거절을유지하고 정상 연결/설정복귀·기존더짧은DB기한을확인한다. 다른API/공개DTO/기한·retry·브라우저flags를완화하지않는다.

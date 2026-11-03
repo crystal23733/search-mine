@@ -40,6 +40,14 @@ pub trait SessionReader: Send + Sync {
         &self,
         hash: [u8; 32],
     ) -> PortFuture<'_, Result<Option<crate::auth::Session>, OnlineError>>;
+    /// Persistent adapters override this to bound backend work by the caller's deadline.
+    fn read_until(
+        &self,
+        hash: [u8; 32],
+        _deadline: Instant,
+    ) -> PortFuture<'_, Result<Option<crate::auth::Session>, OnlineError>> {
+        self.read(hash)
+    }
 }
 #[derive(Clone, Copy)]
 pub struct MatchLimits {

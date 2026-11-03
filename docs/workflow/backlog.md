@@ -215,3 +215,6 @@
 
 
 #184 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0085](../adr/0085-atomic-optional-event-storage.md) → 현재 세션/목적/revision의 같은 transaction 저장·별도 탭 상관키·불변 재시도·선택 raw30일/보존 → [검증184](../verification/184-optional-event-storage.md). 실제 CMP/공개 collector·외부147·상위21은 후속이다.
+
+
+#186 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0086](../adr/0086-consent-operation-deadline.md) → 동의 HTTP/전후세션/검증IO/두transaction의 동일 deadline·실제 backend 종료·공통 PG 기한 → [검증186](../verification/186-consent-operation-deadline.md). 실제 CMP/수집기·상위21/외부147·83은 후속이다.

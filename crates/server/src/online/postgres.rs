@@ -147,6 +147,18 @@ impl SessionReader for PgSessionReader {
                 .map_err(|_| OnlineError::Unavailable)
         })
     }
+    fn read_until(
+        &self,
+        hash: [u8; 32],
+        deadline: std::time::Instant,
+    ) -> PortFuture<'_, Result<Option<crate::auth::Session>, OnlineError>> {
+        Box::pin(async move {
+            self.store
+                .session_until(hash, self.clock.now(), deadline)
+                .await
+                .map_err(|_| OnlineError::Unavailable)
+        })
+    }
 }
 pub(super) fn reason(value: PublicEndReason) -> &'static str {
     match value {

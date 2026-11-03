@@ -27,6 +27,7 @@ pub fn app(pool: Option<PgPool>) -> Router {
             .merge(results::disabled_result_router())
             .merge(me::disabled_me_router())
             .merge(consent::disabled_consent_router())
+            .merge(events::disabled_optional_event_router())
             .merge(daily::disabled_daily_router()),
     )
 }

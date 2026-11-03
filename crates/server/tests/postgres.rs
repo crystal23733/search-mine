@@ -13,6 +13,8 @@ use tower::ServiceExt;
 use uuid::Uuid;
 use zeroize::Zeroizing;
 
+#[path = "postgres/optional_http.rs"]
+mod optional_http;
 struct HttpClock;
 #[path = "postgres/admission_restart.rs"]
 mod admission_restart;

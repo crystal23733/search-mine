@@ -32,34 +32,8 @@ impl<'de> Deserialize<'de> for EventId {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum LandingRoute {
-    Home,
-    Daily,
-    Rules,
-    Tutorial,
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ShareChannel {
-    Copy,
-    Native,
-    Png,
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Placement {
-    Menu,
-    Result,
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum AdFailure {
-    Unavailable,
-    NoFill,
-    Cancelled,
-}
+pub use liar_protocol::events::{AdFailure, LandingRoute, Placement, ShareChannel};
+pub type ClientAction = liar_protocol::events::OptionalEventAction<EventId>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Purpose {
@@ -67,42 +41,11 @@ pub enum Purpose {
     Analytics,
     Advertising,
 }
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-pub enum ClientAction {
-    LandingView {
-        route: LandingRoute,
-    },
-    InviteOpen {},
-    TutorialStart {
-        run_id: EventId,
-    },
-    TutorialComplete {
-        run_id: EventId,
-        duration_ms: u32,
-        skipped: bool,
-    },
-    RematchSelected {
-        previous_match_id: EventId,
-    },
-    ShareClick {
-        date: String,
-        channel: ShareChannel,
-    },
-    AdRequest {
-        placement: Placement,
-    },
-    AdImpression {
-        placement: Placement,
-    },
-    AdFailed {
-        placement: Placement,
-        reason: AdFailure,
-    },
+pub trait ClientActionPurpose {
+    fn purpose(&self) -> Purpose;
 }
-impl ClientAction {
-    pub fn purpose(&self) -> Purpose {
+impl ClientActionPurpose for ClientAction {
+    fn purpose(&self) -> Purpose {
         match self {
             Self::AdRequest { .. } | Self::AdImpression { .. } | Self::AdFailed { .. } => {
                 Purpose::Advertising
@@ -111,6 +54,7 @@ impl ClientAction {
         }
     }
 }
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClientDraft {
     event_id: EventId,
@@ -119,16 +63,7 @@ pub struct ClientDraft {
     pub(super) locale: String,
     pub(super) event: ClientAction,
 }
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct WireClientDraft {
-    event_version: u16,
-    event_id: EventId,
-    session_key: EventId,
-    occurred_at: i64,
-    locale: String,
-    event: ClientAction,
-}
+type WireClientDraft = liar_protocol::events::OptionalEventDraft<EventId>;
 pub fn decode_client(source: &[u8]) -> Result<ClientDraft, EventError> {
     if source.len() > MAX_EVENT_BYTES {
         return Err(EventError::Capacity);

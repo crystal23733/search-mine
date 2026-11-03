@@ -2,8 +2,10 @@ use liar_server::auth::*;
 use liar_server::consent::*;
 use liar_server::daily::*;
 use liar_server::events::{
-    AggregationMaintenance, EventRetentionMaintenance, PgAggregateRetention, PgAggregateStore,
-    PgEventRetention, PgMetricReader, PgOptionalEventRetention,
+    AggregationMaintenance, EventRetentionMaintenance, OptionalEventAuthentication,
+    PgAggregateRetention, PgAggregateStore, PgEventRetention, PgMetricReader,
+    PgOptionalEventRetention, PgOptionalEventStore, disabled_optional_event_router,
+    optional_event_router,
 };
 use liar_server::lobby::*;
 use liar_server::me::*;
@@ -226,12 +228,26 @@ async fn serve() -> ServerResult {
             sessions.clone(),
             runtime.security.clone(),
             ConsentAuthentication {
-                authorities: me_authorities,
+                authorities: me_authorities.clone(),
                 clock: auth_clock.clone(),
             },
             4,
         )
         .map_err(|_| "Consent HTTP initialization failed")?;
+        let optional_events = optional_event_router(
+            Arc::new(PgOptionalEventStore::new(
+                auth_pool.clone(),
+                auth_clock.clone(),
+            )),
+            sessions.clone(),
+            runtime.security.clone(),
+            OptionalEventAuthentication {
+                authorities: me_authorities,
+                clock: auth_clock.clone(),
+            },
+            4,
+        )
+        .map_err(|_| "Optional event HTTP initialization failed")?;
         let daily_repository = Arc::new(PgDailyRepository::new(auth_pool, auth_clock.clone()));
         let daily_workers = BoundedReplayVerifier::new(Arc::new(NativeReplayVerifier));
         let rankings = daily_rankings_router(
@@ -259,6 +275,7 @@ async fn serve() -> ServerResult {
             .merge(results)
             .merge(me)
             .merge(consent)
+            .merge(optional_events)
             .merge(daily)
             .merge(rankings)
     } else {
@@ -267,6 +284,7 @@ async fn serve() -> ServerResult {
             .merge(disabled_result_router())
             .merge(disabled_me_router())
             .merge(disabled_consent_router())
+            .merge(disabled_optional_event_router())
             .merge(disabled_daily_router())
     };
     let bind = env::var("LIAR_BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());

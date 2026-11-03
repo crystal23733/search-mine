@@ -231,3 +231,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 
 #186 FR01/13/16·NFR01/02/05/07/08·TS20/21/24/29/31/35/36 → [ADR0086](../adr/0086-consent-operation-deadline.md) → 동의 HTTP/전후세션/검증IO/두transaction의 동일 deadline·실제 backend 종료·공통 PG 기한 → [검증186](../verification/186-consent-operation-deadline.md). 실제 CMP/수집기·상위21/외부147·83은 후속이다.
+
+
+#188 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0087](../adr/0087-optional-event-http.md) → 폐쇄 단건/최소receipt·현재세션/같은transaction동의·원래기한/실제backend·실HTTPS → [검증188](../verification/188-optional-event-http.md). 실제CMP/브라우저자동수집·외부147·상위21/83은 후속이다.

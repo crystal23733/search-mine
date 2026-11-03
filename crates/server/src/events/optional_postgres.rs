@@ -4,7 +4,7 @@ use crate::{
     consent::{self, ConsentError},
 };
 use sqlx::PgPool;
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 use tokio::{sync::Semaphore, time::Instant};
 
 pub struct PgOptionalEventStore {
@@ -22,13 +22,21 @@ impl PgOptionalEventStore {
     }
 }
 impl OptionalEventStore for PgOptionalEventStore {
-    async fn capture(&self, input: OptionalCapture) -> Result<StoredEvent, OptionalEventError> {
+    async fn capture_until(
+        &self,
+        input: OptionalCapture,
+        deadline: std::time::Instant,
+    ) -> Result<StoredEvent, OptionalEventError> {
         let _permit = self
             .requests
             .clone()
             .try_acquire_owned()
             .map_err(|_| OptionalEventError::Unavailable)?;
-        let deadline = Instant::now() + Duration::from_secs(2);
+        let now = Instant::now();
+        let deadline = Instant::from_std(deadline);
+        if deadline <= now || deadline > now + crate::consent::CONSENT_REQUEST_TIMEOUT {
+            return Err(OptionalEventError::Unavailable);
+        }
         tokio::time::timeout_at(deadline, async {
             if input.expected_revision.is_nil() {
                 return Err(OptionalEventError::Invalid);

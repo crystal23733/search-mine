@@ -2,6 +2,7 @@
 mod aggregate_maintenance;
 mod aggregate_retention;
 mod aggregates;
+mod http;
 mod maintenance;
 mod metric_reader;
 mod metrics;
@@ -21,6 +22,7 @@ mod retention;
 pub use aggregate_maintenance::*;
 pub use aggregate_retention::*;
 pub use aggregates::*;
+pub use http::*;
 pub use maintenance::*;
 pub use metric_reader::*;
 pub use metrics::*;

@@ -9,7 +9,6 @@ import { NavLink } from "../molecules/NavLink";
 import { RecordPeriod, utcTime } from "../molecules/RecordPeriod";
 import { MeSummary } from "./MeSummary";
 import { MeRecords } from "./MeRecords";
-import { MeConsent } from "./MeConsent";
 import { AccountSettings } from "./AccountSettings";
 import { isProvider } from "../../services/auth/types";
 import { providerName } from "../molecules/ProviderButton";
@@ -167,15 +166,6 @@ export function MeContent({ section }: { section: MeSection }) {
             </Card>
           )}
           <AccountSettings />
-        </>
-      )}
-      {section === "privacy" && (
-        <>
-          {value && <MeConsent value={value} startedAt={state.startedAt} />}
-          <h2>{t("me.storage")}</h2>
-          <Card>
-            <p>{t("me.retention")}</p>
-          </Card>
         </>
       )}
       {(section === "history" || section === "overview") && (

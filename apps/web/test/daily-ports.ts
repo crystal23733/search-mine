@@ -10,6 +10,28 @@ export function dailyTestPorts() {
   const records = createDailyRecords();
   return {
     consent: createConsent(),
+    consentControl: {
+      read: async (owner: { accountId: string }) => ({
+        v: 1,
+        account_id: owner.accountId,
+        revision: null,
+        observed_at: 1500,
+        consent: {
+          cmp_available: false,
+          status: "unknown" as const,
+          analytics: "unknown" as const,
+          advertising: "unknown" as const,
+          checked_at: null,
+          expires_at: null,
+        },
+      }),
+      refresh: async () => {
+        throw Error("unavailable");
+      },
+      withdraw: async () => {
+        throw Error("unavailable");
+      },
+    },
     me: {
       overview: async () => {
         throw Error("unavailable");

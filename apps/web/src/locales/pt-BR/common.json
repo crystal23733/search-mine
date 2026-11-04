@@ -419,5 +419,11 @@
   "me.recent": "Registros recentes",
   "me.allRecords": "Ver todos os registros",
   "me.storage": "Informações salvas e retenção",
-  "me.login": "Entrar"
+  "me.login": "Entrar",
+  "consent.serverRefresh": "Atualizar consentimento",
+  "consent.serverVerify": "Conferir alterações",
+  "consent.withdraw.analytics": "Retirar consentimento de análise",
+  "consent.withdraw.advertising": "Retirar consentimento de publicidade",
+  "consent.withdraw.all": "Retirar todos os consentimentos opcionais",
+  "consent.changed": "Seu consentimento mudou. Atualize o status e tente novamente."
 }

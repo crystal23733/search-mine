@@ -454,3 +454,8 @@ TS20/21/24/29/31/35/36 확장(#186): 원래2초를 본문750ms·전후세션 확
 #188 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0087](../adr/0087-optional-event-http.md) → 폐쇄 단건/최소receipt·현재세션/같은transaction동의·원래기한/실제backend·실HTTPS → [검증188](../verification/188-optional-event-http.md). 실제CMP/브라우저자동수집·외부147·상위21/83은 후속이다.
 
 TS20/21/22/24/29/31/35/36 확장(#188): 단건 선택수집은 현재cookie/Origin/CSRF·8locale/폐쇄입력·본문2048/draft1024·4동시/속도/no-store를검사한다. 서버가owner를선택하며같은transaction의현재동의/목적/revision·철회/만료/다른계정/동일ID불변receipt/충돌을확인한다. 전후권한/취소/clock역행과본문·세션·pool·실DB의원래2초/backend종료를확인한다. 실행verifierDisabled·실HTTPS미동의차단·브라우저자동수집0을유지한다.
+
+
+#190 FR01/11/13/16·NFR01/02/05/06/07/08·TS19/20/21/22/24/26/29/31/35/36 → [ADR0088](../adr/0088-consent-and-event-client.md) → 현재self동의제어/화면·현재목적교집합/직전서버확인·단건취소/landing·Rust목적원천 → [검증190](../verification/190-consent-and-event-client.md). 실제CMP/광고·외부147/42·상위21/83은 후속이다.
+
+TS19/20/21/22/24/26/29/31/35/36 확장(#190): nickname없는현재self권한의동의조회/갱신/CAS/목적별·전체철회와8언어·폐쇄응답/만료·이탈취소를검증한다. 선택기록은현재브라우저목적과직전서버grant둘다요구하며원래2초/한건/메모리만사용한다. 로그아웃·철회·목적/계정/revision변경·숨김/오프라인/화면이동/복원은취소하고늦은ack를버린다. 미설정CMP는선택요청0/탭key0·게임계속이며자동retry/영구queue를만들지않는다.

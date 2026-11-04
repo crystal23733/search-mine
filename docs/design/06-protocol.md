@@ -234,3 +234,6 @@ Apple의 `POST /api/v1/auth/apple/notifications`는 브라우저 Origin/CSRF 대
 
 
 #188 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0087](../adr/0087-optional-event-http.md) → 폐쇄 단건/최소receipt·현재세션/같은transaction동의·원래기한/실제backend·실HTTPS → [검증188](../verification/188-optional-event-http.md). 실제CMP/브라우저자동수집·외부147·상위21/83은 후속이다.
+
+
+#190 FR01/11/13/16·NFR01/02/05/06/07/08·TS19/20/21/22/24/26/29/31/35/36 → [ADR0088](../adr/0088-consent-and-event-client.md) → 현재self동의제어/화면·현재목적교집합/직전서버확인·단건취소/landing·Rust목적원천 → [검증190](../verification/190-consent-and-event-client.md). 실제CMP/광고·외부147/42·상위21/83은 후속이다.

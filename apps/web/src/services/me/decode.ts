@@ -1,4 +1,9 @@
-import type { MeOverview, MeHistory, MeRecord } from "@liar/protocol";
+import type {
+  MeOverview,
+  MeHistory,
+  MeRecord,
+  MeConsent,
+} from "@liar/protocol";
 import {
   bool,
   fail,
@@ -171,38 +176,7 @@ export function decodeMeOverview(raw: unknown, owner: string): MeOverview {
     fail();
   onlinePeriod(value.recent_online, value.window_started_at, value.observed_at);
   dailyPeriod(value.recent_daily, value.window_started_at, value.observed_at);
-  const c = value.consent;
-  if (c.status === "unknown") {
-    if (
-      c.checked_at !== null ||
-      c.expires_at !== null ||
-      c.analytics !== "unknown" ||
-      c.advertising !== "unknown"
-    )
-      fail();
-  } else {
-    if (
-      c.checked_at === null ||
-      c.expires_at === null ||
-      c.checked_at > value.observed_at ||
-      c.expires_at <= c.checked_at
-    )
-      fail();
-    if (
-      c.status === "current" &&
-      (c.expires_at <= value.observed_at ||
-        c.analytics === "unknown" ||
-        c.advertising === "unknown")
-    )
-      fail();
-    if (
-      c.status === "expired" &&
-      (c.expires_at > value.observed_at ||
-        c.analytics !== "unknown" ||
-        c.advertising !== "unknown")
-    )
-      fail();
-  }
+  decodeMeConsent(value.consent, value.observed_at);
   return value;
 }
 export function decodeMeHistory(
@@ -240,4 +214,40 @@ export function decodeMeHistory(
     onlinePeriod(rows, value.window_started_at, value.observed_at);
   }
   return value;
+}
+
+export function decodeMeConsent(raw: unknown, observedAt: number): MeConsent {
+  const c = consent(raw);
+  if (c.status === "unknown") {
+    if (
+      c.checked_at !== null ||
+      c.expires_at !== null ||
+      c.analytics !== "unknown" ||
+      c.advertising !== "unknown"
+    )
+      fail();
+  } else {
+    if (
+      c.checked_at === null ||
+      c.expires_at === null ||
+      c.checked_at > observedAt ||
+      c.expires_at <= c.checked_at
+    )
+      fail();
+    if (
+      c.status === "current" &&
+      (c.expires_at <= observedAt ||
+        c.analytics === "unknown" ||
+        c.advertising === "unknown")
+    )
+      fail();
+    if (
+      c.status === "expired" &&
+      (c.expires_at > observedAt ||
+        c.analytics !== "unknown" ||
+        c.advertising !== "unknown")
+    )
+      fail();
+  }
+  return c;
 }

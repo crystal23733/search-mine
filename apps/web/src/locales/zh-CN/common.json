@@ -419,5 +419,11 @@
   "me.recent": "最近记录",
   "me.allRecords": "查看全部记录",
   "me.storage": "保存信息与保留期限",
-  "me.login": "登录"
+  "me.login": "登录",
+  "consent.serverRefresh": "刷新同意状态",
+  "consent.serverVerify": "确认更新的选择",
+  "consent.withdraw.analytics": "撤回分析同意",
+  "consent.withdraw.advertising": "撤回广告同意",
+  "consent.withdraw.all": "撤回所有可选同意",
+  "consent.changed": "同意状态已更改。请刷新后重试。"
 }

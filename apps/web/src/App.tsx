@@ -7,6 +7,7 @@ import { MyInfoPage } from "./pages/MyInfoPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StoragePage } from "./pages/StoragePage";
 import { RulesPage } from "./pages/RulesPage";
+import { documentRoute, documentStatus } from "./services/document-route";
 import { StatusPage } from "./pages/StatusPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
@@ -60,9 +61,7 @@ export function App({ services }: { services: AppServices }) {
       String(preferences.zoom),
     );
   }, [preferences]);
-  const route =
-    url.pathname.replace(/^\/(en|ko|ja|zh-CN|es|pt-BR|de|fr)(?=\/|$)/, "") ||
-    "/";
+  const route = documentRoute(url.pathname);
   useEffect(() => {
     if (
       services.learning.read() === "new" &&
@@ -122,7 +121,7 @@ export function App({ services }: { services: AppServices }) {
     ) : route === "/rules" ? (
       <RulesPage />
     ) : (
-      <StatusPage online={["/queue", "/friends", "/login"].includes(route)} />
+      <StatusPage status={documentStatus(url.pathname) === 403 ? 403 : 404} />
     );
   return (
     <Ui.Provider

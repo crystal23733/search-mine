@@ -114,3 +114,6 @@ PC 대전 우측은 상대 진행 요약만 공개한다. sheet/dialog는 초점
 
 
 #178 FR01/09/11/13/16 · NFR01/02/05/06/07/08 · TS17~22/24/26/29/34~36 → [ADR0083](../adr/0083-my-info-client-and-export-removal.md) → 내 정보4화면·공통 기기 설정·game/self 인증 scope·메모리/취소·파일 UI/DTO/3 API 제거 → [검증178](../verification/178-my-info-pages.md).
+
+
+#192 FR10/11·NFR01/02/05/06/07/08·TS18/19/20/26/30/31 → [ADR0089](../adr/0089-error-document-pages.md) → 명시403/404·고정locale복귀/검색제외·공통문서분류/dev-preview실HTTP → [검증192](../verification/192-error-pages.md). 운영origin24·admin/외부147/42·상위21/83은 후속이다.

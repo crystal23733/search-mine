@@ -425,5 +425,11 @@
   "consent.withdraw.analytics": "Retirer le consentement aux analyses",
   "consent.withdraw.advertising": "Retirer le consentement publicitaire",
   "consent.withdraw.all": "Retirer tous les consentements facultatifs",
-  "consent.changed": "Votre consentement a changé. Actualisez le statut et réessayez."
+  "consent.changed": "Votre consentement a changé. Actualisez le statut et réessayez.",
+  "error.forbiddenTitle": "Accès refusé",
+  "error.notFoundTitle": "Page introuvable",
+  "error.forbiddenDescription": "Vous ne pouvez pas consulter cette page. Vérifiez votre compte ou revenez à l’accueil.",
+  "error.notFoundDescription": "Cette page a peut-être été déplacée ou n’est plus disponible.",
+  "error.home": "Retour à l’accueil",
+  "error.account": "Voir le compte"
 }

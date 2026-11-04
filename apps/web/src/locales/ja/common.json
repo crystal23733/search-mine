@@ -425,5 +425,11 @@
   "consent.withdraw.analytics": "分析への同意を撤回",
   "consent.withdraw.advertising": "広告への同意を撤回",
   "consent.withdraw.all": "任意の同意をすべて撤回",
-  "consent.changed": "同意状況が変わりました。更新してからもう一度お試しください。"
+  "consent.changed": "同意状況が変わりました。更新してからもう一度お試しください。",
+  "error.forbiddenTitle": "アクセスできません",
+  "error.notFoundTitle": "ページが見つかりません",
+  "error.forbiddenDescription": "このページを表示する権限がありません。アカウントを確認するか、ホームに戻ってください。",
+  "error.notFoundDescription": "ページが移動したか、現在は利用できない可能性があります。",
+  "error.home": "ホームに戻る",
+  "error.account": "アカウントを確認"
 }

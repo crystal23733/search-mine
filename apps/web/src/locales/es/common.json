@@ -425,5 +425,11 @@
   "consent.withdraw.analytics": "Retirar consentimiento de análisis",
   "consent.withdraw.advertising": "Retirar consentimiento publicitario",
   "consent.withdraw.all": "Retirar todos los consentimientos opcionales",
-  "consent.changed": "El consentimiento ha cambiado. Actualiza el estado e inténtalo de nuevo."
+  "consent.changed": "El consentimiento ha cambiado. Actualiza el estado e inténtalo de nuevo.",
+  "error.forbiddenTitle": "Acceso denegado",
+  "error.notFoundTitle": "Página no encontrada",
+  "error.forbiddenDescription": "No tienes permiso para ver esta página. Revisa tu cuenta o vuelve al inicio.",
+  "error.notFoundDescription": "La página puede haberse movido o ya no estar disponible.",
+  "error.home": "Volver al inicio",
+  "error.account": "Ver cuenta"
 }

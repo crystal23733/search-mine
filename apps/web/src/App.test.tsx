@@ -83,7 +83,7 @@ test("home rule links show the public Rust snapshot and browser back restores th
     ),
   );
 });
-test("settings update accessible controls while online and unknown routes stay unavailable", async () => {
+test("settings update accessible controls and unknown routes render a clear 404", async () => {
   const services = await setup("/en/settings");
   fireEvent.change(screen.getByRole("checkbox", { name: "High contrast" }), {
     target: { checked: true },
@@ -122,8 +122,64 @@ test("settings update accessible controls while online and unknown routes stay u
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "This page is unavailable",
+        name: "Page not found",
       }).isConnected,
     ).toBe(true),
+  );
+});
+
+test("unknown addresses show a private 404 with fixed locale links and never reflect the input", async () => {
+  await setup("/en/missing?email=private-value#secret-fragment");
+  expect(
+    await screen.findByRole("heading", { name: "Page not found" }),
+  ).toBeTruthy();
+  expect(screen.getByText("404", { exact: true })).toBeTruthy();
+  expect(document.activeElement).toBe(
+    screen.getByRole("heading", { name: "Page not found" }),
+  );
+  expect(document.body.textContent).not.toContain("private-value");
+  const home = screen.getByRole("link", { name: "Back to home", exact: true });
+  expect(home.getAttribute("href")).toBe("/en/");
+  await waitFor(() => expect(document.title).toContain("404"));
+  expect(
+    document.querySelector('meta[name="robots"]')?.getAttribute("content"),
+  ).toContain("noindex");
+});
+test("the forbidden document explains access without inventing a login or exposing account data", async () => {
+  await setup("/en/403?token=private-value");
+  expect(
+    await screen.findByRole("heading", { name: "Access denied" }),
+  ).toBeTruthy();
+  expect(
+    screen
+      .getByRole("link", { name: "View account", exact: true })
+      .getAttribute("href"),
+  ).toBe("/en/me/account");
+  expect(document.body.textContent).not.toContain("private-value");
+});
+
+test("first visits keep the error page and head state is restored when returning to a normal document", async () => {
+  const original = document.title;
+  const services = await setup("/en/not-a-page", true);
+  await screen.findByRole("heading", { name: "Page not found" });
+  expect(window.location.pathname).toBe("/en/not-a-page");
+  await waitFor(() => expect(document.title).toContain("404"));
+  services.navigation.go("/rules");
+  await waitFor(() => expect(document.title).toBe(original));
+  expect(document.querySelector('meta[name="robots"]')).toBeNull();
+  services.navigation.go("/me/privacy");
+  await waitFor(() =>
+    expect(
+      document.querySelector('meta[name="robots"]')?.getAttribute("content"),
+    ).toContain("noindex"),
+  );
+  services.navigation.go("/unknown-again");
+  await screen.findByRole("heading", { name: "Page not found" });
+  expect(
+    document.querySelector('meta[name="robots"]')?.getAttribute("content"),
+  ).toContain("noindex");
+  services.navigation.go("/rules");
+  await waitFor(() =>
+    expect(document.querySelector('meta[name="robots"]')).toBeNull(),
   );
 });

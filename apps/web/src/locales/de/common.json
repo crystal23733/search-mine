@@ -425,5 +425,11 @@
   "consent.withdraw.analytics": "Analyse-Einwilligung widerrufen",
   "consent.withdraw.advertising": "Werbeeinwilligung widerrufen",
   "consent.withdraw.all": "Alle optionalen Einwilligungen widerrufen",
-  "consent.changed": "Deine Einwilligung hat sich geändert. Aktualisiere den Status und versuche es erneut."
+  "consent.changed": "Deine Einwilligung hat sich geändert. Aktualisiere den Status und versuche es erneut.",
+  "error.forbiddenTitle": "Zugriff verweigert",
+  "error.notFoundTitle": "Seite nicht gefunden",
+  "error.forbiddenDescription": "Du hast keine Berechtigung für diese Seite. Prüfe dein Konto oder kehre zur Startseite zurück.",
+  "error.notFoundDescription": "Diese Seite wurde möglicherweise verschoben oder ist nicht mehr verfügbar.",
+  "error.home": "Zur Startseite",
+  "error.account": "Konto ansehen"
 }

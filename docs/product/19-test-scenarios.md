@@ -459,3 +459,8 @@ TS20/21/22/24/29/31/35/36 확장(#188): 단건 선택수집은 현재cookie/Orig
 #190 FR01/11/13/16·NFR01/02/05/06/07/08·TS19/20/21/22/24/26/29/31/35/36 → [ADR0088](../adr/0088-consent-and-event-client.md) → 현재self동의제어/화면·현재목적교집합/직전서버확인·단건취소/landing·Rust목적원천 → [검증190](../verification/190-consent-and-event-client.md). 실제CMP/광고·외부147/42·상위21/83은 후속이다.
 
 TS19/20/21/22/24/26/29/31/35/36 확장(#190): nickname없는현재self권한의동의조회/갱신/CAS/목적별·전체철회와8언어·폐쇄응답/만료·이탈취소를검증한다. 선택기록은현재브라우저목적과직전서버grant둘다요구하며원래2초/한건/메모리만사용한다. 로그아웃·철회·목적/계정/revision변경·숨김/오프라인/화면이동/복원은취소하고늦은ack를버린다. 미설정CMP는선택요청0/탭key0·게임계속이며자동retry/영구queue를만들지않는다.
+
+
+#192 FR10/11·NFR01/02/05/06/07/08·TS18/19/20/26/30/31 → [ADR0089](../adr/0089-error-document-pages.md) → 명시403/404·고정locale복귀/검색제외·공통문서분류/dev-preview실HTTP → [검증192](../verification/192-error-pages.md). 운영origin24·admin/외부147/42·상위21/83은 후속이다.
+
+TS18/19/20/26/30/31 확장(#192):8locale의명시403/404·unknown문서안내와요청query/hash미반영·고정href복귀·title/noindex수명/첫방문을검증한다. dev/preview실HTML GET/HEAD4xx/헤더·known문서200·API/WS/assets pass-through와PC/mobile키보드·가로넘침/기존offlineUI를검증한다. 운영origin상태는24에서별도검수하고SW/제한시간/retry/flags를바꾸지않는다.

@@ -1460,3 +1460,8 @@ input[type="checkbox"]:checked::before {
 .me-page .card {
   overflow-wrap: anywhere;
 }
+
+.status-page h1 {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}

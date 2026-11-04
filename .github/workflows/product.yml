@@ -142,6 +142,7 @@ jobs:
             .tmp/auth-layout/
             .tmp/online-layout/
             .tmp/my-info-layout/
+            .tmp/error-layout/
           retention-days: 7
       - uses: actions/upload-artifact@v7
         if: always()

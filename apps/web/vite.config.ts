@@ -1,9 +1,11 @@
 import { defineConfig } from "vite";
+import { errorDocuments } from "./build/error-documents.ts";
 import preact from "@preact/preset-vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   plugins: [
+    errorDocuments(),
     preact(),
     VitePWA({
       strategies: "injectManifest",

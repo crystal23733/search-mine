@@ -29,6 +29,10 @@
 
 Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJS, PostgreSQL/sqlx를 사용합니다. 집 미니 PC Docker Compose를 Cloudflare Tunnel로 공개하고 DB·집 IP·서비스 포트를 외부에 노출하지 않습니다. 자체 사이트 광고만 사용하며 플레이 도중 광고를 표시하지 않습니다.
 
+## 오류 화면
+
+`/{locale}/403`은 접근 권한 안내, `/{locale}/404`와 알 수 없는 문서 주소는 찾을 수 없음 안내를8언어로 제공합니다. 홈·계정 복귀 링크는 원래 query/hash를 지우고, 오류 화면은 검색 제외와 제목/포커스 수명을 관리합니다. 개발·미리보기 서버의 HTML navigation은 실제403/404를 반환하며 운영 nginx/origin 연결은 #24에서 검수합니다. [오류 문서 검증 #192](docs/verification/192-error-pages.md).
+
 ## OAuth와 화면 기준
 
 Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제공자는 어댑터로 추가합니다. 비밀번호를 저장하지 않고 최소 로그인 식별자와 게임용 닉네임만 요구합니다. 이메일·실명·사진·전화 권한은 요청하지 않습니다. Apple 계정 삭제용 credential은 서버에 암호화 보관합니다. 로그인 없이 로컬 봇/튜토리얼/데일리 연습을 제공하고 온라인 대전·공식 기록은 인증합니다.

@@ -9,7 +9,8 @@
     "jsxImportSource": "preact",
     "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
     "types": ["vite/client", "vitest/globals"],
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["src", "test", "vitest.config.ts"]
 }

@@ -425,5 +425,11 @@
   "consent.withdraw.analytics": "Withdraw analytics consent",
   "consent.withdraw.advertising": "Withdraw advertising consent",
   "consent.withdraw.all": "Withdraw all optional consent",
-  "consent.changed": "Your consent changed. Refresh the status and try again."
+  "consent.changed": "Your consent changed. Refresh the status and try again.",
+  "error.forbiddenTitle": "Access denied",
+  "error.notFoundTitle": "Page not found",
+  "error.forbiddenDescription": "You do not have permission to view this page. Check your account or return home.",
+  "error.notFoundDescription": "This page may have moved or is no longer available.",
+  "error.home": "Back to home",
+  "error.account": "View account"
 }

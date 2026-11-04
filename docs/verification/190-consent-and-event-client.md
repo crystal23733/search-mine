@@ -22,3 +22,7 @@ Collector는 현재 브라우저 purpose와 직전 서버 read의 현재 grant�
 전송 시점의 current 서버 revision과 같은 저장 transaction이 최종 권위이며 UI/CMP view가 이를 대신하지 않는다. 생성 목적 map과 서버 메서드가 같은 Rust 원천을 사용한다. auth self scope·CSRF·최소 응답·메모리 수명/cleanup·동적 import의 mutation 취소·원래2초·현재 컨텍스트/시계·실패/이탈 상태 비우기를 실제 diff에서 검토했다. 취소 직후 새 요청과 이전 finally 경합은 추가 Red/Green으로 보완했다. 전체 게임 규칙/파일 다운로드·SDK/자동retry/DB/secret은 변경하지 않는다.
 
 현재 CMP factory/서버 verifier를 운영에 연결하지 않았으므로 실제 선택 데이터 수집은 계속 차단된다. landing 외 이벤트 producer·실CMP/TCF/지역/익명subject·운영147/42·상위21/83은 후속이다. 코드 기반 검증을 실제 CMP 성공·법적 정책/출시 출구 완료로 보고하지 않는다. PR CI·정확head·최종 리뷰/병합 상태는 GitHub PR과 로컬 당일 review에 기록한다.
+
+최초 원격 Product41847041379(source2eb6260)는 웹397 통과 뒤 신규 HTTPS의 response.json/CDP Network.getResponseBody unavailable로 최초/재시도 실패했다(100PASS/1FAIL/27미실행,9.5분). 별도 기존 offline 비교8개56.5초 통과를 제품 해결/전체 성공으로 해석하지 않는다. 서버/DB·커버리지는 통과했지만 PR은 병합하지 않았다. 원본trace2/네트워크/로그/layout을 .tmp/consent190-ci-first-*에 보존했다. 실제 200응답 metadata와 UI의 current/두목적 denied 표시를 검증하도록 테스트 관측을 수정했다. 실제 UI가 본문을 소비·검증하고 전후 인증을 마쳐야 성공하므로 CDP 본문 재조회에 의존하지 않는다. 결과는 새 head에서 다시 확인한다.
+
+관측 수정 뒤 로컬 신규 HTTPS1개7.7초·typecheck/format/문서 검사를 통과했다. 실제 서버응답status200·요청v1/all·no-store와 UI current/denied2개가 함께 충족돼야 성공한다. 제품 코드는 변경하지 않았다. 최종 원격 head의6checks는 별도 확인한다.

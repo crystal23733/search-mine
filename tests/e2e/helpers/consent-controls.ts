@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 export function registerConsentControlTests(
   approve: (context: BrowserContext) => Promise<void>,
 ) {
@@ -56,13 +56,21 @@ export function registerConsentControlTests(
             v: 1,
             purpose: "all",
           });
-          const current = await withdrawn.json();
-          expect(current.consent).toMatchObject({
-            status: "current",
-            analytics: "denied",
-            advertising: "denied",
-          });
-          await expect(page.getByTestId("me-server-consent")).toBeVisible();
+          expect(withdrawn.headers()["cache-control"]).toBe("no-store");
+          const messages = JSON.parse(
+            await readFile(
+              `apps/web/src/locales/${locale}/common.json`,
+              "utf8",
+            ),
+          );
+          const view = page.getByTestId("me-server-consent");
+          await expect(view).toBeVisible();
+          await expect(
+            view.getByText(messages["me.status.current"], { exact: true }),
+          ).toBeVisible();
+          await expect(
+            view.getByText(messages["me.choice.denied"], { exact: true }),
+          ).toHaveCount(2);
           await expect(button).toBeEnabled();
           expect(
             await page.evaluate(

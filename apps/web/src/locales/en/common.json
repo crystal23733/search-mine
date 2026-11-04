@@ -419,5 +419,11 @@
   "me.recent": "Recent records",
   "me.allRecords": "View all records",
   "me.storage": "Stored information and retention",
-  "me.login": "Sign in"
+  "me.login": "Sign in",
+  "consent.serverRefresh": "Refresh consent status",
+  "consent.serverVerify": "Check updated choices",
+  "consent.withdraw.analytics": "Withdraw analytics consent",
+  "consent.withdraw.advertising": "Withdraw advertising consent",
+  "consent.withdraw.all": "Withdraw all optional consent",
+  "consent.changed": "Your consent changed. Refresh the status and try again."
 }

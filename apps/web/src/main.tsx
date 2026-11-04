@@ -9,6 +9,9 @@ import { createSharePort } from "./services/daily-share";
 import { createActivity } from "./services/activity";
 import { createOffline } from "./services/offline";
 import { createBrowserConsent } from "./services/consent-browser";
+import { createOptionalEvents } from "./services/privacy/collector";
+import { bindOptionalLanding } from "./services/privacy/browser";
+import type { ConsentControlPort } from "./services/privacy/types";
 import { createBrowserAuth } from "./services/auth/browser";
 import { createAuthHttp } from "./services/auth/http";
 import { createPendingSubmissions } from "./services/pending-submissions";
@@ -72,10 +75,62 @@ const offline = createOffline(activity, {
   enabled: import.meta.env.PROD,
   storage,
 });
+const consent = createBrowserConsent(window, account.auth);
+let controlHttp: Promise<ConsentControlPort> | undefined;
+function getConsentHttp(): Promise<ConsentControlPort> {
+  return (controlHttp ??= import("./services/privacy/http")
+    .then((module) =>
+      module.createConsentHttp(account.auth, window.fetch.bind(window), () =>
+        optionalEvents.cancel(),
+      ),
+    )
+    .catch((error) => {
+      controlHttp = undefined;
+      throw error;
+    }));
+}
+const consentControl: ConsentControlPort = {
+  read: async (...args) => (await getConsentHttp()).read(...args),
+  refresh: async (...args) => {
+    optionalEvents.cancel();
+    return (await getConsentHttp()).refresh(...args);
+  },
+  withdraw: async (...args) => {
+    optionalEvents.cancel();
+    return (await getConsentHttp()).withdraw(...args);
+  },
+};
+const optionalEvents = createOptionalEvents({
+  auth: account.auth,
+  consent,
+  control: consentControl,
+  transport: {
+    send: async (...args) =>
+      (await import("./services/privacy/http"))
+        .createEventHttp(account.auth, window.fetch.bind(window))
+        .send(...args),
+  },
+  available: () => navigator.onLine && document.visibilityState === "visible",
+  clock: () => ({ wall: Date.now(), monotonic: performance.now() }),
+  id: () => crypto.randomUUID(),
+});
+const optionalLanding = bindOptionalLanding(
+  window,
+  navigation,
+  account.auth,
+  consent,
+  optionalEvents,
+);
+import.meta.hot?.dispose(() => {
+  optionalLanding.dispose();
+  optionalEvents.dispose();
+  consent.dispose();
+});
 render(
   <App
     services={{
-      consent: createBrowserConsent(window, account.auth),
+      consent,
+      consentControl,
       dailyChallenge: {
         start: async (...args) => (await getDailyApi()).start(...args),
         heartbeat: async (...args) => (await getDailyApi()).heartbeat(...args),

@@ -46,11 +46,9 @@ pub trait ClientActionPurpose {
 }
 impl ClientActionPurpose for ClientAction {
     fn purpose(&self) -> Purpose {
-        match self {
-            Self::AdRequest { .. } | Self::AdImpression { .. } | Self::AdFailed { .. } => {
-                Purpose::Advertising
-            }
-            _ => Purpose::Analytics,
+        match self.collection_purpose() {
+            liar_protocol::events::OptionalEventPurpose::Analytics => Purpose::Analytics,
+            liar_protocol::events::OptionalEventPurpose::Advertising => Purpose::Advertising,
         }
     }
 }

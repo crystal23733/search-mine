@@ -419,5 +419,11 @@
   "me.recent": "Neueste Ergebnisse",
   "me.allRecords": "Alle Ergebnisse anzeigen",
   "me.storage": "Gespeicherte Daten und Aufbewahrung",
-  "me.login": "Anmelden"
+  "me.login": "Anmelden",
+  "consent.serverRefresh": "Einwilligungsstatus aktualisieren",
+  "consent.serverVerify": "Geänderte Auswahl prüfen",
+  "consent.withdraw.analytics": "Analyse-Einwilligung widerrufen",
+  "consent.withdraw.advertising": "Werbeeinwilligung widerrufen",
+  "consent.withdraw.all": "Alle optionalen Einwilligungen widerrufen",
+  "consent.changed": "Deine Einwilligung hat sich geändert. Aktualisiere den Status und versuche es erneut."
 }

@@ -419,5 +419,11 @@
   "me.recent": "최근 기록",
   "me.allRecords": "전적 모두 보기",
   "me.storage": "저장 항목과 보존 기간",
-  "me.login": "로그인"
+  "me.login": "로그인",
+  "consent.serverRefresh": "동의 상태 새로고침",
+  "consent.serverVerify": "변경한 선택 확인",
+  "consent.withdraw.analytics": "분석 동의 철회",
+  "consent.withdraw.advertising": "광고 동의 철회",
+  "consent.withdraw.all": "선택 동의 전체 철회",
+  "consent.changed": "동의 상태가 바뀌었습니다. 새로고침한 뒤 다시 시도하세요."
 }

@@ -16,7 +16,9 @@ import type { DailyApi } from "./daily/types";
 import type { DailyChallengeApi } from "./daily/official";
 import type { ConsentPort } from "./consent";
 import type { MePort } from "./me/types";
+import type { ConsentControlPort } from "./privacy/types";
 export interface AppServices {
+  consentControl: ConsentControlPort;
   me: MePort;
   consent: ConsentPort;
   dailyChallenge: DailyChallengeApi;

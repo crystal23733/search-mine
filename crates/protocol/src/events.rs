@@ -63,6 +63,66 @@ pub enum OptionalEventAction<I> {
         reason: AdFailure,
     },
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum OptionalEventPurpose {
+    Analytics,
+    Advertising,
+}
+impl<I> OptionalEventAction<I> {
+    pub fn collection_purpose(&self) -> OptionalEventPurpose {
+        match self {
+            Self::AdRequest { .. } | Self::AdImpression { .. } | Self::AdFailed { .. } => {
+                OptionalEventPurpose::Advertising
+            }
+            _ => OptionalEventPurpose::Analytics,
+        }
+    }
+}
+/// Generate the browser contract from the same purpose method used at write time.
+pub fn optional_event_purposes() -> std::collections::BTreeMap<String, OptionalEventPurpose> {
+    let actions = [
+        OptionalEventAction::LandingView {
+            route: LandingRoute::Home,
+        },
+        OptionalEventAction::InviteOpen {},
+        OptionalEventAction::TutorialStart {
+            run_id: String::new(),
+        },
+        OptionalEventAction::TutorialComplete {
+            run_id: String::new(),
+            duration_ms: 0,
+            skipped: false,
+        },
+        OptionalEventAction::RematchSelected {
+            previous_match_id: String::new(),
+        },
+        OptionalEventAction::ShareClick {
+            date: String::new(),
+            channel: ShareChannel::Copy,
+        },
+        OptionalEventAction::AdRequest {
+            placement: Placement::Menu,
+        },
+        OptionalEventAction::AdImpression {
+            placement: Placement::Menu,
+        },
+        OptionalEventAction::AdFailed {
+            placement: Placement::Menu,
+            reason: AdFailure::Unavailable,
+        },
+    ];
+    actions
+        .into_iter()
+        .map(|action| {
+            let tag = serde_json::to_value(&action).expect("Event contract serializes")["type"]
+                .as_str()
+                .expect("Event tag")
+                .to_owned();
+            (tag, action.collection_purpose())
+        })
+        .collect()
+}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(deny_unknown_fields)]
 pub struct OptionalEventDraft<I = String> {
@@ -124,6 +184,7 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         ShareChannel::decl(config),
         Placement::decl(config),
         AdFailure::decl(config),
+        OptionalEventPurpose::decl(config),
         OptionalEventAction::<String>::decl(config),
         OptionalEventDraft::<String>::decl(config),
         OptionalEventCaptureInput::decl(config),

@@ -14,6 +14,7 @@ import { MeFailure } from "../services/me/types";
 async function setup(
   path = "/en/me",
   account: AuthAccount | null = TEST_ACCOUNT,
+  overrides: Partial<AppServices> = {},
 ) {
   window.history.replaceState(null, "", path);
   const auth = authTestPorts(account, true);
@@ -60,6 +61,7 @@ async function setup(
     boardRenderer: async () => {
       throw Error();
     },
+    ...overrides,
   };
   render(<App services={services} />);
   return { ...auth, services, me };
@@ -137,4 +139,82 @@ test("privacy distinguishes the server view from unavailable CMP setup and retai
       .getByRole("button", { name: "Reopen consent choices" })
       .hasAttribute("disabled"),
   ).toBe(true);
+});
+
+test("privacy controls withdraw the current session without a nickname and clear old state while writing", async () => {
+  const denied = {
+    v: 1,
+    account_id: TEST_ACCOUNT.id,
+    revision: "c0000000-0000-4000-8000-000000000001",
+    observed_at: 1500,
+    consent: {
+      cmp_available: false,
+      status: "current" as const,
+      analytics: "denied" as const,
+      advertising: "denied" as const,
+      checked_at: 1500,
+      expires_at: 2000,
+    },
+  };
+  let resolve!: (value: typeof denied) => void;
+  const api = {
+    read: vi.fn().mockResolvedValue(denied),
+    refresh: vi.fn(),
+    withdraw: vi.fn().mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    ),
+  };
+  await setup(
+    "/en/me/privacy",
+    { ...TEST_ACCOUNT, nickname: null },
+    { consentControl: api },
+  );
+  await screen.findByTestId("me-server-consent");
+  expect(
+    screen
+      .getByRole("button", { name: "Check updated choices" })
+      .hasAttribute("disabled"),
+  ).toBe(true);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Withdraw all optional consent" }),
+  );
+  expect(screen.queryByTestId("me-server-consent")).toBeNull();
+  expect(api.withdraw.mock.calls[0][1]).toBe("all");
+  resolve(denied);
+  await screen.findByTestId("me-server-consent");
+  expect(
+    screen
+      .getByRole("button", { name: "Refresh consent status" })
+      .hasAttribute("disabled"),
+  ).toBe(false);
+});
+test("leaving privacy aborts its control request and a late view cannot appear on settings", async () => {
+  let resolve!: (value: unknown) => void;
+  const api = {
+    read: vi.fn().mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    ),
+    refresh: vi.fn(),
+    withdraw: vi.fn(),
+  };
+  await setup("/en/me/privacy", TEST_ACCOUNT, { consentControl: api });
+  await waitFor(() => expect(api.read).toHaveBeenCalledOnce());
+  const signal = api.read.mock.calls[0][1] as AbortSignal;
+  fireEvent.click(
+    screen
+      .getAllByRole("link", { name: "Settings", exact: true })
+      .find((link) => link.getAttribute("href") === "/en/settings")!,
+  );
+  await screen.findByRole("heading", { name: "Settings", level: 1 });
+  expect(signal.aborted).toBe(true);
+  resolve({ v: 1, account_id: TEST_ACCOUNT.id });
+  await waitFor(() =>
+    expect(screen.queryByTestId("me-server-consent")).toBeNull(),
+  );
 });

@@ -7,7 +7,7 @@ export function MeConsent({
   value,
   startedAt,
 }: {
-  value: MeOverview;
+  value: Pick<MeOverview, "observed_at" | "consent">;
   startedAt: number;
 }) {
   const { t, locale } = useUi();

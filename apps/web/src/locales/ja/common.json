@@ -419,5 +419,11 @@
   "me.recent": "最近の記録",
   "me.allRecords": "すべての記録を見る",
   "me.storage": "保存する情報と期間",
-  "me.login": "ログイン"
+  "me.login": "ログイン",
+  "consent.serverRefresh": "同意状況を更新",
+  "consent.serverVerify": "変更した選択を確認",
+  "consent.withdraw.analytics": "分析への同意を撤回",
+  "consent.withdraw.advertising": "広告への同意を撤回",
+  "consent.withdraw.all": "任意の同意をすべて撤回",
+  "consent.changed": "同意状況が変わりました。更新してからもう一度お試しください。"
 }

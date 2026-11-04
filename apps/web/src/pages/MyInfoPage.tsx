@@ -6,6 +6,7 @@ import { Button } from "../ui/atoms/Button";
 import { Card } from "../ui/atoms/Card";
 import { AuthFeedback } from "../ui/organisms/AuthFeedback";
 import { ConsentSettings } from "../ui/organisms/ConsentSettings";
+import { ServerConsentControls } from "../ui/organisms/ServerConsentControls";
 import { MeContent, type MeSection } from "../ui/organisms/MeContent";
 export function MyInfoPage({ section = "overview" }: { section?: MeSection }) {
   const { t, services } = useUi();
@@ -49,7 +50,17 @@ export function MyInfoPage({ section = "overview" }: { section?: MeSection }) {
         <NavLink path="/settings">{t("settings")}</NavLink>
       </nav>
       {ready ? (
-        <MeContent key={`${auth.account!.id}-${section}`} section={section} />
+        section === "privacy" ? (
+          <>
+            <ServerConsentControls key={auth.account!.id} />
+            <h2>{t("me.storage")}</h2>
+            <Card>
+              <p>{t("me.retention")}</p>
+            </Card>
+          </>
+        ) : (
+          <MeContent key={`${auth.account!.id}-${section}`} section={section} />
+        )
       ) : (
         <Card>
           {auth.status !== "loading" && <AuthFeedback />}

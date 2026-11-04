@@ -419,5 +419,11 @@
   "me.recent": "Résultats récents",
   "me.allRecords": "Voir tous les résultats",
   "me.storage": "Données conservées et durée",
-  "me.login": "Se connecter"
+  "me.login": "Se connecter",
+  "consent.serverRefresh": "Actualiser le consentement",
+  "consent.serverVerify": "Vérifier les changements",
+  "consent.withdraw.analytics": "Retirer le consentement aux analyses",
+  "consent.withdraw.advertising": "Retirer le consentement publicitaire",
+  "consent.withdraw.all": "Retirer tous les consentements facultatifs",
+  "consent.changed": "Votre consentement a changé. Actualisez le statut et réessayez."
 }

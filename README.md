@@ -31,7 +31,7 @@ Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJ
 
 ## 자동 광고
 
-사용자 지시에 따라 [ADR0091](docs/adr/0091-adsense-auto-ads.md)의 AdSense 자동 광고로 전환합니다. 허용 공개 문서/현재 광고 동의에서 교체 가능한 script port를 실행하고 게임 문서를 분리합니다. #196 설계 병합 뒤 제품 구현을 진행하며 실제 게시자ID/사이트 승인/CMP/운영 설정이 없는 실행 앱은 광고0을 유지합니다. 과거 [#194 정책 검증](docs/verification/194-ad-request-policy.md)의 자체3판 카운터/H5 전면 계획은 대체합니다.
+사용자 지시에 따라 [ADR0091](docs/adr/0091-adsense-auto-ads.md)의 AdSense 자동 광고로 전환합니다. 허용 공개 문서/현재 광고 동의에서 교체 가능한 script port를 실행하고 게임 문서를 분리합니다. [#199 연결](docs/verification/199-auto-ads-runtime.md)은 교체 가능한 script와 게임 새문서 경계를 제공합니다. `VITE_ADSENSE_CLIENT_ID`와 실제 CMP/사이트 승인/운영 설정이 없는 실행 앱은 광고0을 유지합니다. [설정 절차](docs/workflow/auto-ads-configuration.md)를 확인하세요. 과거 [#194 정책 검증](docs/verification/194-ad-request-policy.md)의 자체3판 카운터/H5 전면 계획은 대체합니다.
 
 ## 오류 화면
 

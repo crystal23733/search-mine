@@ -22,7 +22,7 @@ stateDiagram-v2
   NewDocument --> Disabled: no script in protected document
 ```
 
-8locale 홈/규칙의 공개 문서만 초기 허용한다. 게임/튜토리얼/데일리/매칭/친구/순위·개인 결과/내정보/계정/설정/오류와 query/hash 문서는 제외한다. 홈 첫방문 tutorial 전환도 제외한다. 광고 미설정/차단/실패는 게임/탐색에서 기다리지 않는다. ScriptPort는 configured/load(signal), 문서당 단1회·3초 기한·취소·자동재시도 없음으로 분리한다. 실제 설정은 AdSense 게시자ID이며 API키를 만들지 않는다.
+8locale 홈/규칙의 공개 문서만 초기 허용한다. 게임/튜토리얼/데일리/매칭/친구/순위·개인 결과/내정보/계정/설정/오류와 query/미허용hash 문서는 제외하고 고정 접근성 #main은 허용한다. 홈 첫방문 tutorial 전환도 제외한다. 광고 미설정/차단/실패는 게임/탐색에서 기다리지 않는다. ScriptPort는 configured/load(signal), 문서당 단1회·3초 기한·취소·자동재시도 없음으로 분리한다. 실제 설정은 AdSense 게시자ID이며 API키를 만들지 않는다.
 
 script를 시작한 문서는 보호 화면으로 SPA 이동하기 전에 새 문서를 열어 실행 SDK를 격리한다. popstate/BFCache·철회/만료/계정 변경/오프라인을 재검사한다. 노드 삭제를 SDK unload로 간주하지 않는다. 초기 운영은 인페이지 자동 광고만 허용하고 overlay/vignette/anchor/side rail·ad intents는 끈다. 운영 page exclusions도 함께 검수한다. 상세 수명/실제한계·공식근거는 ADR0091을 따른다.
 
@@ -66,3 +66,6 @@ CMP의 필수 동의 처리와 광고 SDK를 분리한다. 분석 동의는 광�
 
 
 #196 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 사용자 자동광고 승인·3판/H5 대체·script port/공개문서/현재목적/게임 새문서 경계 → [검증196](../verification/196-auto-ads-design.md). 제품 구현과 실제 CMP/운영147·상위22/21은 후속이다.
+
+
+#199 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 자동광고 script port/현재권한·공개/보호문서 경계·기본0/실제root·194미사용제거 → [검증199](../verification/199-auto-ads-runtime.md). 실제 CMP/Google운영147·상위22/21·83/198은 별도다.

@@ -1,7 +1,8 @@
 import { render } from "preact";
 import { App } from "./App";
 import { createI18n } from "./services/i18n";
-import { createNavigation } from "./services/navigation";
+import { createAutoAdsBrowser } from "./services/ads/browser";
+import { createAdSenseScript } from "./services/ads/adsense";
 import { createPreferences } from "./services/preferences";
 import { createLearning } from "./services/learning";
 import { createDailyRecords } from "./services/daily-records";
@@ -45,7 +46,6 @@ if (!location.pathname.startsWith(`/${locale}/`))
     "",
     localizedPath(location.pathname, locale) + location.search + location.hash,
   );
-const navigation = createNavigation(window);
 const i18n = await createI18n(locale);
 const activity = createActivity();
 const account = createBrowserAuth(
@@ -76,6 +76,16 @@ const offline = createOffline(activity, {
   storage,
 });
 const consent = createBrowserConsent(window, account.auth);
+const learning = createLearning(storage);
+const autoAds = createAutoAdsBrowser(window, {
+  script: createAdSenseScript(document, import.meta.env.VITE_ADSENSE_CLIENT_ID),
+  consent,
+  auth: account.auth,
+  activity,
+  learning,
+  preferences,
+});
+const navigation = autoAds.navigation;
 let controlHttp: Promise<ConsentControlPort> | undefined;
 function getConsentHttp(): Promise<ConsentControlPort> {
   return (controlHttp ??= import("./services/privacy/http")
@@ -122,6 +132,7 @@ const optionalLanding = bindOptionalLanding(
   optionalEvents,
 );
 import.meta.hot?.dispose(() => {
+  autoAds.dispose();
   optionalLanding.dispose();
   optionalEvents.dispose();
   consent.dispose();
@@ -184,7 +195,7 @@ render(
       i18n,
       navigation,
       preferences,
-      learning: createLearning(storage),
+      learning,
       dailyRecords: records,
       share: createSharePort(),
       wallClock: () => Date.now(),

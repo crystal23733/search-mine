@@ -67,3 +67,5 @@ NSM과 운영 통계는 필수 게임 기록에서 산출한다. 비필수 행�
 
 
 #145 FR01/16·NFR01/02/05/07/08·TS20/21/29/31/34/35/36 → [ADR0068](../adr/0068-anonymous-metrics-retention-and-operations.md) → same-RR 익명 scalar 집계·원래13달력개월/500개2초 정리·자동주기/로컬운영·계정삭제·상위20 감사 → [검증145](../verification/145-anonymous-metrics-retention-and-operations.md). optional21/외부42·25/26·27·미확정83/141은 별도다.
+
+2026-11-05 [ADR0091](../adr/0091-adsense-auto-ads.md): Auto ads는 script load를 request/impression/no-fill로 집계하지 않는다. 위 ad_* 계약은 기존 저장 이력/별도 실제 callback의 의미이며 이번 자동 광고 연결에 가짜 producer를 만들지 않는다. 실제 노출/수익은 승인된 AdSense 보고/정산으로 검증한다.

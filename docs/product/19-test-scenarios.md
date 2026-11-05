@@ -464,3 +464,8 @@ TS19/20/21/22/24/26/29/31/35/36 확장(#190): nickname없는현재self권한의�
 #192 FR10/11·NFR01/02/05/06/07/08·TS18/19/20/26/30/31 → [ADR0089](../adr/0089-error-document-pages.md) → 명시403/404·고정locale복귀/검색제외·공통문서분류/dev-preview실HTTP → [검증192](../verification/192-error-pages.md). 운영origin24·admin/외부147/42·상위21/83은 후속이다.
 
 TS18/19/20/26/30/31 확장(#192):8locale의명시403/404·unknown문서안내와요청query/hash미반영·고정href복귀·title/noindex수명/첫방문을검증한다. dev/preview실HTML GET/HEAD4xx/헤더·known문서200·API/WS/assets pass-through와PC/mobile키보드·가로넘침/기존offlineUI를검증한다. 운영origin상태는24에서별도검수하고SW/제한시간/retry/flags를바꾸지않는다.
+
+
+#194 FR12/13·NFR01/02/05/07/08·TS23/24/25 → [ADR0090](../adr/0090-ad-request-policy.md) → Rust 화면/빈도·양쪽 제한/예약 계획·폐쇄 JSON/생성 TS·native/WASM → [검증194](../verification/194-ad-request-policy.md). 실제 잠금/저장·화면/SDK·상위22/21/147은 후속이다.
+
+TS23/24/25 확장(#194): Rust 요청 계획에서 첫3·이후 gap3, 계정/기기 교집합과 누락/이상 counter, 이미 예약된 결과/미확보 exclusive slot, 정상완료와 abort/tutorial, 현재화면·online/목적/SDK를 검사한다. 결과 예약의 다음 counter를 적용하면 no-fill 뒤 같은 완료와4/5판에서 재요청하지 못하고6판에서 다시 계획한다. 현재 입력값은 adapter의 관측이며 서버 권한/원자 저장을 대체하지 않는다. 같은 bounded/폐쇄 decoder와 정책의 native/WASM 실제 결과를 비교하고 실제 UI/SDK timeout/다중 탭 연결은 상위22 후속으로 남긴다.

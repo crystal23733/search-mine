@@ -1,4 +1,5 @@
 //! Public wire contracts. Provider identity and board truth never belong here.
+pub mod ads;
 pub mod auth;
 pub mod consent;
 pub mod daily;
@@ -42,6 +43,7 @@ pub fn public_types() -> String {
         BotSettings::decl(&config),
         BotProfiles::decl(&config),
     ];
+    declarations.extend(ads::declarations(&config));
     declarations.extend(game::declarations(&config));
     declarations.extend(online::declarations(&config));
     declarations.extend(lobby::declarations(&config));

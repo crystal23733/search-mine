@@ -30,6 +30,11 @@ export class TrainingSession {
     step(input: string, time_ms: number): string;
 }
 
+/**
+ * Plan only: the caller must acquire and persist a reservation before an SDK request.
+ */
+export function planAdRequest(input: string): string;
+
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
@@ -47,6 +52,7 @@ export interface InitOutput {
     readonly localsession_new: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly localsession_snapshot: (a: number, b: number) => void;
     readonly localsession_step: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly planAdRequest: (a: number, b: number, c: number) => void;
     readonly trainingsession_advance: (a: number, b: number, c: number) => void;
     readonly trainingsession_new: (a: number) => void;
     readonly trainingsession_snapshot: (a: number, b: number) => void;

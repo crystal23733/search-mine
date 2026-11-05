@@ -261,3 +261,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #192 FR10/11·NFR01/02/05/06/07/08·TS18/19/20/26/30/31 → [ADR0089](../adr/0089-error-document-pages.md) → 명시403/404·고정locale복귀/검색제외·공통문서분류/dev-preview실HTTP → [검증192](../verification/192-error-pages.md). 운영origin24·admin/외부147/42·상위21/83은 후속이다.
+
+
+#194 FR12/13·NFR01/02/05/07/08·TS23/24/25 → [ADR0090](../adr/0090-ad-request-policy.md) → Rust 화면/빈도·양쪽 제한/예약 계획·폐쇄 JSON/생성 TS·native/WASM → [검증194](../verification/194-ad-request-policy.md). 실제 잠금/저장·화면/SDK·상위22/21/147은 후속이다.

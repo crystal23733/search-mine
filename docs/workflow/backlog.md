@@ -236,3 +236,6 @@
 
 
 #199 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 자동광고 script port/현재권한·공개/보호문서 경계·기본0/실제root·194미사용제거 → [검증199](../verification/199-auto-ads-runtime.md). 실제 CMP/Google운영147·상위22/21·83/198은 별도다.
+
+
+#198 FR01/16·NFR01/02/05/08·TS20/29/34/35 → [ADR0092](../adr/0092-auth-bootstrap-cookie-ownership.md) → bootstrap의세션cookie쓰기분리/실제cookieCSRF·이전조회/재인증경합·새문서/명시삭제 → [검증198](../verification/198-auth-bootstrap-cookie-ownership.md). 원격단일원인/실제제공자42·83과구분한다.

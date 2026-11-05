@@ -1213,13 +1213,13 @@
       "key": "reauth-delete-browser-observation",
       "issue": 198,
       "milestone": "M3",
-      "title": "test(auth): 재인증 복귀 뒤 삭제 버튼의 간헐 대기 실패 조사",
+      "title": "fix(auth): 지연된 세션 조회의 재인증 쿠키 삭제 경합 방지",
       "requirements": "FR01/16, NFR01/02/05/08",
       "scenarios": "TS20/29/34/35",
       "deps": [
         "my-info-web-and-export-removal"
       ],
-      "acceptance": "PR197문서전용CI auth삭제버튼disabled/DOM분리30초·trace보존/원인재현·현재세션/재인증/명시확인보안유지·관련회귀/CI/리뷰;현재원인/해결미확정"
+      "acceptance": "PR197 원격 trace 보존/유일 원인 단정 금지·이전 cookie 조회가 새 세션 cookie를 삭제하는 HTTPS/PG Red→Green·bootstrap 세션 cookie 쓰기 제거/실제 cookie CSRF 바인딩·무효 세션 보호 API 거절/정확 proof 로그인 복구·새문서/명시삭제·timeout/retry/권한 유지·관련 회귀/CI/리뷰/병합"
     },
     {
       "key": "auto-ads-runtime",

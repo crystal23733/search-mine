@@ -202,15 +202,13 @@ async fn bootstrap<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAut
         } else {
             None
         };
-        let clear = cookies.session.is_some() && session.is_none();
-        if clear {
-            cookies.session = None;
-        }
         let browser = cookies
             .browser
             .take()
             .map(Ok)
             .unwrap_or_else(SecretToken::generate)?;
+        // Bind the actual request cookies without granting an invalid token authority.
+        // This read can outlive a rotation and must never erase its replacement cookie.
         let csrf = ctx.security.csrf(&browser, cookies.session.as_ref(), now)?;
         let mut response = Json(AuthBootstrap {
             providers: statuses(&ctx.providers),
@@ -220,9 +218,6 @@ async fn bootstrap<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAut
         })
         .into_response();
         set_cookie(&mut response, cookie(BROWSER_COOKIE, Some(&browser), 300))?;
-        if clear {
-            set_cookie(&mut response, cookie(SESSION_COOKIE, None, 0))?;
-        }
         Ok::<_, AuthError>(response)
     }
     .await;

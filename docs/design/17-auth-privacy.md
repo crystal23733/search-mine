@@ -166,3 +166,6 @@ first-normal 근거는 기존 본인 게임90일 기록과 계정 생성 시각�
 
 
 #150 FR01/10/11/13·NFR01/02/06/07/08·TS18/19/24/26/31/35/36 → [ADR0070](../adr/0070-technical-storage-notice.md) → 읽기 전용8언어 실제 저장소/쿠키·footer/route/dialog·유지/삭제/메모리 대체 → [검증150](../verification/150-technical-storage-notice.md). 실제 CMP/전체 정책/외부147·상위21과83/141은 별도다.
+
+
+#198 FR01/16·NFR01/02/05/08·TS20/29/34/35 → [ADR0092](../adr/0092-auth-bootstrap-cookie-ownership.md) → bootstrap의세션cookie쓰기분리/실제cookieCSRF·이전조회/재인증경합·새문서/명시삭제 → [검증198](../verification/198-auth-bootstrap-cookie-ownership.md). 원격단일원인/실제제공자42·83과구분한다.

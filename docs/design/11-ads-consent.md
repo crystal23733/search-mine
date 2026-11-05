@@ -7,48 +7,26 @@
 Google은 해당 지역의 맞춤형 광고 제공 시 Google 인증 CMP와 IAB TCF 통합을 요구한다. [Google 공식 요구사항](https://support.google.com/adsense/answer/13554116?hl=en)
 본 제품은 EEA·영국·스위스뿐 아니라 지역 불명일 때도 비필수 광고/분석을 기본 차단하고 유효 선택 후 허용하는 보수적 구현을 제안한다. 인증이 모든 법적 의무 충족을 뜻하지는 않으며 공개 전에 실제 정책을 검토한다.
 
+## 자동 광고와 문서 경계
+
+2026-11-05 사용자 지시와 [ADR0091](../adr/0091-adsense-auto-ads.md)이 수동 결과 전면/3판 cap 설계를 대체한다. Google AdSense Auto ads가 배치와 노출을 결정하고 앱은 현재 광고 동의·허용 공개 문서에서만 script port를 시작한다. 실제 게시자ID/사이트 승인이 없으면 외부 광고를 요청하지 않는다. 자체 빈도 카운터·다중 탭 slot lock·H5/adBreak는 기본 범위에서 제외하며194 정책 구현은 후속에서 제거한다.
+
 ```mermaid
 stateDiagram-v2
   [*] --> Disabled
-  Disabled --> Eligible: approved account and purpose allowed
-  Eligible --> MenuBanner: menu only
-  MenuBanner --> Eligible: leaving menu
-  Eligible --> Blocked: tutorial countdown playing offline
-  Blocked --> Eligible: completed result
-  Eligible --> ResultAd: completed gap at least 3 and sdk ready
-  ResultAd --> Eligible: close fail or timeout
-  Eligible --> Disabled: consent revoked
+  Disabled --> SafeDocument: configured online visible valid purpose
+  SafeDocument --> ScriptStarted: home or rules without query or hash
+  ScriptStarted --> ScriptStarted: same safe document
+  ScriptStarted --> NewDocument: navigate to protected screen
+  ScriptStarted --> NewDocument: revoke offline or owner changed
+  NewDocument --> Disabled: no script in protected document
 ```
 
-## 빈도와 게임 상태
+8locale 홈/규칙의 공개 문서만 초기 허용한다. 게임/튜토리얼/데일리/매칭/친구/순위·개인 결과/내정보/계정/설정/오류와 query/hash 문서는 제외한다. 홈 첫방문 tutorial 전환도 제외한다. 광고 미설정/차단/실패는 게임/탐색에서 기다리지 않는다. ScriptPort는 configured/load(signal), 문서당 단1회·3초 기한·취소·자동재시도 없음으로 분리한다. 실제 설정은 AdSense 게시자ID이며 API키를 만들지 않는다.
 
-튜토리얼 제외 정상 대전·데일리 완료만 카운트, abort·이탈 제외. 첫 요청은 최소3번째 완료 이후, 이후 **요청한 완료 번호 간격≥3**으로 제한한다. SDK no-fill/실패도 요청 slot을 소비해 즉시 재시도하지 않는다. 광고 노출 수는 실제 callback로 집계한다. 로컬 봇도 온라인 연결·동의가 있을 때만 완료 카운트에 포함하며 오프라인 광고는 금지한다.
+script를 시작한 문서는 보호 화면으로 SPA 이동하기 전에 새 문서를 열어 실행 SDK를 격리한다. popstate/BFCache·철회/만료/계정 변경/오프라인을 재검사한다. 노드 삭제를 SDK unload로 간주하지 않는다. 초기 운영은 인페이지 자동 광고만 허용하고 overlay/vignette/anchor/side rail·ad intents는 끈다. 운영 page exclusions도 함께 검수한다. 상세 수명/실제한계·공식근거는 ADR0091을 따른다.
 
-카운터는 account 서버 값과 브라우저 저장값 중 보수적인 제한을 사용하고 다중 탭 lock을 적용한다. 로그아웃/스토리지 초기화 우회는 완전히 막을 수 없으므로 판당 전면≤1도 추가한다. 메뉴 배너를 떠난 뒤 countdown/playing 전에 광고 요소를 제거하고 자동 광고의 in-game 삽입을 끈다. 동시에 한 광고만 요청한다. 재대결은 광고 대기 timeout(3초 제안) 후 즉시 진행하며 노출 중에는 매칭/카운트다운을 시작하지 않는다.
-
-API는 실제 노출 가능 여부와 빈도를 자체 판단한다. 자체 3판 cap과 별개이며 첫 요청에 SDK 빈도 제한이 적용되지 않을 수도 있다. [Ad Placement API](https://developers.google.com/ad-placement), [빈도 제어](https://developers.google.com/ad-placement/docs/ad-rate)
-
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant App as Client
-  participant CMP as Certified CMP
-  participant Ads as Google Adapter
-  App->>CMP: load approved consent interface
-  CMP-->>U: choices and storage notice
-  U->>CMP: accept or reject purposes
-  CMP-->>App: valid purpose state
-  alt permission and approved account
-    App->>Ads: initialize once at safe screen
-  else denied unknown or failed
-    App->>App: continue without optional tags
-  end
-  U->>CMP: withdraw later
-  CMP-->>App: changed purpose state
-  App->>Ads: block new requests and remove slots
-```
-
-CMP 자체 로딩 등 필수 동의 처리와 광고 SDK를 분리한다. 분석 동의와 광고 동의를 별도 purpose로 판단하며 동의 실패·광고 차단은 게임 실행을 막지 않는다. 동의 철회 후 신규 요청 차단, 재열기 버튼은 모든 화면의 설정에서 접근 가능하게 한다.
+CMP의 필수 동의 처리와 광고 SDK를 분리한다. 분석 동의는 광고를 허용하지 않는다. 거부/오류/미설정에서는 게임을 정상 제공한다.8언어 공통 설정에서 동의를 재열거나 철회할 수 있다. 자동 광고의 script load를 실제 impression으로 기록하지 않는다.
 
 ## CSP와 문서
 
@@ -85,3 +63,6 @@ CMP 자체 로딩 등 필수 동의 처리와 광고 SDK를 분리한다. 분석
 
 
 #194 FR12/13·NFR01/02/05/07/08·TS23/24/25 → [ADR0090](../adr/0090-ad-request-policy.md) → Rust 화면/빈도·양쪽 제한/예약 계획·폐쇄 JSON/생성 TS·native/WASM → [검증194](../verification/194-ad-request-policy.md). 실제 잠금/저장·화면/SDK·상위22/21/147은 후속이다.
+
+
+#196 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 사용자 자동광고 승인·3판/H5 대체·script port/공개문서/현재목적/게임 새문서 경계 → [검증196](../verification/196-auto-ads-design.md). 제품 구현과 실제 CMP/운영147·상위22/21은 후속이다.

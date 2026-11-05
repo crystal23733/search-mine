@@ -27,7 +27,7 @@
     {
       "key": "M4",
       "title": "M4 · 동의·광고·다국어 공개 준비",
-      "description": "Google 인증 CMP·8언어 정책·실제ads.txt·3판 빈도·SEO. 동의 거부/실패 무차단.",
+      "description": "Google 인증 CMP·8언어 정책·실제ads.txt·자동광고/문서 경계·SEO. 동의 거부/실패 무차단.",
       "number": 5
     },
     {
@@ -285,13 +285,13 @@
     {
       "key": "ads",
       "milestone": "M4",
-      "title": "feat(web): 메뉴·결과 광고와 3판 빈도 제한",
+      "title": "feat(web): AdSense 자동 광고와 게임 문서 격리",
       "requirements": "FR12",
       "scenarios": "TS23/25",
       "deps": [
         "cmp-legal"
       ],
-      "acceptance": "완료 gap≥3·1slot; 게임중 요청/표시0; timeout/no-fill·다중탭 무차단",
+      "acceptance": "자동 배치/script port·기본 미설정0·허용 공개문서/현재 동의·문서당1회·게임 새문서 경계·실제계정/CMP/운영147검수·실패무차단",
       "issue": 22
     },
     {
@@ -1196,6 +1196,18 @@
         "my-info-web-and-export-removal"
       ],
       "acceptance": "ADR0090·정상완료 첫3/이후gap3·기기/계정교집합·현재화면/online/광고목적/SDK/exclusive slot·예약후counter·bounded폐쇄JSON/Rust생성TS/native-WASM·Red/Green/property/CI/리뷰/병합CLOSED; 실제집계/원자저장/다중탭/화면/SDK/CMP는상위22/21/147후속"
+    },
+    {
+      "key": "auto-ads-design",
+      "issue": 196,
+      "milestone": "M4",
+      "title": "docs(ads): 자동 광고 전환과 스크립트 경계 설계",
+      "requirements": "FR12/13, NFR01/02/05/07/08",
+      "scenarios": "TS18/20/23/24/25/30",
+      "deps": [
+        "ad-request-policy"
+      ],
+      "acceptance": "사용자2026-11-05자동광고지시·ADR0091/승인기록/PRD/TS/백로그/공식근거·3판/H5대체·script port/현재동의/공개문서/게임새문서/외부147·문서/Mermaid/실제리뷰/CI/병합CLOSED후제품구현"
     }
   ]
 }

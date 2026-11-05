@@ -14,7 +14,7 @@
 | [M1 · 공정한 Rust 코어](https://github.com/crystal23733/search-mine/milestone/2) | 노게스·두 거짓말 간파·규칙·공개 관측 봇·native/WASM 재현. E4 반례0과 성능/채택률 근거. |
 | [M2 · 싱글 플레이 웹 경험](https://github.com/crystal23733/search-mine/milestone/3) | Atomic UI·8언어·접근성·로컬 봇/튜토리얼·데일리·오프라인. 첫 가치와 E1/E2 검증. |
 | [M3 · 권위 서버와 온라인 대전](https://github.com/crystal23733/search-mine/milestone/4) | 최소 OAuth 계정(Google·Apple·카카오·네이버)·PostgreSQL·WS·매칭/친구방·재접속·데일리 순위·자체 이벤트. 실DB/WS/E2E 통과. |
-| [M4 · 동의·광고·다국어 공개 준비](https://github.com/crystal23733/search-mine/milestone/5) | Google 인증 CMP·8언어 정책·실제ads.txt·3판 빈도·SEO. 동의 거부/실패 무차단. |
+| [M4 · 동의·광고·다국어 공개 준비](https://github.com/crystal23733/search-mine/milestone/5) | Google 인증 CMP·8언어 정책·실제ads.txt·자동광고/문서 경계·SEO. 동의 거부/실패 무차단. |
 | [M5 · 홈서버 운영 검증](https://github.com/crystal23733/search-mine/milestone/6) | Compose·Tunnel·DB 격리·별도 매체 백업·복구/롤백·실측 용량·회선 약관 확인. |
 | [M6 · 베타와 현금 손익 검증](https://github.com/crystal23733/search-mine/milestone/7) | 플레이테스트·수치튜닝·NSM·광고 정산/전력 실측. 28일 현금 손익을 평가하고 확장은 사용자 결정. |
 
@@ -46,7 +46,7 @@
 | [#19 feat(server): 데일리 replay 검증과 순위표](https://github.com/crystal23733/search-mine/issues/19) | M3 | [#18](https://github.com/crystal23733/search-mine/issues/18) | FR09/10 / TS17/18 | 유효입력·버전 replay; 첫 완료 unique; online시간/offline완료 순위와 신뢰 표기 |
 | [#20 feat(server): 자체 제품 이벤트·보존·삭제](https://github.com/crystal23733/search-mine/issues/20) | M3 | [#19](https://github.com/crystal23733/search-mine/issues/19) | FR16 / TS29 | event_id dedup·동의 purpose 분리; 원시30일/집계13개월; NSM·코호트/삭제 검증 |
 | [#21 feat(web): 인증 CMP·8언어 정책·저장소 고지](https://github.com/crystal23733/search-mine/issues/21) | M4 | [#20](https://github.com/crystal23733/search-mine/issues/20) | FR13 / TS24/29 | 사용자 실제 운영자/계정정보; 거부·실패·철회 무광고; 인증CMP검수·실제ads.txt |
-| [#22 feat(web): 메뉴·결과 광고와 3판 빈도 제한](https://github.com/crystal23733/search-mine/issues/22) | M4 | [#21](https://github.com/crystal23733/search-mine/issues/21) | FR12 / TS23/25 | 완료 gap≥3·1slot; 게임중 요청/표시0; timeout/no-fill·다중탭 무차단 |
+| [#22 feat(web): AdSense 자동 광고와 게임 문서 격리](https://github.com/crystal23733/search-mine/issues/22) | M4 | [#21](https://github.com/crystal23733/search-mine/issues/21) | FR12 / TS23/25 | 자동 배치/script port·현재 동의/허용 문서·게임 새문서 경계·실패무차단 |
 | [#23 feat(web): locale SEO와 번역·접근성 최종 검수](https://github.com/crystal23733/search-mine/issues/23) | M4 | [#22](https://github.com/crystal23733/search-mine/issues/22) | FR11/13, NFR06 / TS19/26 | 8locale HTML/canonical/hreflang/sitemap; 개인정보화면 noindex; 긴문구/keyboard 수동 검수 |
 | [#24 chore(deploy): 홈서버 Compose·Tunnel·운영 runbook](https://github.com/crystal23733/search-mine/issues/24) | M5 | [#23](https://github.com/crystal23733/search-mine/issues/23) | FR16, NFR07 / TS20/28 | host게임/DB포트0·내부망; secret/nonroot·health/drain; 사용자 회선/계정 확인 |
 | [#25 chore(ops): PostgreSQL 백업·복구·롤백 훈련](https://github.com/crystal23733/search-mine/issues/25) | M5 | [#24](https://github.com/crystal23733/search-mine/issues/24) | FR16, NFR07 / TS28 | 별도매체 암호화 dump/checksum; 빈 DB복구·이전image호환; 실측 RPO/RTO |
@@ -230,3 +230,6 @@
 
 
 #194 FR12/13·NFR01/02/05/07/08·TS23/24/25 → [ADR0090](../adr/0090-ad-request-policy.md) → Rust 화면/빈도·양쪽 제한/예약 계획·폐쇄 JSON/생성 TS·native/WASM → [검증194](../verification/194-ad-request-policy.md). 실제 잠금/저장·화면/SDK·상위22/21/147은 후속이다.
+
+
+#196 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 사용자 자동광고 승인·3판/H5 대체·script port/공개문서/현재목적/게임 새문서 경계 → [검증196](../verification/196-auto-ads-design.md). 제품 구현과 실제 CMP/운영147·상위22/21은 후속이다.

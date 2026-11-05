@@ -191,13 +191,13 @@ TS26 추가(#163):360px의8언어 보드 모드/도움말 버튼은 글자 전�
 - 최종 기대·예외: lie boolean·truth·source·상대 cells·online seed 없음.
 - 테스트 경계·계층: SnapshotProjection / BoardRenderer / 통합+E2E.
 
-## TS23: 광고 3판 cap (US12)
+## TS23: 자동 광고 script 경계 (US12)
 
-- 목적: 광고 3판 cap의 관찰 가능한 행동을 보장한다.
-- 전제·역할: fake AdsPort·completed_count0, 사용자.
-- 단계와 각 결과: 1/2판→요청0; 3판→최대1; 4/5→0; 6→최대1; no-fill→slot 소비.
-- 최종 기대·예외: 다중 탭·반복 result 진입·callback 중복에서 이중 요청 없음.
-- 테스트 경계·계층: AdsPolicy / StoragePort / 단위+E2E.
+- 목적: AdSense 자동 배치의 교체 가능한 연결과 기본 차단을 보장한다.
+- 전제·역할: fake AutoAdsScriptPort·현재 CMP·8locale의 공개/보호 문서, 사용자.
+- 단계와 각 결과: 미설정/미동의/오프라인→script0; valid 목적의 홈/규칙→문서당1회; 재통지→중복0; load 실패/timeout→게임/탐색 계속.
+- 최종 기대·예외: query/hash/개인/인증/오류/게임 문서·첫방문 tutorial 전환에서 script0. 자체3판 카운터/H5 전면은 기본 범위에서 제외한다. script load를 impression으로 집계하지 않는다.
+- 테스트 경계·계층: AutoAdsScriptPort / ConsentPort / NavigationPort / 단위+실브라우저, 실제 Google 설정147.
 
 ## TS24: CMP 거부·실패·철회 (US13)
 
@@ -205,15 +205,15 @@ TS26 추가(#163):360px의8언어 보드 모드/도움말 버튼은 글자 전�
 - 전제·역할: fake CMP valid/denied/unknown/error, 사용자.
 - 단계와 각 결과: 거부→게임 시작; 실패→광고0; 동의→safe screen SDK1회; 철회→추가요청0.
 - 최종 기대·예외: 분석 purpose 별도, 정책/저장소 고지·재열기, 실제 인증 CMP 별도 수동 검수.
-- 테스트 경계·계층: ConsentPort / AdsPort / E2E+수동.
+- 테스트 경계·계층: ConsentPort / AutoAdsScriptPort / E2E+수동.
 
 ## TS25: 플레이 중 광고 금지 (US12)
 
-- 목적: 플레이 중 광고 금지의 관찰 가능한 행동을 보장한다.
-- 전제·역할: countdown/playing/tutorial/offline, 늦은 SDK callback.
-- 단계와 각 결과: 각 상태로 이동→slot 제거/요청0; callback 늦게 도착→현재 상태 재검사.
-- 최종 기대·예외: no-fill/timeout/차단 뒤 다음판 무차단, 배너 오클릭·초점 확인.
-- 테스트 경계·계층: AdsPolicy / MatchController / 단위+E2E.
+- 목적: SDK가 시작된 문서와 실제 게임 문서를 분리한다.
+- 전제·역할: 허용 공개 문서·script loading/loaded/failed·현재 동의/계정/온라인, 지연된 callback.
+- 단계와 각 결과: 보호 화면 이동→router publish/게임 시작 전 새 문서 navigation; popstate/BFCache→재검사; 철회/만료/오프라인/owner 변경→취소·현재 문서 reload; 광고 없는 문서→기존 SPA 유지.
+- 최종 기대·예외: script 노드 제거만으로 unload를 주장하지 않는다. 실제 새 game 문서는 script0·로딩 실패가 게임 대기가 되지 않음·guard 실패 시 안전 화면 유지. 운영 overlay/vignette 차단·page exclusions는147에서 실검수한다.
+- 테스트 경계·계층: AutoAds lifecycle / NavigationPort / 실제 브라우저 document 경계+운영 검수.
 
 ## TS26: 접근성·작은 화면 (US11)
 
@@ -469,3 +469,6 @@ TS18/19/20/26/30/31 확장(#192):8locale의명시403/404·unknown문서안내와
 #194 FR12/13·NFR01/02/05/07/08·TS23/24/25 → [ADR0090](../adr/0090-ad-request-policy.md) → Rust 화면/빈도·양쪽 제한/예약 계획·폐쇄 JSON/생성 TS·native/WASM → [검증194](../verification/194-ad-request-policy.md). 실제 잠금/저장·화면/SDK·상위22/21/147은 후속이다.
 
 TS23/24/25 확장(#194): Rust 요청 계획에서 첫3·이후 gap3, 계정/기기 교집합과 누락/이상 counter, 이미 예약된 결과/미확보 exclusive slot, 정상완료와 abort/tutorial, 현재화면·online/목적/SDK를 검사한다. 결과 예약의 다음 counter를 적용하면 no-fill 뒤 같은 완료와4/5판에서 재요청하지 못하고6판에서 다시 계획한다. 현재 입력값은 adapter의 관측이며 서버 권한/원자 저장을 대체하지 않는다. 같은 bounded/폐쇄 decoder와 정책의 native/WASM 실제 결과를 비교하고 실제 UI/SDK timeout/다중 탭 연결은 상위22 후속으로 남긴다.
+
+
+#196 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 사용자 자동광고 승인·3판/H5 대체·script port/공개문서/현재목적/게임 새문서 경계 → [검증196](../verification/196-auto-ads-design.md). 제품 구현과 실제 CMP/운영147·상위22/21은 후속이다.

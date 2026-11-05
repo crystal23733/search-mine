@@ -18,17 +18,17 @@ classDiagram
   class NetworkPort { <<interface>> +send(command) }
   class CorePort { <<interface>> +step(localIntent) }
   class I18nPort { <<interface>> +translate(key) }
-  class AdsPort { <<interface>> +requestResultAd() }
+  class AutoAdsScriptPort { <<interface>> +configured() +load(signal) }
   class StoragePort { <<interface>> +saveAttempt() }
   class ConsentPort { <<interface>> +purposeAllowed() }
   MatchController --> MatchStore
   MatchController --> NetworkPort
   MatchController --> CorePort
   BoardRenderer --> MatchStore
-  AdsPort --> ConsentPort
+  AutoAdsScriptPort --> ConsentPort
 ```
 
-MatchController는 intent와 공개 결과 연결만, MatchStore는 공개 상태만, BoardRenderer는 표시만 책임진다. WsNetworkAdapter, WasmCoreAdapter, I18nextAdapter, GoogleAdsAdapter, IndexedDbAdapter, CertifiedCmpAdapter는 각 포트를 구현한다. composition root에서 online/local 모드를 선택하고 store에 비밀 Board를 넣지 않는다.
+MatchController는 intent와 공개 결과 연결만, MatchStore는 공개 상태만, BoardRenderer는 표시만 책임진다. WsNetworkAdapter, WasmCoreAdapter, I18nextAdapter, AdSenseAutoAdsAdapter, IndexedDbAdapter, CertifiedCmpAdapter는 각 포트를 구현한다. composition root에서 online/local 모드를 선택하고 store에 비밀 Board를 넣지 않는다.
 
 ## 컴포넌트 목록과 재사용
 
@@ -72,7 +72,7 @@ flowchart TD
   Cell --> Icon[IconAtom]
 ```
 
-추가 Atoms: Input, Label, Badge, FocusRing, VisuallyHidden. 추가 Molecules: NicknameField, RoomCodeField, ConnectionBadge, StunIndicator, FormError, AdSlotPlaceholder. 추가 Organisms: Lobby, DailyLeaderboard, TutorialGuide, SettingsPanel, LegalContent, MaintenancePanel. Template는 AppShell/MatchLayout/FormLayout; Page는 Home/Lobby/Tutorial/Match/Result/Daily/Settings/Legal/Status다. 각 파일은 표시 또는 한 상호작용 책임으로 분리한다.
+추가 Atoms: Input, Label, Badge, FocusRing, VisuallyHidden. 추가 Molecules: NicknameField, RoomCodeField, ConnectionBadge, StunIndicator, FormError. 추가 Organisms: Lobby, DailyLeaderboard, TutorialGuide, SettingsPanel, LegalContent, MaintenancePanel. Template는 AppShell/MatchLayout/FormLayout; Page는 Home/Lobby/Tutorial/Match/Result/Daily/Settings/Legal/Status다. 각 파일은 표시 또는 한 상호작용 책임으로 분리한다.
 
 Pixi도 CellDisplay→BoardDisplay, FlagDisplay, StunEffect, GaugeDisplay로 나누고 재사용한다. CellAtom은 DOM 접근성 표현이고 CellDisplay는 Canvas 표시로 역할이 다르다. 숫자/상태의 판정 로직을 복제하지 않고 같은 PublicCellView를 사용한다.
 

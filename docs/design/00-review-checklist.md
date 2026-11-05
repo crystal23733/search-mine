@@ -13,7 +13,7 @@
 - SRP: Board truth / PlayerBoard visibility / RuleEngine transition / LieValidator proof / BotPolicy decision 책임 분리. DB·시간·전송은 포트와 어댑터로 분리.
 - 규칙: 동률·타임아웃·기절 경계·중복 명령·마지막 안전칸과 공격·끊김·서버 장애 정의.
 - 보안: secret online seed·Board와 public DTO 분리, STRIDE·Origin·CSRF·rate·내부 DB·백업 정의.
-- 광고/i18n: 8언어와 fallback·URL/SEO, CMP 거부/철회, 3판 cap·플레이 광고0·SDK 실패 경로 정의.
+- 광고/i18n: 8언어와 fallback·URL/SEO, CMP 거부/철회, 자동 배치/문서 경계·플레이 광고0·script 실패 경로 정의.
 - 공정성/성능/수익: **미검증 가정**과 측정 계획을 구분. 알고리즘 증명·미니 PC 성적·Google 승인은 향후 과제.
 - 링크·Mermaid·스킬 검사는 초기 PR의 검증 결과를 아래에 기록한다. 제품 테스트는 아직 작성/실행하지 않았다.
 
@@ -63,8 +63,8 @@
 | FR09 데일리/공유 | US09 | [06](06-protocol.md), [07](07-database.md), [09](09-screens-ux.md) | TS17 DailyService·ReplayVerifier |
 | FR10 오프라인 | US10 | [02 배포](02-deployment-network.md), [08](08-client-architecture.md) | TS18 CorePort·StoragePort·NetworkPort |
 | FR11 언어/SEO | US11 | [10 i18n](10-i18n.md), [09](09-screens-ux.md), [18 화면](18-design-layout.md) | TS19/26/36 I18nPort·Router·DOM Grid |
-| FR12 광고 | US12 | [11 광고](11-ads-consent.md) | TS23/TS25 AdsPolicy·StoragePort |
-| FR13 동의/정책 | US13 | [11](11-ads-consent.md), [12](12-security.md) | TS24 ConsentPort·AdsPort |
+| FR12 광고 | US12 | [11 광고](11-ads-consent.md) | TS23/TS25 AutoAdsScriptPort·NavigationPort |
+| FR13 동의/정책 | US13 | [11](11-ads-consent.md), [12](12-security.md) | TS24 ConsentPort·AutoAdsScriptPort |
 | FR14 재접속 | US14 | [04](04-game-rules-spec.md), [06](06-protocol.md) | TS15/TS16 MatchActor·Transport·Clock |
 | FR15 튜닝 | US15 | [04](04-game-rules-spec.md), [15 구조](15-repo-structure.md) | TS27/TS30 RulesLoader·TypeGenerator |
 | FR16 운영/이벤트 | US16 | [07](07-database.md), [16 운영](16-observability-ops.md), [metrics](../product/20-metrics.md) | TS28/TS29 BackupRunbook·EventRepository |
@@ -264,3 +264,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #194 FR12/13·NFR01/02/05/07/08·TS23/24/25 → [ADR0090](../adr/0090-ad-request-policy.md) → Rust 화면/빈도·양쪽 제한/예약 계획·폐쇄 JSON/생성 TS·native/WASM → [검증194](../verification/194-ad-request-policy.md). 실제 잠금/저장·화면/SDK·상위22/21/147은 후속이다.
+
+
+#196 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 사용자 자동광고 승인·3판/H5 대체·script port/공개문서/현재목적/게임 새문서 경계 → [검증196](../verification/196-auto-ads-design.md). 제품 구현과 실제 CMP/운영147·상위22/21은 후속이다.

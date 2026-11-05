@@ -29,9 +29,9 @@
 
 Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJS, PostgreSQL/sqlx를 사용합니다. 집 미니 PC Docker Compose를 Cloudflare Tunnel로 공개하고 DB·집 IP·서비스 포트를 외부에 노출하지 않습니다. 자체 사이트 광고만 사용하며 플레이 도중 광고를 표시하지 않습니다.
 
-## 광고 요청 정책
+## 자동 광고
 
-[#194 Rust 공통 정책](docs/verification/194-ad-request-policy.md)은 메뉴/결과 화면·현재 목적/온라인 상태·빈도와 예약 계획을 native/WASM에서 동일하게 판단합니다. 첫 결과 광고는 최소3판 완료 뒤, 이후 요청도 최소3판 간격이며 실패한 요청도 slot을 소비합니다. 실제 완료 집계·원자 저장/탭 잠금·화면/SDK 연결은 #22 후속이며 실제 CMP/광고 계정이 없는 실행 앱은 광고를 요청하지 않습니다.
+사용자 지시에 따라 [ADR0091](docs/adr/0091-adsense-auto-ads.md)의 AdSense 자동 광고로 전환합니다. 허용 공개 문서/현재 광고 동의에서 교체 가능한 script port를 실행하고 게임 문서를 분리합니다. #196 설계 병합 뒤 제품 구현을 진행하며 실제 게시자ID/사이트 승인/CMP/운영 설정이 없는 실행 앱은 광고0을 유지합니다. 과거 [#194 정책 검증](docs/verification/194-ad-request-policy.md)의 자체3판 카운터/H5 전면 계획은 대체합니다.
 
 ## 오류 화면
 

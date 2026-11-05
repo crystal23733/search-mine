@@ -477,3 +477,8 @@ TS23/24/25 확장(#194): Rust 요청 계획에서 첫3·이후 gap3, 계정/기�
 #199 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 자동광고 script port/현재권한·공개/보호문서 경계·기본0/실제root·194미사용제거 → [검증199](../verification/199-auto-ads-runtime.md). 실제 CMP/Google운영147·상위22/21·83/198은 별도다.
 
 TS18/20/23/24/25/30 확장(#199): 기존 보호 문서에서 공개 화면으로 돌아와 SDK를 켤 때도 새 공개 문서를 먼저 연다. 최초/방문이력/queryhash의 문서 경계를 검사한다. 메모리 전용 학습/설정은 script0·기존SPA를 유지한다. auth초기loading/비동의/오프라인/hidden/activitybusy·업데이트locked는 신규 load0이며 locked/hidden만으로 활성문서를reload하지 않는다. 테스트script로safe1회→game새문서0과철회·실패/진행중 탐색·뒤로가기를실제브라우저에서검증한다.
+
+
+#198 FR01/16·NFR01/02/05/08·TS20/29/34/35 → [ADR0092](../adr/0092-auth-bootstrap-cookie-ownership.md) → bootstrap의세션cookie쓰기분리/실제cookieCSRF·이전조회/재인증경합·새문서/명시삭제 → [검증198](../verification/198-auth-bootstrap-cookie-ownership.md). 원격단일원인/실제제공자42·83과구분한다.
+
+TS20/29/34/35 확장(#198): 새 OAuth 재인증 세션이 발급된 뒤 이전 cookie를 캡처했던 조회가 완료되어도 최신 cookie를 지우지 않는다. 실제 browser cookie jar/실PG로 이전 세션은 guest·보호API거절, 새 세션은 새문서 본인화면·새명시삭제확인으로 검사한다. bootstrap CSRF는 실제 raw cookie에 바인딩해 무효cookie의 새login을 허용하되 cookie불일치·다른세션 proof·Origin/최근인증검사를 유지한다. 읽기는 세션cookie를 갱신하지 않고 명시logout/삭제는기존대로만료한다.

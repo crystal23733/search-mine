@@ -938,3 +938,66 @@ async fn google_response_issuer_and_metadata_follow_the_registered_provider_cont
     }
     assert_eq!(store.0.sessions.lock().unwrap().len(), 1);
 }
+
+#[tokio::test]
+async fn stale_session_lookup_never_writes_the_session_cookie_and_keeps_cookie_bound_login() {
+    let store = Store::default();
+    let router = router(store.clone());
+    let (browser, _) = bootstrap(&router, None).await;
+    let stale = SecretToken::generate().unwrap();
+    let cookies = format!("{browser}; __Host-liar_session={}", stale.expose().as_str());
+    let response = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/auth/bootstrap")
+                .header(header::COOKIE, &cookies)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(
+        !response
+            .headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .any(|value| value.to_str().unwrap().starts_with("__Host-liar_session=")),
+        "A lookup response can outlive the session it observed and must not erase its replacement"
+    );
+    let value: serde_json::Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 8192).await.unwrap()).unwrap();
+    assert!(value["account"].is_null());
+    assert!(value["session_revision"].is_null());
+    let protected = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/me")
+                .header(header::COOKIE, &cookies)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(protected.status(), StatusCode::UNAUTHORIZED);
+    let csrf = value["csrf"].as_str().unwrap();
+    let mismatched = router
+        .clone()
+        .oneshot(mutation(
+            "POST",
+            "/api/v1/auth/google/start",
+            &browser,
+            csrf,
+            r#"{"locale":"ko","return_path":"daily"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(mismatched.status(), StatusCode::BAD_REQUEST);
+    let _state = start(&router, &cookies, csrf).await;
+    assert!(
+        store.0.sessions.lock().unwrap().is_empty(),
+        "Starting OAuth must not create an account/session"
+    );
+}

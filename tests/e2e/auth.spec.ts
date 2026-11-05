@@ -518,7 +518,12 @@ test("expired authentication requires a fresh provider proof and a new explicit 
     page.getByRole("heading", { name: "Confirm your sign-in again" }),
   ).toBeVisible();
   await expect(page.getByRole("dialog")).not.toBeVisible();
+  const previousDocument = await page.evaluate(() => performance.timeOrigin);
   await page.getByRole("button", { name: "Confirm with Google" }).click();
+  await page.waitForFunction(
+    (previous) => performance.timeOrigin !== previous,
+    previousDocument,
+  );
   await expect(page).toHaveURL(`${origin}/en/me/account`);
   await expect(page.getByText("é探偵", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Delete account" }).click();
@@ -538,6 +543,81 @@ test("expired authentication requires a fresh provider proof and a new explicit 
       .account,
   ).toBeNull();
 });
+test("a delayed stale bootstrap cannot erase the replacement reauthentication cookie", async ({
+  page,
+  context,
+}) => {
+  await approve(context);
+  await login(page);
+  const captured = await context.cookies();
+  const before = captured.find(
+    (cookie) => cookie.name === "__Host-liar_session",
+  )!;
+  const oldCookieHeader = captured
+    .filter(
+      (cookie) =>
+        cookie.name === "__Host-liar_browser" ||
+        cookie.name === "__Host-liar_session",
+    )
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+  await page.request.post("/__fixture/advance", { data: { seconds: 301 } });
+  await page.getByRole("button", { name: "Delete account" }).click();
+  await page
+    .getByRole("button", { name: "Delete account permanently" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Confirm your sign-in again" }),
+  ).toBeVisible();
+  const previousDocument = await page.evaluate(() => performance.timeOrigin);
+  await page.getByRole("button", { name: "Confirm with Google" }).click();
+  await page.waitForFunction(
+    (previous) => performance.timeOrigin !== previous,
+    previousDocument,
+  );
+  await expect(page).toHaveURL(`${origin}/en/me/account`);
+  await expect(
+    page.getByRole("button", { name: "Delete account" }),
+  ).toBeEnabled();
+  const fresh = (await context.cookies()).find(
+    (cookie) => cookie.name === "__Host-liar_session",
+  )!;
+  expect(Boolean(fresh) && fresh.value !== before.value).toBe(true);
+  // Send the cookie captured before rotation, as a request delayed beyond the callback.
+  // APIRequestContext uses the browser's real cookie jar, including response Set-Cookie.
+  const late = await page.request.get("/api/v1/auth/bootstrap", {
+    headers: { cookie: oldCookieHeader },
+  });
+  expect(late.status()).toBe(200);
+  const stale = await late.json();
+  expect(stale.account).toBeNull();
+  expect(stale.session_revision).toBeNull();
+  const denied = await page.request.get("/api/v1/me", {
+    headers: { cookie: oldCookieHeader },
+  });
+  expect(denied.status()).toBe(401);
+  const wrongProof = await page.request.post("/api/v1/auth/google/start", {
+    headers: { origin, "x-liar-csrf": stale.csrf },
+    data: { locale: "en", return_path: "account" },
+  });
+  expect(wrongProof.status()).toBe(400);
+  const retained = (await context.cookies()).find(
+    (cookie) => cookie.name === "__Host-liar_session",
+  );
+  expect(retained?.value === fresh.value).toBe(true);
+  await page.reload();
+  await expect(page.getByText("é探偵", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Delete account" }).click();
+  const dialog = page.getByRole("dialog", { name: "Delete account" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).not.toBeVisible();
+  const current = await page.request
+    .get("/api/v1/auth/bootstrap")
+    .then((response) => response.json());
+  expect(current.account).not.toBeNull();
+});
+
 test("provider cancellation and authentication outage leave guest practice usable in every locale", async ({
   page,
   context,

@@ -108,9 +108,3 @@ impl TrainingSession {
             .map_err(|_| js_error(PublicError::Unavailable))
     }
 }
-
-/// Plan only: the caller must acquire and persist a reservation before an SDK request.
-#[wasm_bindgen(js_name = planAdRequest)]
-pub fn plan_ad_request(input: &str) -> Result<String, JsError> {
-    liar_protocol::ads::plan_ad_json(input).map_err(js_error)
-}

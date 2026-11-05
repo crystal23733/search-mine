@@ -472,3 +472,8 @@ TS23/24/25 확장(#194): Rust 요청 계획에서 첫3·이후 gap3, 계정/기�
 
 
 #196 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 사용자 자동광고 승인·3판/H5 대체·script port/공개문서/현재목적/게임 새문서 경계 → [검증196](../verification/196-auto-ads-design.md). 제품 구현과 실제 CMP/운영147·상위22/21은 후속이다.
+
+
+#199 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 자동광고 script port/현재권한·공개/보호문서 경계·기본0/실제root·194미사용제거 → [검증199](../verification/199-auto-ads-runtime.md). 실제 CMP/Google운영147·상위22/21·83/198은 별도다.
+
+TS18/20/23/24/25/30 확장(#199): 기존 보호 문서에서 공개 화면으로 돌아와 SDK를 켤 때도 새 공개 문서를 먼저 연다. 최초/방문이력/queryhash의 문서 경계를 검사한다. 메모리 전용 학습/설정은 script0·기존SPA를 유지한다. auth초기loading/비동의/오프라인/hidden/activitybusy·업데이트locked는 신규 load0이며 locked/hidden만으로 활성문서를reload하지 않는다. 테스트script로safe1회→game새문서0과철회·실패/진행중 탐색·뒤로가기를실제브라우저에서검증한다.

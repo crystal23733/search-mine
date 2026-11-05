@@ -1,5 +1,3 @@
-#[path = "fixtures/ads.rs"]
-mod ads;
 use liar_core::{
     board::ObservedCell,
     daily::DailyPuzzle,
@@ -86,20 +84,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source = serde_json::to_string(
         &json!({"v":1,"cases":cases,"daily":daily_case()?,"accepted_daily":accepted_daily_case()?}),
     )? + "\n";
-    write_fixture("native-wasm.json", &source)?;
-    write_fixture(
-        "native-ads.json",
-        &(serde_json::to_string(&ads::cases())? + "\n"),
-    )?;
-    Ok(())
-}
-fn write_fixture(name: &str, source: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let target = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tests/fixtures")
-        .join(name);
+    let target =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/native-wasm.json");
     if env::args().any(|arg| arg == "--check") {
         if fs::read_to_string(&target)? != source {
-            return Err(format!("{name} is stale; run yarn fixtures:generate").into());
+            return Err("Native fixture is stale; run yarn fixtures:generate".into());
         }
     } else {
         fs::create_dir_all(target.parent().ok_or("Invalid path")?)?;
@@ -107,7 +96,6 @@ fn write_fixture(name: &str, source: &str) -> Result<(), Box<dyn std::error::Err
     }
     Ok(())
 }
-
 fn daily_case() -> Result<Value, Box<dyn std::error::Error>> {
     let date = "2026-10-07";
     let mut session = DailySession::new(date, 1).map_err(|_| "Daily initialization failed")?;

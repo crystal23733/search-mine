@@ -1208,6 +1208,30 @@
         "ad-request-policy"
       ],
       "acceptance": "사용자2026-11-05자동광고지시·ADR0091/승인기록/PRD/TS/백로그/공식근거·3판/H5대체·script port/현재동의/공개문서/게임새문서/외부147·문서/Mermaid/실제리뷰/CI/병합CLOSED후제품구현"
+    },
+    {
+      "key": "reauth-delete-browser-observation",
+      "issue": 198,
+      "milestone": "M3",
+      "title": "test(auth): 재인증 복귀 뒤 삭제 버튼의 간헐 대기 실패 조사",
+      "requirements": "FR01/16, NFR01/02/05/08",
+      "scenarios": "TS20/29/34/35",
+      "deps": [
+        "my-info-web-and-export-removal"
+      ],
+      "acceptance": "PR197문서전용CI auth삭제버튼disabled/DOM분리30초·trace보존/원인재현·현재세션/재인증/명시확인보안유지·관련회귀/CI/리뷰;현재원인/해결미확정"
+    },
+    {
+      "key": "auto-ads-runtime",
+      "issue": 199,
+      "milestone": "M4",
+      "title": "feat(ads): 자동 광고 스크립트와 게임 문서 경계 연결",
+      "requirements": "FR12/13, NFR01/02/05/07/08",
+      "scenarios": "TS18/20/23/24/25/30",
+      "deps": [
+        "auto-ads-design"
+      ],
+      "acceptance": "ADR0091·기본0/교체가능script/엄격ID·현재목적/공개문서/문서당1회/bounded/cancel·게임새문서/철회/owner/offline/BFCache·실제root·194미사용제거/생성검증·TDD/실browser/전체/coverage/리뷰/CI/병합CLOSED;실제CMP/Google운영147과83/198은별도"
     }
   ]
 }

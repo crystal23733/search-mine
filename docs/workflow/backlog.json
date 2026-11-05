@@ -1184,6 +1184,18 @@
         "my-info-read-api"
       ],
       "acceptance": "ADR0081·me/history/account/privacy/기기설정재사용·8언어/360px/PC/키보드/계정전환/오프라인·파일UI/collector/export port/DTO/public3API삭제404·기록/삭제/동의/공유유지·TDD/PG/HTTPS/full/coverage/CI/리뷰/병합CLOSED"
+    },
+    {
+      "key": "ad-request-policy",
+      "issue": 194,
+      "milestone": "M4",
+      "title": "feat(ads): Rust 광고 빈도·화면 정책과 WASM 계약",
+      "requirements": "FR12/13, NFR01/02/05/07/08",
+      "scenarios": "TS23/24/25",
+      "deps": [
+        "my-info-web-and-export-removal"
+      ],
+      "acceptance": "ADR0090·정상완료 첫3/이후gap3·기기/계정교집합·현재화면/online/광고목적/SDK/exclusive slot·예약후counter·bounded폐쇄JSON/Rust생성TS/native-WASM·Red/Green/property/CI/리뷰/병합CLOSED; 실제집계/원자저장/다중탭/화면/SDK/CMP는상위22/21/147후속"
     }
   ]
 }

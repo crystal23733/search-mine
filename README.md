@@ -29,6 +29,10 @@
 
 Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJS, PostgreSQL/sqlx를 사용합니다. 집 미니 PC Docker Compose를 Cloudflare Tunnel로 공개하고 DB·집 IP·서비스 포트를 외부에 노출하지 않습니다. 자체 사이트 광고만 사용하며 플레이 도중 광고를 표시하지 않습니다.
 
+## 광고 요청 정책
+
+[#194 Rust 공통 정책](docs/verification/194-ad-request-policy.md)은 메뉴/결과 화면·현재 목적/온라인 상태·빈도와 예약 계획을 native/WASM에서 동일하게 판단합니다. 첫 결과 광고는 최소3판 완료 뒤, 이후 요청도 최소3판 간격이며 실패한 요청도 slot을 소비합니다. 실제 완료 집계·원자 저장/탭 잠금·화면/SDK 연결은 #22 후속이며 실제 CMP/광고 계정이 없는 실행 앱은 광고를 요청하지 않습니다.
+
 ## 오류 화면
 
 `/{locale}/403`은 접근 권한 안내, `/{locale}/404`와 알 수 없는 문서 주소는 찾을 수 없음 안내를8언어로 제공합니다. 홈·계정 복귀 링크는 원래 query/hash를 지우고, 오류 화면은 검색 제외와 제목/포커스 수명을 관리합니다. 개발·미리보기 서버의 HTML navigation은 실제403/404를 반환하며 운영 nginx/origin 연결은 #24에서 검수합니다. [오류 문서 검증 #192](docs/verification/192-error-pages.md).

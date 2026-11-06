@@ -11,7 +11,7 @@
 운영자가 선택한 실제 HTTPS origin을 `VITE_PUBLIC_SITE_ORIGIN`으로 빌드 환경에 전달한다. HTTPS·ASCII 호스트의 정규 origin이며 끝의 `/`만 선택적으로 허용한다. 사용자정보·명시 port·다른 path·query/hash·IP literal/localhost는 거절한다. 설정값은 비밀 키가 아니며 실제 DNS/사이트 소유권 검증은 운영자가 수행한다.
 
 - 빌드 시 이 값으로 canonical·각 문서의8개 hreflang와 en x-default·OG URL·24개 URL의 sitemap을 생성한다.
-- 클라이언트 번들에도 같은 값을 고정한다. 변경하면 다시 빌드한다. dev/preview는 같은 환경값으로 실행해 HTML과 SPA가 일치하도록 한다.
+- 클라이언트 번들에도 같은 값을 고정한다. 변경하면 다시 빌드한다. dev는 같은 환경값으로 실행한다. preview는 빌드된 HTML/robots/sitemap을 그대로 읽으므로 실행 시 도메인 환경변수를 다시 전달할 필요가 없다.
 - 실제 문서 URL은 `/{locale}/`, `/{locale}/rules`, `/{locale}/storage`다. 산출 파일은 `{locale}/index.html`, `{locale}/rules.html`, `{locale}/storage.html`이다. Vite dev/preview는 동일 모델로 응답한다. #24의 nginx는 이 깨끗한 문서 URL을 해당 정적 파일에 연결하고, 개인/게임 fallback·오류 HTTP 상태/검색 제외·no-store를 별도로 검수해야 한다.
 - query 또는 알 수 없는 fragment가 있는 공개 화면에도 URL 메타를 넣지 않고 검색 제외한다. 고정 접근성 `#main`만 허용한다. 요청 값/닉네임/초대/토큰을 head에 복사하지 않는다.
 

@@ -230,3 +230,83 @@ test("build emits exactly 24 public documents, safe fallback and an allowlisted 
     } else expect(sitemap).toBeUndefined();
   }
 });
+
+test("preview preserves the built authority and text without an origin in its current environment", async () => {
+  const { mkdtemp, writeFile, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = await mkdtemp(join(tmpdir(), "liar-seo-preview-"));
+  try {
+    await writeFile(
+      join(dir, "index.html"),
+      '<html><head><meta data-liar-seo name="robots" content="noindex, noarchive"></head><body></body></html>',
+    );
+    await writeFile(
+      join(dir, "robots.txt"),
+      `User-agent: *\nSitemap: ${origin}/sitemap.xml\n`,
+    );
+    const { mkdir } = await import("node:fs/promises");
+    await mkdir(join(dir, "ko"));
+    const baked = `<html lang="ko"><head><link data-liar-seo rel="canonical" href="${origin}/ko/rules"></head><body>Built copy</body></html>`;
+    await writeFile(join(dir, "ko/rules.html"), baked);
+    const plugin = publicDocuments(undefined);
+    type Request = { url: string; method: string; headers: { accept: string } };
+    type Response = {
+      statusCode: number;
+      destroyed: boolean;
+      setHeader(key: string, value: string): void;
+      end(body: string | undefined): void;
+    };
+    type Handler = (
+      request: Request,
+      response: Response,
+      next: (error?: unknown) => void,
+    ) => void;
+    let handler: Handler;
+    const hook = plugin.configurePreviewServer;
+    if (typeof hook !== "function") throw Error("Missing preview hook");
+    Reflect.apply(hook, {}, [
+      {
+        config: { root: dir, build: { outDir: "." } },
+        middlewares: {
+          use: (callback: Handler) => {
+            handler = callback;
+          },
+        },
+      },
+    ]);
+    const dispatch = (url: string, method = "GET") =>
+      new Promise<{
+        body: string | undefined;
+        headers: Record<string, string>;
+        status: number;
+      }>((resolve, reject) => {
+        const headers: Record<string, string> = {};
+        const response = {
+          statusCode: 200,
+          destroyed: false,
+          setHeader: (key: string, value: string) => {
+            headers[key] = value;
+          },
+          end: (body: string | undefined) =>
+            resolve({ body, headers, status: response.statusCode }),
+        };
+        handler(
+          { url, method, headers: { accept: "text/html" } },
+          response,
+          (error: unknown) => reject(error ?? Error("Unexpected pass-through")),
+        );
+      });
+    expect((await dispatch("/ko/rules")).body).toBe(baked);
+    expect((await dispatch("/robots.txt")).body).toContain(origin);
+    expect((await dispatch("/sitemap.xml")).status).toBe(404);
+    const privatePage = await dispatch("/ko/rules?token=private-value");
+    expect(privatePage.headers["x-robots-tag"]).toBe("noindex, noarchive");
+    expect(privatePage.headers["cache-control"]).toBe("no-store");
+    expect(privatePage.body).not.toContain(origin);
+    expect(privatePage.body).not.toContain("private-value");
+    expect((await dispatch("/ko/me", "HEAD")).body).toBeUndefined();
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

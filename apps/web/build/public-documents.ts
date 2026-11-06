@@ -150,10 +150,7 @@ export function publicDocuments(originValue: string | undefined): Plugin {
         .replace('<div id="app"></div>', `<div id="app">${content}</div>`),
     };
   }
-  function install(
-    server: Pick<ViteDevServer, "config" | "middlewares">,
-    transform?: ViteDevServer["transformIndexHtml"],
-  ) {
+  function installDev(server: ViteDevServer) {
     server.middlewares.use((request, response, next) => {
       if (!["GET", "HEAD"].includes(request.method ?? "GET")) return next();
       const url = new URL(request.url ?? "/", "http://local.invalid");
@@ -190,15 +187,10 @@ export function publicDocuments(originValue: string | undefined): Plugin {
         return next();
       void (async () => {
         let source = await readFile(
-          resolve(
-            server.config.root,
-            transform
-              ? "index.html"
-              : `${server.config.build.outDir}/index.html`,
-          ),
+          resolve(server.config.root, "index.html"),
           "utf8",
         );
-        if (transform) source = await transform("/index.html", source);
+        source = await server.transformIndexHtml("/index.html", source);
         const value = await html(source, url);
         if (response.destroyed) return;
         response.setHeader("content-type", "text/html; charset=utf-8");
@@ -218,10 +210,75 @@ export function publicDocuments(originValue: string | undefined): Plugin {
     },
     enforce: "post",
     configureServer(server) {
-      install(server, (url, source) => server.transformIndexHtml(url, source));
+      installDev(server);
     },
     configurePreviewServer(server) {
-      install(server);
+      // Preview serves immutable build artifacts, including their baked origin and translations.
+      server.middlewares.use((request, response, next) => {
+        if (!["GET", "HEAD"].includes(request.method ?? "GET")) return next();
+        const url = new URL(request.url ?? "/", "http://local.invalid");
+        const discovery =
+          url.pathname === "/robots.txt" || url.pathname === "/sitemap.xml";
+        if (
+          !discovery &&
+          (!request.headers.accept
+            ?.split(",")
+            .some(
+              (type) => type.trim().split(";")[0].toLowerCase() === "text/html",
+            ) ||
+            !isApplicationDocument(url.pathname) ||
+            documentStatus(url.pathname) !== 200)
+        )
+          return next();
+        const language = url.pathname.split("/")[1];
+        const route = publicPath(documentRoute(url.pathname));
+        const readable =
+          !discovery &&
+          isLocale(language) &&
+          route !== undefined &&
+          !url.search;
+        const file = discovery
+          ? url.pathname.slice(1)
+          : readable
+            ? route === "/"
+              ? `${language}/index.html`
+              : `${language}${route}.html`
+            : "index.html";
+        void (async () => {
+          let content: string;
+          try {
+            content = await readFile(
+              resolve(server.config.root, server.config.build.outDir, file),
+              "utf8",
+            );
+          } catch (error) {
+            if (
+              discovery &&
+              (error as NodeJS.ErrnoException).code === "ENOENT"
+            ) {
+              response.statusCode = 404;
+              response.end();
+              return;
+            }
+            throw error;
+          }
+          if (response.destroyed) return;
+          response.setHeader(
+            "content-type",
+            discovery
+              ? url.pathname === "/robots.txt"
+                ? "text/plain; charset=utf-8"
+                : "application/xml; charset=utf-8"
+              : "text/html; charset=utf-8",
+          );
+          response.setHeader("x-content-type-options", "nosniff");
+          if (!discovery && !readable) {
+            response.setHeader("cache-control", "no-store");
+            response.setHeader("x-robots-tag", "noindex, noarchive");
+          }
+          response.end(request.method === "HEAD" ? undefined : content);
+        })().catch(next);
+      });
     },
     async generateBundle(_options, bundle) {
       const entry = bundle["index.html"];

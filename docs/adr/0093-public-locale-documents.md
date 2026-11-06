@@ -12,7 +12,7 @@ VITE_PUBLIC_SITE_ORIGIN은 선택된 HTTPS origin만 받는다. 사용자정보/
 
 공개 allowlist 이외의 게임·방·본인·인증·설정·오류 및 query/알 수 없는 hash 문서는 noindex,noarchive이며 canonical/alternate/OG URL을 만들지 않는다. 고정 #main 접근성 앵커는 공개 문서를 유지한다. 요청의 host/query/hash/닉네임·초대·token은 head/정적 내용에 복사하지 않는다. private HTML은 no-store/X-Robots-Tag를 적용하고 API/WS/assets의 응답은 기존대로 유지한다. 루트 fallback index도 검색 제외한다.
 
-하나의 순수 document model로 build/dev/preview/SPA의 제목·설명·URL 분류를 공유한다. 페이지별 중복 head 효과를 중앙 수명으로 옮기며 route/locale/hash 변경과 unmount에 중복/이전 metadata가 남지 않게 한다. 실제 origin이 있는 build의 런타임 설정도 동일하다. SW/flags/기한/재시도는 바꾸지 않는다.
+하나의 순수 document model로 build/dev/SPA의 제목·설명·URL 분류를 공유하고 preview는 해당 빌드의 HTML/robots/sitemap을 그대로 제공한다. preview 실행 환경이나 현재 소스 메시지로 과거 산출물의 도메인/번역을 바꾸지 않는다. 페이지별 중복 head 효과를 중앙 수명으로 옮기며 route/locale/hash 변경과 unmount에 중복/이전 metadata가 남지 않게 한다. 실제 origin이 있는 build의 런타임 설정도 동일하다. SW/flags/기한/재시도는 바꾸지 않는다.
 
 ## 검증과 후속
 

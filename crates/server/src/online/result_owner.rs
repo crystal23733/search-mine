@@ -8,7 +8,7 @@ use std::{
     future::Future,
     sync::{
         Arc,
-        atomic::{AtomicU8, Ordering},
+        atomic::{AtomicBool, AtomicU8, Ordering},
     },
     time::Duration,
 };
@@ -28,15 +28,21 @@ const OBSERVED: u8 = 3;
 #[derive(Clone)]
 pub struct PgResultHealth {
     state: watch::Receiver<bool>,
+    rejected: Arc<AtomicBool>,
 }
 impl PgResultHealth {
     pub fn available(&self) -> bool {
-        self.state.has_changed().is_ok() && *self.state.borrow()
+        !self.rejected.load(Ordering::SeqCst)
+            && self.state.has_changed().is_ok()
+            && *self.state.borrow()
+    }
+    fn reject(&self) {
+        self.rejected.store(true, Ordering::SeqCst);
     }
     pub async fn failed(&self) {
         let mut state = self.state.clone();
         loop {
-            if state.has_changed().is_err() || !*state.borrow() {
+            if !self.available() {
                 return;
             }
             if state.changed().await.is_err() {
@@ -53,7 +59,9 @@ pub async fn run_with_result_owner<F: Future>(
         Some(owner) => tokio::select! {
             biased;
             () = owner.failed() => Err(OnlineError::Unavailable),
-            result = server => Ok(result),
+            result = server => {
+                if owner.available() { Ok(result) } else { Err(OnlineError::Unavailable) }
+            },
         },
         None => Ok(server.await),
     }
@@ -77,6 +85,7 @@ struct Job {
 }
 struct RegistrationGuard {
     progress: Arc<AtomicU8>,
+    health: PgResultHealth,
     abort: AbortHandle,
 }
 impl Drop for RegistrationGuard {
@@ -87,6 +96,7 @@ impl Drop for RegistrationGuard {
             == Err(STARTED)
         {
             // An unobserved started transaction cannot safely be discarded by guessing its outcome.
+            self.health.reject();
             self.abort.abort();
         }
     }
@@ -122,6 +132,7 @@ async fn claim_connection(pool: PgPool) -> Result<PgConnection, OnlineError> {
 }
 impl PgResultRuntime {
     pub(super) fn fail_closed(&self) {
+        self.health.reject();
         self.abort.abort();
     }
     pub async fn claim(pool: PgPool, clock: Arc<dyn AuthClock>) -> Result<Self, OnlineError> {
@@ -155,7 +166,10 @@ impl PgResultRuntime {
         let task = tokio::spawn(worker(connection, receiver, state, mode));
         Self {
             jobs,
-            health: PgResultHealth { state: health },
+            health: PgResultHealth {
+                state: health,
+                rejected: Arc::new(AtomicBool::new(false)),
+            },
             clock,
             abort: task.abort_handle(),
         }
@@ -191,6 +205,7 @@ impl PgResultRuntime {
         let (reply, received) = oneshot::channel();
         let guard = matches!(&command, Command::Register(_)).then(|| RegistrationGuard {
             progress: Arc::new(AtomicU8::new(QUEUED)),
+            health: self.health.clone(),
             abort: self.abort.clone(),
         });
         self.jobs
@@ -290,7 +305,10 @@ mod tests {
     #[tokio::test]
     async fn dropped_worker_watch_is_failure_even_when_server_is_ready_to_return() {
         let (state, receiver) = watch::channel(true);
-        let health = PgResultHealth { state: receiver };
+        let health = PgResultHealth {
+            state: receiver,
+            rejected: Arc::new(AtomicBool::new(false)),
+        };
         drop(state);
         assert!(!health.available());
         assert_eq!(
@@ -302,12 +320,56 @@ mod tests {
     #[tokio::test]
     async fn normal_server_completion_preserves_success_with_or_without_owner() {
         let (_state, receiver) = watch::channel(true);
-        let health = PgResultHealth { state: receiver };
+        let health = PgResultHealth {
+            state: receiver,
+            rejected: Arc::new(AtomicBool::new(false)),
+        };
         assert_eq!(
             run_with_result_owner(Some(health.clone()), async { 7 }).await,
             Ok(7)
         );
         assert!(health.available());
         assert_eq!(run_with_result_owner(None, async { 8 }).await, Ok(8));
+    }
+    #[tokio::test]
+    async fn explicit_fail_closed_is_visible_before_worker_abort_is_scheduled() {
+        let (_state, receiver) = watch::channel(true);
+        let (jobs, _received) = mpsc::channel(1);
+        let worker = tokio::spawn(std::future::pending::<()>());
+        let runtime = PgResultRuntime {
+            jobs,
+            health: PgResultHealth {
+                state: receiver,
+                rejected: Arc::new(AtomicBool::new(false)),
+            },
+            clock: Arc::new(crate::auth::SystemAuthClock),
+            abort: worker.abort_handle(),
+        };
+        runtime.fail_closed();
+        assert!(
+            !runtime.health().available(),
+            "Fail closed must not race successful drain completion"
+        );
+        assert_eq!(
+            run_with_result_owner(Some(runtime.health()), async { 7 }).await,
+            Err(OnlineError::Unavailable)
+        );
+    }
+    #[tokio::test]
+    async fn rejection_during_server_completion_cannot_escape_the_owner_guard() {
+        let (_state, receiver) = watch::channel(true);
+        let health = PgResultHealth {
+            state: receiver,
+            rejected: Arc::new(AtomicBool::new(false)),
+        };
+        let rejecting = health.clone();
+        assert_eq!(
+            run_with_result_owner(Some(health), async move {
+                rejecting.reject();
+                7
+            })
+            .await,
+            Err(OnlineError::Unavailable)
+        );
     }
 }

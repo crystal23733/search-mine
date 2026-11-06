@@ -37,6 +37,10 @@ Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJ
 
 홈·튜토리얼 소개·규칙·저장소 고지는8언어 총32개 정적 HTML로 제공하며 JavaScript 없이 읽을 수 있습니다. `VITE_PUBLIC_SITE_ORIGIN`에 확정된 HTTPS origin을 설정하면 canonical·hreflang·OG URL·sitemap을 생성합니다. 미설정 시 도메인을 추정하지 않고 robots crawl을 차단합니다. 개인/게임/인증 문서는 검색 제외합니다. [SEO 설정과 운영 검수](docs/workflow/seo-configuration.md)를 확인하세요.
 
+## 서버 정상 종료
+
+SIGTERM/SIGINT를 받으면 새 온라인 매칭을 막고 readiness503을 반환하며 기존 판의 입력·재접속은 유지합니다. 진행 중 준비 작업의 정리와 결과 저장의 완료를 최대300초 기다린 뒤 HTTP를 최대5초 정리합니다. 저장 실패·소유권 상실·시간 초과는 오류 종료합니다. 성공 후 남은 CPU worker 정리는 최대2초입니다. 실제 Docker의 종료 대기 설정·운영 장비 검수는 #24에서 별도로 확인해야 합니다. [종료 drain 검증 #208](docs/verification/208-online-shutdown-drain.md).
+
 ## 오류 화면
 
 `/{locale}/403`은 접근 권한 안내, `/{locale}/404`와 알 수 없는 문서 주소는 찾을 수 없음 안내를8언어로 제공합니다. 홈·계정 복귀 링크는 원래 query/hash를 지우고, 오류 화면은 검색 제외와 제목/포커스 수명을 관리합니다. 개발·미리보기 서버의 HTML navigation은 실제403/404를 반환하며 운영 nginx/origin 연결은 #24에서 검수합니다. [오류 문서 검증 #192](docs/verification/192-error-pages.md).

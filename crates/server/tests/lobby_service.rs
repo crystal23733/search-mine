@@ -1339,3 +1339,60 @@ async fn actual_lobby_hands_initial_leases_to_human_and_bot_matches_until_start_
         ));
     }
 }
+
+#[tokio::test]
+async fn draining_cancels_waiting_and_actual_cpu_preparation_without_releasing_capacity_early() {
+    let gate = Gate::new(false, false);
+    let f = Fixture::new(&gate, 6, 2, 1);
+    let [a, b, c] = std::array::from_fn(|_| Uuid::new_v4());
+    pair(&f, a, b);
+    eventually(|| gate.0.active.load(Ordering::SeqCst) == 1).await;
+    f.service.join(c, Difficulty::Easy).unwrap();
+    f.service.inner.begin_drain().unwrap();
+    f.service.inner.begin_drain().unwrap();
+    assert!(!f.registry.accepting());
+    assert!(!f.service.inner.admissions_drained());
+    assert_eq!(f.service.status(a), Ok(LobbyView::Idle));
+    assert_eq!(f.service.status(c), Ok(LobbyView::Idle));
+    assert_eq!(
+        f.service.join(c, Difficulty::Easy),
+        Err(OnlineError::Unavailable.into())
+    );
+    assert_eq!(
+        f.service.create_room(c),
+        Err(OnlineError::Unavailable.into())
+    );
+    gate.release();
+    eventually(|| f.service.inner.admissions_drained()).await;
+    assert!(f.registry.drained().unwrap());
+    assert!(f.journal.registered.lock().unwrap().is_empty());
+    assert_eq!(gate.0.calls.load(Ordering::SeqCst), 1);
+    assert!(matches!(
+        f.registry.for_account(a),
+        Err(OnlineError::NotMatched)
+    ));
+}
+
+#[tokio::test]
+async fn draining_observes_started_register_and_discards_before_admissions_are_drained() {
+    let gate = Gate::new(true, false);
+    let f = Fixture::new(&gate, 4, 2, 1);
+    f.journal.held.store(true, Ordering::SeqCst);
+    let a = Uuid::new_v4();
+    let b = Uuid::new_v4();
+    pair(&f, a, b);
+    eventually(|| f.journal.registered.lock().unwrap().len() == 1).await;
+    let id = f.journal.registered.lock().unwrap()[0].id;
+    f.service.inner.begin_drain().unwrap();
+    assert!(!f.service.inner.admissions_drained());
+    assert!(f.registry.drained().unwrap());
+    assert!(f.journal.discarded.lock().unwrap().is_empty());
+    f.journal.release();
+    eventually(|| f.service.inner.admissions_drained()).await;
+    assert_eq!(f.journal.discarded.lock().unwrap().as_slice(), &[id]);
+    assert_eq!(f.journal.failed.load(Ordering::SeqCst), 0);
+    assert!(matches!(
+        f.registry.for_account(a),
+        Err(OnlineError::NotMatched)
+    ));
+}

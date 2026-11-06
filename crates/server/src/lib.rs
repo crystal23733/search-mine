@@ -38,10 +38,15 @@ pub fn app_with_auth(pool: Option<PgPool>, auth: Router) -> Router {
 struct Readiness {
     pool: Option<PgPool>,
     owner: Option<online::PgResultHealth>,
+    registry: Option<std::sync::Arc<online::MatchRegistry>>,
 }
 impl Readiness {
-    fn owns_results(&self) -> bool {
+    fn available(&self) -> bool {
         self.owner.as_ref().is_none_or(|owner| owner.available())
+            && self
+                .registry
+                .as_ref()
+                .is_none_or(|registry| registry.accepting())
     }
 }
 pub fn app_with_auth_and_owner(
@@ -49,10 +54,22 @@ pub fn app_with_auth_and_owner(
     auth: Router,
     owner: Option<online::PgResultHealth>,
 ) -> Router {
+    app_with_lifecycle(pool, auth, owner, None)
+}
+pub fn app_with_lifecycle(
+    pool: Option<PgPool>,
+    auth: Router,
+    owner: Option<online::PgResultHealth>,
+    registry: Option<std::sync::Arc<online::MatchRegistry>>,
+) -> Router {
     Router::new()
         .route("/health/live", get(live))
         .route("/health/ready", get(ready))
-        .with_state(Readiness { pool, owner })
+        .with_state(Readiness {
+            pool,
+            owner,
+            registry,
+        })
         .merge(auth)
 }
 
@@ -75,7 +92,7 @@ async fn ready(
     [(header::HeaderName, &'static str); 1],
     Json<HealthResponse>,
 ) {
-    let available = if state.owns_results()
+    let available = if state.available()
         && let Some(pool) = &state.pool
     {
         matches!(
@@ -85,7 +102,7 @@ async fn ready(
             )
             .await,
             Ok(Ok(_))
-        ) && state.owns_results()
+        ) && state.available()
     } else {
         false
     };

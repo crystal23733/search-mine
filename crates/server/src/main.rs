@@ -27,6 +27,9 @@ fn run(server: impl std::future::Future<Output = ServerResult>) -> ServerResult 
     if result.is_err() {
         // Fatal process exit must not wait for already started CPU work.
         runtime.shutdown_background();
+    } else {
+        // Storage and HTTP have drained; bound remaining CPU worker cleanup.
+        runtime.shutdown_timeout(Duration::from_secs(2));
     }
     result
 }
@@ -68,6 +71,7 @@ async fn serve() -> ServerResult {
     let config = load_auth_config(|name| env::var(name).ok(), read_private_key)
         .map_err(|_| "Authentication configuration is invalid")?;
     let mut result_owner = None;
+    let mut lifecycle = None;
     let auth = if let Some(config) = config {
         let online = load_online_config(|name| env::var(name).ok())
             .map_err(|_| "Online limits are invalid")?;
@@ -206,6 +210,7 @@ async fn serve() -> ServerResult {
             },
         )
         .map_err(|_| "Lobby initialization failed")?;
+        lifecycle = Some((service.clone(), registry.clone()));
         let lobby = lobby_router(
             service,
             sessions.clone(),
@@ -311,14 +316,66 @@ async fn serve() -> ServerResult {
     let listener = tokio::net::TcpListener::bind(bind)
         .await
         .map_err(|_| "Server bind failed")?;
-    let app = liar_server::app_with_auth_and_owner(pool, auth, result_owner.clone());
-    run_with_result_owner(result_owner, async move {
-        axum::serve(listener, app)
-            .with_graceful_shutdown(shutdown)
-            .await
-    })
+    let registry = lifecycle.as_ref().map(|(_, registry)| registry.clone());
+    let app = liar_server::app_with_lifecycle(pool, auth, result_owner.clone(), registry);
+    let (stop, stopped) = tokio::sync::oneshot::channel();
+    run_with_result_owner(
+        result_owner,
+        serve_until_shutdown(shutdown, drain_online(lifecycle), stop, async move {
+            axum::serve(listener, app)
+                .with_graceful_shutdown(async {
+                    let _ = stopped.await;
+                })
+                .await
+        }),
+    )
     .await
-    .map_err(|_| "Online storage ownership lost")?
-    .map_err(|_| "HTTP server failed")?;
+    .map_err(|_| "Online storage ownership lost")??;
     Ok(())
+}
+
+async fn drain_online(
+    lifecycle: Option<(Arc<LobbyService>, Arc<MatchRegistry>)>,
+) -> Result<(), &'static str> {
+    if let Some((lobby, registry)) = lifecycle {
+        lobby
+            .begin_drain()
+            .map_err(|_| "Admission drain unavailable")?;
+        loop {
+            if registry.drained().map_err(|_| "Match drain failed")? && lobby.admissions_drained() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    }
+    Ok(())
+}
+
+async fn serve_until_shutdown(
+    signal: impl std::future::Future<Output = ()>,
+    drain: impl std::future::Future<Output = Result<(), &'static str>>,
+    stop: tokio::sync::oneshot::Sender<()>,
+    server: impl std::future::Future<Output = std::io::Result<()>>,
+) -> Result<(), &'static str> {
+    tokio::pin!(server);
+    tokio::select! {
+        biased;
+        result = &mut server => return result.map_err(|_| "HTTP server failed"),
+        () = signal => {},
+    }
+    tokio::select! {
+        biased;
+        result = &mut server => {
+            result.map_err(|_| "HTTP server failed")?;
+            return Err("HTTP server stopped before drain");
+        },
+        result = tokio::time::timeout(Duration::from_secs(300), drain) => {
+            result.map_err(|_| "Online drain timed out")??;
+        },
+    }
+    stop.send(()).map_err(|_| "HTTP shutdown unavailable")?;
+    tokio::time::timeout(Duration::from_secs(5), server)
+        .await
+        .map_err(|_| "HTTP shutdown timed out")?
+        .map_err(|_| "HTTP server failed")
 }

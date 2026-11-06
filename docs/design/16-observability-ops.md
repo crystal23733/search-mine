@@ -61,3 +61,6 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 
 
 #206 FR16·NFR01/02/05/07/08·TS20/21/28/31/35/36 → [ADR0095](../adr/0095-normal-shutdown-signals.md) → UnixSIGTERM/SIGINT 정상종료·private factory/child검증·fatal불변 → [검증206](../verification/206-normal-shutdown-signals.md). 활성게임drain/실제Docker·호스트24/83은별도다.
+
+
+#208 FR03/06/07/14/16·NFR01/02/05/07/08·TS15/16/20/21/28/31/35/36 → [ADR0096](../adr/0096-online-shutdown-drain.md) → 정상신호 후 새매칭 차단·기존 판/재접속/저장 drain·ready503·bounded 실패종료 → [검증208](../verification/208-online-shutdown-drain.md). 실제Docker/호스트24·백업25/성능26/83은별도다.

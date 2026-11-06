@@ -492,3 +492,8 @@ TS18/19/20/26/30/31 확장(#202): JS 없는8locale홈/규칙/저장소고지·�
 #204 FR08/11/12/13·NFR01/02/05/06/08·TS13/18/19/20/23/26/30/31 → [ADR0094](../adr/0094-tutorial-guide-document.md) → 공개learn/학습쓰기0·명시고정locale시작/게임분리·32HTML/광고0 → [검증204](../verification/204-tutorial-guide-document.md). 실제색인/정책/전문번역·사람검수/83은별도다.
 
 TS13/18/19/20/23/26/30/31 확장(#204): /{locale}/learn 첫방문·학습new/skipped/complete/저장소거부에서 소개 유지/mark0·gamecore/board초기화0,8언어/키보드360·광고0. 고정href진입/시작/복귀는queryhash를복사하지않고 실제tutorial만보드를시작한다. JSoff소개8/공개32·configuredSEO/sitemap·게임noindex·기존홈자동학습과초대복귀를유지한다.
+
+
+#206 FR16·NFR01/02/05/07/08·TS20/21/28/31/35/36 → [ADR0095](../adr/0095-normal-shutdown-signals.md) → UnixSIGTERM/SIGINT 정상종료·private factory/child검증·fatal불변 → [검증206](../verification/206-normal-shutdown-signals.md). 활성게임drain/실제Docker·호스트24/83은별도다.
+
+TS20/21/28/31/35/36 확장(#206): 실제 무작업main child의loopback liveness관측후 own PID의SIGTERM/SIGINT가4초 내정상exit로끝나며부모프로세스/다른자원을건드리지않는다. env격리·실패cleanup·계측profile전달, 기존fatal worker/owner-loss/HTTP/WS기한불변을검사한다. 활성게임drain/실Windows·Docker는후속이다.

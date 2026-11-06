@@ -3,7 +3,7 @@ use crate::auth::AuthClock;
 use liar_core::game::{AnalysisResult, Rejection, Seat};
 use liar_protocol::online::{OnlineError, OnlineEvent, OnlineInput};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Arc, Mutex, Weak},
     time::Duration,
 };
@@ -11,6 +11,9 @@ use tokio::sync::{Semaphore, mpsc, oneshot};
 use uuid::Uuid;
 
 struct RegistryState {
+    draining: bool,
+    unresolved: HashSet<Uuid>,
+    failed: bool,
     matches: HashMap<Uuid, MatchHandle>,
     accounts: HashMap<Uuid, Uuid>,
 }
@@ -105,6 +108,9 @@ impl MatchRegistry {
         }
         Ok(Arc::new(Self {
             inner: Mutex::new(RegistryState {
+                draining: false,
+                unresolved: HashSet::new(),
+                failed: false,
                 matches: HashMap::new(),
                 accounts: HashMap::new(),
             }),
@@ -164,6 +170,9 @@ impl MatchRegistry {
         admission: Option<MatchAdmission>,
     ) -> Result<MatchHandle, OnlineError> {
         let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        if inner.draining {
+            return Err(OnlineError::Unavailable);
+        }
         let id = state.id();
         let players = state.players();
         if inner.matches.contains_key(&id)
@@ -188,6 +197,7 @@ impl MatchRegistry {
             clock: self.clock.clone(),
             outgoing: self.limits.outgoing,
         }));
+        inner.unresolved.insert(id);
         inner.matches.insert(id, handle.clone());
         for account in players.iter().flatten() {
             inner.accounts.insert(*account, id);
@@ -238,10 +248,32 @@ impl MatchRegistry {
             .cloned()
             .ok_or(OnlineError::NotMatched)
     }
+    pub fn begin_drain(&self) -> Result<(), OnlineError> {
+        let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        inner.draining = true;
+        Ok(())
+    }
+    pub fn accepting(&self) -> bool {
+        self.inner.lock().is_ok_and(|inner| !inner.draining)
+    }
+    pub fn drained(&self) -> Result<bool, OnlineError> {
+        let inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        if !inner.draining || inner.failed {
+            return Err(OnlineError::Unavailable);
+        }
+        Ok(inner.unresolved.is_empty())
+    }
+    pub(super) fn recorded(&self, id: Uuid, saved: bool) {
+        if let Ok(mut inner) = self.inner.lock() {
+            inner.unresolved.remove(&id);
+            inner.failed |= !saved;
+        }
+    }
     pub(super) fn finish(&self, id: Uuid, remove: bool) {
         if let Ok(mut inner) = self.inner.lock() {
             inner.accounts.retain(|_, current| *current != id);
             if remove {
+                inner.failed |= inner.unresolved.remove(&id);
                 inner.matches.remove(&id);
             }
         }

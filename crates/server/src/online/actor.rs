@@ -380,6 +380,9 @@ impl Actor {
                 at,
             );
         }
+        if let Some(owner) = self.owner.upgrade() {
+            owner.recorded(self.state.id(), result.is_ok());
+        }
     }
     fn retire(&mut self, seat: Seat, at: u64) {
         if let Some(sink) = self.sinks[seat.index()].take() {

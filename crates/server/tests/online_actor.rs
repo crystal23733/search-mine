@@ -436,3 +436,145 @@ async fn slow_consumer_is_retired_without_blocking_the_other_seat() {
     .unwrap();
     assert!(!*second.authority().revoked().borrow());
 }
+
+struct HeldResults {
+    gate: tokio::sync::Semaphore,
+    entered: AtomicUsize,
+    fail: bool,
+}
+impl ResultRepository for HeldResults {
+    fn save(
+        &self,
+        _result: FinishedMatch,
+    ) -> PortFuture<'_, Result<SaveResult, liar_protocol::online::OnlineError>> {
+        Box::pin(async move {
+            self.entered.fetch_add(1, Ordering::SeqCst);
+            let permit = self.gate.acquire().await.unwrap();
+            permit.forget();
+            if self.fail {
+                Err(liar_protocol::online::OnlineError::Unavailable)
+            } else {
+                Ok(SaveResult::Saved)
+            }
+        })
+    }
+}
+
+#[tokio::test]
+async fn draining_preserves_actor_input_reconnect_and_waits_for_observed_result_success() {
+    for fail in [false, true] {
+        let clock = Arc::new(Clock(AtomicU64::new(3000)));
+        let results = Arc::new(HeldResults {
+            gate: tokio::sync::Semaphore::new(0),
+            entered: AtomicUsize::new(0),
+            fail,
+        });
+        let authorities = AuthorityRegistry::new(4).unwrap();
+        let registry = MatchRegistry::new(
+            MatchLimits {
+                matches: 2,
+                mailbox: 16,
+                outgoing: 32,
+                proof_workers: 1,
+            },
+            clock.clone(),
+            clock.clone(),
+            authorities.clone(),
+            results.clone(),
+        )
+        .unwrap();
+        assert!(registry.drained().is_err());
+        let accounts = [Uuid::new_v4(), Uuid::new_v4()];
+        let id = Uuid::new_v4();
+        let handle = registry.create(state(id, accounts.map(Some))).unwrap();
+        registry.begin_drain().unwrap();
+        registry.begin_drain().unwrap();
+        assert!(!registry.drained().unwrap());
+        assert!(matches!(
+            registry.create(state(Uuid::new_v4(), [Some(Uuid::new_v4()), None])),
+            Err(liar_protocol::online::OnlineError::Unavailable)
+        ));
+        let bind = || {
+            authorities
+                .bind(
+                    authorities.generation().unwrap(),
+                    accounts[0],
+                    [1; 32],
+                    20000,
+                    18000,
+                )
+                .unwrap()
+        };
+        let mut connection = handle.connect(bind()).await.unwrap();
+        connection.next().await.unwrap();
+        let command = OnlineInput {
+            v: 1,
+            match_id: id.to_string(),
+            command_id: Uuid::new_v4().to_string(),
+            client_seq: 1,
+            session_epoch: connection.epoch(),
+            known_revision: 0,
+            action: PublicAction::Open { cell: 8 },
+        };
+        connection.send(command).unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            loop {
+                if matches!(
+                    connection.next().await.unwrap().payload,
+                    OnlinePayload::Ack {
+                        status: AckStatus::Applied,
+                        ..
+                    }
+                ) {
+                    break;
+                }
+            }
+        })
+        .await
+        .unwrap();
+        drop(connection);
+        let mut resumed = handle.connect(bind()).await.unwrap();
+        assert!(matches!(
+            resumed.next().await.unwrap().payload,
+            OnlinePayload::Snapshot {
+                last_client_seq: 1,
+                ..
+            }
+        ));
+        clock.0.store(243000, Ordering::SeqCst);
+        tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            while results.entered.load(Ordering::SeqCst) == 0 {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            registry.for_account(accounts[0]),
+            Err(liar_protocol::online::OnlineError::NotMatched)
+        ));
+        assert!(
+            !registry.drained().unwrap(),
+            "Releasing account occupancy does not mean result persistence has finished"
+        );
+        results.gate.add_permits(3);
+        let expected = if fail {
+            liar_protocol::online::RecordingStatus::Failed
+        } else {
+            liar_protocol::online::RecordingStatus::Saved
+        };
+        tokio::time::timeout(std::time::Duration::from_secs(2),async {
+            loop {if matches!(resumed.next().await.unwrap().payload,OnlinePayload::MatchEnd{recording,..} if recording==expected){break;}}
+            while matches!(registry.drained(),Ok(false)) {tokio::task::yield_now().await;}
+        }).await.unwrap();
+        if fail {
+            assert!(registry.drained().is_err());
+        } else {
+            assert!(registry.drained().unwrap());
+        }
+        assert!(
+            registry.by_id(id).is_ok(),
+            "The result delivery TTL need not expire before drain completes"
+        );
+    }
+}

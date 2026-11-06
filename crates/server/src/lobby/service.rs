@@ -114,6 +114,7 @@ struct Failure {
     expires: u64,
 }
 struct ServiceState {
+    draining: bool,
     policy: LobbyState,
     leases: HashMap<Uuid, ConnectionAuthority>,
     jobs: HashMap<ReservationKey, Job>,
@@ -165,6 +166,7 @@ impl LobbyService {
             tokio::runtime::Handle::try_current().map_err(|_| OnlineError::Unavailable)?;
         let service = Arc::new(Self {
             inner: Mutex::new(ServiceState {
+                draining: false,
                 policy: LobbyState::new(limits.capacity)?,
                 leases: HashMap::new(),
                 jobs: HashMap::new(),
@@ -195,6 +197,23 @@ impl LobbyService {
         });
         Ok(service)
     }
+    pub fn begin_drain(&self) -> Result<(), LobbyServiceError> {
+        let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        self.registry.begin_drain()?;
+        if !inner.draining {
+            inner.draining = true;
+            inner.policy = LobbyState::new(self.limits.capacity)?;
+            inner.jobs.clear();
+            inner.leases.clear();
+            inner.failures.clear();
+            inner.failure_order.clear();
+        }
+        Ok(())
+    }
+    pub fn admissions_drained(&self) -> bool {
+        self.inner.lock().is_ok_and(|inner| inner.draining)
+            && self.capacity.available_permits() == self.limits.workers
+    }
     pub fn status(&self, authority: &ConnectionAuthority) -> Result<LobbyView, LobbyServiceError> {
         let account = authority.account();
         if account.is_nil() {
@@ -206,8 +225,10 @@ impl LobbyService {
             self.authentication.clock.now(),
             || (),
         )?;
-        self.advance(&mut inner, self.registry.now_ms())?;
-        self.dispatch(&mut inner);
+        if !inner.draining {
+            self.advance(&mut inner, self.registry.now_ms())?;
+            self.dispatch(&mut inner);
+        }
         self.authentication.authorities.with_authority(
             authority,
             self.authentication.clock.now(),
@@ -302,6 +323,9 @@ impl LobbyService {
             return Err(OnlineError::Malformed.into());
         }
         let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        if inner.draining {
+            return Err(OnlineError::Unavailable.into());
+        }
         let now = self.registry.now_ms();
         self.authentication.authorities.with_authority(
             authority,
@@ -359,6 +383,9 @@ impl LobbyService {
     }
     fn tick(&self) -> Result<(), LobbyServiceError> {
         let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        if inner.draining {
+            return Ok(());
+        }
         self.advance(&mut inner, self.registry.now_ms())?;
         self.dispatch(&mut inner);
         Ok(())

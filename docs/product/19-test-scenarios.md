@@ -497,3 +497,8 @@ TS13/18/19/20/23/26/30/31 확장(#204): /{locale}/learn 첫방문·학습new/ski
 #206 FR16·NFR01/02/05/07/08·TS20/21/28/31/35/36 → [ADR0095](../adr/0095-normal-shutdown-signals.md) → UnixSIGTERM/SIGINT 정상종료·private factory/child검증·fatal불변 → [검증206](../verification/206-normal-shutdown-signals.md). 활성게임drain/실제Docker·호스트24/83은별도다.
 
 TS20/21/28/31/35/36 확장(#206): 실제 무작업main child의loopback liveness관측후 own PID의SIGTERM/SIGINT가4초 내정상exit로끝나며부모프로세스/다른자원을건드리지않는다. env격리·실패cleanup·계측profile전달, 기존fatal worker/owner-loss/HTTP/WS기한불변을검사한다. 활성게임drain/실Windows·Docker는후속이다.
+
+
+## #208 정상 종료 drain
+
+TS15/16/20/21/28/31/35/36: 첫신호→로비/registry입장직렬차단·queue/preparing취소·register ACK/discard·admission permit 반환·ready503/live200; 기존 입력/재접속/결과 조회 유지·저장Pending 중 종료금지/Saved 관측 뒤 종료; 저장실패/예상치못한actor종료/ownerloss·300초/5초상한 실패종료·성공runtime2초. 제어port/paused시간 및 실제main/PG/HTTP/WS로 검증한다. [ADR0096](../adr/0096-online-shutdown-drain.md). 실제Docker/호스트 검수는 별도다.

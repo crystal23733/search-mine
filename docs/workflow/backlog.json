@@ -316,7 +316,8 @@
       "scenarios": "TS20/28",
       "deps": [
         "seo",
-        "normal-shutdown-signals"
+        "normal-shutdown-signals",
+        "online-shutdown-drain"
       ],
       "acceptance": "host게임/DB포트0·내부망; secret/nonroot·health/drain; 사용자 회선/계정 확인",
       "issue": 24
@@ -1272,6 +1273,18 @@
         "tutorial-guide-document"
       ],
       "acceptance": "ADR0095·UnixSIGTERM/SIGINT동일graceful/serve전설치failclosed·nonUnixCtrlC/fatal불변·실childRedGreen4초/cleanup/계측·Rust/실PG/6CI/coverage/리뷰/정확head병합;실Docker/활성게임drain/호스트24·83별도"
+    },
+    {
+      "key": "online-shutdown-drain",
+      "milestone": "M5",
+      "title": "feat(server): 정상 종료 시 매칭 차단과 진행 판·저장 drain",
+      "requirements": "FR03/06/07/14/16, NFR01/02/05/07/08",
+      "scenarios": "TS15/16/20/21/28/31/35/36",
+      "deps": [
+        "normal-shutdown-signals"
+      ],
+      "acceptance": "새 매칭 직렬 차단·기존 판/재접속·admission/저장 drain·ready503·bounded 실패종료·실PG/main/WS·RedGreen/리뷰/6CI",
+      "issue": 208
     }
   ]
 }

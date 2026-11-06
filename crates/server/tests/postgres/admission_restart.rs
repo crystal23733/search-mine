@@ -480,3 +480,195 @@ async fn real_main_cancel_during_started_register_discards_after_ack_and_keeps_o
     drop(server);
     close_auth_pool(pool).await;
 }
+
+#[cfg(unix)]
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn real_main_sigterm_keeps_existing_ws_until_result_commit_and_exits_normally() {
+    let pool = auth_pool().await;
+    let client = client();
+    let (mut server, origin) = spawn(&pool).await;
+    let (users, id) = pair(&pool, &client, &origin, &server).await;
+    let connect = || {
+        let mut request = format!("{}/api/v1/ws", origin.replacen("http://", "ws://", 1))
+            .into_client_request()
+            .unwrap();
+        request
+            .headers_mut()
+            .insert("origin", "https://game.example".parse().unwrap());
+        request
+            .headers_mut()
+            .insert("cookie", users[0].cookie.parse().unwrap());
+        connect_async(request)
+    };
+    let (mut socket, _) = connect().await.unwrap();
+    let snapshot = tokio::time::timeout(Duration::from_secs(2), socket.next())
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    let snapshot: Value = serde_json::from_str(snapshot.to_text().unwrap()).unwrap();
+    assert_eq!(snapshot["payload"]["type"], "snapshot");
+    let mut blocked = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM online_active_matches WHERE id=$1 FOR UPDATE")
+        .bind(id)
+        .fetch_one(&mut *blocked)
+        .await
+        .unwrap();
+    assert!(
+        std::process::Command::new("/bin/kill")
+            .arg("-TERM")
+            .arg(server.0.id().to_string())
+            .status()
+            .unwrap()
+            .success()
+    );
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let ready = client
+                .get(format!("{origin}/health/ready"))
+                .send()
+                .await
+                .expect("Drain must keep existing service reachable");
+            if ready.status() == StatusCode::SERVICE_UNAVAILABLE {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        client
+            .get(format!("{origin}/health/live"))
+            .send()
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::OK
+    );
+    let rejected = client
+        .post(format!("{origin}/api/v1/lobby"))
+        .header("origin", "https://game.example")
+        .header("cookie", &users[1].cookie)
+        .header("x-liar-csrf", &users[1].csrf)
+        .json(&json!({"v":1,"command":{"type":"queue_join","difficulty":"normal"}}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(rejected.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let current = lobby(&client, &origin, &users[0], json!({"type":"status"})).await;
+    assert_eq!(current["state"]["type"], "matched");
+    assert_eq!(current["state"]["match_id"], id.to_string());
+    // The existing participant can reconnect while the other has never attached.
+    let (mut resumed, _) = connect().await.unwrap();
+    let snapshot = tokio::time::timeout(Duration::from_secs(2), resumed.next())
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    let snapshot: Value = serde_json::from_str(snapshot.to_text().unwrap()).unwrap();
+    assert_eq!(snapshot["payload"]["type"], "snapshot");
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let event = resumed.next().await.unwrap().unwrap();
+            if !event.is_text() {
+                continue;
+            }
+            let event: Value = serde_json::from_str(event.to_text().unwrap()).unwrap();
+            if event["payload"]["type"] == "match_end" && event["payload"]["recording"] == "pending"
+            {
+                break;
+            }
+        }
+    })
+    .await
+    .unwrap();
+    assert!(
+        server.0.try_wait().unwrap().is_none(),
+        "Pending storage cannot be a normal completed drain"
+    );
+    assert_eq!(
+        result(&client, &origin, &users[0], id).await.status(),
+        StatusCode::NOT_FOUND
+    );
+    blocked.commit().await.unwrap();
+    let status = tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if let Some(status) = server.0.try_wait().unwrap() {
+                break status;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("An observed saved result must permit normal exit");
+    assert!(status.success(), "Normal drain failed: {status:?}");
+    let reason: String = sqlx::query_scalar("SELECT reason FROM online_match_results WHERE id=$1")
+        .bind(id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(reason, "cancelled");
+    let active: i64 = sqlx::query_scalar("SELECT count(*) FROM online_active_matches WHERE id=$1")
+        .bind(id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(active, 0);
+    drop((socket, resumed, server));
+    close_auth_pool(pool).await;
+}
+
+#[cfg(unix)]
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn real_main_owner_loss_during_sigterm_drain_still_exits_as_failure() {
+    let pool = auth_pool().await;
+    let client = client();
+    let (mut server, origin) = spawn(&pool).await;
+    let (_, id) = pair(&pool, &client, &origin, &server).await;
+    let owner = super::result_owner::owner_pid(&pool).await;
+    assert!(
+        std::process::Command::new("/bin/kill")
+            .arg("-TERM")
+            .arg(server.0.id().to_string())
+            .status()
+            .unwrap()
+            .success()
+    );
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let reply = client
+                .get(format!("{origin}/health/ready"))
+                .send()
+                .await
+                .unwrap();
+            if reply.status() == StatusCode::SERVICE_UNAVAILABLE {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .unwrap();
+    let terminated: bool = sqlx::query_scalar("SELECT pg_terminate_backend($1)")
+        .bind(owner)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert!(terminated);
+    wait_failed(&mut server).await;
+    let unresolved: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM online_active_matches WHERE id=$1")
+            .bind(id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        unresolved, 1,
+        "Fatal loss keeps the journal for the existing restart recovery"
+    );
+    drop(server);
+    close_auth_pool(pool).await;
+}

@@ -315,7 +315,8 @@
       "requirements": "FR16, NFR07",
       "scenarios": "TS20/28",
       "deps": [
-        "seo"
+        "seo",
+        "normal-shutdown-signals"
       ],
       "acceptance": "host게임/DB포트0·내부망; secret/nonroot·health/drain; 사용자 회선/계정 확인",
       "issue": 24
@@ -1259,6 +1260,18 @@
         "public-locale-documents"
       ],
       "acceptance": "ADR0094·learn소개8/쓰기0·core0·명시cleanhref/기존tutorial유지·공개32HTML/SEO/불변preview·광고0·TDD/PCmobile/전체CI/coverage/리뷰/정확head병합;실제색인/정책/전문번역/사람검수23/147·83별도"
+    },
+    {
+      "key": "normal-shutdown-signals",
+      "issue": 206,
+      "milestone": "M5",
+      "title": "fix(server): SIGTERM을 정상 종료 경로에 연결",
+      "requirements": "FR16, NFR01/02/05/07/08",
+      "scenarios": "TS20/21/28/31/35/36",
+      "deps": [
+        "tutorial-guide-document"
+      ],
+      "acceptance": "ADR0095·UnixSIGTERM/SIGINT동일graceful/serve전설치failclosed·nonUnixCtrlC/fatal불변·실childRedGreen4초/cleanup/계측·Rust/실PG/6CI/coverage/리뷰/정확head병합;실Docker/활성게임drain/호스트24·83별도"
     }
   ]
 }

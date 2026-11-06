@@ -31,6 +31,24 @@ fn run(server: impl std::future::Future<Output = ServerResult>) -> ServerResult 
     result
 }
 
+fn shutdown_signal() -> std::io::Result<impl std::future::Future<Output = ()>> {
+    #[cfg(unix)]
+    let mut interrupt = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?;
+    #[cfg(unix)]
+    let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+    Ok(async move {
+        #[cfg(unix)]
+        tokio::select! {
+            _ = interrupt.recv() => {},
+            _ = terminate.recv() => {},
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = tokio::signal::ctrl_c().await;
+        }
+    })
+}
+
 #[cfg(test)]
 #[path = "../tests/unit/server_runtime.rs"]
 mod tests;
@@ -287,6 +305,8 @@ async fn serve() -> ServerResult {
             .merge(disabled_optional_event_router())
             .merge(disabled_daily_router())
     };
+    // Install process signals before accepting requests; setup failure follows the fatal exit path.
+    let shutdown = shutdown_signal().map_err(|_| "OS shutdown handler unavailable")?;
     let bind = env::var("LIAR_BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());
     let listener = tokio::net::TcpListener::bind(bind)
         .await
@@ -294,9 +314,7 @@ async fn serve() -> ServerResult {
     let app = liar_server::app_with_auth_and_owner(pool, auth, result_owner.clone());
     run_with_result_owner(result_owner, async move {
         axum::serve(listener, app)
-            .with_graceful_shutdown(async {
-                let _ = tokio::signal::ctrl_c().await;
-            })
+            .with_graceful_shutdown(shutdown)
             .await
     })
     .await

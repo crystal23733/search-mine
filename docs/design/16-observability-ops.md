@@ -58,3 +58,6 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 
 
 #148 NFR01/02/05/07/08 · TS15/16/20/21/31 → [ADR0069](../adr/0069-main-preparation-diagnostics.md) → 실제 child별 고유 로그·단조 단계/실패 상태·재시작 보존 → [검증148](../verification/148-main-preparation-diagnostics.md). 상위141의 미확정 준비 원인과 진단 보존을 구분한다.
+
+
+#206 FR16·NFR01/02/05/07/08·TS20/21/28/31/35/36 → [ADR0095](../adr/0095-normal-shutdown-signals.md) → UnixSIGTERM/SIGINT 정상종료·private factory/child검증·fatal불변 → [검증206](../verification/206-normal-shutdown-signals.md). 활성게임drain/실제Docker·호스트24/83은별도다.

@@ -17,7 +17,14 @@ fn configured(address: &str, auth: bool) -> Command {
         .env("LIAR_BIND", address)
         .stdout(Stdio::null())
         .stderr(Stdio::piped());
-    for name in ["SystemRoot", "WINDIR", "PATH", "TEMP", "TMP"] {
+    for name in [
+        "SystemRoot",
+        "WINDIR",
+        "PATH",
+        "TEMP",
+        "TMP",
+        "LLVM_PROFILE_FILE",
+    ] {
         if let Some(value) = std::env::var_os(name) {
             command.env(name, value);
         }
@@ -99,4 +106,65 @@ async fn standalone_main_rejects_invalid_lobby_configuration_before_serving() {
     .await
     .unwrap();
     assert!(!status.success());
+}
+
+#[cfg(unix)]
+async fn assert_normal_signal_exit(signal: &str) {
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .timeout(Duration::from_secs(1))
+        .build()
+        .unwrap();
+    let reserved = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = reserved.local_addr().unwrap().to_string();
+    drop(reserved);
+    let mut server = Server(configured(&address, false).spawn().unwrap());
+    tokio::time::timeout(Duration::from_secs(4), async {
+        loop {
+            assert!(server.0.try_wait().unwrap().is_none());
+            if client
+                .get(format!("http://{address}/health/live"))
+                .send()
+                .await
+                .is_ok_and(|response| response.status() == StatusCode::OK)
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("The owned child must become live");
+    let sent = Command::new("/bin/kill")
+        .arg(signal)
+        .arg(server.0.id().to_string())
+        .status()
+        .unwrap();
+    assert!(sent.success());
+    let status = tokio::time::timeout(Duration::from_secs(4), async {
+        loop {
+            if let Some(status) = server.0.try_wait().unwrap() {
+                break status;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("An idle server must shut down normally after the signal");
+    assert!(
+        status.success(),
+        "{signal} must take the normal server exit path: {status:?}"
+    );
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn standalone_main_terminates_cleanly_on_sigterm() {
+    assert_normal_signal_exit("-TERM").await;
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn standalone_main_terminates_cleanly_on_sigint() {
+    assert_normal_signal_exit("-INT").await;
 }

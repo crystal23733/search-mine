@@ -431,5 +431,10 @@
   "error.forbiddenDescription": "No tienes permiso para ver esta página. Revisa tu cuenta o vuelve al inicio.",
   "error.notFoundDescription": "La página puede haberse movido o ya no estar disponible.",
   "error.home": "Volver al inicio",
-  "error.account": "Ver cuenta"
+  "error.account": "Ver cuenta",
+  "learn.title": "Guía del tutorial",
+  "learn.description": "Practica cómo abrir casillas seguras, cambiar un número oculto y detectar una mentira en un tablero local guiado. No necesitas una cuenta.",
+  "learn.steps": "Qué practicarás",
+  "learn.start": "Empezar el tutorial",
+  "learn.ready": "Empieza la práctica guiada cuando quieras. Puedes repetirla desde la página de reglas."
 }

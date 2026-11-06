@@ -23,6 +23,7 @@ test("public locale documents provide translated content without JavaScript", as
           ["/", "home.title1"],
           ["/rules", "rules.title"],
           ["/storage", "storage.pageTitle"],
+          ["/learn", "learn.title"],
         ]) {
           const response = await page.goto(`${origin}/${locale}${path}`);
           expect(response?.status()).toBe(200);

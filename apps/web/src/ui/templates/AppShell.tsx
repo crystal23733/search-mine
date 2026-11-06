@@ -4,7 +4,7 @@ import { Header } from "../organisms/Header";
 import { NavLink } from "../molecules/NavLink";
 import { OfflineNotice } from "../organisms/OfflineNotice";
 export function AppShell({ children }: { children: ComponentChildren }) {
-  const { t } = useUi();
+  const { t, locale } = useUi();
   return (
     <div class="app-shell">
       <a class="skip-link" href="#main">
@@ -16,6 +16,7 @@ export function AppShell({ children }: { children: ComponentChildren }) {
         {children}
       </main>
       <footer>
+        <a href={`/${locale}/learn`}>{t("learn.title")}</a>
         <NavLink path="/privacy">{t("privacy")}</NavLink>
         <NavLink path="/terms">{t("terms")}</NavLink>
         <NavLink path="/storage">{t("storage.pageTitle")}</NavLink>

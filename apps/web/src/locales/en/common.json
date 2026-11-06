@@ -431,5 +431,10 @@
   "error.forbiddenDescription": "You do not have permission to view this page. Check your account or return home.",
   "error.notFoundDescription": "This page may have moved or is no longer available.",
   "error.home": "Back to home",
-  "error.account": "View account"
+  "error.account": "View account",
+  "learn.title": "Tutorial guide",
+  "learn.description": "Practise opening safe cells, changing a hidden number and spotting a lie on a guided local board. No account is required.",
+  "learn.steps": "What you will practise",
+  "learn.start": "Start the tutorial",
+  "learn.ready": "Start guided practice when you are ready. You can repeat it from the rules page."
 }

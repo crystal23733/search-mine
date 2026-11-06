@@ -431,5 +431,10 @@
   "error.forbiddenDescription": "このページを表示する権限がありません。アカウントを確認するか、ホームに戻ってください。",
   "error.notFoundDescription": "ページが移動したか、現在は利用できない可能性があります。",
   "error.home": "ホームに戻る",
-  "error.account": "アカウントを確認"
+  "error.account": "アカウントを確認",
+  "learn.title": "チュートリアルガイド",
+  "learn.description": "ガイド付きのローカル盤面で、安全なマスを開く、数字を変える、うそを見抜く操作を練習します。アカウントは不要です。",
+  "learn.steps": "練習する内容",
+  "learn.start": "チュートリアルを始める",
+  "learn.ready": "準備ができたら練習を始めましょう。ルール画面から何度でも練習できます。"
 }

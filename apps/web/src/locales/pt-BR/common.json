@@ -431,5 +431,10 @@
   "error.forbiddenDescription": "Você não tem permissão para ver esta página. Confira sua conta ou volte ao início.",
   "error.notFoundDescription": "A página pode ter mudado de endereço ou não estar mais disponível.",
   "error.home": "Voltar ao início",
-  "error.account": "Ver conta"
+  "error.account": "Ver conta",
+  "learn.title": "Guia do tutorial",
+  "learn.description": "Pratique abrir casas seguras, alterar um número oculto e identificar uma mentira em um tabuleiro local guiado. Não é preciso ter conta.",
+  "learn.steps": "O que você vai praticar",
+  "learn.start": "Iniciar o tutorial",
+  "learn.ready": "Comece a prática guiada quando quiser. Você pode repeti-la na página de regras."
 }

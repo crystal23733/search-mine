@@ -302,7 +302,8 @@
       "scenarios": "TS19/26",
       "deps": [
         "ads",
-        "public-locale-documents"
+        "public-locale-documents",
+        "tutorial-guide-document"
       ],
       "acceptance": "8locale HTML/canonical/hreflang/sitemap; 개인정보화면 noindex; 긴문구/keyboard 수동 검수",
       "issue": 23
@@ -1246,6 +1247,18 @@
         "reauth-delete-browser-observation"
       ],
       "acceptance": "ADR0093·24공개HTML/정확origin·미설정URL0/robots차단·canonical/8hreflang+x-default/sitemap·private/querynoindex/유출0·SPA head/JSoff/PCmobile·TDD/회귀/CI/리뷰/병합; 실제도메인/정책/최종번역은23/147/24"
+    },
+    {
+      "key": "tutorial-guide-document",
+      "issue": 204,
+      "milestone": "M4",
+      "title": "feat(web): 8언어 튜토리얼 소개와 명시 학습 진입",
+      "requirements": "FR08/11/12/13, NFR01/02/05/06/08",
+      "scenarios": "TS13/18/19/20/23/26/30/31",
+      "deps": [
+        "public-locale-documents"
+      ],
+      "acceptance": "ADR0094·learn소개8/쓰기0·core0·명시cleanhref/기존tutorial유지·공개32HTML/SEO/불변preview·광고0·TDD/PCmobile/전체CI/coverage/리뷰/정확head병합;실제색인/정책/전문번역/사람검수23/147·83별도"
     }
   ]
 }

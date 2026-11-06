@@ -384,3 +384,33 @@ test("unknown fragment changes retire a previously clean SDK document", () => {
   window.dispatchEvent(new HashChangeEvent("hashchange"));
   expect(s.documents.reload).toHaveBeenCalledTimes(1);
 });
+
+test("the public tutorial guide remains excluded from advertising in every locale", () => {
+  for (const locale of ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"]) {
+    const s = setup(`/${locale}/learn`);
+    const app = s.start();
+    s.notify();
+    expect(s.script.load).not.toHaveBeenCalled();
+    app.dispose();
+  }
+});
+test("an SDK document cannot publish the tutorial guide and a guide cannot activate an SDK on return", () => {
+  const safe = setup("/ko/rules");
+  const app = safe.start();
+  const publish = vi.fn();
+  app.navigation.subscribe(publish);
+  app.navigation.go("/learn");
+  expect(safe.documents.navigate).toHaveBeenCalledWith(
+    `${location.origin}/ko/learn`,
+  );
+  expect(location.pathname).toBe("/ko/rules");
+  expect(publish).not.toHaveBeenCalled();
+  app.dispose();
+  const guide = setup("/ko/learn");
+  const current = guide.start();
+  current.navigation.go("/");
+  expect(guide.documents.navigate).toHaveBeenCalledWith(
+    `${location.origin}/ko/`,
+  );
+  expect(guide.script.load).not.toHaveBeenCalled();
+});

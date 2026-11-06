@@ -431,5 +431,10 @@
   "error.forbiddenDescription": "您没有查看此页面的权限。请检查账户或返回首页。",
   "error.notFoundDescription": "此页面可能已移动或不再提供。",
   "error.home": "返回首页",
-  "error.account": "查看账户"
+  "error.account": "查看账户",
+  "learn.title": "教程指南",
+  "learn.description": "在本地引导棋盘中练习打开安全格、修改数字和指认谎言，无需账号。",
+  "learn.steps": "练习内容",
+  "learn.start": "开始教程",
+  "learn.ready": "准备好后即可开始引导练习。你可以从规则页面重复练习。"
 }

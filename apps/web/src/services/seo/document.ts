@@ -1,7 +1,7 @@
 import { LOCALES, type Locale } from "../locale.ts";
 import { documentRoute, documentStatus } from "../document-route.ts";
 import type { I18nPort } from "../i18n.ts";
-export const PUBLIC_DOCUMENTS = ["/", "/rules", "/storage"] as const;
+export const PUBLIC_DOCUMENTS = ["/", "/rules", "/storage", "/learn"] as const;
 export type PublicDocument = (typeof PUBLIC_DOCUMENTS)[number];
 export function publicOrigin(value: string | undefined): string | undefined {
   if (!value) return undefined;
@@ -54,21 +54,25 @@ export function documentMetadata(
   const heading =
     status !== 200
       ? `${status} · ${t(status === 403 ? "error.forbiddenTitle" : "error.notFoundTitle")}`
-      : page === "/rules"
-        ? t("rules.title")
-        : page === "/storage"
-          ? t("storage.pageTitle")
-          : page === "/"
-            ? `${t("home.title1")} ${t("home.title2")}`
-            : "Liar Sweeper";
+      : page === "/learn"
+        ? t("learn.title")
+        : page === "/rules"
+          ? t("rules.title")
+          : page === "/storage"
+            ? t("storage.pageTitle")
+            : page === "/"
+              ? `${t("home.title1")} ${t("home.title2")}`
+              : "Liar Sweeper";
   const description =
-    page === "/rules"
-      ? t("basics.goal")
-      : page === "/storage"
-        ? t("storage.intro")
-        : page === "/"
-          ? t("home.description")
-          : undefined;
+    page === "/learn"
+      ? t("learn.description")
+      : page === "/rules"
+        ? t("basics.goal")
+        : page === "/storage"
+          ? t("storage.intro")
+          : page === "/"
+            ? t("home.description")
+            : undefined;
   const canonical =
     readable && origin
       ? `${origin}${localizedDocument(locale, page)}`

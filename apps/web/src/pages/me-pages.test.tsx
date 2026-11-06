@@ -89,7 +89,9 @@ test("my info displays server summaries, navigates private tabs and keeps settin
     .find((link) => link.getAttribute("href") === "/en/settings")!;
   fireEvent.click(settings);
   await screen.findByRole("heading", { name: "Settings", level: 1 });
-  expect(document.querySelector('meta[name="robots"]')).toBeNull();
+  expect(
+    document.querySelector('meta[name="robots"]')?.getAttribute("content"),
+  ).toContain("noindex");
   expect(f.me.history).toHaveBeenCalled();
 });
 test("guest information links to sign-in and device settings without creating a server account", async () => {

@@ -301,7 +301,8 @@
       "requirements": "FR11/13, NFR06",
       "scenarios": "TS19/26",
       "deps": [
-        "ads"
+        "ads",
+        "public-locale-documents"
       ],
       "acceptance": "8locale HTML/canonical/hreflang/sitemap; 개인정보화면 noindex; 긴문구/keyboard 수동 검수",
       "issue": 23
@@ -1232,6 +1233,19 @@
         "auto-ads-design"
       ],
       "acceptance": "ADR0091·기본0/교체가능script/엄격ID·현재목적/공개문서/문서당1회/bounded/cancel·게임새문서/철회/owner/offline/BFCache·실제root·194미사용제거/생성검증·TDD/실browser/전체/coverage/리뷰/CI/병합CLOSED;실제CMP/Google운영147과83/198은별도"
+    },
+    {
+      "key": "public-locale-documents",
+      "issue": 202,
+      "milestone": "M4",
+      "title": "feat(web): 공개 locale HTML과 SEO 문서 경계 구현",
+      "requirements": "FR11/13, NFR01/02/05/06/08",
+      "scenarios": "TS18/19/20/26/30/31",
+      "deps": [
+        "auto-ads-runtime",
+        "reauth-delete-browser-observation"
+      ],
+      "acceptance": "ADR0093·24공개HTML/정확origin·미설정URL0/robots차단·canonical/8hreflang+x-default/sitemap·private/querynoindex/유출0·SPA head/JSoff/PCmobile·TDD/회귀/CI/리뷰/병합; 실제도메인/정책/최종번역은23/147/24"
     }
   ]
 }

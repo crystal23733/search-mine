@@ -18,6 +18,7 @@ import type { ConsentPort } from "./consent";
 import type { MePort } from "./me/types";
 import type { ConsentControlPort } from "./privacy/types";
 export interface AppServices {
+  publicSiteOrigin?: string;
   consentControl: ConsentControlPort;
   me: MePort;
   consent: ConsentPort;

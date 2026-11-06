@@ -137,9 +137,11 @@ import.meta.hot?.dispose(() => {
   optionalEvents.dispose();
   consent.dispose();
 });
+root.replaceChildren();
 render(
   <App
     services={{
+      publicSiteOrigin: import.meta.env.VITE_PUBLIC_SITE_ORIGIN,
       consent,
       consentControl,
       dailyChallenge: {

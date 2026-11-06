@@ -1,4 +1,6 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useState } from "preact/hooks";
+import { applyDocumentHead } from "./services/seo/head";
+import { documentMetadata } from "./services/seo/document";
 import { Ui } from "./ui/context";
 import { AppShell } from "./ui/templates/AppShell";
 import { HomePage } from "./pages/HomePage";
@@ -51,9 +53,6 @@ export function App({ services }: { services: AppServices }) {
     };
   }, [services, requestedLocale]);
   useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
-  useEffect(() => {
     document.documentElement.dataset.contrast = preferences.contrast;
     document.documentElement.dataset.motion = preferences.motion;
     document.documentElement.style.setProperty(
@@ -62,6 +61,19 @@ export function App({ services }: { services: AppServices }) {
     );
   }, [preferences]);
   const route = documentRoute(url.pathname);
+  useLayoutEffect(
+    () =>
+      applyDocumentHead(
+        document,
+        documentMetadata(url, locale, services.i18n, services.publicSiteOrigin),
+      ),
+    [url, locale, services],
+  );
+  useEffect(() => {
+    const changed = () => setUrl(services.navigation.current());
+    window.addEventListener("hashchange", changed);
+    return () => window.removeEventListener("hashchange", changed);
+  }, [services]);
   useEffect(() => {
     if (
       services.learning.read() === "new" &&

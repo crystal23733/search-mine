@@ -8,22 +8,6 @@ export function StatusPage({ status }: { status: 403 | 404 }) {
   );
   const heading = useRef<HTMLHeadingElement>(null);
   useLayoutEffect(() => {
-    const oldTitle = document.title,
-      previous = document.querySelector<HTMLMetaElement>('meta[name="robots"]'),
-      content = previous?.getAttribute("content"),
-      meta = previous ?? document.createElement("meta");
-    document.title = `${status} · ${title} | Liar Sweeper`;
-    meta.name = "robots";
-    meta.content = "noindex, noarchive";
-    if (!previous) document.head.append(meta);
-    return () => {
-      document.title = oldTitle;
-      if (!previous) meta.remove();
-      else if (content === null) meta.removeAttribute("content");
-      else meta.content = content ?? "";
-    };
-  }, [status, title]);
-  useLayoutEffect(() => {
     heading.current?.focus({ preventScroll: true });
   }, [status]);
   return (

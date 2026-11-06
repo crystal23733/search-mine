@@ -482,3 +482,8 @@ TS18/20/23/24/25/30 확장(#199): 기존 보호 문서에서 공개 화면으로
 #198 FR01/16·NFR01/02/05/08·TS20/29/34/35 → [ADR0092](../adr/0092-auth-bootstrap-cookie-ownership.md) → bootstrap의세션cookie쓰기분리/실제cookieCSRF·이전조회/재인증경합·새문서/명시삭제 → [검증198](../verification/198-auth-bootstrap-cookie-ownership.md). 원격단일원인/실제제공자42·83과구분한다.
 
 TS20/29/34/35 확장(#198): 새 OAuth 재인증 세션이 발급된 뒤 이전 cookie를 캡처했던 조회가 완료되어도 최신 cookie를 지우지 않는다. 실제 browser cookie jar/실PG로 이전 세션은 guest·보호API거절, 새 세션은 새문서 본인화면·새명시삭제확인으로 검사한다. bootstrap CSRF는 실제 raw cookie에 바인딩해 무효cookie의 새login을 허용하되 cookie불일치·다른세션 proof·Origin/최근인증검사를 유지한다. 읽기는 세션cookie를 갱신하지 않고 명시logout/삭제는기존대로만료한다.
+
+
+#202 FR11/13·NFR01/02/05/06/08·TS18/19/20/26/30/31 → [ADR0093](../adr/0093-public-locale-documents.md) → 공개24HTML/설정origin·canonical/hreflang/sitemap·private noindex/SPA head → [검증202](../verification/202-public-locale-seo.md). 실제도메인/정책/번역 최종검수·상위23/147/24와83은 별도다.
+
+TS18/19/20/26/30/31 확장(#202): JS 없는8locale홈/규칙/저장소고지·고정언어/본문링크, origin 미설정/정확HTTPS설정/잘못된값거절, 공개allowlist reciprocal hreflang+x-default/en·sitemap·queryhash/host미반영, 보호/오류/실게임문서noindex와head/unmount/언어수명·HEAD/no-store, 모바일360/키보드/긴문구·기존PWA회귀를 검사한다.

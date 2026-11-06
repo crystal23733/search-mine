@@ -209,7 +209,10 @@ export function registerMyInfoTests(approve: Approve, login: Login) {
           await expect(
             one.getByText(messages["me.deviceOnly"], { exact: true }),
           ).toBeVisible();
-          await expect(one.locator('meta[name="robots"]')).toHaveCount(0);
+          await expect(one.locator('meta[name="robots"]')).toHaveAttribute(
+            "content",
+            "noindex, noarchive",
+          );
           expect(JSON.stringify(value)).not.toMatch(
             /secret|seed|board|subject|digest|credential|csrf|session_revision|token|password|email/,
           );

@@ -239,3 +239,6 @@
 
 
 #198 FR01/16·NFR01/02/05/08·TS20/29/34/35 → [ADR0092](../adr/0092-auth-bootstrap-cookie-ownership.md) → bootstrap의세션cookie쓰기분리/실제cookieCSRF·이전조회/재인증경합·새문서/명시삭제 → [검증198](../verification/198-auth-bootstrap-cookie-ownership.md). 원격단일원인/실제제공자42·83과구분한다.
+
+
+#202 FR11/13·NFR01/02/05/06/08·TS18/19/20/26/30/31 → [ADR0093](../adr/0093-public-locale-documents.md) → 공개24HTML/설정origin·canonical/hreflang/sitemap·private noindex/SPA head → [검증202](../verification/202-public-locale-seo.md). 실제도메인/정책/번역 최종검수·상위23/147/24와83은 별도다.

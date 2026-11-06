@@ -1,4 +1,3 @@
-import { useEffect } from "preact/hooks";
 import { useUi } from "../ui/context";
 import { useSnapshot } from "../ui/useSnapshot";
 import { NavLink } from "../ui/molecules/NavLink";
@@ -12,21 +11,6 @@ export function MyInfoPage({ section = "overview" }: { section?: MeSection }) {
   const { t, services } = useUi();
   const auth = useSnapshot(services.auth);
   const offline = useSnapshot(services.offline);
-  useEffect(() => {
-    const previous = document.querySelector<HTMLMetaElement>(
-      'meta[name="robots"]',
-    );
-    const original = previous?.getAttribute("content");
-    const meta = previous ?? document.createElement("meta");
-    meta.name = "robots";
-    meta.content = "noindex, noarchive";
-    if (!previous) document.head.append(meta);
-    return () => {
-      if (!previous) meta.remove();
-      else if (original === null) meta.removeAttribute("content");
-      else meta.content = original ?? "";
-    };
-  }, []);
   const ready =
     auth.status === "ready" &&
     auth.account !== null &&

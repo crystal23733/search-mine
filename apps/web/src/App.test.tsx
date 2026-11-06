@@ -159,13 +159,14 @@ test("the forbidden document explains access without inventing a login or exposi
 });
 
 test("first visits keep the error page and head state is restored when returning to a normal document", async () => {
-  const original = document.title;
   const services = await setup("/en/not-a-page", true);
   await screen.findByRole("heading", { name: "Page not found" });
   expect(window.location.pathname).toBe("/en/not-a-page");
   await waitFor(() => expect(document.title).toContain("404"));
   services.navigation.go("/rules");
-  await waitFor(() => expect(document.title).toBe(original));
+  await waitFor(() =>
+    expect(document.title).toBe("How to play | Liar Sweeper"),
+  );
   expect(document.querySelector('meta[name="robots"]')).toBeNull();
   services.navigation.go("/me/privacy");
   await waitFor(() =>

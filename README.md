@@ -33,6 +33,10 @@ Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJ
 
 사용자 지시에 따라 [ADR0091](docs/adr/0091-adsense-auto-ads.md)의 AdSense 자동 광고로 전환합니다. 허용 공개 문서/현재 광고 동의에서 교체 가능한 script port를 실행하고 게임 문서를 분리합니다. [#199 연결](docs/verification/199-auto-ads-runtime.md)은 교체 가능한 script와 게임 새문서 경계를 제공합니다. `VITE_ADSENSE_CLIENT_ID`와 실제 CMP/사이트 승인/운영 설정이 없는 실행 앱은 광고0을 유지합니다. [설정 절차](docs/workflow/auto-ads-configuration.md)를 확인하세요. 과거 [#194 정책 검증](docs/verification/194-ad-request-policy.md)의 자체3판 카운터/H5 전면 계획은 대체합니다.
 
+## 공개 locale 문서
+
+홈·규칙·저장소 고지는8언어 정적 HTML로 제공하며 JavaScript 없이 읽을 수 있습니다. `VITE_PUBLIC_SITE_ORIGIN`에 확정된 HTTPS origin을 설정하면 canonical·hreflang·OG URL·sitemap을 생성합니다. 미설정 시 도메인을 추정하지 않고 robots crawl을 차단합니다. 개인/게임/인증 문서는 검색 제외합니다. [SEO 설정과 운영 검수](docs/workflow/seo-configuration.md)를 확인하세요.
+
 ## 오류 화면
 
 `/{locale}/403`은 접근 권한 안내, `/{locale}/404`와 알 수 없는 문서 주소는 찾을 수 없음 안내를8언어로 제공합니다. 홈·계정 복귀 링크는 원래 query/hash를 지우고, 오류 화면은 검색 제외와 제목/포커스 수명을 관리합니다. 개발·미리보기 서버의 HTML navigation은 실제403/404를 반환하며 운영 nginx/origin 연결은 #24에서 검수합니다. [오류 문서 검증 #192](docs/verification/192-error-pages.md).

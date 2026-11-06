@@ -25,6 +25,9 @@ export function RulesPage() {
           <p key={key}>{t(key, data)}</p>
         ))}
       </Card>
+      <p>
+        <a href={`/${locale}/learn`}>{t("learn.title")}</a>
+      </p>
       <NavLink path="/tutorial" class="button button--primary">
         {t("tutorial.replay")}
       </NavLink>

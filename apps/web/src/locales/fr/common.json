@@ -431,5 +431,10 @@
   "error.forbiddenDescription": "Vous ne pouvez pas consulter cette page. Vérifiez votre compte ou revenez à l’accueil.",
   "error.notFoundDescription": "Cette page a peut-être été déplacée ou n’est plus disponible.",
   "error.home": "Retour à l’accueil",
-  "error.account": "Voir le compte"
+  "error.account": "Voir le compte",
+  "learn.title": "Guide du tutoriel",
+  "learn.description": "Entraîne-toi à ouvrir des cases sûres, à modifier un nombre caché et à repérer un mensonge sur un plateau local guidé. Aucun compte n’est nécessaire.",
+  "learn.steps": "Ce que tu vas apprendre",
+  "learn.start": "Commencer le tutoriel",
+  "learn.ready": "Commence l’entraînement guidé quand tu le souhaites. Tu peux le répéter depuis la page des règles."
 }

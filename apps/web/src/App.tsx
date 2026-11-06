@@ -8,6 +8,7 @@ import { LatestResultPage } from "./pages/LatestResultPage";
 import { MyInfoPage } from "./pages/MyInfoPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StoragePage } from "./pages/StoragePage";
+import { TutorialGuidePage } from "./pages/TutorialGuidePage";
 import { RulesPage } from "./pages/RulesPage";
 import { documentRoute, documentStatus } from "./services/document-route";
 import { StatusPage } from "./pages/StatusPage";
@@ -130,6 +131,8 @@ export function App({ services }: { services: AppServices }) {
       <LoginPage />
     ) : route === "/onboarding" ? (
       <OnboardingPage />
+    ) : route === "/learn" ? (
+      <TutorialGuidePage />
     ) : route === "/rules" ? (
       <RulesPage />
     ) : (

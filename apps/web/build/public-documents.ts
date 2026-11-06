@@ -2,6 +2,7 @@ import type { Plugin, ViteDevServer } from "vite";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createTranslation } from "../src/services/i18n-engine.ts";
+import { GUIDE_STEPS } from "../src/services/tutorial-guide.ts";
 import { ruleCopyData } from "../src/services/rule-copy.ts";
 import { type I18nPort, type MessageKey } from "../src/services/i18n-engine.ts";
 import {
@@ -38,14 +39,17 @@ export function staticContent(
 ): string {
   const t = (key: MessageKey, data?: Record<string, string | number>) =>
     escapeHtml(i18n.t(locale, key, data));
-  const link = (path: string, text: string) =>
-    `<a href="/${locale}${path}">${text}</a>`;
+  const link = (path: string, text: string, className = "") =>
+    `<a href="/${locale}${path}" class="${className}">${text}</a>`;
   const basics = () =>
     `<p>${t("basics.goal")}</p><dl>${(["numbers", "flags", "controls", "lies"] as const).map((topic) => `<dt>${t(`basics.${topic}.title`)}</dt><dd>${t(`basics.${topic}`, { open: i18n.t(locale, "board.open"), flag: i18n.t(locale, "board.flag"), accuse: i18n.t(locale, "board.accuse") })}</dd>`).join("")}</dl>`;
   let title: string, body: string;
   if (route === "/") {
     title = `${t("home.title1")} ${t("home.title2")}`;
     body = `<p>${t("home.description")}</p><p>${link("/practice", t("home.practice"))}</p><p>${link("/rules", t("home.learn"))}</p>`;
+  } else if (route === "/learn") {
+    title = t("learn.title");
+    body = `<p>${t("learn.description")}</p><h2>${t("learn.steps")}</h2><ol>${GUIDE_STEPS.map((step) => `<li><h3>${t(`home.${step}`)}</h3><p>${t(`home.${step}Hint`)}</p></li>`).join("")}</ol>${basics()}<p>${t("learn.ready")}</p><div class="match-controls">${link("/tutorial", t("learn.start"), "button button--primary")}${link("/rules", t("rules.title"), "button")}</div>`;
   } else if (route === "/rules") {
     title = t("rules.title");
     const data = ruleCopyData(locale);
@@ -67,7 +71,7 @@ export function staticContent(
     title = t("storage.pageTitle");
     body = `<p>${t("storage.intro")}</p><dl>${(["preferences", "records", "cache", "cookies", "optional"] as const).map((category) => `<dt>${t(`storage.${category}.title`)}</dt><dd>${t(`storage.${category}.description`)}</dd>`).join("")}</dl>${(["storage.manage", "storage.siteData", "storage.fallback"] as const).map((key) => `<p>${t(key)}</p>`).join("")}`;
   }
-  return `<div class="app-shell"><a class="skip-link" href="#main">${t("skip")}</a><main id="main" class="reading-page" tabindex="-1"><h1>${title}</h1>${body}<p>${link("/", t("home"))} · ${link("/storage", t("storage.pageTitle"))}</p><nav aria-label="${t("language")}">${LOCALES.map((language) => `<a href="${localizedDocument(language, route)}" lang="${language}">${LOCALE_NAMES[language]}</a>`).join(" · ")}</nav></main></div>`;
+  return `<div class="app-shell"><a class="skip-link" href="#main">${t("skip")}</a><main id="main" class="reading-page" tabindex="-1"><h1>${title}</h1>${body}<p>${link("/", t("home"))} · ${link("/storage", t("storage.pageTitle"))} · ${link("/learn", t("learn.title"))}</p><nav aria-label="${t("language")}">${LOCALES.map((language) => `<a href="${localizedDocument(language, route)}" lang="${language}">${LOCALE_NAMES[language]}</a>`).join(" · ")}</nav></main></div>`;
 }
 export function publicDocuments(originValue: string | undefined): Plugin {
   const origin = publicOrigin(originValue);

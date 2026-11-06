@@ -431,5 +431,10 @@
   "error.forbiddenDescription": "Du hast keine Berechtigung für diese Seite. Prüfe dein Konto oder kehre zur Startseite zurück.",
   "error.notFoundDescription": "Diese Seite wurde möglicherweise verschoben oder ist nicht mehr verfügbar.",
   "error.home": "Zur Startseite",
-  "error.account": "Konto ansehen"
+  "error.account": "Konto ansehen",
+  "learn.title": "Tutorial-Anleitung",
+  "learn.description": "Übe auf einem angeleiteten lokalen Spielfeld, sichere Felder zu öffnen, eine verdeckte Zahl zu ändern und eine Lüge zu erkennen. Du brauchst kein Konto.",
+  "learn.steps": "Das wirst du üben",
+  "learn.start": "Tutorial starten",
+  "learn.ready": "Beginne die angeleitete Übung, wenn du bereit bist. Über die Regelseite kannst du sie wiederholen."
 }

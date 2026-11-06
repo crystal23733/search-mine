@@ -3,6 +3,7 @@ export const DOCUMENT_ROUTES = [
   "/",
   "/practice",
   "/tutorial",
+  "/learn",
   "/daily",
   "/daily/rankings",
   "/daily/official",

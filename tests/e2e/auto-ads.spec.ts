@@ -164,3 +164,38 @@ test("fixed skip link keeps the automatic script on the same public document", a
     await page.evaluate(() => (window as FixtureWindow).__testAdExecutions),
   ).toBe(1);
 });
+
+test("an SDK document leaves before the guide and cannot follow its explicit tutorial entry", async ({
+  page,
+}) => {
+  let requests = 0;
+  await page.route(sdk, async (route) => {
+    requests++;
+    await route.fulfill({ contentType: "text/javascript", body: source });
+  });
+  await fixture(page);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as FixtureWindow).__testAdExecutions),
+    )
+    .toBe(1);
+  await page.evaluate(() =>
+    (window as FixtureWindow).__autoAdsFixture!.go("/learn"),
+  );
+  await expect(page).toHaveURL(/\/ko\/learn$/);
+  await expect(
+    page.getByRole("heading", { name: "튜토리얼 안내", level: 1 }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "언어", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("script[data-liar-auto-ads]")).toHaveCount(0);
+  expect(
+    await page.evaluate(() => (window as FixtureWindow).__testAdExecutions),
+  ).toBeUndefined();
+  await page.getByRole("link", { name: "튜토리얼 시작", exact: true }).click();
+  await expect(page).toHaveURL(/\/ko\/tutorial$/);
+  await expect(page.getByRole("gridcell")).toHaveCount(9);
+  await expect(page.locator("script[data-liar-auto-ads]")).toHaveCount(0);
+  expect(requests).toBe(1);
+});

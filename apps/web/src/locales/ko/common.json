@@ -431,5 +431,10 @@
   "error.forbiddenDescription": "이 페이지에 접근할 권한이 없습니다. 계정 상태를 확인하거나 홈으로 돌아가세요.",
   "error.notFoundDescription": "주소가 변경되었거나 더 이상 제공되지 않는 페이지일 수 있습니다.",
   "error.home": "홈으로 돌아가기",
-  "error.account": "계정 확인"
+  "error.account": "계정 확인",
+  "learn.title": "튜토리얼 안내",
+  "learn.description": "안내에 따라 안전한 칸 열기, 숫자 공격, 거짓말 지목을 연습해 보세요. 계정 없이 시작할 수 있습니다.",
+  "learn.steps": "연습할 내용",
+  "learn.start": "튜토리얼 시작",
+  "learn.ready": "준비가 되면 튜토리얼을 시작하세요. 규칙 화면에서 언제든 다시 연습할 수 있습니다."
 }

@@ -163,7 +163,7 @@ test("static copy is escaped rather than interpreted as markup", async () => {
   expect(doc.querySelector("img")).toBeNull();
   expect(doc.querySelector("h1")?.textContent).toContain("<img");
 });
-test("build emits exactly 24 public documents, safe fallback and an allowlisted sitemap only when configured", async () => {
+test("build emits exactly 32 public documents, safe fallback and an allowlisted sitemap only when configured", async () => {
   for (const configured of [undefined, origin]) {
     const plugin = publicDocuments(configured);
     const emitted: Array<{ fileName: string; source: string }> = [];
@@ -186,7 +186,7 @@ test("build emits exactly 24 public documents, safe fallback and an allowlisted 
     );
     expect(
       emitted.filter((asset) => asset.fileName.endsWith(".html")),
-    ).toHaveLength(24);
+    ).toHaveLength(32);
     expect(bundle["index.html"].source).toContain(
       'content="noindex, noarchive"',
     );
@@ -221,9 +221,11 @@ test("build emits exactly 24 public documents, safe fallback and an allowlisted 
       const urls = [...xml.querySelectorAll("loc")].map(
         (node) => node.textContent,
       );
-      expect(urls).toHaveLength(24);
-      expect(new Set(urls).size).toBe(24);
+      expect(urls).toHaveLength(32);
+      expect(new Set(urls).size).toBe(32);
       expect(urls).toContain(`${origin}/zh-CN/storage`);
+      expect(urls).toContain(`${origin}/en/learn`);
+      expect(urls).not.toContain(`${origin}/en/tutorial`);
       expect(sitemap).not.toMatch(
         /me\/|login|tutorial|friends|queue|daily|undefined/,
       );

@@ -117,3 +117,6 @@ PC 대전 우측은 상대 진행 요약만 공개한다. sheet/dialog는 초점
 
 
 #192 FR10/11·NFR01/02/05/06/07/08·TS18/19/20/26/30/31 → [ADR0089](../adr/0089-error-document-pages.md) → 명시403/404·고정locale복귀/검색제외·공통문서분류/dev-preview실HTTP → [검증192](../verification/192-error-pages.md). 운영origin24·admin/외부147/42·상위21/83은 후속이다.
+
+
+#204 FR08/11/12/13·NFR01/02/05/06/08·TS13/18/19/20/23/26/30/31 → [ADR0094](../adr/0094-tutorial-guide-document.md) → 공개learn/학습쓰기0·명시고정locale시작/게임분리·32HTML/광고0 → [검증204](../verification/204-tutorial-guide-document.md). 실제색인/정책/전문번역·사람검수/83은별도다.

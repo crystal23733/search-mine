@@ -285,3 +285,6 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #208 FR03/06/07/14/16·NFR01/02/05/07/08·TS15/16/20/21/28/31/35/36 → [ADR0096](../adr/0096-online-shutdown-drain.md) → 정상신호 후 새매칭 차단·기존 판/재접속/저장 drain·ready503·bounded 실패종료 → [검증208](../verification/208-online-shutdown-drain.md). 실제Docker/호스트24·백업25/성능26/83은별도다.
+
+
+#211 FR01/10/11/14/16·NFR01/02/05/07/08·TS15/16/18/19/20/21/26/28/31/35/36 → [ADR0097](../adr/0097-isolated-container-deployment.md) → locked source 이미지·파일secret/nonroot·공개포트0·nginx32locale/오류·API/WS·정상stop → [검증211](../verification/211-isolated-container-deployment.md). 실제계정/호스트24·백업25/성능26/83은별도다.

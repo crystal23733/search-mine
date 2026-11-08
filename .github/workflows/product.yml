@@ -154,3 +154,27 @@ jobs:
             .tmp/offline-update-probes/
             .tmp/native-worker-traces/
           retention-days: 7
+
+  deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn playwright install --with-deps chromium
+      - run: python3 deploy/tests/smoke.py --browser
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: deployment-summary
+          include-hidden-files: true
+          if-no-files-found: error
+          path: |
+            .tmp/liar-smoke-*/summary.json
+            .tmp/liar-smoke-*/build-*.log
+            .tmp/liar-smoke-*/failure.log
+          retention-days: 7

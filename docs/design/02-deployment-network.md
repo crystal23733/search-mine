@@ -11,6 +11,8 @@ flowchart TD
     Connector --> Nginx[nginx 8080 내부]
     Nginx --> Server[server 3000 내부]
     Server --> DB[(postgres 5432 내부)]
+    Server --> Egress[외부요청 전용 network]
+    Egress --> Providers[OAuth와 JWKS HTTPS]
     DB --> Dump[pg_dump 전용 백업 작업]
     Dump --> Backup[암호화 백업 별도 매체]
   end
@@ -24,10 +26,11 @@ Tunnel은 origin에 공개 IP를 부여하지 않고 outbound 연결을 만든�
 |---|---|---|
 | edge | cloudflared, nginx | 없음 |
 | app: internal | nginx, server | 없음 |
-| db: internal | server, postgres, 백업 작업 | 없음 |
+| db: internal | server, postgres, migration/grant, 백업 작업 | 없음 |
+| outbound | server의 OAuth/JWKS/Apple 외부 요청 | 없음 |
 | 운영 접근 | 로컬 SSH 또는 사용자 VPN | 게임 배포에서 추가 공개하지 않음 |
 
-nginx는 정적 자산과 `/api/`, `/ws`만 프록시한다. 실제 client IP는 trusted proxy 경로에서만 해석하며 사용자가 보낸 헤더를 신뢰하지 않는다. CDN은 hash 자산만 장기 캐시, WS/API/닉네임·순위 응답은 cache bypass, HTML은 짧은 재검증을 사용한다. cloudflared egress는 공식 Tunnel 연결 요구사항을 운영 환경에서 확인한다. WAF 기능과 무료 한도는 사용 중 플랜에서 검증하며 유료 플랜을 전제로 하지 않는다.
+nginx는 정적 자산을 제공하고 `/api/`(WS는 `/api/v1/ws`)와 최소 `/health/live`, `/health/ready`만 고정 server로 프록시한다. 실제 client IP는 trusted proxy 경로에서만 해석하며 사용자가 보낸 헤더를 신뢰하지 않는다. CDN은 hash 자산만 장기 캐시, WS/API/닉네임·순위 응답은 cache bypass, HTML은 짧은 재검증을 사용한다. cloudflared egress는 공식 Tunnel 연결 요구사항을 운영 환경에서 확인한다. WAF 기능과 무료 한도는 사용 중 플랜에서 검증하며 유료 플랜을 전제로 하지 않는다.
 
 ## 저장소와 비밀
 
@@ -45,3 +48,6 @@ RPO≤24시간·RTO≤2시간은 운영 목표다. 전원·회선·장비가 없
 #122: [ADR0057](../adr/0057-authenticated-daily-timing-http.md). LIAR_DAILY_TICKETS 기본64/엄격1..20000, 같은 authority/단조 clock registry를 main/fixture HTTP와 실제 invalidator에 주입. 중복 authority invalidation 금지·매 요청 reap-before-bind.
 
 #124: [ADR0058](../adr/0058-public-daily-rankings.md)의 public rankings는 요청2/global20초당·전체HTTP2초·입력4KiB/응답64KiB를 적용한다. 인증 데일리와 공개 조회는 동일 BoundedReplayVerifier clone의 CPU2/2초를 공유한다. IP/브라우저별 추적 키를 만들지 않는다. forward migration202610120002를 serving/HTTPS 검증 전에 별도로 적용한다.
+
+
+#211 FR01/10/11/14/16·NFR01/02/05/07/08·TS15/16/18/19/20/21/26/28/31/35/36 → [ADR0097](../adr/0097-isolated-container-deployment.md) → locked source 이미지·파일secret/nonroot·공개포트0·nginx32locale/오류·API/WS·정상stop → [검증211](../verification/211-isolated-container-deployment.md). 실제계정/호스트24·백업25/성능26/83은별도다.

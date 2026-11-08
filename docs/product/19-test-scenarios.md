@@ -502,3 +502,8 @@ TS20/21/28/31/35/36 확장(#206): 실제 무작업main child의loopback liveness
 ## #208 정상 종료 drain
 
 TS15/16/20/21/28/31/35/36: 첫신호→로비/registry입장직렬차단·queue/preparing취소·register ACK/discard·admission permit 반환·ready503/live200; 기존 입력/재접속/결과 조회 유지·저장Pending 중 종료금지/Saved 관측 뒤 종료; 저장실패/예상치못한actor종료/ownerloss·300초/5초상한 실패종료·성공runtime2초. 제어port/paused시간 및 실제main/PG/HTTP/WS로 검증한다. [ADR0096](../adr/0096-online-shutdown-drain.md). 실제Docker/호스트 검수는 별도다.
+
+
+## #211 격리 배포 기반
+
+TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제외, 파일secret누락/충돌·nonroot/read-only·DDL/DML분리/실migration·내부health·공개포트0·OAuth외부요청경로·32localeJSoff/개인querynoindex·403404실상태·API/WSproxy·hash캐시/필수헤더·실Dockerstop. 실제계정/Tunnel/호스트·성능/백업RPO/RTO는별도. [ADR0097](../adr/0097-isolated-container-deployment.md).

@@ -317,7 +317,8 @@
       "deps": [
         "seo",
         "normal-shutdown-signals",
-        "online-shutdown-drain"
+        "online-shutdown-drain",
+        "isolated-container-deployment"
       ],
       "acceptance": "host게임/DB포트0·내부망; secret/nonroot·health/drain; 사용자 회선/계정 확인",
       "issue": 24
@@ -1285,6 +1286,18 @@
       ],
       "acceptance": "새 매칭 직렬 차단·기존 판/재접속·admission/저장 drain·ready503·bounded 실패종료·실PG/main/WS·RedGreen/리뷰/6CI",
       "issue": 208
+    },
+    {
+      "key": "isolated-container-deployment",
+      "milestone": "M5",
+      "title": "chore(deploy): 격리된 컨테이너 배포 기반과 nginx 실행 검증",
+      "requirements": "FR01/10/11/14/16, NFR01/02/05/07/08",
+      "scenarios": "TS15/16/18/19/20/21/26/28/31/35/36",
+      "deps": [
+        "online-shutdown-drain"
+      ],
+      "acceptance": "허용context/locked이미지·파일secret/nonroot·DDL/DML/내부망·공개포트0·nginx32locale/오류/API/WS·실Docker build/run/stop·리뷰/필수CI",
+      "issue": 211
     }
   ]
 }

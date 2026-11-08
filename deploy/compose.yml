@@ -1,0 +1,143 @@
+name: liar-sweeper
+x-logging: &logging
+  driver: json-file
+  options: {max-size: 10m, max-file: '3'}
+x-server: &server
+  image: ${LIAR_SERVER_IMAGE:-liar-server:local}
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+    target: server
+  logging: *logging
+  user: '10001:10001'
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: ['/tmp:size=32m,mode=1777']
+  mem_limit: 1g
+  cpus: 2
+services:
+  postgres:
+    image: postgres:18-alpine
+    logging: *logging
+    user: postgres
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:size=32m,mode=1777', '/var/run/postgresql:size=16m,mode=1777']
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./init-db.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: liar
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+    secrets: [db_admin_password, db_owner_password, db_serving_password]
+    networks: [db]
+    healthcheck:
+      test: [CMD, pg_isready, -h, 127.0.0.1, -U, postgres, -d, liar]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    restart: unless-stopped
+    stop_grace_period: 30s
+    mem_limit: 512m
+    cpus: 1
+  migrate:
+    <<: *server
+    command: [migrate]
+    environment:
+      MIGRATION_DATABASE_URL_FILE: /run/secrets/migration_database_url
+    secrets: [migration_database_url]
+    networks: [db]
+    healthcheck: {disable: true}
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: 'no'
+  grant:
+    image: postgres:18-alpine
+    logging: *logging
+    user: postgres
+    entrypoint: [sh, /scripts/grant-runtime.sh]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:size=8m,mode=1777']
+    volumes:
+      - ./grant-runtime.sh:/scripts/grant-runtime.sh:ro
+      - ./serving-grants.sql:/scripts/serving-grants.sql:ro
+    secrets: [db_owner_password]
+    networks: [db]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    restart: 'no'
+  server:
+    <<: *server
+    environment:
+      LIAR_PUBLIC_ORIGIN: ${LIAR_PUBLIC_ORIGIN:?Set the confirmed HTTPS public origin}
+      DATABASE_URL_FILE: /run/secrets/database_url
+      LIAR_AUTH_CSRF_KEY_FILE: /run/secrets/csrf_key
+      LIAR_AUTH_DIGEST_KEYS_FILE: /run/secrets/digest_keys
+      LIAR_AUTH_VAULT_KEYS_FILE: /run/secrets/vault_keys
+    secrets: [database_url, csrf_key, digest_keys, vault_keys]
+    networks: [app, db, outbound]
+    depends_on:
+      grant: {condition: service_completed_successfully}
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 320s
+  web:
+    image: ${LIAR_WEB_IMAGE:-liar-web:local}
+    logging: *logging
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: web
+      args:
+        VITE_PUBLIC_SITE_ORIGIN: ${LIAR_PUBLIC_ORIGIN:?Set the confirmed HTTPS public origin}
+        VITE_ADSENSE_CLIENT_ID: ${VITE_ADSENSE_CLIENT_ID:-}
+    user: '101:101'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:size=32m,mode=1777']
+    networks: [edge, app]
+    depends_on:
+      server: {condition: service_healthy}
+    restart: unless-stopped
+    stop_grace_period: 10s
+    mem_limit: 128m
+    cpus: 1
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    logging: *logging
+    profiles: [tunnel]
+    user: '65532:65532'
+    command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/tunnel_token]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    secrets: [tunnel_token]
+    networks: [edge]
+    restart: unless-stopped
+    depends_on:
+      web: {condition: service_started}
+    mem_limit: 128m
+    cpus: 1
+networks:
+  edge: {}
+  app: {internal: true}
+  db: {internal: true}
+  outbound: {}
+volumes:
+  pgdata: {}
+secrets:
+  db_admin_password: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/db_admin_password'}
+  db_owner_password: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/db_owner_password'}
+  db_serving_password: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/db_serving_password'}
+  migration_database_url: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/migration_database_url'}
+  database_url: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/database_url'}
+  csrf_key: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/csrf_key'}
+  digest_keys: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/digest_keys'}
+  vault_keys: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/vault_keys'}
+  tunnel_token: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/tunnel_token'}

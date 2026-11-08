@@ -36,7 +36,7 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 
 미니 PC 사양·OS, 전력 실측, 디스크/별도 백업 매체, 자동재시작, 유선 회선/통신사 가정용 서비스 제공 약관, 도메인/Cloudflare 계정, AdSense/H5 승인, Google 인증 CMP, 운영자 연락처, 번역 검수·미성년자 방침을 확인한다. 비밀값을 이슈나 채팅에 붙여넣지 않는다.
 
-현재는 운영 runbook 설계이며 Docker Compose·nginx·DB·Tunnel을 실행하거나 유료 서비스를 생성하지 않는다.
+운영 runbook의 독립 구현은 #211에서 고유 로컬 Docker Compose·nginx·DB·stop으로 검증한다. 실제 Tunnel/계정 연결·미니 PC/회선·운영 배포는 사용자 입력과 별도 검수 뒤에만 진행하며 유료 서비스를 생성하지 않는다.
 
 
 #103 [ADR0047](../adr/0047-durable-lobby-admission.md): 공개 runtime은 typed journal owner를 claim하고 startup unknown abort 완료 뒤 serving한다. owner failure는 기존 serve guard로 종료하며 단일 인스턴스 교체를 유지한다. 재시작은 원래 admitted retention 기준을 유지하고 seed/통계를 복구 추측하지 않는다. 물리 삭제/백업25와 하드웨어26·새로고침 결과 발견은 별도다.
@@ -64,3 +64,6 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 
 
 #208 FR03/06/07/14/16·NFR01/02/05/07/08·TS15/16/20/21/28/31/35/36 → [ADR0096](../adr/0096-online-shutdown-drain.md) → 정상신호 후 새매칭 차단·기존 판/재접속/저장 drain·ready503·bounded 실패종료 → [검증208](../verification/208-online-shutdown-drain.md). 실제Docker/호스트24·백업25/성능26/83은별도다.
+
+
+#211 FR01/10/11/14/16·NFR01/02/05/07/08·TS15/16/18/19/20/21/26/28/31/35/36 → [ADR0097](../adr/0097-isolated-container-deployment.md) → locked source 이미지·파일secret/nonroot·공개포트0·nginx32locale/오류·API/WS·정상stop → [검증211](../verification/211-isolated-container-deployment.md). 실제계정/호스트24·백업25/성능26/83은별도다.

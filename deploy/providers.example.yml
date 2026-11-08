@@ -1,0 +1,21 @@
+# Optional operator override. Set all four real registrations before public launch (#42).
+services:
+  server:
+    environment:
+      LIAR_GOOGLE_CLIENT_ID: ${LIAR_GOOGLE_CLIENT_ID:?}
+      LIAR_GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+      LIAR_KAKAO_CLIENT_ID: ${LIAR_KAKAO_CLIENT_ID:?}
+      LIAR_KAKAO_CLIENT_SECRET_FILE: /run/secrets/kakao_client_secret
+      LIAR_NAVER_CLIENT_ID: ${LIAR_NAVER_CLIENT_ID:?}
+      LIAR_NAVER_CLIENT_SECRET_FILE: /run/secrets/naver_client_secret
+      LIAR_APPLE_CLIENT_ID: ${LIAR_APPLE_CLIENT_ID:?}
+      LIAR_APPLE_TEAM_ID: ${LIAR_APPLE_TEAM_ID:?}
+      LIAR_APPLE_KEY_ID: ${LIAR_APPLE_KEY_ID:?}
+      LIAR_APPLE_PRIVATE_KEY_FILE: /run/secrets/apple_private_key
+      LIAR_APPLE_NOTIFICATION_AUDIENCE: ${LIAR_APPLE_NOTIFICATION_AUDIENCE:?}
+    secrets: [google_client_secret, kakao_client_secret, naver_client_secret, apple_private_key]
+secrets:
+  google_client_secret: {file: '${LIAR_SECRETS_DIR:?}/google_client_secret'}
+  kakao_client_secret: {file: '${LIAR_SECRETS_DIR:?}/kakao_client_secret'}
+  naver_client_secret: {file: '${LIAR_SECRETS_DIR:?}/naver_client_secret'}
+  apple_private_key: {file: '${LIAR_SECRETS_DIR:?}/apple_private_key'}

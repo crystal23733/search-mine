@@ -37,6 +37,10 @@ Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJ
 
 홈·튜토리얼 소개·규칙·저장소 고지는8언어 총32개 정적 HTML로 제공하며 JavaScript 없이 읽을 수 있습니다. `VITE_PUBLIC_SITE_ORIGIN`에 확정된 HTTPS origin을 설정하면 canonical·hreflang·OG URL·sitemap을 생성합니다. 미설정 시 도메인을 추정하지 않고 robots crawl을 차단합니다. 개인/게임/인증 문서는 검색 제외합니다. [SEO 설정과 운영 검수](docs/workflow/seo-configuration.md)를 확인하세요.
 
+## 컨테이너 배포 기반
+
+`deploy/compose.yml`은 source 이미지·내부DB·별도 migration/grant·nginx를 구성하며 운영 host 포트를 열지 않습니다. 실제 provider 키·도메인/Tunnel·CMP가 없는 기본 실행은 해당 외부 기능을 활성화하지 않습니다. 파일 secret/비권한·읽기 전용 실행과 종료 대기는 [컨테이너 배포 절차](docs/workflow/container-deployment.md)를 따릅니다. `python3 deploy/tests/smoke.py --browser`는 합성 설정/고유 프로젝트의 실제 Docker·DB·HTTP/WS·Chromium을 검사하고 정리합니다. 실제 호스트·계정·백업/복구·부하 검수는 별도입니다.
+
 ## 서버 정상 종료
 
 SIGTERM/SIGINT를 받으면 새 온라인 매칭을 막고 readiness503을 반환하며 기존 판의 입력·재접속은 유지합니다. 진행 중 준비 작업의 정리와 결과 저장의 완료를 최대300초 기다린 뒤 HTTP를 최대5초 정리합니다. 저장 실패·소유권 상실·시간 초과는 오류 종료합니다. 성공 후 남은 CPU worker 정리는 최대2초입니다. 실제 Docker의 종료 대기 설정·운영 장비 검수는 #24에서 별도로 확인해야 합니다. [종료 drain 검증 #208](docs/verification/208-online-shutdown-drain.md).

@@ -171,6 +171,8 @@ jobs:
         if: always()
         with:
           name: deployment-summary
+          include-hidden-files: true
+          if-no-files-found: error
           path: |
             .tmp/liar-smoke-*/summary.json
             .tmp/liar-smoke-*/build-*.log

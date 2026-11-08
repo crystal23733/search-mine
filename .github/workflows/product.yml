@@ -171,5 +171,8 @@ jobs:
         if: always()
         with:
           name: deployment-summary
-          path: .tmp/liar-smoke-*/summary.json
+          path: |
+            .tmp/liar-smoke-*/summary.json
+            .tmp/liar-smoke-*/build-*.log
+            .tmp/liar-smoke-*/failure.log
           retention-days: 7

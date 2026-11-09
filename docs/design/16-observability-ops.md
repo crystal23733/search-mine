@@ -67,3 +67,5 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 
 
 #211 FR01/10/11/14/16·NFR01/02/05/07/08·TS15/16/18/19/20/21/26/28/31/35/36 → [ADR0097](../adr/0097-isolated-container-deployment.md) → locked source 이미지·파일secret/nonroot·공개포트0·nginx32locale/오류·API/WS·정상stop → [검증211](../verification/211-isolated-container-deployment.md). 실제계정/호스트24·백업25/성능26/83은별도다.
+
+#215의 source_retention은 원래7일 seed/replay와90일 online/daily 원본을 정리한다. 5단계 각100/합계500개 이하, 기존2초/최대8batch/60초 주기와 maintenance pool2를 공유한다. deleted는 삭제 행과 비밀 필드를 비운 원본 행 수의 합이며 ID/내용은 로그에 남기지 않는다. fresh raw cascade 시 coverage를 같은 transaction에서 전진시키고 invalid_clock/unavailable이면 rollback한다. 조회 만료는 기존대로 즉시 적용하며 실제 backlog/최대 물리 지연은 #26 검수 대상이다. [ADR0099](../adr/0099-source-retention.md)·[검증215](../verification/215-source-retention.md)를 따른다.

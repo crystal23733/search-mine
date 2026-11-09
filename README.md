@@ -6,6 +6,8 @@
 
 **현재 상태:** 코어·웹 shell·OAuth 계정·온라인 대전/재접속·영속 복구·공식 데일리/순위/공유·필수 지표 기반과 내 정보 화면을 구현했습니다. 실제 제공자/CMP 운영 검수·외부 설정과 관찰/출시 조건은 백로그에서 구분합니다. [계정 화면·실제 HTTPS 검증](docs/verification/46-oauth-account-ui.md)을 확인하세요. [거짓말 검증 결과와 제한](docs/verification/06-lie-certification.md)·[규칙](docs/verification/07-rule-engine.md)·[봇 검증](docs/verification/08-public-bots.md)·[WASM 검증](docs/verification/09-public-wasm.md)·[웹 shell](docs/verification/10-atomic-shell.md)·[보드 검증과 화면](docs/verification/11-public-board.md)·[실제 로컬 대전/학습](docs/verification/12-local-practice-tutorial.md)·[데일리/기록/공유](docs/verification/13-utc-daily-records-share.md)·[오프라인/업데이트/대기](docs/verification/14-public-offline-cache.md)을 확인하세요. 제공된 원문은 [docs/planning](docs/planning/HANDOFF_PROMPT.md)에 보존했고 기존 Next/Nest 프로젝트는 확인을 받아 제거했습니다.
 
+운영 중 원본 보존 정리는 [#215 검증](docs/verification/215-source-retention.md)을 따릅니다. 원래7일 seed/리플레이와90일 전적을 bounded 주기로 정리하고, 연결 이벤트 삭제 시 통계 수집 범위를 함께 보정합니다. 실제 백업 복구·별도 매체 검수는 #25에 남습니다.
+
 ## 먼저 읽을 문서
 
 필수 이벤트의 원본 transaction 수집·원시30일 보존·NSM/D7·익명13개월 보존·내부 운영 조회는 [#145의 #20 통합 감사](docs/verification/145-anonymous-metrics-retention-and-operations.md)까지 완료했다. 실제 사용 지표 달성·선택 수집·운영 장비 실측은 별도다.

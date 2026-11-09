@@ -135,6 +135,7 @@ fn record(line: &str, elapsed: u64) -> Value {
         "board_pool"
             | "admission"
             | "event_retention"
+            | "source_retention"
             | "optional_event_retention"
             | "metric_retention"
             | "product_metrics"

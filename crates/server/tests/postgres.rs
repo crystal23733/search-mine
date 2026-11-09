@@ -50,6 +50,8 @@ mod optional_events;
 mod optional_retention;
 #[path = "postgres/personal.rs"]
 mod personal;
+#[path = "postgres/source_retention.rs"]
+mod source_retention;
 #[tokio::test]
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn invitation_transactions_preserve_canonical_codes_consume_once_and_expire_without_accounts()

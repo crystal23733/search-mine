@@ -19,6 +19,7 @@ mod policy;
 mod postgres;
 mod producers;
 mod retention;
+mod source_retention;
 pub use aggregate_maintenance::*;
 pub use aggregate_retention::*;
 pub use aggregates::*;
@@ -36,6 +37,7 @@ pub use policy::*;
 pub use postgres::*;
 pub(crate) use producers::{collect_daily, collect_online};
 pub use retention::*;
+pub use source_retention::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EventError {

@@ -258,3 +258,5 @@
 #213 FR16·NFR02/05/07/08·TS28/29/31/35 → [ADR0098](../adr/0098-encrypted-backup-verification.md) → 스트리밍 age/custom dump·원래28일/손상검사·격리 빈DB 복원 → [검증213](../verification/213-encrypted-backup-verification.md). 실제 서비스 복구/최신 삭제 기록/이전 release/별도 매체/RPO·RTO는 #25 후속이다.
 
 #215 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/28/29/31/35 → [ADR0099](../adr/0099-source-retention.md) → 원래7일/90일 source 정리·동일transaction coverage 보정·bounded maintenance → [검증215](../verification/215-source-retention.md). 실제 서비스 복구/최신 삭제 기록/별도 매체/RPO·RTO는 #25 후속이다.
+
+#217 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0100](../adr/0100-recovery-quarantine.md) → 복구 gate 기본차단·최소 권리 원장 재적용/세션무효화·quarantine 유지 → [검증217](../verification/217-recovery-quarantine.md). 최신 원장 독립 내구·완전성/release와 실제 매체/RPO·RTO는 #25 후속이다.

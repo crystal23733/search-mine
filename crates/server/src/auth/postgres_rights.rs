@@ -41,6 +41,7 @@ impl AccountStore for PgAuthStore {
         } else {
             false
         };
+        record_identity_removal(&mut tx, auth.account, provider, auth.now).await?;
         sqlx::query("DELETE FROM auth_identities WHERE account_id=$1 AND provider=$2")
             .bind(auth.account)
             .bind(provider.as_str())
@@ -120,5 +121,16 @@ pub(super) async fn revoke_locked(
         .execute(&mut **tx)
         .await
         .map_err(database_error)?;
+    Ok(())
+}
+
+pub(super) async fn record_identity_removal(
+    tx: &mut Transaction<'_, Postgres>,
+    account: Uuid,
+    provider: Provider,
+    now: i64,
+) -> Result<(), AuthError> {
+    sqlx::query("INSERT INTO auth_identity_tombstones(identity_id,deleted_at,expires_at) SELECT id,to_timestamp($3),to_timestamp($3)+interval '2419200 seconds' FROM auth_identities WHERE account_id=$1 AND provider=$2 ON CONFLICT(identity_id) DO NOTHING")
+        .bind(account).bind(provider.as_str()).bind(timestamp(now)?).execute(&mut **tx).await.map_err(database_error)?;
     Ok(())
 }

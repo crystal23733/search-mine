@@ -49,6 +49,11 @@ case "${1:-}" in
         load_secret MIGRATION_DATABASE_URL
         exec /app/bin/migrate
         ;;
+    recovery)
+        shift
+        load_secret MIGRATION_DATABASE_URL
+        exec /app/bin/recovery "$@"
+        ;;
     metrics)
         shift
         load_secret DATABASE_URL

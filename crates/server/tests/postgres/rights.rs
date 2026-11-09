@@ -1164,6 +1164,9 @@ async fn apple_notifications_are_atomic_deduplicated_and_keep_other_login_method
         .unwrap(),
         1
     );
+    let removed:(Uuid,i64,i64)=sqlx::query_as("SELECT identity_id,EXTRACT(EPOCH FROM deleted_at)::bigint,EXTRACT(EPOCH FROM expires_at)::bigint FROM auth_identity_tombstones")
+        .fetch_one(&pool).await.unwrap();
+    assert_eq!(removed, (second.identity_id, 5006, 5006 + 2419200));
     sqlx::query("DELETE FROM auth_accounts WHERE id=$1")
         .bind(second.account.id)
         .execute(&pool)

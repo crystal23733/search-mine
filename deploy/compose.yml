@@ -108,6 +108,16 @@ services:
     stop_grace_period: 10s
     mem_limit: 128m
     cpus: 1
+  recovery:
+    <<: *server
+    profiles: [recovery]
+    command: [recovery, quarantine]
+    environment:
+      MIGRATION_DATABASE_URL_FILE: /run/secrets/migration_database_url
+    secrets: [migration_database_url]
+    networks: [db]
+    healthcheck: {disable: true}
+    restart: 'no'
   cloudflared:
     image: cloudflare/cloudflared:latest
     logging: *logging

@@ -11,6 +11,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&url)
         .await
         .map_err(|_| "Migration database connection failed")?;
+    let fresh = liar_server::recovery::FreshSchema::inspect(&pool)
+        .await
+        .map_err(|_| "Migration bootstrap inspection failed")?;
     let folder = env::var("LIAR_MIGRATIONS").unwrap_or_else(|_| "migrations".into());
     Migrator::new(Path::new(&folder))
         .await
@@ -18,6 +21,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .run(&pool)
         .await
         .map_err(|_| "Migration failed")?;
+    fresh
+        .initialize(&pool)
+        .await
+        .map_err(|_| "Fresh database initialization failed")?;
     pool.close().await;
     Ok(())
 }

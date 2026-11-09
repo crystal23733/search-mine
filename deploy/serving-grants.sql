@@ -10,6 +10,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON
     online_match_results, online_match_players, online_active_matches, online_active_players,
     daily_definitions, daily_completions, session_consents
 TO liar_app;
+GRANT SELECT ON service_recovery_control TO liar_app;
+GRANT SELECT, INSERT, DELETE ON auth_identity_tombstones TO liar_app;
 GRANT SELECT, INSERT, DELETE ON product_events, optional_product_events TO liar_app;
 GRANT UPDATE(id) ON product_events, optional_product_events TO liar_app;
 GRANT SELECT, INSERT ON metric_collection TO liar_app;

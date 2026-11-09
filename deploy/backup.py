@@ -33,7 +33,8 @@ def regular(path):
 def encrypt_dump(output, recipient, env):
     processes = []
     try:
-        dump = subprocess.Popen(['pg_dump', '--format=custom', '--no-password', '--lock-wait-timeout=5s'],
+        dump = subprocess.Popen(['pg_dump', '--format=custom', '--no-password', '--lock-wait-timeout=5s',
+                                 '--exclude-table-data=service_recovery_control'],
                                 env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         processes.append(dump)
         age = subprocess.Popen(['age', '--encrypt', '--recipients-file', str(regular(recipient))],

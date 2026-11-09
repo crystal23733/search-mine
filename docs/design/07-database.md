@@ -122,8 +122,8 @@ erDiagram
 | 계정·identity | 계정 삭제/연결 해제까지; 사용자가 요청하면 세션 즉시 철회·식별자 제거. 휴면만으로 자동 삭제하는 정책은 채택하지 않음 |
 | 세션·auth transaction | 세션 최대30일, auth 거래5분; 원문 token/state DB 보관 없음 |
 | Apple credential | 연결 기간만 암호화; 삭제시 철회, 실패 재시도 목적 queue 최대24시간 |
-| 매치 결과 | 90일 후 식별자 제거·집계, seed/replay는7일 제한 |
-| 데일리 input log/첫 완료 | #112는 원래 completed_at에서 replay7일/record90일 anchor를 고정하고 own은 정확90일에 숨긴다. raw replay 물리 삭제·definition FK 수명/백업은 #25, 공개 순위/집계는 후속 #19/20 |
+| 매치 결과 | 원래 retention anchor부터90일에 result/player 원본 삭제, seed는 원래7일 경계에 NULL. #215의 bounded 주기 정리; 익명 집계의 원래13달력개월 보존은 별도 |
+| 데일리 input log/첫 완료 | #112는 원래 completed_at에서 replay7일/record90일 anchor를 고정하고 own은 정확90일에 숨긴다. #215가 replay7일 NULL·record90일 삭제·검증 만료/미참조 definition 정리를 담당한다. 백업·실제 복구는 #25 |
 | 원시 분석 이벤트 | 30일, 익명 일별 집계13개월 |
 | 동의 기록 | 정책/목적 최소값180일 제안, 법적 검토 뒤 확정 |
 | 백업 | 일7개·주4개, 암호화와 제한 접근; 삭제 후 최대28일 잔존 고지 |
@@ -203,3 +203,5 @@ product_metric_aggregates는 metric+UTC period 키, computed_at/observed_through
 #184 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0085](../adr/0085-atomic-optional-event-storage.md) → 현재 세션/목적/revision의 같은 transaction 저장·별도 탭 상관키·불변 재시도·선택 raw30일/보존 → [검증184](../verification/184-optional-event-storage.md). 실제 CMP/공개 collector·외부147·상위21은 후속이다.
 
 #213 FR16·NFR02/05/07/08·TS28/29/31/35 → [ADR0098](../adr/0098-encrypted-backup-verification.md) → 스트리밍 age/custom dump·원래28일/손상검사·격리 빈DB 복원 → [검증213](../verification/213-encrypted-backup-verification.md). 실제 서비스 복구/최신 삭제 기록/이전 release/별도 매체/RPO·RTO는 #25 후속이다.
+
+#215 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/28/29/31/35 → [ADR0099](../adr/0099-source-retention.md) → 원래7일/90일 source 정리·동일transaction coverage 보정·bounded maintenance → [검증215](../verification/215-source-retention.md). 실제 서비스 복구/최신 삭제 기록/별도 매체/RPO·RTO는 #25 후속이다.

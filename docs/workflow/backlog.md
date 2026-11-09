@@ -256,3 +256,5 @@
 #211 FR01/10/11/14/16·NFR01/02/05/07/08·TS15/16/18/19/20/21/26/28/31/35/36 → [ADR0097](../adr/0097-isolated-container-deployment.md) → locked source 이미지·파일secret/nonroot·공개포트0·nginx32locale/오류·API/WS·정상stop → [검증211](../verification/211-isolated-container-deployment.md). 실제계정/호스트24·백업25/성능26/83은별도다.
 
 #213 FR16·NFR02/05/07/08·TS28/29/31/35 → [ADR0098](../adr/0098-encrypted-backup-verification.md) → 스트리밍 age/custom dump·원래28일/손상검사·격리 빈DB 복원 → [검증213](../verification/213-encrypted-backup-verification.md). 실제 서비스 복구/최신 삭제 기록/이전 release/별도 매체/RPO·RTO는 #25 후속이다.
+
+#215 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/28/29/31/35 → [ADR0099](../adr/0099-source-retention.md) → 원래7일/90일 source 정리·동일transaction coverage 보정·bounded maintenance → [검증215](../verification/215-source-retention.md). 실제 서비스 복구/최신 삭제 기록/별도 매체/RPO·RTO는 #25 후속이다.

@@ -4,8 +4,8 @@ use liar_server::daily::*;
 use liar_server::events::{
     AggregationMaintenance, EventRetentionMaintenance, OptionalEventAuthentication,
     PgAggregateRetention, PgAggregateStore, PgEventRetention, PgMetricReader,
-    PgOptionalEventRetention, PgOptionalEventStore, disabled_optional_event_router,
-    optional_event_router,
+    PgOptionalEventRetention, PgOptionalEventStore, PgSourceRetention,
+    disabled_optional_event_router, optional_event_router,
 };
 use liar_server::lobby::*;
 use liar_server::me::*;
@@ -143,6 +143,13 @@ async fn serve() -> ServerResult {
         );
         tokio::spawn(
             EventRetentionMaintenance::anonymous(Arc::new(PgAggregateRetention::new(
+                maintenance_pool.clone(),
+                auth_clock.clone(),
+            )))
+            .run(),
+        );
+        tokio::spawn(
+            EventRetentionMaintenance::source(Arc::new(PgSourceRetention::new(
                 maintenance_pool.clone(),
                 auth_clock.clone(),
             )))

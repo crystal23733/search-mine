@@ -30,6 +30,12 @@ impl EventRetentionMaintenance {
             component: "metric_retention",
         }
     }
+    pub fn source(store: Arc<dyn EventRetentionStore>) -> Self {
+        Self {
+            store,
+            component: "source_retention",
+        }
+    }
     pub async fn run_cycle(&self) -> Result<RetentionCycle, EventStoreError> {
         let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
         tokio::time::timeout_at(deadline, async {

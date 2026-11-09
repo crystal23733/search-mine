@@ -7,6 +7,7 @@ pub mod lobby;
 pub mod me;
 pub mod online;
 mod postgres_deadline;
+pub mod recovery;
 pub mod results;
 pub mod room_code;
 use axum::{
@@ -96,11 +97,7 @@ async fn ready(
         && let Some(pool) = &state.pool
     {
         matches!(
-            tokio::time::timeout(
-                Duration::from_secs(1),
-                sqlx::query("SELECT 1").execute(pool)
-            )
-            .await,
+            tokio::time::timeout(Duration::from_secs(1), recovery::ensure_serving(pool)).await,
             Ok(Ok(_))
         ) && state.available()
     } else {

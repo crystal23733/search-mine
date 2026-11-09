@@ -108,14 +108,26 @@ pub struct PgResultRuntime {
     clock: Arc<dyn AuthClock>,
     abort: AbortHandle,
 }
+async fn owner_key(connection: &mut PgConnection) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar("SELECT $1::bigint + 'online_match_results'::regclass::oid::bigint")
+        .bind(OWNER_NAMESPACE)
+        .fetch_one(connection)
+        .await
+}
+pub(crate) async fn recovery_lock(connection: &mut PgConnection) -> Result<bool, OnlineError> {
+    let key = owner_key(connection)
+        .await
+        .map_err(|_| OnlineError::Unavailable)?;
+    sqlx::query_scalar("SELECT pg_try_advisory_xact_lock($1)")
+        .bind(key)
+        .fetch_one(connection)
+        .await
+        .map_err(|_| OnlineError::Unavailable)
+}
 async fn claim_connection(pool: PgPool) -> Result<PgConnection, OnlineError> {
     timeout(DEADLINE, async {
         let mut connection = pool.acquire().await?.detach();
-        let key: i64 =
-            sqlx::query_scalar("SELECT $1::bigint + 'online_match_results'::regclass::oid::bigint")
-                .bind(OWNER_NAMESPACE)
-                .fetch_one(&mut connection)
-                .await?;
+        let key = owner_key(&mut connection).await?;
         let locked: bool = sqlx::query_scalar("SELECT pg_try_advisory_lock($1)")
             .bind(key)
             .fetch_one(&mut connection)

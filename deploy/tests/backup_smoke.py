@@ -76,6 +76,7 @@ class BackupSmoke(Smoke):
         self.results['configuration'] = True
         self.compose_run('up', '-d', '--wait', '--wait-timeout', '120', 'postgres')
         self.compose_run('run', '--rm', 'migrate', timeout=120)
+        require(self.fixture_sql("SELECT count(*) FROM service_recovery_control WHERE state='active';").stdout.strip()==b'1','Factory-empty source must be active')
         self.fixture_sql("""
 INSERT INTO auth_accounts VALUES('11111111-1111-4111-8111-111111111111','Backup fixture','2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');
 INSERT INTO auth_identities(id,account_id,provider,issuer,subject_digest,digest_key_version,linked_at)
@@ -122,6 +123,8 @@ SELECT count(*) FROM pg_constraint WHERE contype='f';"""
         require(self.fixture_sql("INSERT INTO auth_identities(id,account_id,provider,issuer,subject_digest,digest_key_version,linked_at) VALUES(gen_random_uuid(),gen_random_uuid(),'google','https://accounts.google.com',decode(repeat('cd',32),'hex'),1,now());", 'restored_fixture', okay=False).returncode != 0, 'Restored FK was not enforced')
         require(self.fixture_sql('UPDATE product_metric_aggregates SET expires_at=expires_at+1;', 'restored_fixture', okay=False).returncode != 0, 'Restored aggregate expiry was mutable')
         require(self.fixture_sql('UPDATE metric_collection SET coverage_since=started_at;', 'restored_fixture', okay=False).returncode != 0, 'Restored metric coverage regressed')
+        require(self.fixture_sql('SELECT count(*) FROM service_recovery_control;', 'restored_fixture').stdout.strip()==b'0', 'Managed backup must never restore an active runtime gate')
+        self.results['restored_gate_is_blocked'] = True
         self.results['empty_database_round_trip'] = True
         self.stage('Rejecting authenticated ciphertext damage, wrong identity and dump failures')
         damaged = 'backup-' + str(int(time.time())) + '-' + uuid.uuid4().hex

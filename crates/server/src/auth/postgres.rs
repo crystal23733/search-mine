@@ -135,6 +135,7 @@ impl AuthStore for PgAuthStore {
             .map_err(database_error)?;
         for query in [
             "DELETE FROM auth_deletion_tombstones WHERE expires_at<=to_timestamp($1)",
+            "DELETE FROM auth_identity_tombstones WHERE expires_at<=to_timestamp($1)",
             "DELETE FROM auth_apple_notification_receipts WHERE expires_at<=to_timestamp($1)",
             "DELETE FROM auth_apple_revoke_queue WHERE expires_at<=to_timestamp($1)",
         ] {

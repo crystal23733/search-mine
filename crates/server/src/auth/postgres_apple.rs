@@ -179,6 +179,7 @@ async fn detach_apple(
     if count <= 1 {
         erase_locked(tx, account, now).await?;
     } else {
+        super::postgres_rights::record_identity_removal(tx, account, Provider::Apple, now).await?;
         sqlx::query(
             "DELETE FROM auth_identities WHERE id=$1 AND account_id=$2 AND provider='apple'",
         )

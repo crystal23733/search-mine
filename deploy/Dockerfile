@@ -9,7 +9,7 @@ COPY . .
 FROM source AS server-build
 RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,target=/work/target \
     cargo build --release --locked -p liar-server --bins && \
-    mkdir /binaries && cp target/release/liar-server target/release/migrate target/release/metrics /binaries/
+    mkdir /binaries && cp target/release/liar-server target/release/migrate target/release/metrics target/release/recovery /binaries/
 
 FROM source AS web-build
 COPY --from=node /usr/local/ /usr/local/

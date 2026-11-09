@@ -50,6 +50,8 @@ mod optional_events;
 mod optional_retention;
 #[path = "postgres/personal.rs"]
 mod personal;
+#[path = "postgres/recovery.rs"]
+mod recovery;
 #[path = "postgres/source_retention.rs"]
 mod source_retention;
 #[tokio::test]
@@ -413,6 +415,9 @@ async fn auth_pool_through(last: Option<i64>) -> sqlx::PgPool {
         .connect(&url)
         .await
         .unwrap();
+    let fresh = liar_server::recovery::FreshSchema::inspect(&pool)
+        .await
+        .unwrap();
     let migrations = Migrator::new(Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../migrations"
@@ -429,6 +434,9 @@ async fn auth_pool_through(last: Option<i64>) -> sqlx::PgPool {
     .run(&pool)
     .await
     .unwrap();
+    if last.is_none() {
+        fresh.initialize(&pool).await.unwrap();
+    }
     pool
 }
 async fn close_auth_pool(pool: sqlx::PgPool) {
@@ -939,13 +947,7 @@ async fn auth_storage_enforces_minimal_data_atomic_consumption_rotation_and_cons
 #[tokio::test]
 #[ignore = "requires a real PostgreSQL DATABASE_URL; executed in the database CI job"]
 async fn readiness_tracks_actual_database_availability() {
-    let url = env::var("DATABASE_URL").expect("DATABASE_URL is required for this test");
-    let pool = PgPoolOptions::new()
-        .max_connections(2)
-        .acquire_timeout(Duration::from_secs(1))
-        .connect(&url)
-        .await
-        .expect("test PostgreSQL must be running");
+    let pool = auth_pool().await;
     let server = app(Some(pool.clone()));
     let request = || {
         Request::builder()
@@ -961,6 +963,12 @@ async fn readiness_tracks_actual_database_availability() {
         serde_json::from_slice::<serde_json::Value>(&body).unwrap(),
         serde_json::json!({"status":"ok"})
     );
+    liar_server::recovery::quarantine(&pool, &SystemAuthClock)
+        .await
+        .unwrap();
+    let quarantined = server.clone().oneshot(request()).await.unwrap();
+    assert_eq!(quarantined.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(quarantined.headers()["cache-control"], "no-store");
     close_auth_pool(pool).await;
     let response = server.oneshot(request()).await.unwrap();
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);

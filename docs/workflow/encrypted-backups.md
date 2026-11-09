@@ -42,3 +42,5 @@ docker compose --env-file /restricted/production.env -f deploy/compose.yml -f de
 ## 복구 출구
 
 자동 검증은 합성 데이터를 담은 고유 PG18의 빈 DB에 단일 transaction으로 복원하고 migrations/FK/원래 시각을 비교한다. 이는 실제 운영 RPO/RTO나 이전 release 호환성 측정이 아니다. 실제 서비스 복구 전에 최신 삭제 tombstone의 독립 내구 기록 재적용, 세션/거래/동의 무효화, 원래 만료시각의 정리와 metric coverage 보정, owner/ready 차단, 이전 실제 이미지·대표 API/순위 검증이 필요하다. 최신 삭제 기록을 확보할 수 없으면 접근을 열지 않는다. 이 출구와 별도 매체·실제 호스트 훈련은 상위 #25에 남는다.
+
+관리 dump는 service_recovery_control DATA를 제외한다. 복구 대상의 차단/원장 적용은 [복구 격리 절차](recovery-quarantine.md)를 따르며 apply 성공도 서비스 활성화를 뜻하지 않는다. 기존 gate 없는 백업의 migration도 자동 활성화하지 않는다.

@@ -70,6 +70,11 @@ async fn serve() -> ServerResult {
         .map_err(|_| "Database configuration is invalid")?;
     let config = load_auth_config(|name| env::var(name).ok(), read_private_key)
         .map_err(|_| "Authentication configuration is invalid")?;
+    if let Some(pool) = &pool {
+        liar_server::recovery::ensure_serving(pool)
+            .await
+            .map_err(|_| "Database is quarantined or unverified")?;
+    }
     let mut result_owner = None;
     let mut lifecycle = None;
     let auth = if let Some(config) = config {
@@ -100,6 +105,12 @@ async fn serve() -> ServerResult {
         );
         let origin = config.security.origin().to_string();
         let auth_pool = pool.clone().ok_or("Authentication requires a database")?;
+        let writer = PgJournalRuntime::claim(auth_pool.clone(), auth_clock.clone())
+            .await
+            .map_err(|_| "Online storage ownership unavailable")?;
+        liar_server::recovery::ensure_serving(&auth_pool)
+            .await
+            .map_err(|_| "Database is quarantined or unverified")?;
         let store = PgAuthStore::new(auth_pool.clone());
         tokio::spawn(async move {
             let clock = SystemAuthClock;
@@ -109,9 +120,6 @@ async fn serve() -> ServerResult {
                 let _ = store.cleanup(clock.now()).await;
             }
         });
-        let writer = PgJournalRuntime::claim(auth_pool.clone(), auth_clock.clone())
-            .await
-            .map_err(|_| "Online storage ownership unavailable")?;
         result_owner = Some(writer.health());
         let writer = Arc::new(writer);
         PgMetricReader::new(auth_pool.clone(), auth_clock.clone())

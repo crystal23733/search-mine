@@ -25,7 +25,7 @@ tokio = { version = "1.53.2", features = ["macros", "rt-multi-thread", "net", "s
 unicode-normalization = "0.1.25"
 unicode-segmentation = "1.13.3"
 url = "2.5.8"
-uuid = { version = "1.27.0", features = ["v4"] }
+uuid = { version = "1.27.0", features = ["serde", "v4"] }
 zeroize = { version = "1.9.1", features = ["derive"] }
 
 [dev-dependencies]

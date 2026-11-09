@@ -507,3 +507,5 @@ TS15/16/20/21/28/31/35/36: 첫신호→로비/registry입장직렬차단·queue/
 ## #211 격리 배포 기반
 
 TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제외, 파일secret누락/충돌·nonroot/read-only·DDL/DML분리/실migration·내부health·공개포트0·OAuth외부요청경로·32localeJSoff/개인querynoindex·403404실상태·API/WSproxy·hash캐시/필수헤더·실Dockerstop. 실제계정/Tunnel/호스트·성능/백업RPO/RTO는별도. [ADR0097](../adr/0097-isolated-container-deployment.md).
+
+#213 FR16·NFR02/05/07/08·TS28/29/31/35 → [ADR0098](../adr/0098-encrypted-backup-verification.md) → 스트리밍 age/custom dump·원래28일/손상검사·격리 빈DB 복원 → [검증213](../verification/213-encrypted-backup-verification.md). 실제 서비스 복구/최신 삭제 기록/이전 release/별도 매체/RPO·RTO는 #25 후속이다.

@@ -178,3 +178,21 @@ jobs:
             .tmp/liar-smoke-*/build-*.log
             .tmp/liar-smoke-*/failure.log
           retention-days: 7
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 -m unittest discover -s deploy/tests -p test_backup.py
+      - run: python3 deploy/tests/backup_smoke.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backup-summary
+          include-hidden-files: true
+          if-no-files-found: error
+          path: |
+            .tmp/liar-smoke-*/summary.json
+            .tmp/liar-smoke-*/build-*.log
+            .tmp/liar-smoke-*/failure.log
+          retention-days: 7

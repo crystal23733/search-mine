@@ -201,3 +201,5 @@ product_metric_aggregates는 metric+UTC period 키, computed_at/observed_through
 
 
 #184 FR01/13/16·NFR01/02/05/07/08·TS20/21/22/24/29/31/35/36 → [ADR0085](../adr/0085-atomic-optional-event-storage.md) → 현재 세션/목적/revision의 같은 transaction 저장·별도 탭 상관키·불변 재시도·선택 raw30일/보존 → [검증184](../verification/184-optional-event-storage.md). 실제 CMP/공개 collector·외부147·상위21은 후속이다.
+
+#213 FR16·NFR02/05/07/08·TS28/29/31/35 → [ADR0098](../adr/0098-encrypted-backup-verification.md) → 스트리밍 age/custom dump·원래28일/손상검사·격리 빈DB 복원 → [검증213](../verification/213-encrypted-backup-verification.md). 실제 서비스 복구/최신 삭제 기록/이전 release/별도 매체/RPO·RTO는 #25 후속이다.

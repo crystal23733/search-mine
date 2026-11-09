@@ -70,3 +70,5 @@ python3 deploy/tests/smoke.py --browser
 검사는 `liar-smoke-<random>` 프로젝트와 `.tmp`의 합성 비밀만 만든다. 처음 기동 상태에서 host published ports0을 검사한다. 실제 Chromium/WS 연결 단계에서만 생성한 override로127.0.0.1의 임의 포트를 열며 운영 compose에는 이 mapping이 없다. no-JS32문서와 실제 Rust WASM 튜토리얼을 검사한 뒤 제한 계정/세션 fixture로 인증 WS·자연 초기연결 취소의 실제 Docker stop/저장을 확인한다. 이는 실제 OAuth 인증/4분 전체 게임·최종 network ACK·운영 장비/실Tunnel 성공의 증거가 아니다.
 
 성공/실패 뒤에도 소유한 프로젝트의 컨테이너·네트워크·볼륨과 합성 비밀만 정리한다. 이미지/검증 summary는 남는다. 운영 DB에는 `down --volumes`를 사용하지 않는다. 백업·암호화·별도매체/복원·롤백 훈련과 측정 RPO/RTO는 #25, 미니PC 부하/성능은 #26의 미완료 출구다.
+
+암호화 백업 생성/검사/정리는 [백업 절차](encrypted-backups.md)를 따른다. 최신 삭제 기록/서비스 접근 차단과 실제 복구 출구는 #25에서 별도 검증한다.

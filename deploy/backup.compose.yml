@@ -1,0 +1,41 @@
+# Explicit operator overlay. Default deployment never starts a backup job.
+x-backup: &backup
+  image: ${LIAR_BACKUP_IMAGE:-liar-backup:local}
+  build:
+    context: ..
+    dockerfile: deploy/backup.Dockerfile
+    target: backup
+  user: '10001:10001'
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: ['/tmp:size=1g,mode=1777', '/var/lib/postgresql:size=1m,mode=0700,uid=10001,gid=10001']
+  volumes:
+    - ${LIAR_BACKUP_DIR:?Set restricted separate backup directory}:/backups
+  logging:
+    driver: json-file
+    options: {max-size: 1m, max-file: '2'}
+  restart: 'no'
+  mem_limit: 1536m
+  cpus: 1
+services:
+  backup:
+    <<: *backup
+    profiles: [backup]
+    command: [backup]
+    networks: [db]
+    secrets: [db_owner_password, backup_recipient]
+  backup-verify:
+    <<: *backup
+    profiles: [backup-verify]
+    command: [verify]
+    network_mode: none
+    secrets: [backup_identity]
+  backup-prune:
+    <<: *backup
+    profiles: [backup-prune]
+    command: [prune]
+    network_mode: none
+secrets:
+  backup_recipient: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/backup_recipient'}
+  backup_identity: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/backup_identity'}

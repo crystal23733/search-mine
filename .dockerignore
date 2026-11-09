@@ -49,6 +49,8 @@
 !tsconfig*.json
 !deploy/
 !deploy/Dockerfile
+!deploy/backup.py
+!deploy/backup.Dockerfile
 !deploy/entrypoint.sh
 !deploy/render-nginx.mjs
 !deploy/nginx.conf

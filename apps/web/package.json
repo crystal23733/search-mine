@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "icons:generate": "pwa-assets-generator --config build/pwa-assets.config.ts",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json && tsc --noEmit -p tsconfig.vite.json",

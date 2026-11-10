@@ -224,12 +224,14 @@ export function registerDailyOfficialTests(approve: Approve, login: Login) {
         expect(new Set(starts).size).toBe(2);
         expect(submissions).toHaveLength(3);
         expect(submissions[2]).toBe(submissions[1]);
-        const download = page.waitForEvent("download");
-        await page.getByRole("button", { name: "Download PNG" }).click();
-        const png = await download;
-        expect(
-          (await readFile((await png.path())!)).subarray(0, 8).toString("hex"),
-        ).toBe("89504e470d0a1a0a");
+        let downloads = 0;
+        page.on("download", () => downloads++);
+        await expect(
+          page.getByRole("button", { name: "Download PNG" }),
+        ).toHaveCount(0);
+        await expect(page.locator(".daily-mosaic")).toBeVisible();
+        await page.getByRole("button", { name: "Copy result" }).click();
+        expect(downloads).toBe(0);
         await page.screenshot({
           path: `.tmp/daily132-result-${width}.png`,
           fullPage: true,

@@ -195,6 +195,7 @@ class Smoke:
             for route in ["/", "/rules", "/storage", "/learn"]:
                 path = "/" + locale + route
                 status, headers, body = self.request(path)
+                require(b'rel="manifest"' in body, "Public document lacks PWA manifest")
                 require(status == 200 and b"<h1>" in body, "Public JavaScript-off document unavailable")
                 require((f'<html lang="{locale}">').encode() in body, "Static locale mismatch")
                 require((f'rel="canonical" href="{ORIGIN}{path}"').encode() in body, "Canonical origin/path mismatch")
@@ -220,6 +221,17 @@ class Smoke:
         require(status == 200 and len(providers) == 4 and all(not provider["available"] for provider in providers), "Absent real providers must stay disabled")
         status, _, _ = self.request("/api/v1/daily/submit", "POST", {"Content-Type": "application/json", "Origin": ORIGIN}, " " * (2 * 1024 * 1024))
         require(status != 413, "Proxy truncated the existing 2 MiB replay envelope")
+        status, manifest_headers, raw = self.request("/manifest.webmanifest")
+        require(status == 200 and "application/manifest+json" in manifest_headers["content-type"][0], "PWA manifest MIME/status mismatch")
+        manifest = json.loads(raw)
+        require(all(manifest[key] == "/" for key in ["id", "scope", "start_url"]) and manifest["display"] == "standalone", "PWA entry or identity changed")
+        for icon in manifest["icons"] + [{"src": "/icons/apple-touch-icon-180x180.png", "sizes": "180x180"}]:
+            code, icon_headers, png = self.request(icon["src"])
+            width, height = map(int, icon["sizes"].split("x"))
+            require(code == 200 and "image/png" in icon_headers["content-type"][0] and png[:8] == bytes.fromhex("89504e470d0a1a0a"), "PWA icon is missing or HTML")
+            require(int.from_bytes(png[16:20], "big") == width and int.from_bytes(png[20:24], "big") == height, "PWA icon dimensions mismatch")
+        require("manifest-src 'self'" in headers["content-security-policy"][0], "PWA manifest CSP absent")
+        self.results["pwa_manifest_and_icons"] = True
         self.results["public_documents"] = 32
         self.results["private_error_cache_api"] = True
 

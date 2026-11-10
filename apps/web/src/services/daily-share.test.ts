@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import {
   DEFAULT_RULES,
   type DailyView,
@@ -10,8 +10,24 @@ import {
   verifiedDailyShare,
   shareMosaic,
   shareText,
-  renderSharePng,
+  createSharePort,
 } from "./daily-share";
+test("web summaries only copy or share text and never expose a file download operation", async () => {
+  const copy = vi.fn(async () => {}),
+    share = vi.fn(async () => {});
+  const port = createSharePort({
+    clipboard: { writeText: copy } as unknown as Clipboard,
+    share,
+  });
+  expect("download" in port).toBe(false);
+  await port.copy("visible result");
+  await port.nativeShare("visible result");
+  expect(copy).toHaveBeenCalledWith("visible result");
+  expect(share).toHaveBeenCalledWith({
+    title: "Liar Sweeper",
+    text: "visible result",
+  });
+});
 test("share allowlist ignores names, seed, replay and actual board positions and always states local trust", () => {
   const view = {
     metadata: {
@@ -61,7 +77,7 @@ test("share allowlist ignores names, seed, replay and actual board positions and
     "unverified",
   );
 });
-test("verified cards select the receipt authority and both PNG trust labels without private fields", async () => {
+test("verified summaries select the receipt authority without private fields", async () => {
   const receipt = {
     completion_id: "PRIVATE-COMPLETION",
     attempt_id: "PRIVATE-ATTEMPT",
@@ -89,18 +105,4 @@ test("verified cards select the receipt authority and both PNG trust labels with
       DEFAULT_RULES,
     ),
   ).toThrow("verified_time_missing");
-  const labels: string[] = [];
-  const dom = {
-    createElement: () => ({
-      getContext: () => ({
-        fillRect: () => {},
-        fillText: (text: string) => labels.push(text),
-      }),
-      toBlob: (cb: (blob: Blob) => void) => cb(new Blob(["png"])),
-    }),
-  } as unknown as Document;
-  await renderSharePng(timed, "server verified", dom);
-  await renderSharePng(untimed, "completion verified", dom);
-  expect(labels).toContain("VERIFIED · SERVER TIME");
-  expect(labels).toContain("VERIFIED COMPLETION · TIME UNVERIFIED");
 });

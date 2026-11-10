@@ -1,5 +1,6 @@
 # 19. 테스트 시나리오
 
+> 2026-11-10 [ADR0101](../adr/0101-web-workflows-and-installable-pwa.md): 웹내 조회/관리와 선택적 PWA 설치가 현행 요구이며 남은 PNG 저장은 #221에서 제거한다. 과거 text/PNG 실행 기록은 이력으로 보존한다.
 > 2026-11-01 최신 변경: [ADR0081](../adr/0081-my-info-and-export-removal.md)의 내 정보/파일 다운로드 제거가 현행 목표다. 아래 #114 등 과거 export 실행 기록은 당시 구현 이력이며 새 다운로드 기능의 요구가 아니다.
 
 TS18/20/26/30 확장(#159): 앱 없는 두 탭의 첫 제어권 준비 후 동일workerURL bytes를 갱신한다. control과 stopping 직후 재시작 요청/실제old재시작/원래10초reload를 구분한다. Browser trace의 다른 소유자 보호·동기/누락 완료·상한/중복 정리를 확인하고 자연 E2E의 최초 실패·native 자료를 CI에 보존한다. [ADR0075](../adr/0075-native-worker-restart-observation.md). #83 제품 수정 완료를 주장하지 않는다.
@@ -523,3 +524,5 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 - 8언어 PC/모바일에서 설치 카드와 오류/취소 뒤 재이용·키보드/긴 번역 overflow를 확인한다. standalone 모드에서는 현재 앱 창 실행을 표시한다. 합성 설치 이벤트 시험과 실제 OS 설치를 구분한다.
 - 내정보·데일리 결과·두 공식 순위를 웹에서 조회·새로고침하며 다운로드 이벤트0/PNG 버튼0이다. 결과 복사/텍스트 공유 취소 후에도 웹 카드가 남는다. 설치 없이 기존 기능을 이용한다.
 - 실제 production HTTPS·배포에서 manifest/icons/CSP와 캐시된 오프라인 봇/데일리·공식순위 offline 안내/인증/API 비캐시·두탭 업데이트 회귀를 유지한다. #83과 실기기 설치/실제 OAuth 복귀는 별도 미완료로 보고한다.
+
+#221 FR01/09/10/11/16·NFR01/02/03/05/06/07/08·TS17/18/19/20/24/26/30/36 → [ADR0101](../adr/0101-web-workflows-and-installable-pwa.md) → InstallPort/8언어 설정·one-shot gesture/상태·manifest/PNG/maskable/Apple·동일origin 정적 제공·사용자 PNG다운로드 제거/웹 공유 → [검증221](../verification/221-installable-pwa.md). 실제 OS 설치/외부 origin·OAuth와 #83은 별도다.

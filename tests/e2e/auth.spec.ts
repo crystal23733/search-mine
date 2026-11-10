@@ -1,3 +1,4 @@
+import { pwaInstallationTests } from "./helpers/pwa-installation";
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
@@ -646,3 +647,6 @@ test("provider cancellation and authentication outage leave guest practice usabl
     ).toBe(true);
   }
 });
+
+// Production HTTPS metadata and UI contracts; synthetic events do not install the OS app.
+pwaInstallationTests();

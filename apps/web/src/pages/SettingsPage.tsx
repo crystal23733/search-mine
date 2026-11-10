@@ -8,6 +8,7 @@ import { NavLink } from "../ui/molecules/NavLink";
 import { PendingSubmission } from "../ui/organisms/PendingSubmission";
 import { StorageNotice } from "../ui/organisms/StorageNotice";
 import { ConsentSettings } from "../ui/organisms/ConsentSettings";
+import { InstallCard } from "../ui/organisms/InstallCard";
 import type { Preferences } from "../services/preferences";
 import { useSnapshot } from "../ui/useSnapshot";
 export function SettingsPage() {
@@ -35,6 +36,7 @@ export function SettingsPage() {
   return (
     <div class="reading-page">
       <h1>{t("settings")}</h1>
+      <InstallCard />
       <ConsentSettings />
       <p>{t("me.deviceOnly")}</p>
       <NavLink path="/me" class="button">

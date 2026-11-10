@@ -1,3 +1,4 @@
+import { createInstall } from "./services/install";
 import { render } from "preact";
 import { App } from "./App";
 import { createI18n } from "./services/i18n";
@@ -22,6 +23,7 @@ import "./styles.css";
 import type { DailyApi } from "./services/daily/types";
 const root = document.getElementById("app");
 if (!root) throw new Error("Application root is missing");
+const install = createInstall(window);
 let storage: Storage | undefined;
 try {
   storage = window.localStorage;
@@ -132,6 +134,7 @@ const optionalLanding = bindOptionalLanding(
   optionalEvents,
 );
 import.meta.hot?.dispose(() => {
+  install.dispose();
   autoAds.dispose();
   optionalLanding.dispose();
   optionalEvents.dispose();
@@ -141,6 +144,7 @@ root.replaceChildren();
 render(
   <App
     services={{
+      install,
       publicSiteOrigin: import.meta.env.VITE_PUBLIC_SITE_ORIGIN,
       consent,
       consentControl,

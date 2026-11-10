@@ -32,7 +32,7 @@ export function documentStatus(pathname: string): 200 | 403 | 404 {
 }
 export function isApplicationDocument(pathname: string): boolean {
   return (
-    !/^\/(?:api|ws|health|assets|src|node_modules|@vite|@id|@fs)(?:\/|$)/.test(
+    !/^\/(?:api|ws|health|assets|icons|src|node_modules|@vite|@id|@fs)(?:\/|$)/.test(
       pathname,
     ) &&
     !/^\/(?:service-worker\.js|registerSW\.js|favicon\.[^/]+|manifest\.[^/]+)$/.test(

@@ -1,3 +1,4 @@
+import { createInstall } from "../src/services/install";
 import { createDailyRecords } from "../src/services/daily-records";
 import { createActivity } from "../src/services/activity";
 import { createOffline } from "../src/services/offline";
@@ -9,6 +10,7 @@ export function dailyTestPorts() {
   const auth = guestAuthPorts();
   const records = createDailyRecords();
   return {
+    install: createInstall(),
     consent: createConsent(),
     consentControl: {
       read: async (owner: { accountId: string }) => ({
@@ -90,7 +92,6 @@ export function dailyTestPorts() {
     share: {
       copy: async () => {},
       nativeShare: async () => {},
-      download: async () => {},
     },
   };
 }

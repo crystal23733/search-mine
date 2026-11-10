@@ -86,13 +86,10 @@ export function DailyPage() {
   const summary = card
     ? `Liar Sweeper · ${card.date} UTC · v${card.version}\n${t(card.completed ? "daily.complete" : "daily.incomplete")} · ${t("daily.unverified")}\n${card.opened_safe}/${card.safe_total} · ${t("daily.personalTime")}: ${formatTime(card.elapsed_ms)}\n${t("match.mistakes", { count: card.mistakes })}`
     : "";
-  const share = (action: "copy" | "nativeShare" | "download") => {
+  const share = (action: "copy" | "nativeShare") => {
     if (!card || shareStatus === "busy") return;
     setShareStatus("busy");
-    const task =
-      action === "download"
-        ? services.share.download(card, summary)
-        : services.share[action](shareText(card, summary));
+    const task = services.share[action](shareText(card, summary));
     void task
       .then(() => setShareStatus("done"))
       .catch(() => setShareStatus("error"));
@@ -206,12 +203,6 @@ export function DailyPage() {
               onClick={() => share("copy")}
             >
               {t("daily.copy")}
-            </Button>
-            <Button
-              disabled={shareStatus === "busy"}
-              onClick={() => share("download")}
-            >
-              {t("daily.png")}
             </Button>
             <Button
               disabled={shareStatus === "busy"}

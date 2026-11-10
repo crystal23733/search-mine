@@ -19,6 +19,8 @@ export async function createWorkerUpdateServer(): Promise<WorkerUpdateServer> {
     ".js": "text/javascript",
     ".css": "text/css",
     ".wasm": "application/wasm",
+    ".png": "image/png",
+    ".webmanifest": "application/manifest+json",
   };
   const server = createServer((request, response) => {
     void (async () => {

@@ -1,3 +1,4 @@
+import type { InstallPort } from "./install";
 import type { PracticeCore, TrainingCore, DailyCore } from "@liar/core-bridge";
 import type { DailyRecordsPort } from "./daily-records";
 import type { SharePort } from "./daily-share";
@@ -18,6 +19,7 @@ import type { ConsentPort } from "./consent";
 import type { MePort } from "./me/types";
 import type { ConsentControlPort } from "./privacy/types";
 export interface AppServices {
+  install: InstallPort;
   publicSiteOrigin?: string;
   consentControl: ConsentControlPort;
   me: MePort;

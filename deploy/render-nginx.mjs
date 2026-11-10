@@ -37,7 +37,7 @@ ${LOCALES.flatMap(locale => PUBLIC_DOCUMENTS.map(route => `    "200:/${locale}${
 map "$status:$uri" $response_cache {
     default $document_cache;
     ~^200:/assets/[a-zA-Z0-9_/-]+-[a-zA-Z0-9_-]+\\.(?:js|css|wasm)$ "public, max-age=31536000, immutable";
-    ~^200:/(?:core/|service-worker\\.js|robots\\.txt|sitemap\\.xml) "no-cache";
+    ~^200:/(?:core/|icons/|manifest\\.webmanifest|service-worker\\.js|robots\\.txt|sitemap\\.xml) "no-cache";
     ~^[0-9]+:/(?:api/|health/) "no-store";
 }
 map $http_upgrade $connection_upgrade {
@@ -45,7 +45,7 @@ map $http_upgrade $connection_upgrade {
     websocket upgrade;
 }
 map $uri $content_security_policy {
-    default "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; worker-src 'self' blob:; connect-src 'self'${ws}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+    default "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; worker-src 'self' blob:; connect-src 'self'${ws}; manifest-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 }
 `;
 writeFileSync(process.argv[2] ?? 'deploy/routes.generated.conf', config);

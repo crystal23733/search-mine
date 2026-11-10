@@ -80,7 +80,7 @@ export function OfficialDailyPage() {
   const summary = card
     ? `Liar Sweeper · ${card.date} UTC · v${card.version}\n${t(card.completed ? "daily.complete" : "daily.incomplete")} · ${t(card.trust === "unverified" ? "daily.unverified" : card.trust === "verified_time" ? "official.verifiedTime" : "official.verifiedCompletion")}\n${card.opened_safe}/${card.safe_total} · ${t(card.trust === "verified_time" ? "ranking.elapsed" : "daily.personalTime")}: ${format(card.elapsed_ms)}\n${t("match.mistakes", { count: card.mistakes })}`
     : "";
-  const share = (action: "copy" | "nativeShare" | "download") => {
+  const share = (action: "copy" | "nativeShare") => {
     if (!card || sharing === "busy") return;
     const current = controller.result();
     if (card.trust !== "unverified" && !current) return;
@@ -90,10 +90,7 @@ export function OfficialDailyPage() {
     const currentShare = () =>
       controller.read().generation === generation &&
       services.auth.revision() === ownerRevision;
-    const task =
-      action === "download"
-        ? services.share.download(card, summary)
-        : services.share[action](shareText(card, summary));
+    const task = services.share[action](shareText(card, summary));
     void task
       .then(() => {
         if (currentShare()) setSharing("done");
@@ -283,16 +280,6 @@ export function OfficialDailyPage() {
               onClick={() => share("copy")}
             >
               {t("daily.copy")}
-            </Button>
-            <Button
-              disabled={
-                sharing === "busy" ||
-                state.status === "saving" ||
-                state.status === "submitting"
-              }
-              onClick={() => share("download")}
-            >
-              {t("daily.png")}
             </Button>
             <Button
               disabled={

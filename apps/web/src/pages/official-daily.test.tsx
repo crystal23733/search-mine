@@ -63,7 +63,6 @@ async function setup(guest = false) {
     dispose: vi.fn(),
   };
   const copy = vi.fn<AppServices["share"]["copy"]>(async () => {}),
-    download = vi.fn<AppServices["share"]["download"]>(async () => {}),
     nativeShare = vi.fn<AppServices["share"]["nativeShare"]>(async () => {});
   const services: AppServices = {
     ...base,
@@ -100,7 +99,7 @@ async function setup(guest = false) {
     boardRenderer: async () => {
       throw Error("DOM fallback");
     },
-    share: { copy, download, nativeShare },
+    share: { copy, nativeShare },
   };
   const rendered = render(
     <Ui.Provider
@@ -130,7 +129,6 @@ async function setup(guest = false) {
     own,
     core,
     copy,
-    download,
     nativeShare,
     change,
     receipt,
@@ -187,8 +185,7 @@ test("own result and all share actions use the receipt without daily writes and 
   expect(s.copy.mock.calls[0][0]).not.toMatch(
     /PrivateName|private-completion|first-attempt|seed|ticket/,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
-  await waitFor(() => expect(s.download).toHaveBeenCalled());
+  expect(screen.queryByRole("button", { name: "Download PNG" })).toBeNull();
   fireEvent.click(
     screen.getByRole("button", { name: "Share result", exact: true }),
   );

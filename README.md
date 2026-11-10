@@ -10,6 +10,12 @@
 
 복구 대상의 기본 차단과 owner 전용 삭제 원장 적용은 [복구 격리 절차](docs/workflow/recovery-quarantine.md)를 따릅니다. 빈 설치만 최초 활성화하고 복구/기존 DB는 자동 재개하지 않습니다.
 
+## 웹 이용과 앱 설치
+
+전적·계정·설정·공식 순위는 웹에서 조회·처리하며 데일리 PNG 다운로드도 제공하지 않습니다. 결과는 웹 카드에서 확인하고 복사·텍스트 공유할 수 있습니다. `/{locale}/daily/rankings`에서 두 공식 순위를 조회·새로고침합니다.
+
+`/{locale}/settings`에서 선택적으로 Liar Sweeper를 설치할 수 있습니다. 지원하는 브라우저는 설치 버튼, 그 외에는 브라우저 메뉴·홈 화면 추가 안내를 제공합니다. 설치 없이도 웹 기능을 이용할 수 있습니다. 캐시가 준비된 연습은 오프라인으로, 공식 대전·순위는 연결 후 이용합니다. [설치와 실기기 검수](docs/workflow/pwa-installation.md)·[구현 검증 #221](docs/verification/221-installable-pwa.md)을 확인하세요.
+
 ## 먼저 읽을 문서
 
 필수 이벤트의 원본 transaction 수집·원시30일 보존·NSM/D7·익명13개월 보존·내부 운영 조회는 [#145의 #20 통합 감사](docs/verification/145-anonymous-metrics-retention-and-operations.md)까지 완료했다. 실제 사용 지표 달성·선택 수집·운영 장비 실측은 별도다.

@@ -230,7 +230,7 @@ test("daily native/WASM completed replay and production worker share the same pu
   expect(result.workerStep).toEqual(daily.events[0].expected);
   expect(result.workerReplay.inputs).toEqual([daily.replay.inputs[0]]);
 });
-test("UTC daily preserves a running board across midnight and locale, completes locally and shares a real PNG", async ({
+test("UTC daily preserves a running board across midnight and locale, completes locally and shares its visible result without downloads", async ({
   page,
   context,
 }, info) => {
@@ -270,15 +270,12 @@ test("UTC daily preserves a running board across midnight and locale, completes 
   ).toBeVisible();
   await expect(page.getByText("First local completion saved.")).toBeVisible();
   await expect(page.locator(".daily-records li")).toHaveCount(1);
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download PNG" }).click();
-  const png = await download;
-  expect(png.suggestedFilename()).toBe("liar-daily-2026-10-07.png");
-  const path = await png.path();
-  const bytes = readFileSync(path!);
-  expect(bytes.subarray(1, 4).toString()).toBe("PNG");
-  expect(bytes.readUInt32BE(16)).toBe(800);
-  expect(bytes.readUInt32BE(20)).toBe(600);
+  let downloads = 0;
+  page.on("download", () => downloads++);
+  await expect(page.getByRole("button", { name: "Download PNG" })).toHaveCount(
+    0,
+  );
+  await expect(page.locator(".daily-mosaic")).toBeVisible();
   if (info.project.name === "chromium") {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.getByRole("button", { name: "Copy result" }).click();
@@ -304,6 +301,7 @@ test("UTC daily preserves a running board across midnight and locale, completes 
     requests.filter((uri) => unrequestedServiceCall(uri, page.url())),
   ).toEqual([]);
   expect(page.url()).toContain("code=ABCD1234#invite");
+  expect(downloads).toBe(0);
 });
 test("denied storage and clipboard keep the solo puzzle operable and UTC timeout never saves completion", async ({
   page,
@@ -327,7 +325,7 @@ test("denied storage and clipboard keep the solo puzzle operable and UTC timeout
   await page.getByRole("button", { name: "Copy result" }).click();
   await expect(
     page.getByText(
-      "Sharing is unavailable or cancelled. Try copying the result or downloading a PNG.",
+      "Sharing is unavailable or cancelled. You can read the result here or try copying it.",
     ),
   ).toBeVisible();
   await page.clock.fastForward(243000);

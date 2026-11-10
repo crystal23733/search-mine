@@ -339,7 +339,7 @@ async fn serving_can_read_but_never_change_the_runtime_gate() {
     serving.close().await;
     close_auth_pool(pool).await;
 }
-async fn cli(
+pub(super) async fn cli(
     pool: &sqlx::PgPool,
     args: &[&str],
     input: &[u8],

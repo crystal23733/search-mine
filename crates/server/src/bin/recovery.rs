@@ -1,14 +1,15 @@
-//! Owner-only offline sanitation. No activation/release command is provided.
+//! Owner-only recovery transport. No activation/release command is provided.
 use liar_server::{
-    auth::SystemAuthClock,
-    recovery::{self, Ledger, MAX_BYTES, RecoveryError},
+    auth::{AuthClock, SystemAuthClock},
+    recovery::{self, Ledger, MAX_BYTES, RecoveryError, Snapshot},
 };
 use sqlx::postgres::PgPoolOptions;
 use std::{
     env,
-    io::{self, Read},
+    io::{self, Read, Write},
     time::Duration,
 };
+use uuid::Uuid;
 use zeroize::Zeroizing;
 #[tokio::main]
 async fn main() {
@@ -17,21 +18,42 @@ async fn main() {
         std::process::exit(1);
     }
 }
+enum Command {
+    Quarantine,
+    Capture,
+    Apply(Ledger),
+    ApplySnapshot(Uuid, Snapshot),
+}
+fn read_input() -> Result<Zeroizing<Vec<u8>>, RecoveryError> {
+    let mut bytes = Zeroizing::new(Vec::new());
+    io::stdin()
+        .take((MAX_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .map_err(|_| RecoveryError::Invalid)?;
+    Ok(bytes)
+}
 async fn run() -> Result<(), RecoveryError> {
     let args = env::args().skip(1).collect::<Vec<_>>();
-    if args.len() != 1 || !matches!(args[0].as_str(), "quarantine" | "apply") {
-        return Err(RecoveryError::Invalid);
-    }
-    let ledger = if args[0] == "apply" {
-        let mut bytes = Zeroizing::new(Vec::new());
-        io::stdin()
-            .take((MAX_BYTES + 1) as u64)
-            .read_to_end(&mut bytes)
-            .map_err(|_| RecoveryError::Invalid)?;
-        use liar_server::auth::AuthClock;
-        Some(Ledger::parse(&bytes, SystemAuthClock.now())?)
-    } else {
-        None
+    let command = match args
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
+        ["quarantine"] => Command::Quarantine,
+        ["capture"] => Command::Capture,
+        ["apply"] => Command::Apply(Ledger::parse(&read_input()?, SystemAuthClock.now())?),
+        ["apply-snapshot", incident] => {
+            let incident = Uuid::parse_str(incident).map_err(|_| RecoveryError::Invalid)?;
+            if incident.is_nil() {
+                return Err(RecoveryError::Invalid);
+            }
+            Command::ApplySnapshot(
+                incident,
+                Snapshot::parse(&read_input()?, SystemAuthClock.now())?,
+            )
+        }
+        _ => return Err(RecoveryError::Invalid),
     };
     let url = env::var("MIGRATION_DATABASE_URL").map_err(|_| RecoveryError::Invalid)?;
     let pool = PgPoolOptions::new()
@@ -40,18 +62,36 @@ async fn run() -> Result<(), RecoveryError> {
         .connect(&url)
         .await
         .map_err(|_| RecoveryError::Unavailable)?;
-    if let Some(ledger) = ledger {
-        let applied = recovery::apply(&pool, &SystemAuthClock, &ledger).await?;
-        println!(
-            "{}",
-            serde_json::json!({"state":"quarantined","applied":applied})
-        );
-    } else {
-        let id = recovery::quarantine(&pool, &SystemAuthClock).await?;
-        println!(
-            "{}",
-            serde_json::json!({"state":"quarantined","recovery_id":id})
-        );
+    match command {
+        Command::Quarantine => {
+            let id = recovery::quarantine(&pool, &SystemAuthClock).await?;
+            println!(
+                "{}",
+                serde_json::json!({"state":"quarantined","recovery_id":id})
+            );
+        }
+        Command::Capture => {
+            let snapshot = recovery::capture(&pool, &SystemAuthClock).await?;
+            let bytes = Zeroizing::new(snapshot.to_bytes(SystemAuthClock.now())?);
+            io::stdout()
+                .write_all(&bytes)
+                .map_err(|_| RecoveryError::Unavailable)?;
+        }
+        Command::Apply(ledger) => {
+            let applied = recovery::apply(&pool, &SystemAuthClock, &ledger).await?;
+            println!(
+                "{}",
+                serde_json::json!({"state":"quarantined","applied":applied})
+            );
+        }
+        Command::ApplySnapshot(incident, snapshot) => {
+            let applied =
+                recovery::apply_snapshot(&pool, &SystemAuthClock, incident, &snapshot).await?;
+            println!(
+                "{}",
+                serde_json::json!({"state":"quarantined","applied":applied})
+            );
+        }
     }
     pool.close().await;
     Ok(())

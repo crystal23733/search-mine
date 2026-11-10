@@ -513,3 +513,13 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 #215 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/28/29/31/35 → [ADR0099](../adr/0099-source-retention.md) → 원래7일/90일 source 정리·동일transaction coverage 보정·bounded maintenance → [검증215](../verification/215-source-retention.md). 실제 서비스 복구/최신 삭제 기록/별도 매체/RPO·RTO는 #25 후속이다.
 
 #217 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0100](../adr/0100-recovery-quarantine.md) → 복구 gate 기본차단·최소 권리 원장 재적용/세션무효화·quarantine 유지 → [검증217](../verification/217-recovery-quarantine.md). 최신 원장 독립 내구·완전성/release와 실제 매체/RPO·RTO는 #25 후속이다.
+
+## 웹내 처리·선택적 PWA 확장 (#219)
+
+[ADR0101](../adr/0101-web-workflows-and-installable-pwa.md) · FR01/09/10/11/16 · TS17/18/19/20/24/26/30/36.
+
+- 일반 탭에서 manifest/192·512·maskable/Apple 아이콘이 실제 MIME/상태로 제공되고 공개8언어 문서도 연결한다. 설치 시작 URL은 계정/query 없는 `/`이며 기존 언어로 복귀한다.
+- 설정은 실제 prompt 전에는 브라우저/홈화면 추가 안내, prompt 후에는 명시 버튼을 제공한다. 사용자 클릭 전에 prompt0, 동기 클릭에서1회, 중복0; 취소/throw/reject/appinstalled/mediachange/구독 해제·dispose 후 늦은 promise를 검증한다. accepted와 실제 설치/앱창 실행을 혼동하지 않는다.
+- 8언어 PC/모바일에서 설치 카드와 오류/취소 뒤 재이용·키보드/긴 번역 overflow를 확인한다. standalone 모드에서는 현재 앱 창 실행을 표시한다. 합성 설치 이벤트 시험과 실제 OS 설치를 구분한다.
+- 내정보·데일리 결과·두 공식 순위를 웹에서 조회·새로고침하며 다운로드 이벤트0/PNG 버튼0이다. 결과 복사/텍스트 공유 취소 후에도 웹 카드가 남는다. 설치 없이 기존 기능을 이용한다.
+- 실제 production HTTPS·배포에서 manifest/icons/CSP와 캐시된 오프라인 봇/데일리·공식순위 offline 안내/인증/API 비캐시·두탭 업데이트 회귀를 유지한다. #83과 실기기 설치/실제 OAuth 복귀는 별도 미완료로 보고한다.

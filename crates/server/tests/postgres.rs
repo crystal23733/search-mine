@@ -52,6 +52,8 @@ mod optional_retention;
 mod personal;
 #[path = "postgres/recovery.rs"]
 mod recovery;
+#[path = "postgres/recovery_snapshot.rs"]
+mod recovery_snapshot;
 #[path = "postgres/source_retention.rs"]
 mod source_retention;
 #[tokio::test]

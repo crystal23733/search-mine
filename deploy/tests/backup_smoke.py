@@ -113,6 +113,7 @@ with backup.decrypt(encrypted, __import__('pathlib').Path('/run/secrets/backup_i
         self.image_script(restore(name, 'restored_fixture'), self.project + '_db')
         self.results['fixture_restore_seconds'] = round(time.monotonic() - started, 3)
         snapshot = """SELECT version,encode(checksum,'hex') FROM _sqlx_migrations ORDER BY version;
+SELECT source_id::text FROM service_recovery_origin WHERE singleton;
 SELECT row_to_json(a)::text FROM auth_accounts a ORDER BY id;
 SELECT row_to_json(i)::text FROM auth_identities i ORDER BY id;
 SELECT row_to_json(t)::text FROM auth_deletion_tombstones t ORDER BY account_id;
@@ -124,6 +125,8 @@ SELECT count(*) FROM pg_constraint WHERE contype='f';"""
         require(self.fixture_sql('UPDATE product_metric_aggregates SET expires_at=expires_at+1;', 'restored_fixture', okay=False).returncode != 0, 'Restored aggregate expiry was mutable')
         require(self.fixture_sql('UPDATE metric_collection SET coverage_since=started_at;', 'restored_fixture', okay=False).returncode != 0, 'Restored metric coverage regressed')
         require(self.fixture_sql('SELECT count(*) FROM service_recovery_control;', 'restored_fixture').stdout.strip()==b'0', 'Managed backup must never restore an active runtime gate')
+        require(self.fixture_sql('SELECT count(*) FROM service_recovery_origin;', 'restored_fixture').stdout.strip()==b'1', 'Managed backup must retain source origin')
+        self.results['restored_source_origin'] = True
         self.results['restored_gate_is_blocked'] = True
         self.results['empty_database_round_trip'] = True
         self.stage('Rejecting authenticated ciphertext damage, wrong identity and dump failures')

@@ -177,8 +177,8 @@ class Smoke:
         for network in ["app", "db"]:
             actual = json.loads(self.run(["docker", "network", "inspect", self.project + "_" + network]).stdout)[0]
             require(actual["Internal"], "Docker did not isolate the app/DB network")
-        gate = self.sql("SELECT has_table_privilege('liar_app','service_recovery_control','SELECT'),has_table_privilege('liar_app','service_recovery_control','UPDATE'),has_table_privilege('liar_app','auth_identity_tombstones','UPDATE');", app=True).stdout.strip()
-        require(gate == b"t|f|f", "Serving acquired recovery activation or tombstone rewrite privileges")
+        gate = self.sql("SELECT has_table_privilege('liar_app','service_recovery_control','SELECT'),has_table_privilege('liar_app','service_recovery_control','UPDATE'),has_table_privilege('liar_app','auth_identity_tombstones','UPDATE'),has_table_privilege('liar_app','service_recovery_origin','SELECT'),has_table_privilege('liar_app','service_recovery_origin','UPDATE');", app=True).stdout.strip()
+        require(gate == b"t|f|f|f|f", "Serving acquired recovery activation or tombstone rewrite privileges")
 
         require(self.inspect("migrate")["State"]["ExitCode"] == 0 and self.inspect("grant")["State"]["ExitCode"] == 0, "Migration and grants must complete")
         comm = self.compose_run("exec", "-T", "server", "cat", "/proc/1/comm").stdout.strip()

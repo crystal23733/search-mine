@@ -446,5 +446,6 @@
   "install.standalone": "Vous utilisez Liar Sweeper dans une fenêtre d’application.",
   "install.dismissed": "Installation annulée. Vous pouvez continuer à utiliser le site.",
   "install.failed": "Impossible d’ouvrir la demande d’installation. Essayez le menu d’installation du navigateur.",
-  "install.network": "L’entraînement hors ligne nécessite un cache prêt sur cet appareil. Les parties en ligne et les classements officiels nécessitent une connexion."
+  "install.network": "L’entraînement hors ligne nécessite un cache prêt sur cet appareil. Les parties en ligne et les classements officiels nécessitent une connexion.",
+  "offline.applying": "Application des modifications. Veuillez patienter."
 }

@@ -1,4 +1,5 @@
 import type { ActivityPort } from "./activity";
+import type { UpdateInteractionPort } from "./update-interaction";
 export interface OfflineState {
   online: boolean;
   ready: boolean;
@@ -19,6 +20,7 @@ export function createOffline(
   options?: {
     window: Window;
     enabled: boolean;
+    interaction: UpdateInteractionPort;
     storage?: Pick<Storage, "getItem" | "setItem">;
   },
 ): OfflinePort {
@@ -112,9 +114,12 @@ export function createOffline(
       if (
         event.data?.type === "prepare" &&
         typeof event.data.token === "string"
-      )
-        event.ports[0]?.postMessage(activity.prepare(event.data.token));
-      else if (
+      ) {
+        const prepared = activity.prepare(event.data.token);
+        const ready = prepared && options!.interaction.ready();
+        if (prepared && !ready) activity.release(event.data.token);
+        event.ports[0]?.postMessage(ready);
+      } else if (
         event.data?.type === "release" &&
         typeof event.data.token === "string"
       )

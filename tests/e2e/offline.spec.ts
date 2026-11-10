@@ -33,6 +33,89 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem("liar.tutorial.v1", '"skipped"'),
   );
 });
+test("prepared idle document blocks link input before ACK and restores focus after release in eight languages", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  for (const locale of ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"]) {
+    await page.goto(`/${locale}/settings`);
+    await expect
+      .poll(
+        () => page.evaluate(() => Boolean(navigator.serviceWorker.controller)),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+    const language = page.locator("header select");
+    await language.focus();
+    const link = page.locator("header a.brand"),
+      box = await link.boundingBox();
+    expect(box).not.toBeNull();
+    const before = page.url();
+    const acknowledged = await page.evaluate(
+      () =>
+        new Promise<boolean>((resolve) => {
+          const channel = new MessageChannel();
+          channel.port1.onmessage = (event) => {
+            channel.port1.close();
+            channel.port2.close();
+            resolve(event.data === true);
+          };
+          // UI contract injection only; normal lifecycle/reload tests use actual worker messages.
+          navigator.serviceWorker.dispatchEvent(
+            new MessageEvent("message", {
+              source: navigator.serviceWorker.controller,
+              data: { type: "prepare", token: "input-barrier-contract" },
+              ports: [channel.port2],
+            }),
+          );
+        }),
+    );
+    expect(acknowledged).toBe(true);
+    const modal = page.locator("dialog.update-interaction");
+    await expect(modal).toBeVisible();
+    expect(await modal.evaluate((element) => element.matches(":modal"))).toBe(
+      true,
+    );
+    const messages = JSON.parse(
+      readFileSync(
+        new URL(
+          `../../apps/web/src/locales/${locale}/common.json`,
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    await expect(modal).toHaveAccessibleName(messages["offline.applying"]);
+    await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await page.keyboard.press("Escape");
+    await expect(modal).toBeVisible();
+    expect(page.url()).toBe(before);
+    await page.evaluate(() =>
+      navigator.serviceWorker.dispatchEvent(
+        new MessageEvent("message", {
+          source: navigator.serviceWorker.controller,
+          data: { type: "release", token: "other" },
+        }),
+      ),
+    );
+    await expect(modal).toBeVisible();
+    await page.evaluate(() =>
+      navigator.serviceWorker.dispatchEvent(
+        new MessageEvent("message", {
+          source: navigator.serviceWorker.controller,
+          data: { type: "release", token: "input-barrier-contract" },
+        }),
+      ),
+    );
+    await expect(modal).toHaveCount(0);
+    await expect(language).toBeFocused();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+});
 test("production precaches public WASM and all locales; offline reload starts a real daily without creating an account", async ({
   page,
   context,
@@ -170,6 +253,57 @@ test("offline completion atomically survives reload with a pending replay; setti
   await expect(page.getByText("Pending local results: 0")).toBeVisible();
   await page.goto("/en/daily");
   await expect(page.locator(".daily-records li")).toHaveCount(0);
+});
+test("concurrent link input cannot strand a two-tab idle update", async ({
+  page,
+  context,
+  workerUpdate,
+}) => {
+  test.setTimeout(60_000);
+  await page.goto(`${workerUpdate.origin}/en/settings`);
+  await expect(
+    page.getByText("Public local play assets are cached on this device."),
+  ).toBeVisible();
+  const other = await context.newPage();
+  await other.goto(`${workerUpdate.origin}/en/settings`);
+  for (const tab of [page, other])
+    await expect
+      .poll(() =>
+        tab.evaluate(() => navigator.serviceWorker.controller?.scriptURL),
+      )
+      .toBe(`${workerUpdate.origin}/service-worker.js`);
+  const box = await other.locator("header a.brand").boundingBox();
+  expect(box).not.toBeNull();
+  workerUpdate.advance();
+  await page.evaluate(async () => {
+    await (await navigator.serviceWorker.getRegistration("/"))!.update();
+  });
+  await expect(
+    page.getByRole("button", { name: "Apply update" }),
+  ).toBeEnabled();
+  await Promise.all([
+    page.waitForEvent("load", { timeout: 10000 }),
+    other.waitForEvent("load", { timeout: 10000 }),
+    (async () => {
+      const input = (async () => {
+        for (let i = 0; i < 8; i++)
+          await other.mouse.click(
+            box!.x + box!.width / 2,
+            box!.y + box!.height / 2,
+          );
+      })();
+      await page.getByRole("button", { name: "Apply update" }).click();
+      await input;
+    })(),
+  ]);
+  for (const tab of [page, other]) {
+    await expect
+      .poll(() =>
+        tab.evaluate(() => sessionStorage.getItem("offline-test-boots")),
+      )
+      .toBe("2");
+    await expect(tab.locator("dialog.update-interaction")).toHaveCount(0);
+  }
 });
 test("two-tab update cannot interrupt a game; idle update reloads both, cache deletion is scoped and can be re-enabled", async ({
   page,

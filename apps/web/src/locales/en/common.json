@@ -446,5 +446,6 @@
   "install.standalone": "You are using Liar Sweeper in an app window.",
   "install.dismissed": "Installation was cancelled. You can keep using the website.",
   "install.failed": "The installation prompt could not be opened. Try your browser’s installation menu.",
-  "install.network": "Offline practice needs a prepared cache on this device. Online matches and official rankings require a connection."
+  "install.network": "Offline practice needs a prepared cache on this device. Online matches and official rankings require a connection.",
+  "offline.applying": "Applying changes. Please wait."
 }

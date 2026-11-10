@@ -446,5 +446,6 @@
   "install.standalone": "Du verwendest Liar Sweeper in einem App-Fenster.",
   "install.dismissed": "Installation abgebrochen. Du kannst die Website weiter nutzen.",
   "install.failed": "Die Installationsanfrage konnte nicht geöffnet werden. Nutze das Installationsmenü des Browsers.",
-  "install.network": "Offline-Übung benötigt einen vorbereiteten Cache auf diesem Gerät. Online-Partien und offizielle Ranglisten benötigen eine Verbindung."
+  "install.network": "Offline-Übung benötigt einen vorbereiteten Cache auf diesem Gerät. Online-Partien und offizielle Ranglisten benötigen eine Verbindung.",
+  "offline.applying": "Änderungen werden übernommen. Bitte warten."
 }

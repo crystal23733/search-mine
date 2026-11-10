@@ -1,4 +1,5 @@
 import { createInstall } from "./services/install";
+import { createUpdateInteraction } from "./ui/atoms/update-interaction";
 import { render } from "preact";
 import { App } from "./App";
 import { createI18n } from "./services/i18n";
@@ -17,7 +18,7 @@ import type { ConsentControlPort } from "./services/privacy/types";
 import { createBrowserAuth } from "./services/auth/browser";
 import { createAuthHttp } from "./services/auth/http";
 import { createPendingSubmissions } from "./services/pending-submissions";
-import { chooseLocale, localizedPath } from "./services/locale";
+import { chooseLocale, localizedPath, isLocale } from "./services/locale";
 import "@liar/design-tokens/tokens.css";
 import "./styles.css";
 import type { DailyApi } from "./services/daily/types";
@@ -50,6 +51,14 @@ if (!location.pathname.startsWith(`/${locale}/`))
   );
 const i18n = await createI18n(locale);
 const activity = createActivity();
+const interaction = createUpdateInteraction(activity, document, () =>
+  i18n.t(
+    isLocale(document.documentElement.lang)
+      ? document.documentElement.lang
+      : locale,
+    "offline.applying",
+  ),
+);
 const account = createBrowserAuth(
   window,
   createAuthHttp(window.fetch.bind(window)),
@@ -73,6 +82,7 @@ const pendingSubmissions = createPendingSubmissions(records, account.auth, {
   },
 });
 const offline = createOffline(activity, {
+  interaction,
   window,
   enabled: import.meta.env.PROD,
   storage,
@@ -135,6 +145,7 @@ const optionalLanding = bindOptionalLanding(
 );
 import.meta.hot?.dispose(() => {
   install.dispose();
+  interaction.dispose();
   autoAds.dispose();
   optionalLanding.dispose();
   optionalEvents.dispose();

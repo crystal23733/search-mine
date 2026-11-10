@@ -38,3 +38,5 @@ TDD는 activity lease/시작 경합·busy/누락/새 client 업데이트·DB upg
 cache state가 render와 effect subscribe 사이에 먼저 갱신되는 경합을 실제 offline reload에서 확인했다. useSnapshot은 subscribe 직후 최신 read도 반영한다. offline startup에서는 새로운 네트워크 등록을 요구하지 않고 기존 active registration을 조회한다. SW 캐시는 브라우저가 삭제할 수 있으며 installed 상태가 영구 보존을 보장하지 않는다.
 
 [Workbox precaching](https://developer.chrome.com/docs/workbox/modules/workbox-precaching), [VitePWA injectManifest](https://vite-pwa-org.netlify.app/guide/inject-manifest.html), [prompt update](https://vite-pwa-org.netlify.app/guide/prompt-for-update.html), [SW skipWaiting 표준](https://w3c.github.io/ServiceWorker/#service-worker-global-scope-skipwaiting)을 확인했다. 표준 skipWaiting 자체는 모든 게임이 idle임을 보장하지 않으므로 별도 prepare/lock 경계를 구현한다.
+
+2026-11-10 [ADR0102](0102-update-interaction-barrier.md)은 #83 입력 경합에 대해 준비 ACK 전에 native modal로 입력을 잠그도록 보완한다. 기존 새 core guard만으로 남았던 링크 입력/Warm Up을 실제 앱에서4/8실패로 재현했고 동기 장벽·NACK·같은 lease/focus 수명과24+64retry0 대조를 확인했다. 기존 worker/재로드 조건·비캐시/등록/타이머/flags는 유지하며 전체CI·병합/종료는 해당 PR의 실제 결과를 따른다. 과거 실패/진단 기록과 Chromium 내부 경합 자체는 이 보완으로 삭제하지 않는다.

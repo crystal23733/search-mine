@@ -446,5 +446,6 @@
   "install.standalone": "Estás usando Liar Sweeper en una ventana de aplicación.",
   "install.dismissed": "Instalación cancelada. Puedes seguir usando la web.",
   "install.failed": "No se pudo abrir la instalación. Prueba el menú de instalación del navegador.",
-  "install.network": "La práctica sin conexión necesita una caché preparada en este dispositivo. Las partidas en línea y las clasificaciones oficiales requieren conexión."
+  "install.network": "La práctica sin conexión necesita una caché preparada en este dispositivo. Las partidas en línea y las clasificaciones oficiales requieren conexión.",
+  "offline.applying": "Aplicando cambios. Espera un momento."
 }

@@ -9,6 +9,7 @@ const { values } = parseArgs({
   options: {
     attempts: { type: "string", default: "1" },
     trigger: { type: "string", default: "cdp" },
+    guard: { type: "string", default: "none" },
   },
 });
 if (!/^[1-8]$/.test(values.attempts))
@@ -17,6 +18,9 @@ const attempts = Number(values.attempts);
 const requestedTrigger = values.trigger;
 if (!["cdp", "pointer"].includes(requestedTrigger))
   throw Error("--trigger must be cdp or pointer");
+const guard = values.guard;
+if (!["none", "inert", "primed-inert", "modal", "primed-modal"].includes(guard))
+  throw Error("Unknown interaction guard");
 const outputBase = resolve(".tmp");
 await mkdir(outputBase, { recursive: true });
 const folder = await mkdtemp(join(outputBase, "sw-restart-"));
@@ -110,6 +114,7 @@ async function collect(mobile, exerciseTrigger, attempt) {
   const trigger = exerciseTrigger ? requestedTrigger : "control";
   const record = {
     mobile,
+    guard,
     trigger,
     attempt,
     restartRequested: false,
@@ -193,12 +198,36 @@ async function collect(mobile, exerciseTrigger, attempt) {
       )
       .toBe("installed");
     let input;
+    if (guard.startsWith("primed-") && trigger === "pointer") {
+      const box = await other.locator("#home").boundingBox();
+      if (!box) throw Error("Home link has no bounding box");
+      await other.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      record.inputClicksCompleted++;
+    }
+    if (guard !== "none") {
+      for (const tab of [page, other])
+        await tab.evaluate((mode) => {
+          if (mode.endsWith("modal")) {
+            const dialog = document.createElement("dialog");
+            dialog.textContent = "Applying changes";
+            dialog.addEventListener("cancel", (event) =>
+              event.preventDefault(),
+            );
+            document.body.append(dialog);
+            dialog.showModal();
+          } else document.body.inert = true;
+        }, guard);
+    }
     if (trigger === "pointer") {
       const box = await other.locator("#home").boundingBox();
       if (!box) throw Error("Home link has no bounding box");
       record.inputClicksRequested = 8;
       input = (async () => {
-        for (let index = 0; index < record.inputClicksRequested; index++) {
+        for (
+          let index = record.inputClicksCompleted;
+          index < record.inputClicksRequested;
+          index++
+        ) {
           await other.mouse.click(
             box.x + box.width / 2,
             box.y + box.height / 2,
@@ -289,6 +318,7 @@ try {
           JSON.stringify({
             mobile,
             trigger: result.trigger,
+            guard,
             attempt,
             restartRequested: result.restartRequested,
             inputClicks: result.inputClicksCompleted,

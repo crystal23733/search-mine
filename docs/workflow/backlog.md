@@ -260,3 +260,5 @@
 #215 FR01/09/14/16·NFR01/02/05/07/08·TS15/16/17/18/20/21/28/29/31/35 → [ADR0099](../adr/0099-source-retention.md) → 원래7일/90일 source 정리·동일transaction coverage 보정·bounded maintenance → [검증215](../verification/215-source-retention.md). 실제 서비스 복구/최신 삭제 기록/별도 매체/RPO·RTO는 #25 후속이다.
 
 #217 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0100](../adr/0100-recovery-quarantine.md) → 복구 gate 기본차단·최소 권리 원장 재적용/세션무효화·quarantine 유지 → [검증217](../verification/217-recovery-quarantine.md). 최신 원장 독립 내구·완전성/release와 실제 매체/RPO·RTO는 #25 후속이다.
+
+#219 FR01/09/10/11/16·NFR01/02/03/05/06/07/08·TS17/18/19/20/24/26/30/36 → [ADR0101](../adr/0101-web-workflows-and-installable-pwa.md): 웹내 전적/설정/랭킹·PNG 다운로드 제거, 선택적 PWA manifest/아이콘·8언어 user-gesture 설치·메뉴 안내/실행 상태·같은 SW/권한 경계. 설계 병합 뒤 제품 구현, 실제 OS 설치/외부 origin과 #83은 별도다.

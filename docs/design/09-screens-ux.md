@@ -103,3 +103,5 @@ PC: 클릭 open, 우클릭 flag, 열린 숫자의 메뉴에서 accuse, A로 지�
 
 
 #152 FR11/13·NFR01/02/06/07/08·TS19/24/26/29/31/36 → [ADR0071](../adr/0071-purpose-consent-port.md) → 목적별 닫힌 current CMP port/재열기수명·8언어설정·실행앱미설정차단 → [검증152](../verification/152-purpose-consent-port.md). 실제CMP/계정탭/서버동의·선택수집/외부147·상위21은후속이다.
+
+#219 FR01/09/10/11/16·NFR01/02/03/05/06/07/08·TS17/18/19/20/24/26/30/36 → [ADR0101](../adr/0101-web-workflows-and-installable-pwa.md): 웹내 전적/설정/랭킹·PNG 다운로드 제거, 선택적 PWA manifest/아이콘·8언어 user-gesture 설치·메뉴 안내/실행 상태·같은 SW/권한 경계. 설계 병합 뒤 제품 구현, 실제 OS 설치/외부 origin과 #83은 별도다.

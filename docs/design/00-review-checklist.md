@@ -288,3 +288,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 
 
 #211 FR01/10/11/14/16·NFR01/02/05/07/08·TS15/16/18/19/20/21/26/28/31/35/36 → [ADR0097](../adr/0097-isolated-container-deployment.md) → locked source 이미지·파일secret/nonroot·공개포트0·nginx32locale/오류·API/WS·정상stop → [검증211](../verification/211-isolated-container-deployment.md). 실제계정/호스트24·백업25/성능26/83은별도다.
+
+#219 FR01/09/10/11/16·NFR01/02/03/05/06/07/08·TS17/18/19/20/24/26/30/36 → [ADR0101](../adr/0101-web-workflows-and-installable-pwa.md): 웹내 전적/설정/랭킹·PNG 다운로드 제거, 선택적 PWA manifest/아이콘·8언어 user-gesture 설치·메뉴 안내/실행 상태·같은 SW/권한 경계. 설계 병합 뒤 제품 구현, 실제 OS 설치/외부 origin과 #83은 별도다.

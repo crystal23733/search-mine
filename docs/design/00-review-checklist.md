@@ -292,3 +292,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #219 FR01/09/10/11/16·NFR01/02/03/05/06/07/08·TS17/18/19/20/24/26/30/36 → [ADR0101](../adr/0101-web-workflows-and-installable-pwa.md): 웹내 전적/설정/랭킹·PNG 다운로드 제거, 선택적 PWA manifest/아이콘·8언어 user-gesture 설치·메뉴 안내/실행 상태·같은 SW/권한 경계. 설계 병합 뒤 제품 구현, 실제 OS 설치/외부 origin과 #83은 별도다.
 
 #221 FR01/09/10/11/16·NFR01/02/03/05/06/07/08·TS17/18/19/20/24/26/30/36 → [ADR0101](../adr/0101-web-workflows-and-installable-pwa.md) → InstallPort/8언어 설정·one-shot gesture/상태·manifest/PNG/maskable/Apple·동일origin 정적 제공·사용자 PNG다운로드 제거/웹 공유 → [검증221](../verification/221-installable-pwa.md). 실제 OS 설치/외부 origin·OAuth와 #83은 별도다.
+
+2026-11-10 #83 FR10·TS18/20/26/30 → [ADR0102](../adr/0102-update-interaction-barrier.md) → 실제 입력 겹침4/8fail의 native Warm Up/Restart origin짝·prepare ACK 전 modal 입력 잠금·NACK/lease/focus·24+64retry0 검증 → [검증83](../verification/83-activation-recovery.md). 과거 진단은 이력이며 Chromium 자체/실기기223 검수는 별도다.

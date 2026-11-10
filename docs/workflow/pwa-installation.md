@@ -12,7 +12,7 @@
 
 manifest의 id/scope/start_url은 `/`이며 계정·query·토큰을 넣지 않는다. manifest와 아이콘은 같은 origin의 공개 정적 자산이다. nginx는 `/manifest.webmanifest`를 `application/manifest+json`, `/icons/*.png`를 `image/png`로 제공하고 CSP는 same-origin manifest만 허용한다.32개 공개 locale HTML도 manifest를 연결한다. 인증/API/WS/광고 응답은 SW에 캐시하지 않는다.
 
-기존 고정 SW URL·수동 등록·게임 중 업데이트 차단을 유지한다. 설치 코드는 자동 skipWaiting/reload·SDK/선택 수집을 추가하지 않는다. #83의 간헐 두 탭 업데이트 조사는 별도로 열린 상태이며 설치 UI 검증으로 해결을 주장하지 않는다.
+기존 고정 SW URL·수동 등록·게임 중 업데이트 차단을 유지한다. 설치 코드는 자동 skipWaiting/reload·SDK/선택 수집을 추가하지 않는다. [ADR0102](../adr/0102-update-interaction-barrier.md)는 준비 ACK 전에8언어 modal로 링크 입력을 잠가 #83의 입력/Warm Up 경합을 보완한다. 로컬24+64회와 전체 CI는 [검증83](../verification/83-activation-recovery.md)/해당 PR에서 확인하며 실제 설치 기기의 업데이트 검수는 별도다.
 
 아이콘 원본은 `apps/web/public/icons/source.svg`이고 기존 노란색 숫자4 브랜드를 사용한다. 현재 설치된 assets-generator로 아래 명령을 실행해 PNG/maskable/Apple 자산을 재생성한다. 아이콘은 앱 자산이며 사용자가 결과 파일을 다운로드하는 기능이 아니다.
 

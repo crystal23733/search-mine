@@ -20,3 +20,14 @@ pointer 모드는 동일한 단순 fetch handler/anchor를 쓰는 입력 없는 
 기존 별도8case 관측에서는 대조4/4 reload·실제old재시작4/4·강제군reload0/4였다. 후속 실제 제품 CI의 자연 실패4건은 Warm Up 목적의 정지 중 재시작이었다. pointer 모드는 이 목적을 일반 입력으로 분리해 조사한다. 설치된 Chrome의 version/revision은 실행 자료로 확인하며 다른 환경에서 동일 결과를 보장하지 않는다. 실제 제품의 각 상위 입력/heuristic과 안전한 복구는 별도이며 제품 수정이 아니다. native trace 수집 자체도 실행 시점에 영향을 줄 수 있다. #83은 OPEN으로 유지한다.
 
 실제 제품 두 탭 E2E의 추가 native 관측은 `LIAR_TRACE_SW_NATIVE=1`로 켠다. 그 경로는 worker 시작/정지/debugger 명령을 보내지 않고, 원래 timeout·retry·network manager를 유지한다. 자료는 `.tmp/native-worker-traces`와 browser-failures artifact에 보존한다.
+
+## #83 입력 장벽 후보 대조
+
+`--guard` 기본값은 기존 `none`이다. 명시적으로 `inert`, `primed-inert`, `modal`, `primed-modal`을 선택할 수 있다. 모든 idle fixture 탭의 문서 입력을 막은 뒤 같은 링크 좌표를8회 클릭한다. primed 모드는 첫 클릭1회를 장벽 전에 보내고 나머지7회를 이후에 보낸다. modal은 표준 native dialog이며 backdrop/ESC로 임의 해제하지 않는다. 대조군도 같은 장벽을 사용하고 제품 SW/게임/Workbox를 실행하지 않는다.
+
+```sh
+node spikes/83-native-worker-restart/repro.mjs --trigger pointer --guard modal --attempts 2
+node spikes/83-native-worker-restart/repro.mjs --trigger pointer --guard primed-modal --attempts 2
+```
+
+record의 guard·실제 클릭/입력 막힘·완전한 native Warm Up/old재시작·두 탭 원래10초 reload를 함께 해석한다. incomplete/truncated trace의 횟수는 계속 null이다. 이 대조만으로 제품이 수정됐다고 하지 않는다. 실제 앱의 prepare ACK 전 장벽과 실패/lease/focus·8언어 및 production 반복/전체CI는 [ADR0102](../../docs/adr/0102-update-interaction-barrier.md)와 [검증83](../../docs/verification/83-activation-recovery.md)에서 별도로 확인한다. CDP 직접 강제 시작은 앱 입력 장벽이 막는 경로가 아니며 이 자료로 Chromium 자체의 수정 완료를 주장하지 않는다.

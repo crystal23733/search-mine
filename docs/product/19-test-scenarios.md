@@ -526,3 +526,5 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 - 실제 production HTTPS·배포에서 manifest/icons/CSP와 캐시된 오프라인 봇/데일리·공식순위 offline 안내/인증/API 비캐시·두탭 업데이트 회귀를 유지한다. #83과 실기기 설치/실제 OAuth 복귀는 별도 미완료로 보고한다.
 
 #221 FR01/09/10/11/16·NFR01/02/03/05/06/07/08·TS17/18/19/20/24/26/30/36 → [ADR0101](../adr/0101-web-workflows-and-installable-pwa.md) → InstallPort/8언어 설정·one-shot gesture/상태·manifest/PNG/maskable/Apple·동일origin 정적 제공·사용자 PNG다운로드 제거/웹 공유 → [검증221](../verification/221-installable-pwa.md). 실제 OS 설치/외부 origin·OAuth와 #83은 별도다.
+
+#83 입력 장벽 후보 · FR10/NFR01/02/05/06/07/08·TS18/20/26/30 → [ADR0102](../adr/0102-update-interaction-barrier.md) → native modal 전 prepare ACK 금지·busy/NACK·lease/focus 수명 → [대조 기록](../verification/83-activation-recovery.md). 실제 반복/전체 검증 전 수정 완료로 판단하지 않는다.

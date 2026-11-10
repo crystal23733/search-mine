@@ -38,7 +38,11 @@ function environment() {
     registration,
     container,
     message,
-    options: { window: win as unknown as Window, enabled: true },
+    options: {
+      window: win as unknown as Window,
+      enabled: true,
+      interaction: { ready: () => true },
+    },
   };
 }
 test("offline reload reads an existing active registration and network recovery remains a signal, not authentication", async () => {
@@ -56,6 +60,18 @@ test("offline reload reads an existing active registration and network recovery 
   expect(port.read().online).toBe(false);
   expect(changed).toHaveBeenCalled();
   unsubscribe();
+});
+test("preparation NACKs and releases its lease when a synchronous input barrier cannot open", async () => {
+  const env = environment(),
+    activity = createActivity();
+  createOffline(activity, {
+    ...env.options,
+    interaction: { ready: () => false },
+  });
+  await vi.waitFor(() => expect(env.container.register).toHaveBeenCalled());
+  const reply = env.message({ type: "prepare", token: "guard-unavailable" });
+  expect(reply).toHaveBeenCalledWith(false);
+  expect(activity.read().locked).toBe(false);
 });
 test("only a trusted worker can prepare locks; first claim does not reload and locked old-controller change does", async () => {
   const env = environment(),

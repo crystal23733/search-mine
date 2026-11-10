@@ -446,5 +446,6 @@
   "install.standalone": "您正在应用窗口中使用 Liar Sweeper。",
   "install.dismissed": "已取消安装。您可以继续使用网页。",
   "install.failed": "无法打开安装提示。请尝试使用浏览器的安装菜单。",
-  "install.network": "离线练习需要本设备已准备好缓存。在线对战和官方排名需要网络连接。"
+  "install.network": "离线练习需要本设备已准备好缓存。在线对战和官方排名需要网络连接。",
+  "offline.applying": "正在应用更改，请稍候。"
 }

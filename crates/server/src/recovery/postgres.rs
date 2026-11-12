@@ -109,8 +109,8 @@ pub async fn quarantine(pool: &PgPool, clock: &dyn AuthClock) -> Result<Uuid, Re
     bounded(async{
         let mut op=Operation::new(clock)?;let mut tx=pool.begin().await.map_err(db)?;op.own(&mut tx).await?;
         op.check(&mut tx).await?;
-        let id:Uuid=sqlx::query_scalar("INSERT INTO service_recovery_control VALUES(true,'quarantined',(SELECT oid::bigint FROM pg_database WHERE datname=current_database()),current_schema()::regnamespace::oid::bigint,$1,$2) ON CONFLICT(singleton) DO UPDATE SET state='quarantined', database_oid=EXCLUDED.database_oid,schema_oid=EXCLUDED.schema_oid,recovery_id=CASE WHEN service_recovery_control.state='quarantined' AND service_recovery_control.database_oid=EXCLUDED.database_oid AND service_recovery_control.schema_oid=EXCLUDED.schema_oid THEN service_recovery_control.recovery_id ELSE EXCLUDED.recovery_id END,updated_at=EXCLUDED.updated_at RETURNING recovery_id")
-            .bind(Uuid::new_v4()).bind(op.last).fetch_one(&mut *tx).await.map_err(db)?;
+        let id:Uuid=sqlx::query_scalar("INSERT INTO service_recovery_control VALUES(true,'quarantined',(SELECT oid::bigint FROM pg_database WHERE datname=current_database()),current_schema()::regnamespace::oid::bigint,$1,$2) ON CONFLICT(singleton) DO UPDATE SET state='quarantined', database_oid=EXCLUDED.database_oid,schema_oid=EXCLUDED.schema_oid,recovery_id=CASE WHEN service_recovery_control.state='quarantined' AND service_recovery_control.database_oid=EXCLUDED.database_oid AND service_recovery_control.schema_oid=EXCLUDED.schema_oid THEN service_recovery_control.recovery_id ELSE EXCLUDED.recovery_id END,updated_at=EXCLUDED.updated_at WHERE service_recovery_control.state<>'sealed' RETURNING recovery_id")
+            .bind(Uuid::new_v4()).bind(op.last).fetch_optional(&mut *tx).await.map_err(db)?.ok_or(RecoveryError::Blocked)?;
         op.check(&mut tx).await?;tx.commit().await.map_err(db)?;Ok(id)
     }).await
 }
@@ -144,19 +144,43 @@ async fn read_source<T>(
             .fetch_optional(&mut *tx).await.map_err(db)?;
         let source_id = source_id.ok_or(RecoveryError::Blocked)?;
         op.check(&mut tx).await?;
-        let rows: Vec<(String, Uuid, i64, i64)> = sqlx::query_as(CAPTURE)
-            .bind(captured_at).fetch_all(&mut *tx).await.map_err(db)?;
-        let entries = rows.into_iter().map(|(kind,id,deleted_at,expires_at)| Erasure {
-            kind: if kind == "account" { Kind::Account } else { Kind::Identity },
-            id, deleted_at, expires_at,
-        }).collect();
-        let snapshot = Snapshot { version: 1, source_id, captured_at, entries };
+        let snapshot = snapshot_in(&mut tx, source_id, captured_at).await?;
         op.check(&mut tx).await?;
         snapshot.to_bytes(op.last)?;
         let result = read(snapshot, op.last)?;
         tx.commit().await.map_err(db)?;
         Ok(result)
     }).await
+}
+pub(super) async fn snapshot_in(
+    tx: &mut Transaction<'_, Postgres>,
+    source_id: Uuid,
+    captured_at: i64,
+) -> Result<Snapshot, RecoveryError> {
+    let rows: Vec<(String, Uuid, i64, i64)> = sqlx::query_as(CAPTURE)
+        .bind(captured_at)
+        .fetch_all(&mut **tx)
+        .await
+        .map_err(db)?;
+    let entries = rows
+        .into_iter()
+        .map(|(kind, id, deleted_at, expires_at)| Erasure {
+            kind: if kind == "account" {
+                Kind::Account
+            } else {
+                Kind::Identity
+            },
+            id,
+            deleted_at,
+            expires_at,
+        })
+        .collect();
+    Ok(Snapshot {
+        version: 1,
+        source_id,
+        captured_at,
+        entries,
+    })
 }
 const CAPTURE: &str = "SELECT kind,id,CASE WHEN deleted=trunc(deleted) THEN deleted::bigint ELSE -1 END,CASE WHEN expires=trunc(expires) THEN expires::bigint ELSE -1 END FROM (SELECT 'account' AS kind,account_id AS id,extract(epoch FROM deleted_at) AS deleted,extract(epoch FROM expires_at) AS expires FROM auth_deletion_tombstones WHERE expires_at>to_timestamp($1::double precision) UNION ALL SELECT 'identity',identity_id,extract(epoch FROM deleted_at),extract(epoch FROM expires_at) FROM auth_identity_tombstones WHERE expires_at>to_timestamp($1::double precision)) entries ORDER BY kind,id LIMIT 501";
 

@@ -49,6 +49,8 @@ Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJ
 
 홈·튜토리얼 소개·규칙·저장소 고지는8언어 총32개 정적 HTML로 제공하며 JavaScript 없이 읽을 수 있습니다. `VITE_PUBLIC_SITE_ORIGIN`에 확정된 HTTPS origin을 설정하면 canonical·hreflang·OG URL·sitemap을 생성합니다. 미설정 시 도메인을 추정하지 않고 robots crawl을 차단합니다. 개인/게임/인증 문서는 검색 제외합니다. [SEO 설정과 운영 검수](docs/workflow/seo-configuration.md)를 확인하세요.
 
+배포 전 설정 점검·백업/권리 원장 주기·실제 main/WS 부하와 번들 보고는 [운영 도구 절차](docs/workflow/release-operations.md)를 따릅니다. 실제 계정/장비 검수 증거가 없으면 공개 준비 완료를 선언하지 않습니다.
+
 ## 컨테이너 배포 기반
 
 `deploy/compose.yml`은 source 이미지·내부DB·별도 migration/grant·nginx를 구성하며 운영 host 포트를 열지 않습니다. 실제 provider 키·도메인/Tunnel·CMP가 없는 기본 실행은 해당 외부 기능을 활성화하지 않습니다. 파일 secret/비권한·읽기 전용 실행과 종료 대기는 [컨테이너 배포 절차](docs/workflow/container-deployment.md)를 따릅니다. `python3 deploy/tests/smoke.py --browser`는 합성 설정/고유 프로젝트의 실제 Docker·DB·HTTP/WS·Chromium을 검사하고 정리합니다. 실제 호스트·계정·백업/복구·부하 검수는 별도입니다.

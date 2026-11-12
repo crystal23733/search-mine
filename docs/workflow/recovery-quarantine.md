@@ -47,3 +47,5 @@ capture는 live main과 병행 가능한 read-only/repeatable-read transaction�
 capture stdout에는 개인 UUID가 포함된다. 터미널/로그/평문 archive로 남기거나 사용자 화면/API에 연결하지 않는다. **독립 암호화 checkpoint와 전체 인증 후 SQL 전달 도구는 [#227 절차](encrypted-rights-ledger.md)를 따른다. 실제 매체/주기·모든 권리 변경의 최신 완전성은 #25 후속이다.** 현재 native 경로를 운영용 자동 보관·복구 절차가 완성됐다고 해석하지 않는다. `age --decrypt | recovery apply-snapshot ...`처럼 인증 전에 DB를 바꾸는 직접 pipe도 사용하지 않는다.
 
 snapshot은 version/source_id/captured_at/entries를 보존한다. 실제 capture 시각을5분 뒤에 현재로 덮어쓰지 않으며 최대28일까지만 검증한다. apply-snapshot은 인증된 입력을 메모리/stdin으로 받아 현재 quarantine incident·DB/schema와 보존된 source UUID가 모두 맞는지 확인한다. capture 때 유효했던 항목 중 현재 만료된 것은 재적용하지 않으며, 아직 유효한 항목의 원래 expiry는 연장하지 않는다. 삭제/세션 무효화 절차는 기존 apply와 공유하고 성공도 quarantine 상태다. source UUID가 같다는 사실만으로 최신 데이터 완전성이나 서비스 재개를 허가하지 않는다.
+
+#231의 통제된 복구 재개는 [최신 원본 차단 절차](encrypted-rights-ledger.md)를 따른다. source `sealed`는 일반 quarantine/SQL 상태 변경으로 다시 열지 않으며, 최신 자료를 확인할 수 없는 장애에서 자동 재개하지 않는다.

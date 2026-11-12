@@ -272,3 +272,7 @@
 #227 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0104](../adr/0104-encrypted-recovery-checkpoint.md) → 원래 expiry별 age checkpoint·원자 current·전체 인증 후 native 검사/적용 → [검증227](../verification/227-encrypted-recovery-checkpoint.md). 최신 동기 내구/cutover/release·실제 운영 매체/스케줄/RPO·RTO는 #25 후속이다.
 
 #229 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0105](../adr/0105-current-rights-snapshot-audit.md) → 전체 인증 후 같은 MVCC의 현재 원장 집합 비교·관측 요약/읽기 전용 → [검증229](../verification/229-current-rights-snapshot-audit.md). writer 정지/동기 내구·최종 cutover/release·실제 운영 출구는 #25 후속이다.
+
+## #231 배포 운영 완성 작업 (2026-11-13)
+
+#229 후속으로 원본 writer 차단/최신 비교 뒤 명시 복구 재개, 기존 보존 adapter 정리, 실제 main/인증/WS 부하와 bundle/admission 보고, 비밀 비출력 배포 점검과 timer/receipt를 구현·검증한다. [ADR0106](../adr/0106-controlled-recovery-resume.md)·[검증231](../verification/231-release-operations.md). 상위24/25/26의 실제 장비·매체·이전 이미지·RPO/RTO·성능 출구는 운영자 검수로 유지한다.

@@ -72,3 +72,5 @@ python3 deploy/tests/smoke.py --browser
 성공/실패 뒤에도 소유한 프로젝트의 컨테이너·네트워크·볼륨과 합성 비밀만 정리한다. 이미지/검증 summary는 남는다. 운영 DB에는 `down --volumes`를 사용하지 않는다. 백업·암호화·별도매체/복원·롤백 훈련과 측정 RPO/RTO는 #25, 미니PC 부하/성능은 #26의 미완료 출구다.
 
 암호화 백업 생성/검사/정리는 [백업 절차](encrypted-backups.md)를 따른다. 최신 삭제 기록/서비스 접근 차단과 실제 복구 출구는 #25에서 별도 검증한다.
+
+공개 전 [배포 점검·주기 실행·부하 측정](release-operations.md)을 실행한다. PostgreSQL/Tunnel도 실제 검수된 불변 image로 설정하며, 계정·장비 검수 증거가 없으면 점검은 blocked를 반환한다.

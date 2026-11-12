@@ -1,4 +1,4 @@
-//! Owner-only recovery transport. No activation/release command is provided.
+//! Owner-only recovery transport. Controlled resume requires a separate, current source.
 use liar_server::{
     auth::{AuthClock, SystemAuthClock},
     recovery::{self, Ledger, MAX_BYTES, RecoveryError, Snapshot},
@@ -24,6 +24,7 @@ enum Command {
     Apply(Ledger),
     ApplySnapshot(Uuid, Snapshot),
     CompareSnapshot(Snapshot),
+    Resume(Uuid, Snapshot),
 }
 fn read_input() -> Result<Zeroizing<Vec<u8>>, RecoveryError> {
     let mut bytes = Zeroizing::new(Vec::new());
@@ -56,15 +57,17 @@ async fn run() -> Result<(), RecoveryError> {
             Command::CompareSnapshot(Snapshot::parse(&read_input()?, SystemAuthClock.now())?)
         }
         ["apply"] => Command::Apply(Ledger::parse(&read_input()?, SystemAuthClock.now())?),
-        ["apply-snapshot", incident] => {
+        [mode @ ("apply-snapshot" | "resume-from-source"), incident] => {
             let incident = Uuid::parse_str(incident).map_err(|_| RecoveryError::Invalid)?;
             if incident.is_nil() {
                 return Err(RecoveryError::Invalid);
             }
-            Command::ApplySnapshot(
-                incident,
-                Snapshot::parse(&read_input()?, SystemAuthClock.now())?,
-            )
+            let snapshot = Snapshot::parse(&read_input()?, SystemAuthClock.now())?;
+            if *mode == "resume-from-source" {
+                Command::Resume(incident, snapshot)
+            } else {
+                Command::ApplySnapshot(incident, snapshot)
+            }
         }
         _ => return Err(RecoveryError::Invalid),
     };
@@ -103,6 +106,29 @@ async fn run() -> Result<(), RecoveryError> {
                 "{}",
                 serde_json::to_string(&report).map_err(|_| RecoveryError::Invalid)?
             );
+        }
+        Command::Resume(incident, snapshot) => {
+            let source_url =
+                env::var("RECOVERY_SOURCE_DATABASE_URL").map_err(|_| RecoveryError::Invalid)?;
+            let source = PgPoolOptions::new()
+                .max_connections(1)
+                .acquire_timeout(Duration::from_secs(1))
+                .connect(&source_url)
+                .await
+                .map_err(|_| RecoveryError::Unavailable)?;
+            let applied = recovery::resume_from_source(
+                &source,
+                &pool,
+                std::sync::Arc::new(SystemAuthClock),
+                incident,
+                &snapshot,
+            )
+            .await?;
+            println!(
+                "{}",
+                serde_json::json!({"state":"active","applied":applied})
+            );
+            source.close().await;
         }
         Command::ApplySnapshot(incident, snapshot) => {
             let applied =

@@ -23,6 +23,7 @@ enum Command {
     Capture,
     Apply(Ledger),
     ApplySnapshot(Uuid, Snapshot),
+    CompareSnapshot(Snapshot),
 }
 fn read_input() -> Result<Zeroizing<Vec<u8>>, RecoveryError> {
     let mut bytes = Zeroizing::new(Vec::new());
@@ -51,6 +52,9 @@ async fn run() -> Result<(), RecoveryError> {
     {
         ["quarantine"] => Command::Quarantine,
         ["capture"] => Command::Capture,
+        ["compare-snapshot"] => {
+            Command::CompareSnapshot(Snapshot::parse(&read_input()?, SystemAuthClock.now())?)
+        }
         ["apply"] => Command::Apply(Ledger::parse(&read_input()?, SystemAuthClock.now())?),
         ["apply-snapshot", incident] => {
             let incident = Uuid::parse_str(incident).map_err(|_| RecoveryError::Invalid)?;
@@ -91,6 +95,13 @@ async fn run() -> Result<(), RecoveryError> {
             println!(
                 "{}",
                 serde_json::json!({"state":"quarantined","applied":applied})
+            );
+        }
+        Command::CompareSnapshot(snapshot) => {
+            let report = recovery::compare_snapshot(&pool, &SystemAuthClock, &snapshot).await?;
+            println!(
+                "{}",
+                serde_json::to_string(&report).map_err(|_| RecoveryError::Invalid)?
             );
         }
         Command::ApplySnapshot(incident, snapshot) => {

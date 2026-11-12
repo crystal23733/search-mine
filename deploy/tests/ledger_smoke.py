@@ -8,6 +8,7 @@ from smoke import ROOT, require
 ACCOUNT = '11111111-1111-4111-8111-111111111111'
 SURVIVOR = '44444444-4444-4444-8444-444444444444'
 IDENTITY = '55555555-5555-4555-8555-555555555555'
+RECENT_IDENTITY = '66666666-6666-4666-8666-666666666666'
 
 
 class LedgerSmoke(BackupSmoke):
@@ -51,11 +52,12 @@ class LedgerSmoke(BackupSmoke):
                               self.image, '-y', '/identity']).stdout
         (self.secret_dir / 'backup_recipient').write_bytes(recipient)
         (self.secret_dir / 'backup_recipient').chmod(0o444)
-        profiles = ['ledger-capture', 'ledger-verify', 'ledger-prune', 'ledger-apply']
+        profiles = ['ledger-capture', 'ledger-verify', 'ledger-prune', 'ledger-audit', 'ledger-apply']
         flags = [arg for p in profiles for arg in ['--profile', p]]
         config = json.loads(self.compose_run(*flags, 'config', '--format', 'json').stdout)
         expected = {'ledger-capture': {'migration_database_url', 'backup_recipient'},
                     'ledger-verify': {'backup_identity'}, 'ledger-prune': set(),
+                    'ledger-audit': {'migration_database_url', 'backup_identity'},
                     'ledger-apply': {'migration_database_url', 'backup_identity'}}
         for name in profiles:
             service = config['services'][name]
@@ -72,7 +74,9 @@ class LedgerSmoke(BackupSmoke):
 INSERT INTO auth_accounts VALUES('{ACCOUNT}','Erased fixture',now()-interval '28 days',now()),('{SURVIVOR}','Surviving fixture',now()-interval '28 days',now());
 INSERT INTO auth_identities(id,account_id,provider,issuer,subject_digest,digest_key_version,linked_at)
 VALUES('22222222-2222-4222-8222-222222222222','{ACCOUNT}','google','https://accounts.google.com',decode(repeat('ab',32),'hex'),1,now()-interval '28 days'),
-('{IDENTITY}','{SURVIVOR}','google','https://accounts.google.com',decode(repeat('cd',32),'hex'),1,now()-interval '28 days');
+('{IDENTITY}','{SURVIVOR}','google','https://accounts.google.com',decode(repeat('cd',32),'hex'),1,now()-interval '28 days'),
+('{RECENT_IDENTITY}','{SURVIVOR}','kakao','https://kauth.kakao.com',decode(repeat('de',32),'hex'),1,now()-interval '28 days'),
+('77777777-7777-4777-8777-777777777777','{SURVIVOR}','naver','https://nid.naver.com',decode(repeat('ef',32),'hex'),1,now()-interval '28 days');
 CREATE DATABASE restored_fixture OWNER liar_owner;
 """)
         dump = self.compose_run('exec', '-T', 'postgres', 'sh', '-c',
@@ -99,12 +103,34 @@ COMMIT;""")
         require(captured['entries'] == 2, 'Capture did not include both rights')
         verified = json.loads(self.compose_run('run', '--rm', '--no-deps', 'ledger-verify').stdout)
         require(verified['entries'] == 2 and verified['captured_at'] == captured['captured_at'], 'Offline verification changed the original snapshot')
+        self.stage('Distinguishing authenticated old data from the current source observation')
+        matched = json.loads(self.compose_run('run', '--rm', '--no-deps', 'ledger-audit').stdout)
+        require(set(matched) == {'status', 'captured_at', 'observed_at', 'entries'} and matched['status'] == 'matched' and matched['entries'] == 2, 'Initial source observation did not match')
+        require(matched['captured_at'] == captured['captured_at'] and matched['observed_at'] >= captured['captured_at'], 'Observation overwrote the original capture')
+        recent = int(self.fixture_sql('SELECT floor(extract(epoch FROM clock_timestamp()))::bigint;').stdout)
+        self.fixture_sql(f"""BEGIN;
+INSERT INTO auth_identity_tombstones VALUES('{RECENT_IDENTITY}',to_timestamp({recent}),to_timestamp({recent+2419200}));
+DELETE FROM auth_identities WHERE id='{RECENT_IDENTITY}';
+COMMIT;""")
+        still_valid = json.loads(self.compose_run('run', '--rm', '--no-deps', 'ledger-verify').stdout)
+        require(still_valid['entries'] == 2, 'Old checkpoint authentication unexpectedly changed')
+        stale = self.compose_run('run', '--rm', '--no-deps', 'ledger-audit', okay=False)
+        require(stale.returncode != 0 and json.loads(stale.stdout) == {'status': 'failed', 'code': 'ledger_operation_failed'}, 'Authenticated incomplete checkpoint was accepted')
+        require(self.fixture_sql('SELECT (SELECT count(*) FROM auth_accounts),(SELECT count(*) FROM auth_identities);').stdout.strip() == b'1|1', 'Source audit changed source accounts/identities')
+        require(self.fixture_sql('SELECT (SELECT count(*) FROM auth_accounts),(SELECT count(*) FROM auth_identities);', 'restored_fixture').stdout.strip() == b'2|4', 'Audit changed the restored target')
+        captured = json.loads(self.compose_run('run', '--rm', '--no-deps', 'ledger-capture').stdout)
+        require(captured['entries'] == 3, 'Recapture lost the new unlink')
+        fresh = json.loads(self.compose_run('run', '--rm', '--no-deps', 'ledger-audit').stdout)
+        require(fresh['status'] == 'matched' and fresh['entries'] == 3 and fresh['captured_at'] == captured['captured_at'], 'Recaptured current rights failed comparison')
+        wrong_target = self.container(['audit'], keys=['migration_database_url', 'backup_identity'], owner='target_url', network=network, okay=False)
+        require(wrong_target.returncode != 0, 'A quarantined restored DB was treated as the active source')
+        self.results['current_source_audit_detects_post_capture_unlink'] = True
         self.container(['script', f"""
 root=pathlib.Path('/ledger')
 for p in root.rglob('*'):
  if p.is_file():
   data=p.read_bytes()
-  assert all(v.encode() not in data for v in ['{ACCOUNT}','{IDENTITY}','Erased fixture'])
+  assert all(v.encode() not in data for v in ['{ACCOUNT}','{IDENTITY}','{RECENT_IDENTITY}','Erased fixture'])
 print('no personal plaintext')
 """])
         self.results['public_recipient_capture_and_offline_authentication'] = True
@@ -134,24 +160,24 @@ finally:
 print('blocked before SQL')
 """], keys=['migration_database_url', 'backup_identity', 'backup_recipient'], owner='target_url', network=network)
         counts = self.fixture_sql('SELECT (SELECT count(*) FROM auth_accounts),(SELECT count(*) FROM auth_identities);', 'restored_fixture').stdout.strip()
-        require(counts == b'2|2', 'Authentication failure changed the restored target')
+        require(counts == b'2|4', 'Authentication failure changed the restored target')
         wrong = self.container(['script', "\ntry:\n with ledger.LedgerStore('/ledger') as s:s.verify(pathlib.Path('/run/secrets/other_identity'))\nexcept ledger.BackupError:pass\nelse:raise AssertionError('Wrong identity accepted')\n"], keys=['other_identity'])
         require(wrong.returncode == 0, 'Wrong key test failed')
         self.results['wrong_key_and_final_part_auth_failure_leave_db_unchanged'] = True
         self.stage('Applying the fully authenticated snapshot to the quarantined restore')
         for _ in range(2):
             result = self.container(['apply', '--incident', incident], keys=['migration_database_url', 'backup_identity'], owner='target_url', network=network)
-            require(json.loads(result.stdout) == {'status': 'applied', 'state': 'quarantined', 'applied': 2}, 'Sanitation was not idempotent/quarantined')
+            require(json.loads(result.stdout) == {'status': 'applied', 'state': 'quarantined', 'applied': 3}, 'Sanitation was not idempotent/quarantined')
         counts = self.fixture_sql('SELECT (SELECT count(*) FROM auth_accounts),(SELECT count(*) FROM auth_identities),(SELECT state FROM service_recovery_control);', 'restored_fixture').stdout.strip()
-        require(counts == b'1|0|quarantined', 'Restored erasure/identity rights or quarantine were lost')
+        require(counts == b'1|1|quarantined', 'Restored erasure/identity rights or quarantine were lost')
         self.results['restored_rights_applied_idempotently_without_activation'] = True
         self.stage('Pruning by original record expiry without recapturing timestamps')
         self.container(['script', f"""
 root=pathlib.Path('/ledger')
 with ledger.LedgerStore(root,lambda:{now+300}) as store:
  summary=store.verify(pathlib.Path('/run/secrets/backup_identity'))
- assert summary=={{'captured_at':{captured['captured_at']},'entries':1}}
- assert len(list(root.glob('ledger-*/part-*.age')))==1
+ assert summary=={{'captured_at':{captured['captured_at']},'entries':2}}
+ assert len(list(root.glob('ledger-*/part-*.age')))==2
 with ledger.LedgerStore(root,lambda:{captured['captured_at']+2419201}) as store:store.prune()
 assert not list(root.glob('ledger-*'));assert ledger.read_json(root/'current.json')['name'] is None
 print('original expiry retained')

@@ -411,3 +411,179 @@ async fn capture_timeout_or_clock_reversal_never_returns_a_snapshot_or_changes_s
     capture(&pool, &Clock(NOW)).await.unwrap();
     close_auth_pool(pool).await;
 }
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn current_source_cli_rejects_a_valid_but_incomplete_checkpoint_without_personal_output() {
+    use super::recovery::cli;
+    let pool = auth_pool().await;
+    let now = SystemAuthClock.now();
+    let private = Uuid::new_v4();
+    marker(&pool, "account", private, now - 10).await;
+    let snapshot = capture(&pool, &Clock(now))
+        .await
+        .unwrap()
+        .to_bytes(now)
+        .unwrap();
+    let output = cli(&pool, &["compare-snapshot"], &snapshot, true).await;
+    assert!(
+        output.status.success(),
+        "A complete authenticated checkpoint must match the source observation"
+    );
+    let summary: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(summary["captured_at"], now);
+    assert!(summary["observed_at"].as_i64().unwrap() >= now);
+    assert_eq!(summary["entries"], 1);
+    assert_eq!(summary.as_object().unwrap().len(), 3);
+    assert!(
+        !String::from_utf8(output.stdout)
+            .unwrap()
+            .contains(&private.to_string())
+    );
+    marker(&pool, "identity", Uuid::new_v4(), now).await;
+    let output = cli(&pool, &["compare-snapshot"], &snapshot, true).await;
+    assert!(!output.status.success());
+    assert!(output.stderr.is_empty());
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&output.stdout).unwrap(),
+        serde_json::json!({"status":"failed","code":"recovery_failed"})
+    );
+    ensure_serving(&pool).await.unwrap();
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM auth_identity_tombstones")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 1);
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn comparison_matches_one_mvcc_observation_but_not_a_later_committed_change() {
+    let pool = auth_pool().await;
+    marker(&pool, "account", Uuid::new_v4(), NOW - 10).await;
+    let checkpoint = capture(&pool, &Clock(NOW)).await.unwrap();
+    let original = checkpoint.to_bytes(NOW).unwrap();
+    let mut lock = pool.begin().await.unwrap();
+    sqlx::query("LOCK TABLE service_recovery_control IN ACCESS EXCLUSIVE MODE")
+        .execute(&mut *lock)
+        .await
+        .unwrap();
+    let reading = pool.clone();
+    let task =
+        tokio::spawn(async move { compare_snapshot(&reading, &Clock(NOW), &checkpoint).await });
+    wait_for_table_reader(&pool, "service_recovery_control").await;
+    marker(&pool, "identity", Uuid::new_v4(), NOW).await;
+    lock.commit().await.unwrap();
+    let report = task.await.unwrap().unwrap();
+    assert_eq!(serde_json::to_value(report).unwrap()["entries"], 1);
+    let old = Snapshot::parse(&original, NOW).unwrap();
+    assert!(matches!(
+        compare_snapshot(&pool, &Clock(NOW), &old).await,
+        Err(RecoveryError::Blocked)
+    ));
+    ensure_serving(&pool).await.unwrap();
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn live_owner_comparison_never_mutates_the_gate_or_takes_the_journal_lock() {
+    use liar_server::online::PgJournalRuntime;
+    let pool = auth_pool().await;
+    let before: (Uuid, i64) =
+        sqlx::query_as("SELECT recovery_id,updated_at FROM service_recovery_control")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let runtime = PgJournalRuntime::claim(pool.clone(), Arc::new(Clock(NOW)))
+        .await
+        .unwrap();
+    let checkpoint = capture(&pool, &Clock(NOW)).await.unwrap();
+    let report = compare_snapshot(&pool, &Clock(NOW), &checkpoint)
+        .await
+        .unwrap();
+    assert_eq!(serde_json::to_value(report).unwrap()["entries"], 0);
+    let after: (Uuid, i64) =
+        sqlx::query_as("SELECT recovery_id,updated_at FROM service_recovery_control")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(before, after);
+    ensure_serving(&pool).await.unwrap();
+    drop(runtime);
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn comparison_refuses_over_limit_unknown_quarantined_and_reversed_sources() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    struct Reversing(AtomicUsize);
+    impl AuthClock for Reversing {
+        fn now(&self) -> i64 {
+            if self.0.fetch_add(1, Ordering::SeqCst) == 0 {
+                NOW
+            } else {
+                NOW - 1
+            }
+        }
+    }
+    let pool = auth_pool().await;
+    let checkpoint = capture(&pool, &Clock(NOW)).await.unwrap();
+    assert!(matches!(
+        compare_snapshot(&pool, &Reversing(AtomicUsize::new(0)), &checkpoint).await,
+        Err(RecoveryError::Invalid)
+    ));
+    sqlx::query("INSERT INTO auth_identity_tombstones SELECT gen_random_uuid(),to_timestamp($1::double precision),to_timestamp($2::double precision) FROM generate_series(1,501)").bind(NOW-1).bind(NOW-1+2419200).execute(&pool).await.unwrap();
+    assert!(matches!(
+        compare_snapshot(&pool, &Clock(NOW), &checkpoint).await,
+        Err(RecoveryError::Invalid)
+    ));
+    sqlx::query("DELETE FROM auth_identity_tombstones")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let origin = source(&pool).await;
+    sqlx::query("DELETE FROM service_recovery_origin")
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert!(matches!(
+        compare_snapshot(&pool, &Clock(NOW), &checkpoint).await,
+        Err(RecoveryError::Blocked)
+    ));
+    sqlx::query("INSERT INTO service_recovery_origin VALUES(true,$1)")
+        .bind(origin)
+        .execute(&pool)
+        .await
+        .unwrap();
+    quarantine(&pool, &Clock(NOW)).await.unwrap();
+    assert!(matches!(
+        compare_snapshot(&pool, &Clock(NOW), &checkpoint).await,
+        Err(RecoveryError::Blocked)
+    ));
+    close_auth_pool(pool).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL; executed in database CI"]
+async fn comparison_deadline_fails_without_changing_source_or_claiming_a_match() {
+    let pool = auth_pool().await;
+    let checkpoint = capture(&pool, &Clock(NOW)).await.unwrap();
+    let mut lock = pool.begin().await.unwrap();
+    sqlx::query("LOCK TABLE service_recovery_control IN ACCESS EXCLUSIVE MODE")
+        .execute(&mut *lock)
+        .await
+        .unwrap();
+    assert!(matches!(
+        compare_snapshot(&pool, &Clock(NOW), &checkpoint).await,
+        Err(RecoveryError::Unavailable)
+    ));
+    lock.rollback().await.unwrap();
+    compare_snapshot(&pool, &Clock(NOW), &checkpoint)
+        .await
+        .unwrap();
+    ensure_serving(&pool).await.unwrap();
+    close_auth_pool(pool).await;
+}

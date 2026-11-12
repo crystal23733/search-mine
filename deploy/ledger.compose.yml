@@ -1,0 +1,47 @@
+# Explicit operator jobs; no user download or automatic service activation.
+x-ledger: &ledger
+  image: ${LIAR_LEDGER_IMAGE:-liar-ledger:local}
+  build:
+    context: ..
+    dockerfile: deploy/backup.Dockerfile
+    target: recovery-ledger
+  user: '10001:10001'
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: ['/tmp:size=32m,mode=1777', '/var/lib/postgresql:size=1m,mode=0700,uid=10001,gid=10001']
+  volumes:
+    - ${LIAR_LEDGER_DIR:?Set restricted separate ledger directory}:/ledger
+  logging:
+    driver: json-file
+    options: {max-size: 1m, max-file: '2'}
+  restart: 'no'
+  mem_limit: 256m
+  cpus: 1
+services:
+  ledger-capture:
+    <<: *ledger
+    profiles: [ledger-capture]
+    command: [capture]
+    networks: [db]
+    secrets: [migration_database_url, backup_recipient]
+  ledger-verify:
+    <<: *ledger
+    profiles: [ledger-verify]
+    command: [verify]
+    network_mode: none
+    secrets: [backup_identity]
+  ledger-prune:
+    <<: *ledger
+    profiles: [ledger-prune]
+    command: [prune]
+    network_mode: none
+  ledger-apply:
+    <<: *ledger
+    profiles: [ledger-apply]
+    command: [apply]
+    networks: [db]
+    secrets: [migration_database_url, backup_identity]
+secrets:
+  backup_recipient: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/backup_recipient'}
+  backup_identity: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/backup_identity'}

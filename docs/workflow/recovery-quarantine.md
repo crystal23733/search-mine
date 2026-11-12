@@ -22,7 +22,7 @@ docker compose -p liar-recovery --env-file /restricted/restore-target.env -f dep
 
 ## 검증한 원장 적용
 
-원장은 현재의 권위 있는 account/identity 삭제 기록으로 준비해야 한다. 현재 source는 account 삭제 tombstone과 identity 연결 해제/Apple 철회의 최소 UUID·원래 시각·28일 expiry를 DB에 보관한다. 과거 dump의 이 표를 최신 원장으로 간주하지 않는다. 별도 매체의 완전한 캡처/암호화 전달 도구와 재개 증거는 #25 후속이다.
+원장은 현재의 권위 있는 account/identity 삭제 기록으로 준비해야 한다. 현재 source는 account 삭제 tombstone과 identity 연결 해제/Apple 철회의 최소 UUID·원래 시각·28일 expiry를 DB에 보관한다. 과거 dump의 이 표를 최신 원장으로 간주하지 않는다. 암호화 checkpoint와 전체 인증 후 전달 도구는 [#227 절차](encrypted-rights-ledger.md)를 따른다. 실제 별도 매체·최신 완전성/재개 증거는 #25 후속이다.
 
 기존 수동 apply의 Ledger 입력 계약은 version=1, 해당 recovery_id, 실제 captured_at(epoch초), entries다. 각 entry는 kind(account/identity), id(UUID), deleted_at, expires_at만 가진다. 최대500개·128KiB, capture는 현재보다 미래가 아니며5분 이내, expiry는 deleted_at+2419200초이며 현재 아직 만료되지 않아야 한다. 중복/nil/알 수 없는 필드·미래 삭제는 전체 입력을 거절한다. 시각을 임의로 바꿔 오래된 자료를 새 자료로 가장하지 않는다.
 
@@ -44,6 +44,6 @@ main은 기동 전과 owner 확보 후 gate를 확인한다. 준비 상태도 ga
 
 capture는 live main과 병행 가능한 read-only/repeatable-read transaction이다. 원래 삭제·연결 해제 UUID와 시각만 읽고, 미확정 변경은 포함하지 않는다. 두 표 합계500개/128KiB와2초 한도를 초과하거나 gate·시각이 잘못되면 부분 결과 대신 실패한다. 전체 current capture의 일관성은 이후 권리 변경의 영구 보관/최신 완전성을 뜻하지 않는다.
 
-capture stdout에는 개인 UUID가 포함된다. 터미널/로그/평문 archive로 남기거나 사용자 화면/API에 연결하지 않는다. **독립 암호화 저장 및 전체 인증이 끝난 뒤에만 SQL 적용 도구로 전달하는 계층은 #25 후속이다.** 현재 native 경로를 운영용 자동 보관·복구 절차가 완성됐다고 해석하지 않는다. `age --decrypt | recovery apply-snapshot ...`처럼 인증 전에 DB를 바꾸는 직접 pipe도 사용하지 않는다.
+capture stdout에는 개인 UUID가 포함된다. 터미널/로그/평문 archive로 남기거나 사용자 화면/API에 연결하지 않는다. **독립 암호화 checkpoint와 전체 인증 후 SQL 전달 도구는 [#227 절차](encrypted-rights-ledger.md)를 따른다. 실제 매체/주기·모든 권리 변경의 최신 완전성은 #25 후속이다.** 현재 native 경로를 운영용 자동 보관·복구 절차가 완성됐다고 해석하지 않는다. `age --decrypt | recovery apply-snapshot ...`처럼 인증 전에 DB를 바꾸는 직접 pipe도 사용하지 않는다.
 
 snapshot은 version/source_id/captured_at/entries를 보존한다. 실제 capture 시각을5분 뒤에 현재로 덮어쓰지 않으며 최대28일까지만 검증한다. apply-snapshot은 인증된 입력을 메모리/stdin으로 받아 현재 quarantine incident·DB/schema와 보존된 source UUID가 모두 맞는지 확인한다. capture 때 유효했던 항목 중 현재 만료된 것은 재적용하지 않으며, 아직 유효한 항목의 원래 expiry는 연장하지 않는다. 삭제/세션 무효화 절차는 기존 apply와 공유하고 성공도 quarantine 상태다. source UUID가 같다는 사실만으로 최신 데이터 완전성이나 서비스 재개를 허가하지 않는다.

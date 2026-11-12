@@ -34,6 +34,15 @@ fn read_input() -> Result<Zeroizing<Vec<u8>>, RecoveryError> {
 }
 async fn run() -> Result<(), RecoveryError> {
     let args = env::args().skip(1).collect::<Vec<_>>();
+    if args.as_slice() == ["inspect-snapshot"] {
+        let snapshot = Snapshot::parse(&read_input()?, SystemAuthClock.now())?;
+        println!(
+            "{}",
+            serde_json::to_string(&snapshot.inspect(SystemAuthClock.now())?)
+                .map_err(|_| RecoveryError::Invalid)?
+        );
+        return Ok(());
+    }
     let command = match args
         .iter()
         .map(String::as_str)

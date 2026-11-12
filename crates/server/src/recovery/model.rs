@@ -47,7 +47,22 @@ pub struct Snapshot {
     pub(super) captured_at: i64,
     pub(super) entries: Vec<Erasure>,
 }
+#[derive(Serialize)]
+pub struct SnapshotInspection {
+    source_id: Uuid,
+    captured_at: i64,
+    entries: u16,
+}
 impl Snapshot {
+    pub fn inspect(&self, now: i64) -> Result<SnapshotInspection, RecoveryError> {
+        self.validate(now)?;
+        Ok(SnapshotInspection {
+            source_id: self.source_id,
+            captured_at: self.captured_at,
+            entries: self.entries.len() as u16,
+        })
+    }
+
     pub fn parse(bytes: &[u8], now: i64) -> Result<Self, RecoveryError> {
         if bytes.len() > MAX_BYTES {
             return Err(RecoveryError::Invalid);

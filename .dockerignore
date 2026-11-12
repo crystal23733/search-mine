@@ -50,6 +50,7 @@
 !deploy/
 !deploy/Dockerfile
 !deploy/backup.py
+!deploy/ledger.py
 !deploy/backup.Dockerfile
 !deploy/entrypoint.sh
 !deploy/render-nginx.mjs

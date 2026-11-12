@@ -530,3 +530,5 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 #83 입력 장벽 후보 · FR10/NFR01/02/05/06/07/08·TS18/20/26/30 → [ADR0102](../adr/0102-update-interaction-barrier.md) → native modal 전 prepare ACK 금지·busy/NACK·lease/focus 수명 → [대조 기록](../verification/83-activation-recovery.md). 실제 반복/전체 검증 전 수정 완료로 판단하지 않는다.
 
 #225 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0103](../adr/0103-recovery-source-snapshot.md) → owner source UUID/일관된 캡처·원래 시각/출처 검증·공통 원자 재적용 → [검증225](../verification/225-recovery-source-snapshot.md). 독립 암호화 내구/항목별 expiry·최신 cutover/release·실제 운영 출구는 #25 후속이다.
+
+#227 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0104](../adr/0104-encrypted-recovery-checkpoint.md) → 원래 expiry별 age checkpoint·원자 current·전체 인증 후 native 검사/적용 → [검증227](../verification/227-encrypted-recovery-checkpoint.md). 최신 동기 내구/cutover/release·실제 운영 매체/스케줄/RPO·RTO는 #25 후속이다.

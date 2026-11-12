@@ -1,5 +1,5 @@
 use super::model::{Erasure, Kind};
-use super::{Ledger, RecoveryError, Snapshot};
+use super::{Ledger, RecoveryError, Snapshot, SnapshotMatch};
 use crate::{
     auth::{AuthClock, SystemAuthClock},
     online::recovery_lock,
@@ -116,6 +116,23 @@ pub async fn quarantine(pool: &PgPool, clock: &dyn AuthClock) -> Result<Uuid, Re
 }
 /// Read committed rights without acquiring the live server's exclusive journal lock.
 pub async fn capture(pool: &PgPool, clock: &dyn AuthClock) -> Result<Snapshot, RecoveryError> {
+    read_source(pool, clock, |snapshot, _| Ok(snapshot)).await
+}
+pub async fn compare_snapshot(
+    pool: &PgPool,
+    clock: &dyn AuthClock,
+    checkpoint: &Snapshot,
+) -> Result<SnapshotMatch, RecoveryError> {
+    read_source(pool, clock, |observed, now| {
+        checkpoint.compare(&observed, now)
+    })
+    .await
+}
+async fn read_source<T>(
+    pool: &PgPool,
+    clock: &dyn AuthClock,
+    read: impl FnOnce(Snapshot, i64) -> Result<T, RecoveryError>,
+) -> Result<T, RecoveryError> {
     bounded(async {
         let mut op = Operation::new(clock)?;
         let captured_at = op.last;
@@ -136,8 +153,9 @@ pub async fn capture(pool: &PgPool, clock: &dyn AuthClock) -> Result<Snapshot, R
         let snapshot = Snapshot { version: 1, source_id, captured_at, entries };
         op.check(&mut tx).await?;
         snapshot.to_bytes(op.last)?;
+        let result = read(snapshot, op.last)?;
         tx.commit().await.map_err(db)?;
-        Ok(snapshot)
+        Ok(result)
     }).await
 }
 const CAPTURE: &str = "SELECT kind,id,CASE WHEN deleted=trunc(deleted) THEN deleted::bigint ELSE -1 END,CASE WHEN expires=trunc(expires) THEN expires::bigint ELSE -1 END FROM (SELECT 'account' AS kind,account_id AS id,extract(epoch FROM deleted_at) AS deleted,extract(epoch FROM expires_at) AS expires FROM auth_deletion_tombstones WHERE expires_at>to_timestamp($1::double precision) UNION ALL SELECT 'identity',identity_id,extract(epoch FROM deleted_at),extract(epoch FROM expires_at) FROM auth_identity_tombstones WHERE expires_at>to_timestamp($1::double precision)) entries ORDER BY kind,id LIMIT 501";

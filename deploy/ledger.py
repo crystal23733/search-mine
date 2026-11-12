@@ -348,6 +348,16 @@ class LedgerStore:
         snapshot = self.verified_snapshot(identity)
         return {'captured_at': snapshot['captured_at'], 'entries': len(snapshot['entries'])}
 
+    def audit(self, identity, env):
+        snapshot = self.verified_snapshot(identity)
+        result = native(['compare-snapshot'], encode(snapshot), env, self.remaining())
+        require(isinstance(result, dict) and set(result) == {'captured_at', 'observed_at', 'entries'})
+        integer(result['captured_at'], snapshot['captured_at'], snapshot['captured_at'])
+        integer(result['observed_at'], snapshot['captured_at'], self.now())
+        integer(result['entries'], 0, len(snapshot['entries']))
+        self.prune()
+        return result
+
     def apply(self, identity, incident, env):
         require(isinstance(incident, str) and uuid.UUID(incident).int != 0)
         snapshot = self.verified_snapshot(identity)
@@ -359,7 +369,7 @@ class LedgerStore:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['capture', 'verify', 'apply', 'prune'])
+    parser.add_argument('command', choices=['capture', 'verify', 'audit', 'apply', 'prune'])
     parser.add_argument('--incident')
     args = parser.parse_args()
     os.umask(0o077)
@@ -377,6 +387,8 @@ def main():
                 print(json.dumps({'status': 'captured', 'captured_at': result['captured_at'], 'entries': result['entries']}))
             elif args.command == 'verify':
                 print(json.dumps(dict(store.verify(Path('/run/secrets/backup_identity')), status='verified')))
+            elif args.command == 'audit':
+                print(json.dumps(dict(store.audit(Path('/run/secrets/backup_identity'), owner_environment()), status='matched')))
             elif args.command == 'apply':
                 print(json.dumps(dict(store.apply(Path('/run/secrets/backup_identity'), args.incident, owner_environment()), status='applied')))
             else:

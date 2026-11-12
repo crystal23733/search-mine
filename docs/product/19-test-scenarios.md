@@ -532,3 +532,5 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 #225 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0103](../adr/0103-recovery-source-snapshot.md) → owner source UUID/일관된 캡처·원래 시각/출처 검증·공통 원자 재적용 → [검증225](../verification/225-recovery-source-snapshot.md). 독립 암호화 내구/항목별 expiry·최신 cutover/release·실제 운영 출구는 #25 후속이다.
 
 #227 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0104](../adr/0104-encrypted-recovery-checkpoint.md) → 원래 expiry별 age checkpoint·원자 current·전체 인증 후 native 검사/적용 → [검증227](../verification/227-encrypted-recovery-checkpoint.md). 최신 동기 내구/cutover/release·실제 운영 매체/스케줄/RPO·RTO는 #25 후속이다.
+
+#229 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0105](../adr/0105-current-rights-snapshot-audit.md) → 전체 인증 후 같은 MVCC의 현재 원장 집합 비교·관측 요약/읽기 전용 → [검증229](../verification/229-current-rights-snapshot-audit.md). writer 정지/동기 내구·최종 cutover/release·실제 운영 출구는 #25 후속이다.

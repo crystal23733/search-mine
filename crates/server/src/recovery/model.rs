@@ -53,7 +53,41 @@ pub struct SnapshotInspection {
     captured_at: i64,
     entries: u16,
 }
+#[derive(Serialize)]
+pub struct SnapshotMatch {
+    captured_at: i64,
+    observed_at: i64,
+    entries: u16,
+}
 impl Snapshot {
+    pub fn compare(&self, observed: &Self, now: i64) -> Result<SnapshotMatch, RecoveryError> {
+        self.validate(now)?;
+        observed.validate(now)?;
+        if self.captured_at > observed.captured_at {
+            return Err(RecoveryError::Invalid);
+        }
+        if self.source_id != observed.source_id {
+            return Err(RecoveryError::Blocked);
+        }
+        let current = |snapshot: &Self| {
+            snapshot
+                .entries
+                .iter()
+                .filter(|e| e.expires_at > observed.captured_at)
+                .map(|e| (e.kind, e.id, e.deleted_at, e.expires_at))
+                .collect::<std::collections::HashSet<_>>()
+        };
+        let actual = current(observed);
+        if current(self) != actual {
+            return Err(RecoveryError::Blocked);
+        }
+        Ok(SnapshotMatch {
+            captured_at: self.captured_at,
+            observed_at: observed.captured_at,
+            entries: actual.len() as u16,
+        })
+    }
+
     pub fn inspect(&self, now: i64) -> Result<SnapshotInspection, RecoveryError> {
         self.validate(now)?;
         Ok(SnapshotInspection {

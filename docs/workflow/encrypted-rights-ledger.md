@@ -30,6 +30,18 @@ verify는 비밀키만 사용해 전체 index와 현재 유효한 모든 개인 
 
 실제 주기 실행은 아직 자동 구성하지 않는다. 운영자는 원래 기한의 정리 주기·중단 후 재개 직전 정리·모든 복제본과 물리 매체의 만료를 검증해야 한다. 잘못된 metadata 때문에 정리가 실패한 것을 정리 완료로 계산하지 않는다. age 인증은 public recipient를 가진 송신자의 서명이 아니므로 신뢰하는 운영자 전용 저장소·키 접근 통제를 유지한다.
 
+## 현재 원장과 비교 (#229)
+
+[ADR0105](../adr/0105-current-rights-snapshot-audit.md) / [검증229](../verification/229-current-rights-snapshot-audit.md)의 audit는 전체 인증한 checkpoint와 **현재 정상 source DB**의 같은 MVCC 시점 원장을 비교한다. source owner URL과 비밀키만 사용하며 DB 내부망에서 읽기만 한다. 아래 source env/project는 캡처에 사용한 실제 원본을 가리켜야 한다. 격리된 target env로 바꾸지 않는다.
+
+```sh
+docker compose -p liar --env-file /restricted/source.env -f deploy/compose.yml -f deploy/ledger.compose.yml --profile ledger-audit run --rm --no-deps -T ledger-audit
+```
+
+결과 status는 matched이며 captured_at은 원래 checkpoint 생성 시각, observed_at은 일관된 source snapshot 관측 시각, entries는 그 관측 때 유효한 항목 수다. 새 연결 해제/계정 삭제가 추가되면 기존 자료의 verify는 성공해도 audit는 실패할 수 있다. 같은 개수의 다른 ID/kind·원래 시각 불일치도 거절한다. 원래 기한이 지난 checkpoint 항목은 재생성하지 않고 정리한다. 손상·누락·다른 키는 source 비교를 호출하기 전에 차단하며 source가 없거나 격리·출처 불명·Clock/한도/연결 오류이면 일치를 추측하지 않는다.
+
+matched는 해당 DB snapshot의 관측 결과이며 검사 중/이후 commit된 새로운 쓰기까지 포함했다는 보장이 아니다. 개인 차이 목록을 출력하거나 원래 capture 시각을 현재로 바꾸지 않는다. 결과를 서비스 재개 승인 파일로 보관하거나 automatic release에 연결하지 않는다. writer 정지/최종 cutover와 모든 권리 변경의 동기 내구·최신 완전성, 실제 매체/주기/RPO·RTO는 #25에 남는다. source/target DB와 기존 checkpoint를 검사 자체로 변경하지 않으며, 원래 expiry의 파일 정리만 기존 정책에 따라 수행한다.
+
 ## 격리 복구 대상 적용
 
 [복구 격리 절차](recovery-quarantine.md)에 따라 관리 백업을 원본과 구분한 빈 대상에 복원하고 migration/quarantine을 확인한다. gate가 없는 과거 백업을 임의 활성화하지 않는다. source UUID가 없는 백업도 추측해서 채우지 않는다. 복구 대상의 server/web/Tunnel을 시작하지 않는다. source와 구분한 target env/secret/project와 같은 checkpoint 디렉터리를 사용한다.

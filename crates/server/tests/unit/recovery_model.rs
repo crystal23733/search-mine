@@ -163,3 +163,95 @@ fn snapshot_bounds_and_duplicate_keys_never_return_a_partial_batch() {
     v["entries"].as_array_mut().unwrap().push(e);
     assert!(parse_snapshot(&v, NOW).is_err());
 }
+
+#[test]
+fn comparison_is_order_independent_and_preserves_both_original_observation_times() {
+    let mut value = snapshot();
+    let mut identity = value["entries"][0].clone();
+    identity["kind"] = json!("identity");
+    identity["id"] = json!(Uuid::new_v4());
+    value["entries"].as_array_mut().unwrap().push(identity);
+    let checkpoint = parse_snapshot(&value, NOW).unwrap();
+    value["captured_at"] = json!(NOW + 301);
+    value["entries"].as_array_mut().unwrap().reverse();
+    let authority = parse_snapshot(&value, NOW + 301).unwrap();
+    let report = checkpoint.compare(&authority, NOW + 301).unwrap();
+    assert_eq!(
+        serde_json::to_value(report).unwrap(),
+        json!({"captured_at":NOW,"observed_at":NOW+301,"entries":2})
+    );
+}
+#[test]
+fn comparison_rejects_missing_extra_same_count_substitution_and_original_time_changes() {
+    let value = snapshot();
+    let checkpoint = parse_snapshot(&value, NOW).unwrap();
+    for change in ["missing", "extra", "id", "kind", "times", "source"] {
+        let mut current = value.clone();
+        current["captured_at"] = json!(NOW + 1);
+        match change {
+            "missing" => current["entries"] = json!([]),
+            "extra" => {
+                let mut entry = current["entries"][0].clone();
+                entry["id"] = json!(Uuid::new_v4());
+                current["entries"].as_array_mut().unwrap().push(entry);
+            }
+            "id" => current["entries"][0]["id"] = json!(Uuid::new_v4()),
+            "kind" => current["entries"][0]["kind"] = json!("identity"),
+            "times" => {
+                current["entries"][0]["deleted_at"] = json!(NOW - 11);
+                current["entries"][0]["expires_at"] = json!(NOW - 11 + 2419200);
+            }
+            _ => current["source_id"] = json!(Uuid::new_v4()),
+        }
+        let authority = parse_snapshot(&current, NOW + 1).unwrap();
+        assert!(
+            matches!(
+                checkpoint.compare(&authority, NOW + 1),
+                Err(RecoveryError::Blocked)
+            ),
+            "{change}"
+        );
+    }
+}
+#[test]
+fn comparison_uses_exact_observation_expiry_and_distinguishes_empty_from_missing_records() {
+    let mut value = snapshot();
+    value["entries"][0]["deleted_at"] = json!(NOW - 2419199);
+    value["entries"][0]["expires_at"] = json!(NOW + 1);
+    let checkpoint = parse_snapshot(&value, NOW).unwrap();
+    value["entries"] = json!([]);
+    value["captured_at"] = json!(NOW + 1);
+    let authority = parse_snapshot(&value, NOW + 1).unwrap();
+    let report = checkpoint.compare(&authority, NOW + 1).unwrap();
+    assert_eq!(
+        serde_json::to_value(report).unwrap(),
+        json!({"captured_at":NOW,"observed_at":NOW+1,"entries":0})
+    );
+    let mut before = value.clone();
+    before["captured_at"] = json!(NOW);
+    let before = parse_snapshot(&before, NOW).unwrap();
+    assert!(matches!(
+        checkpoint.compare(&before, NOW),
+        Err(RecoveryError::Blocked)
+    ));
+}
+#[test]
+fn comparison_rejects_future_checkpoint_stale_material_and_clock_reversal() {
+    let value = snapshot();
+    let checkpoint = parse_snapshot(&value, NOW).unwrap();
+    let mut observed = value.clone();
+    observed["captured_at"] = json!(NOW + 1);
+    let authority = parse_snapshot(&observed, NOW + 1).unwrap();
+    for now in [NOW - 1, NOW, NOW + 2419201, 253402300800] {
+        assert!(matches!(
+            checkpoint.compare(&authority, now),
+            Err(RecoveryError::Invalid)
+        ));
+    }
+    observed["captured_at"] = json!(NOW + 2);
+    let future = parse_snapshot(&observed, NOW + 2).unwrap();
+    assert!(matches!(
+        future.compare(&authority, NOW + 2),
+        Err(RecoveryError::Invalid)
+    ));
+}

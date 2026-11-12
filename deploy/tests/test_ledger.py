@@ -36,6 +36,7 @@ class LedgerContracts(unittest.TestCase):
         self.key.write_text('synthetic key')
         self.now = NOW
         self.calls = []
+        self.audit_matches = True
         self.snapshot = {'version': 1, 'source_id': str(uuid.uuid4()), 'captured_at': NOW, 'entries': [
             {'kind': 'account', 'id': str(uuid.uuid4()), 'deleted_at': NOW-2419199, 'expires_at': NOW+1},
             {'kind': 'identity', 'id': str(uuid.uuid4()), 'deleted_at': NOW-10, 'expires_at': NOW-10+2419200}]}
@@ -56,6 +57,9 @@ class LedgerContracts(unittest.TestCase):
         if args == ['inspect-snapshot']:
             # Only a port fixture; Rust model rules are tested by the real binary.
             return {'source_id': value['source_id'], 'captured_at': value['captured_at'], 'entries': len(value['entries'])}
+        if args == ['compare-snapshot']:
+            ledger.require(self.audit_matches)
+            return {'captured_at': value['captured_at'], 'observed_at': self.now, 'entries': len(value['entries'])}
         self.assertEqual(args[0], 'apply-snapshot')
         return {'state': 'quarantined', 'applied': len(value['entries'])}
 
@@ -128,6 +132,40 @@ class LedgerContracts(unittest.TestCase):
         with patch.object(ledger, 'decrypt', fail_last), self.store() as store:
             with self.assertRaises(ledger.BackupError):
                 store.apply(self.key, str(uuid.uuid4()), {})
+        self.assertNotIn('apply-snapshot', self.calls)
+
+    def test_audit_keeps_the_original_capture_and_returns_only_a_point_in_time_match(self):
+        pointer = self.capture()
+        self.now += 301
+        with self.store() as store:
+            self.assertEqual(store.audit(self.key, {}), {'captured_at': NOW, 'observed_at': NOW+301, 'entries': 1})
+        self.assertEqual(self.calls[-2:], ['inspect-snapshot', 'compare-snapshot'])
+        self.assertNotIn('apply-snapshot', self.calls)
+        self.assertEqual(ledger.read_json(self.root / 'current.json'), pointer)
+
+    def test_authenticated_but_stale_audit_does_not_rewrite_or_apply_the_checkpoint(self):
+        pointer = self.capture()
+        self.audit_matches = False
+        with self.store() as store:
+            self.assertEqual(store.verify(self.key)['entries'], 2)
+            with self.assertRaises(ledger.BackupError):
+                store.audit(self.key, {})
+        self.assertNotIn('apply-snapshot', self.calls)
+        self.assertEqual(ledger.read_json(self.root / 'current.json'), pointer)
+
+    def test_last_authentication_failure_prevents_even_reading_the_source_db(self):
+        self.capture()
+        folder, manifest = self.files()
+        last = folder / manifest['parts'][-1]['name']
+        def fail_last(path, *args):
+            if path == last:
+                raise ledger.BackupError()
+            return fake_decrypt(path, *args)
+        self.calls.clear()
+        with patch.object(ledger, 'decrypt', fail_last), self.store() as store:
+            with self.assertRaises(ledger.BackupError):
+                store.audit(self.key, {})
+        self.assertNotIn('compare-snapshot', self.calls)
         self.assertNotIn('apply-snapshot', self.calls)
 
     def test_missing_or_corrupt_ciphertext_never_reaches_apply(self):

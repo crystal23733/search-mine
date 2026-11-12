@@ -36,6 +36,12 @@ services:
     profiles: [ledger-prune]
     command: [prune]
     network_mode: none
+  ledger-audit:
+    <<: *ledger
+    profiles: [ledger-audit]
+    command: [audit]
+    networks: [db]
+    secrets: [migration_database_url, backup_identity]
   ledger-apply:
     <<: *ledger
     profiles: [ledger-apply]

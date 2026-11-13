@@ -164,7 +164,15 @@ class Smoke:
 
     def containers(self):
         self.stage("Starting isolated DB, migration, grants, server and nginx")
-        self.compose_run("up", "-d", "--wait", "--wait-timeout", "180", timeout=200)
+        try:
+            self.compose_run("up", "-d", "--wait", "--wait-timeout", "180", timeout=200)
+        except AssertionError:
+            logs = self.compose_run("logs", "--no-color", "postgres", okay=False).stdout.decode(errors="replace")
+            for value in self.values.values():
+                logs = logs.replace(value, "[fixture redacted]")
+            with (self.folder / "failure.log").open("a") as stream:
+                stream.write(logs)
+            raise
         for service in ["postgres", "server", "web"]:
             info = self.inspect(service)
             require(not info["HostConfig"]["PortBindings"], "No running production port may be published")

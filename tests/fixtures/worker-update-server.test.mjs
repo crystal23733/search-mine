@@ -25,3 +25,11 @@ test('fixture shutdown closes an HTTP request whose body never completes', async
     await (closed ?? server.close());
   }
 });
+test('fixture serves the same root shell URL used by the production precache', async()=>{
+  const server=await createWorkerUpdateServer();
+  try {
+    const response=await fetch(server.origin+'/');
+    assert.equal(response.status,200);
+    assert.match(await response.text(),/<div id="app"/);
+  }finally{await server.close();}
+});

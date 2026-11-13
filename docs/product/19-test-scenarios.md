@@ -536,3 +536,5 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 #229 FR01/14/16·NFR01/02/05/07/08·TS20/21/28/29/31/34/35 → [ADR0105](../adr/0105-current-rights-snapshot-audit.md) → 전체 인증 후 같은 MVCC의 현재 원장 집합 비교·관측 요약/읽기 전용 → [검증229](../verification/229-current-rights-snapshot-audit.md). writer 정지/동기 내구·최종 cutover/release·실제 운영 출구는 #25 후속이다.
 
 #231 FR16/NFR03/04/05/07·TS20/21/28/29/31/34/35 → [ADR0106](../adr/0106-controlled-recovery-resume.md) → OPS231-01~06·원본 fence/명시 재개·실제 main 부하/번들·비밀 비출력 점검/주기 실행 → [검증231](../verification/231-release-operations.md). 실제 장비·외부 계정·원본 미확인 장애의 완전성은 운영 검수다.
+
+#233 FR12/13·TS20/21/23/24/25/30/35/36 → [ADR0107](../adr/0107-google-cmp-bootstrap.md)·[사용자 명시 승인](../workflow/approval-record.md) → Google공식public bootstrap/pause·현재TCF·새문서격리 설계. 제품 연결/실계정검수는 별도이며 설계 문서만으로 동작 완료를 주장하지 않는다.

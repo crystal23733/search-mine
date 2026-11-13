@@ -296,3 +296,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 2026-11-10 #83 FR10·TS18/20/26/30 → [ADR0102](../adr/0102-update-interaction-barrier.md) → 실제 입력 겹침4/8fail의 native Warm Up/Restart origin짝·prepare ACK 전 modal 입력 잠금·NACK/lease/focus·24+64retry0 검증 → [검증83](../verification/83-activation-recovery.md). 과거 진단은 이력이며 Chromium 자체/실기기223 검수는 별도다.
 
 #231 FR16/NFR03~05/07 배포 운영 완성: [ADR0106](../adr/0106-controlled-recovery-resume.md)·[OPS231 인수](../verification/231-release-operations.md). 원본을 차단한 뒤만 복구 재개하며 과거 checkpoint만으로 재개하지 않는다. 실제 main/WS 부하·초기/lazy/WASM 보고와 운영 설정 점검을 준비하고, 계정/장비/매체/실기기 확인은 별도로 남긴다.
+
+#233 FR12/13·TS20/21/23/24/25/30/35/36: 사용자GoogleCMP공식방식명시승인→[ADR0107](../adr/0107-google-cmp-bootstrap.md). 동의 전 공개 태그는광고요청pause이며기존Google쿠키읽기가능성을고지했다. 미설정/거부광고0·개인/게임/인증문서격리는유지한다. 실제연결/운영은후속.

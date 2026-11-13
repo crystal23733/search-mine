@@ -28,3 +28,9 @@
 실제 배포의 service-worker 설치가 완료되지 않아 조사한 결과, 배포 이미지의 `/index.html?__WB_REVISION__=fixture`는404였다. 빌드 manifest의 물리 HTML 주소를 실제 공개 웹 주소로 변환하고 fallback의 캐시 키를 `/`로 통일했다. Google모드 navigation이 일반 precache route보다 먼저 네트워크/오프라인 fallback을 선택하도록 등록 순서도 맞췄다. HTML alias나 기존 개인/query 차단을 풀지 않는다. 실제 Nginx의 worker activated/controller를 별도로 검사한다.
 
 현재 로컬 기록: web478/69files, Rust workspace/Clippy, PostgreSQL233(새 Google 제출 포함), Playwright163(retry0, 최종 precache 수정 전), overlay 반복24(retry0). 실제 배포 최종검사·최신 CI/coverage는 아직 진행 중이며 이 기록만으로 병합·운영 완료를 판정하지 않는다.
+
+시험 서버의 실제 root HTML 검사는 빌드된 `dist`를 사용하므로 `yarn build` 뒤 `yarn test:worker-server`를 실행한다. CI에서 이 순서가 빠져404가 났던 실행은 제품 성공으로 계산하지 않는다.
+
+실제 구성된 Google 시험 이미지의 Chromium 검사도 통과했다: 최초 pause1, 현재 선택 뒤0, 공개 동의창 재열기·광고0, worker activated/controller, 게임/개인 새 문서의 태그0, 실제 게시 정책·ads.txt,304 없는 CSP nonce/본문 일치. 이는 합성 SDK 응답의 연결 검증이며 실제 Google 서비스 승인이 아니다. 기본 Nginx56문서·WASM·worker 활성화도 통과했다. 최종 root fixture 수정 뒤 PC/mobile offline12건은 재시도0으로 통과했다.
+
+중간 CI2589ac5는 Rust/core coverage/실DB/백업이 통과했다. 계측 server95.13%(13016/13683), Consent domain99.46%(370/372),9개domain 모두95%이상이다. Web은 build전fixture의404로 실패했으므로 순서를 수정해 최신head에서 다시 검증한다. 최신 exact head의 전체checks·PR리뷰·병합은 이와 별도다.

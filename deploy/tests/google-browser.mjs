@@ -47,7 +47,7 @@ try {
   expect(await page.evaluate(()=>Boolean(navigator.serviceWorker.controller))).toBe(true);
   await page.getByRole('link',{name:'Liar Sweeper',exact:true}).first().click();
   // Tutorial/new-player routing must not publish a game in the prepared document.
-  await expect(page).toHaveURL(/\/ko\/tutorial$/);
+  await expect(page).toHaveURL(`${base}/ko/tutorial?return=%2F`);
   expect(await page.locator('script[data-liar-auto-ads]').count()).toBe(0);
   expect(await page.evaluate(()=>window.__googleFixture)).toBeUndefined();
   const privateResponse=await page.goto(`${base}/ko/me/privacy`);

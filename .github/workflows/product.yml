@@ -123,9 +123,9 @@ jobs:
       - run: yarn typecheck
       - run: yarn test
       - run: yarn test:worker-probe
-      - run: yarn test:worker-server
       - run: yarn test:native-worker-trace
       - run: yarn build
+      - run: yarn test:worker-server
       - run: yarn playwright install --with-deps chromium
       - run: MIGRATION_DATABASE_URL="$DATABASE_URL" cargo run --locked -p liar-server --bin migrate
       - run: yarn test:e2e

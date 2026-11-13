@@ -447,5 +447,9 @@
   "install.dismissed": "Instalação cancelada. Você pode continuar usando o site.",
   "install.failed": "Não foi possível abrir a instalação. Tente o menu de instalação do navegador.",
   "install.network": "A prática offline precisa de um cache preparado neste dispositivo. Partidas online e classificações oficiais exigem conexão.",
-  "offline.applying": "Aplicando alterações. Aguarde um momento."
+  "offline.applying": "Aplicando alterações. Aguarde um momento.",
+  "consent.pageTitle": "Escolhas de privacidade",
+  "consent.pageIntro": "Gerencie aqui o consentimento para anúncios do Google. Para aplicá-lo às estatísticas do serviço, confirme separadamente na sessão atual da sua conta.",
+  "consent.accountOptional": "Você pode gerenciar o consentimento publicitário sem entrar na conta.",
+  "policy.pending": "O responsável ainda não publicou este documento."
 }

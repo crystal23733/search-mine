@@ -170,9 +170,23 @@ async fn withdraw<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
 ) -> Response {
     respond(ctx, uri, headers, body, Operation::Withdraw, deadline).await
 }
+struct Submission<'a, V> {
+    verifier: &'a V,
+    evidence: Option<&'a liar_protocol::consent::ConsentEvidence>,
+}
+impl<V: ConsentVerifier> ConsentVerifier for Submission<'_, V> {
+    async fn verify(&self, subject: Uuid, now: i64) -> Result<VerifiedConsent, ConsentError> {
+        self.verifier
+            .verify_submitted(subject, now, self.evidence)
+            .await
+    }
+}
 enum Command {
     Read,
-    Refresh(Option<Uuid>),
+    Refresh(
+        Option<Uuid>,
+        Option<liar_protocol::consent::ConsentEvidence>,
+    ),
     Withdraw(ConsentWithdrawal),
 }
 fn command(operation: Operation, body: &[u8]) -> Result<Command, Failure> {
@@ -181,13 +195,16 @@ fn command(operation: Operation, body: &[u8]) -> Result<Command, Failure> {
             decode_consent_read(body).map_err(error)?;
             Command::Read
         }
-        Operation::Refresh => Command::Refresh(
-            decode_consent_refresh(body)
-                .map_err(error)?
-                .expected_revision
-                .map(|id| Uuid::parse_str(&id).map_err(|_| error(ConsentApiError::Malformed)))
-                .transpose()?,
-        ),
+        Operation::Refresh => {
+            let input = decode_consent_refresh(body).map_err(error)?;
+            Command::Refresh(
+                input
+                    .expected_revision
+                    .map(|id| Uuid::parse_str(&id).map_err(|_| error(ConsentApiError::Malformed)))
+                    .transpose()?,
+                input.evidence,
+            )
+        }
         Operation::Withdraw => {
             Command::Withdraw(decode_consent_withdraw(body).map_err(error)?.purpose)
         }
@@ -302,9 +319,17 @@ async fn respond<S: ConsentStore + 'static, V: ConsentVerifier + 'static>(
                     .read(owner, deadline.into_std())
                     .await
                     .map_err(domain)?,
-                Command::Refresh(expected) => Some(
+                Command::Refresh(expected, ref evidence) => Some(
                     ctx.store
-                        .refresh(owner, expected, ctx.verifier.as_ref(), deadline.into_std())
+                        .refresh(
+                            owner,
+                            expected,
+                            &Submission {
+                                verifier: ctx.verifier.as_ref(),
+                                evidence: evidence.as_ref(),
+                            },
+                            deadline.into_std(),
+                        )
                         .await
                         .map_err(domain)?,
                 ),

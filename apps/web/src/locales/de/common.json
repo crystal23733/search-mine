@@ -447,5 +447,9 @@
   "install.dismissed": "Installation abgebrochen. Du kannst die Website weiter nutzen.",
   "install.failed": "Die Installationsanfrage konnte nicht geöffnet werden. Nutze das Installationsmenü des Browsers.",
   "install.network": "Offline-Übung benötigt einen vorbereiteten Cache auf diesem Gerät. Online-Partien und offizielle Ranglisten benötigen eine Verbindung.",
-  "offline.applying": "Änderungen werden übernommen. Bitte warten."
+  "offline.applying": "Änderungen werden übernommen. Bitte warten.",
+  "consent.pageTitle": "Datenschutzauswahl",
+  "consent.pageIntro": "Verwalte hier deine Einwilligung für Google-Werbung. Für die Statistik dieses Dienstes musst du deine Auswahl in der aktuellen angemeldeten Sitzung gesondert übernehmen.",
+  "consent.accountOptional": "Du kannst die Werbeeinwilligung ohne Anmeldung verwalten.",
+  "policy.pending": "Der Betreiber hat dieses Dokument noch nicht veröffentlicht."
 }

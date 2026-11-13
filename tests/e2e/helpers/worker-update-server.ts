@@ -36,7 +36,7 @@ export async function createWorkerUpdateServer(): Promise<WorkerUpdateServer> {
           return;
         }
         const file = resolve(root, `.${path}`);
-        if (!file.startsWith(`${root}${sep}`)) {
+        if (file !== root && !file.startsWith(`${root}${sep}`)) {
           response.writeHead(400).end();
           return;
         }
@@ -78,6 +78,7 @@ export async function createWorkerUpdateServer(): Promise<WorkerUpdateServer> {
       new Promise<void>((accept, reject) => {
         server.close((error) => (error ? reject(error) : accept()));
         server.closeIdleConnections();
+        server.closeAllConnections();
       }),
   };
 }

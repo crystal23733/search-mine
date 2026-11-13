@@ -8,6 +8,7 @@ import type {
 import type { RequestOwner } from "../auth/requests";
 import type { Locale } from "../locale";
 export interface ConsentControlPort {
+  refreshHere?(): boolean;
   read(owner: RequestOwner, signal: AbortSignal): Promise<ConsentSnapshot>;
   refresh(
     owner: RequestOwner,

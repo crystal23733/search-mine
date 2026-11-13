@@ -12,8 +12,13 @@ try {
     expect(response.status()).toBe(200);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('h1')).toBeVisible();
-    expect(await page.locator('link[rel=canonical]').getAttribute('href')).toBe(`https://sweeper.example.test/${locale}${path}`);
-    expect(await page.locator('link[rel=alternate]').count()).toBe(9);
+    if(['/privacy','/terms','/consent'].includes(path)) {
+      expect(await page.locator('link[rel=canonical]').count()).toBe(0);
+      await expect(page.locator('meta[name=robots]')).toHaveAttribute('content',/noindex/);
+    } else {
+      expect(await page.locator('link[rel=canonical]').getAttribute('href')).toBe(`https://sweeper.example.test/${locale}${path}`);
+      expect(await page.locator('link[rel=alternate]').count()).toBe(9);
+    }
   }
   await noScript.close();
   const context = await browser.newContext({ viewport: { width: 360, height: 780 } });
@@ -23,13 +28,14 @@ try {
   await active.goto(`${base}/ko/learn`);
   await active.getByRole('link', { name: '튜토리얼 시작', exact: true }).click();
   await expect(active.getByRole('gridcell')).toHaveCount(9);
+  await expect.poll(()=>active.evaluate(async()=>(await navigator.serviceWorker.getRegistration())?.active?.state)).toBe('activated');
   expect(errors).toEqual([]);
   const privateResponse = await active.goto(`${base}/ko/me/account?private=fixture`);
   expect(privateResponse.headers()['cache-control']).toBe('no-store');
   await expect(active.locator('meta[name=robots]')).toHaveAttribute('content', /noindex/);
   expect(await active.locator('link[rel=canonical]').count()).toBe(0);
   await context.close();
-  console.log('Docker nginx: 32 mobile JavaScript-off documents, real WASM tutorial and private head PASS');
+  console.log('Docker nginx: 56 mobile JavaScript-off documents, real WASM tutorial and private head PASS');
 } finally {
   await browser.close();
 }

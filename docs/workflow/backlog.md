@@ -280,3 +280,7 @@
 ## #233 Google CMP 공식 연결 설계 (2026-11-13)
 
 사용자가 Google 개인정보 보호 및 메시지와공개문서태그사전로드/광고요청pause공식방식을명시선택했다. [ADR0107](../adr/0107-google-cmp-bootstrap.md)·approval-record/design-approval에근거를남긴다. 기록PR병합뒤제품연결·8언어정책설정·CSP/ads.txt준비와확인된시험서버teardown경합을진행한다. 실제운영147은유지한다.
+
+## #235 공개 웹 연결과 출시 회귀
+
+FR11/12/13/16·TS18/19/20/21/23/24/25/26/29/30/31/35/36 → [ADR0107](../adr/0107-google-cmp-bootstrap.md)·[ADR0108](../adr/0108-full-viewport-update-interaction.md)·[ADR0109](../adr/0109-current-session-google-consent-evidence.md) → 단일 Google paused bootstrap/현재 TCF·명시 세션 선택/CAS·보호 문서 새 탐색·운영자8언어 정책/nonce CSP·시험 fixture 종료와 viewport 입력 장벽 → [검증235](../verification/235-public-launch-wiring.md). 실제 계정·정책 확정·SDK 네트워크/호스트 검수는 #42/#147/#24와 구분한다.

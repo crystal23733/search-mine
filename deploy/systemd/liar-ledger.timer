@@ -1,0 +1,9 @@
+[Unit]
+Description=Hourly Liar Sweeper encrypted rights checkpoint
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=30
+Unit=liar-maintenance@ledger.service
+[Install]
+WantedBy=timers.target

@@ -58,7 +58,7 @@ async fn capture_is_minimal_committed_and_keeps_original_times() {
 async fn capture_reads_gate_and_both_kinds_from_one_mvcc_snapshot() {
     let pool = auth_pool().await;
     let mut lock = pool.begin().await.unwrap();
-    sqlx::query("LOCK TABLE service_recovery_control IN ACCESS EXCLUSIVE MODE")
+    sqlx::query("LOCK TABLE auth_deletion_tombstones IN ACCESS EXCLUSIVE MODE")
         .execute(&mut *lock)
         .await
         .unwrap();
@@ -66,12 +66,11 @@ async fn capture_reads_gate_and_both_kinds_from_one_mvcc_snapshot() {
     let task = tokio::spawn(async move { capture(&reading, &Clock(NOW)).await });
     tokio::time::timeout(Duration::from_secs(1),async {
         loop {
-            let waiting:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_locks WHERE relation='service_recovery_control'::regclass AND NOT granted)").fetch_one(&pool).await.unwrap();
+            let waiting:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_locks WHERE relation='auth_deletion_tombstones'::regclass AND NOT granted)").fetch_one(&pool).await.unwrap();
             if waiting {break;}
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
     }).await.unwrap();
-    marker(&pool, "account", Uuid::new_v4(), NOW).await;
     marker(&pool, "identity", Uuid::new_v4(), NOW).await;
     lock.commit().await.unwrap();
     let result = task.await.unwrap().unwrap();
@@ -85,7 +84,7 @@ async fn capture_reads_gate_and_both_kinds_from_one_mvcc_snapshot() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(value["entries"].as_array().unwrap().len(), 2);
+    assert_eq!(value["entries"].as_array().unwrap().len(), 1);
     close_auth_pool(pool).await;
 }
 #[tokio::test]
@@ -465,14 +464,14 @@ async fn comparison_matches_one_mvcc_observation_but_not_a_later_committed_chang
     let checkpoint = capture(&pool, &Clock(NOW)).await.unwrap();
     let original = checkpoint.to_bytes(NOW).unwrap();
     let mut lock = pool.begin().await.unwrap();
-    sqlx::query("LOCK TABLE service_recovery_control IN ACCESS EXCLUSIVE MODE")
+    sqlx::query("LOCK TABLE auth_deletion_tombstones IN ACCESS EXCLUSIVE MODE")
         .execute(&mut *lock)
         .await
         .unwrap();
     let reading = pool.clone();
     let task =
         tokio::spawn(async move { compare_snapshot(&reading, &Clock(NOW), &checkpoint).await });
-    wait_for_table_reader(&pool, "service_recovery_control").await;
+    wait_for_table_reader(&pool, "auth_deletion_tombstones").await;
     marker(&pool, "identity", Uuid::new_v4(), NOW).await;
     lock.commit().await.unwrap();
     let report = task.await.unwrap().unwrap();

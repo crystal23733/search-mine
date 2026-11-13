@@ -18,7 +18,7 @@ x-server: &server
   cpus: 2
 services:
   postgres:
-    image: postgres:18-alpine
+    image: ${LIAR_POSTGRES_IMAGE:-postgres:18-alpine}
     logging: *logging
     user: postgres
     read_only: true
@@ -55,7 +55,7 @@ services:
       postgres: {condition: service_healthy}
     restart: 'no'
   grant:
-    image: postgres:18-alpine
+    image: ${LIAR_POSTGRES_IMAGE:-postgres:18-alpine}
     logging: *logging
     user: postgres
     entrypoint: [sh, /scripts/grant-runtime.sh]
@@ -76,6 +76,16 @@ services:
     environment:
       LIAR_PUBLIC_ORIGIN: ${LIAR_PUBLIC_ORIGIN:?Set the confirmed HTTPS public origin}
       DATABASE_URL_FILE: /run/secrets/database_url
+      LIAR_ONLINE_MATCHES: ${LIAR_ONLINE_MATCHES:-16}
+      LIAR_ONLINE_CONNECTIONS: ${LIAR_ONLINE_CONNECTIONS:-32}
+      LIAR_ONLINE_PROOF_WORKERS: ${LIAR_ONLINE_PROOF_WORKERS:-2}
+      LIAR_ONLINE_MAILBOX: ${LIAR_ONLINE_MAILBOX:-64}
+      LIAR_ONLINE_OUTGOING: ${LIAR_ONLINE_OUTGOING:-16}
+      LIAR_LOBBY_CAPACITY: ${LIAR_LOBBY_CAPACITY:-32}
+      LIAR_LOBBY_WORKERS: ${LIAR_LOBBY_WORKERS:-2}
+      LIAR_BOARD_CAPACITY: ${LIAR_BOARD_CAPACITY:-4}
+      LIAR_BOARD_WORKERS: ${LIAR_BOARD_WORKERS:-1}
+      LIAR_BOT_WORKERS: ${LIAR_BOT_WORKERS:-2}
       LIAR_AUTH_CSRF_KEY_FILE: /run/secrets/csrf_key
       LIAR_AUTH_DIGEST_KEYS_FILE: /run/secrets/digest_keys
       LIAR_AUTH_VAULT_KEYS_FILE: /run/secrets/vault_keys
@@ -119,7 +129,7 @@ services:
     healthcheck: {disable: true}
     restart: 'no'
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: ${LIAR_TUNNEL_IMAGE:-cloudflare/cloudflared:latest}
     logging: *logging
     profiles: [tunnel]
     user: '65532:65532'

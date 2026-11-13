@@ -53,4 +53,20 @@ docker compose -p liar-recovery --env-file /restricted/restore-target.env -f dep
 
 `RECOVERY_UUID`는 첫 명령이 반환한 해당 대상의 incident UUID로 대체한다. apply job은 target owner URL과 비밀키만 가지며, 같은 lock 안에서 모든 인증/대응/원래 시각·한도 검증을 완료한 메모리 Snapshot만 native apply-snapshot stdin으로 전달한다. `age --decrypt | recovery ...` 형태로 인증 완료 전에 SQL에 전달하지 않는다. 마지막 파일 손상·다른 키·누락·출처 불일치·Clock/기한 오류면 거절한다. native는 같은 transaction에서 권리 재적용/세션·동의 무효화를 수행하고 성공도 quarantine을 유지한다.
 
-이 도구는 서비스 활성화 명령을 제공하지 않는다. 모든 권리 변경의 동기 내구·최신 완전성/cutover, 기존 운영 DB/이전 이미지 호환성, 실제 별도 매체/RPO·RTO 등 #25의 나머지 출구가 완료되기 전 접근을 재개하지 않는다.
+`capture/verify/audit/apply/prune`은 자동 활성화하지 않는다. #231의 아래 명시 재개 경로만 최신 원본 차단을 요구하며, 기존 운영 DB/이전 이미지 호환성·실제 별도 매체/RPO·RTO 등 #25의 운영 출구는 별도로 검수한다.
+
+## 최신 원본을 차단한 명시 재개 (#231)
+
+일반 `apply`는 계속 quarantine을 유지한다. 최신 원본을 확인할 수 있는 통제된 복구/교체에서는 별도 `ledger-resume`을 사용한다. source server를 정상 drain/종료하고, 대상은 위 절차로 restore/migrate/quarantine한다. 원본이 active일 때 최종 capture/audit를 수행한 같은 checkpoint 디렉터리를 사용한다.
+
+대상 secret 디렉터리에 `recovery_source_database_url`을 준비한다. **대상 owner URL과 구분해 원본 DB를 가리켜야 한다.** 서로 다른 Compose의 `postgres` 이름은 충돌할 수 있으므로 원본 컨테이너의 고유한 내부 DNS 이름/검수한 전용 network alias를 사용한다. 원본 private db network 이름을 대상 env의 `LIAR_RECOVERY_SOURCE_NETWORK`로 지정한다. 외부 host port를 열지 않는다.
+
+```sh
+docker compose -p liar-recovery --env-file /restricted/restore-target.env \
+  -f deploy/compose.yml -f deploy/ledger.compose.yml --profile ledger-resume \
+  run --rm --no-deps -T ledger-resume resume --incident RECOVERY_UUID
+```
+
+전체 암호화 인증 후 원본 writer 잠금·gate/출처·최신 전체 집합을 다시 확인한다. 부족하면 원본과 대상을 열지 않는다. 성공하면 원본을sealed로 commit하고 DB trigger로 권리 변경·gate 재활성화/삭제를 막는다. 이후 대상의 권리/세션 재적용과 기존 보존 adapter의 정리를 끝낸 뒤 같은 incident만active로 전환한다. 원본 차단 뒤 오류가 나면 대상은 quarantine이며 같은 자료/원본으로 재시도한다. 이미active인 대상은 재적용하지 않으므로 응답 유실 시 운영자가 gate/readiness를 확인한다. 이후 대상 server를 시작해 기존 journal 복구/readiness를 검사하고 마지막에 web/Tunnel을 연결한다.
+
+원본을 잃었거나 최신 권리의 완전성을 확인할 수 없으면 이 명령을 사용하지 않는다. 과거 checkpoint만으로 재개하는 우회는 제공하지 않는다. 기존 개인정보를 되살리지 않는 새 설치 또는 원본/완전한 자료 확보가 운영자 결정이다. 이 도구는 동기 복제나 실제 매체/RPO/RTO·이전 이미지 호환 검수를 대신하지 않는다. [배포 점검과 주기 실행](release-operations.md)을 함께 따른다.

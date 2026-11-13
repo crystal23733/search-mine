@@ -74,13 +74,19 @@ def key_file(path):
     return path
 
 
-def owner_environment():
-    env = {k: v for k, v in os.environ.items() if not k.startswith('PG') and k not in {'DATABASE_URL', 'MIGRATION_DATABASE_URL'}}
+def owner_environment(source=False):
+    env = {k: v for k, v in os.environ.items() if not k.startswith('PG') and k not in {'DATABASE_URL', 'MIGRATION_DATABASE_URL', 'RECOVERY_SOURCE_DATABASE_URL'}}
     path = Path('/run/secrets/migration_database_url')
     key_file(path)
     data = path.read_bytes()
     require(0 < len(data) <= 16384 and not any(c in data for c in (b'\0', b'\r', b'\n')))
     env['MIGRATION_DATABASE_URL'] = data.decode()
+    if source:
+        path = Path('/run/secrets/recovery_source_database_url')
+        key_file(path)
+        data = path.read_bytes()
+        require(0 < len(data) <= 16384 and not any(c in data for c in (b'\0', b'\r', b'\n')))
+        env['RECOVERY_SOURCE_DATABASE_URL'] = data.decode()
     return env
 
 
@@ -366,10 +372,19 @@ class LedgerStore:
         integer(result['applied'], 0, 500)
         return result
 
+    def resume(self, identity, incident, env_factory):
+        require(isinstance(incident, str) and uuid.UUID(incident).int != 0)
+        snapshot = self.verified_snapshot(identity)
+        # Load source credentials only after all encrypted parts authenticate.
+        result = native(['resume-from-source', incident], encode(snapshot), env_factory(), self.remaining())
+        require(isinstance(result, dict) and set(result) == {'state', 'applied'} and result['state'] == 'active')
+        integer(result['applied'], 0, 500)
+        return result
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['capture', 'verify', 'audit', 'apply', 'prune'])
+    parser.add_argument('command', choices=['capture', 'verify', 'audit', 'apply', 'resume', 'prune'])
     parser.add_argument('--incident')
     args = parser.parse_args()
     os.umask(0o077)
@@ -380,7 +395,7 @@ def main():
     signal.signal(signal.SIGINT, interrupted)
     signal.signal(signal.SIGTERM, interrupted)
     try:
-        require(bool(args.incident) == (args.command == 'apply'))
+        require(bool(args.incident) == (args.command in {'apply', 'resume'}))
         with LedgerStore('/ledger') as store:
             if args.command == 'capture':
                 result = store.capture(Path('/run/secrets/backup_recipient'), owner_environment())
@@ -391,6 +406,8 @@ def main():
                 print(json.dumps(dict(store.audit(Path('/run/secrets/backup_identity'), owner_environment()), status='matched')))
             elif args.command == 'apply':
                 print(json.dumps(dict(store.apply(Path('/run/secrets/backup_identity'), args.incident, owner_environment()), status='applied')))
+            elif args.command == 'resume':
+                print(json.dumps(dict(store.resume(Path('/run/secrets/backup_identity'), args.incident, lambda: owner_environment(source=True)), status='resumed')))
             else:
                 print(json.dumps({'status': 'pruned', 'removed': store.prune()}))
     except (BackupError, OSError, ValueError, KeyError, TypeError, StopIteration, subprocess.SubprocessError):

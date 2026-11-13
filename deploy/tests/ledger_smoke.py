@@ -52,13 +52,14 @@ class LedgerSmoke(BackupSmoke):
                               self.image, '-y', '/identity']).stdout
         (self.secret_dir / 'backup_recipient').write_bytes(recipient)
         (self.secret_dir / 'backup_recipient').chmod(0o444)
-        profiles = ['ledger-capture', 'ledger-verify', 'ledger-prune', 'ledger-audit', 'ledger-apply']
+        profiles = ['ledger-capture', 'ledger-verify', 'ledger-prune', 'ledger-audit', 'ledger-apply', 'ledger-resume']
         flags = [arg for p in profiles for arg in ['--profile', p]]
         config = json.loads(self.compose_run(*flags, 'config', '--format', 'json').stdout)
         expected = {'ledger-capture': {'migration_database_url', 'backup_recipient'},
                     'ledger-verify': {'backup_identity'}, 'ledger-prune': set(),
                     'ledger-audit': {'migration_database_url', 'backup_identity'},
-                    'ledger-apply': {'migration_database_url', 'backup_identity'}}
+                    'ledger-apply': {'migration_database_url', 'backup_identity'},
+                    'ledger-resume': {'migration_database_url', 'recovery_source_database_url', 'backup_identity'}}
         for name in profiles:
             service = config['services'][name]
             require(service['user'] == '10001:10001' and service['read_only'] and not service.get('ports') and 'ALL' in service['cap_drop'], 'Ledger job isolation mismatch')
@@ -66,7 +67,7 @@ class LedgerSmoke(BackupSmoke):
             if name in ['ledger-verify', 'ledger-prune']:
                 require(service['network_mode'] == 'none', 'Offline jobs must not have a network')
             else:
-                require(set(service['networks']) == {'db'}, 'Owner jobs must only use the internal DB network')
+                require(set(service['networks']) == ({'db', 'recovery-source'} if name == 'ledger-resume' else {'db'}), 'Owner jobs must only use the internal DB network')
         self.results['key_and_network_isolation'] = True
         self.compose_run('up', '-d', '--wait', '--wait-timeout', '120', 'postgres')
         self.compose_run('run', '--rm', 'migrate', timeout=120)
@@ -171,6 +172,20 @@ print('blocked before SQL')
         counts = self.fixture_sql('SELECT (SELECT count(*) FROM auth_accounts),(SELECT count(*) FROM auth_identities),(SELECT state FROM service_recovery_control);', 'restored_fixture').stdout.strip()
         require(counts == b'1|1|quarantined', 'Restored erasure/identity rights or quarantine were lost')
         self.results['restored_rights_applied_idempotently_without_activation'] = True
+        self.stage('Fencing the original source and explicitly resuming only the restored target')
+        (self.secret_dir / 'recovery_source_database_url').write_text(self.values['migration_database_url'])
+        (self.secret_dir / 'recovery_source_database_url').chmod(0o444)
+        result = self.container(['resume', '--incident', incident],
+                                keys=['migration_database_url', 'recovery_source_database_url', 'backup_identity'],
+                                owner='target_url', network=network)
+        require(json.loads(result.stdout) == {'status': 'resumed', 'state': 'active', 'applied': 3}, 'Controlled resume failed')
+        require(self.fixture_sql('SELECT state FROM service_recovery_control;').stdout.strip() == b'sealed', 'Source was not fenced')
+        require(self.fixture_sql('SELECT state FROM service_recovery_control;', 'restored_fixture').stdout.strip() == b'active', 'Target was not activated')
+        rejected = self.container(['resume', '--incident', incident],
+                                  keys=['migration_database_url', 'recovery_source_database_url', 'backup_identity'],
+                                  owner='target_url', network=network, okay=False)
+        require(rejected.returncode != 0, 'Active target was silently re-applied')
+        self.results['source_fenced_target_resumed_only_once'] = True
         self.stage('Pruning by original record expiry without recapturing timestamps')
         self.container(['script', f"""
 root=pathlib.Path('/ledger')

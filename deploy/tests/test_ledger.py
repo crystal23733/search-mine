@@ -57,6 +57,8 @@ class LedgerContracts(unittest.TestCase):
         if args == ['inspect-snapshot']:
             # Only a port fixture; Rust model rules are tested by the real binary.
             return {'source_id': value['source_id'], 'captured_at': value['captured_at'], 'entries': len(value['entries'])}
+        if args[0] == 'resume-from-source':
+            return {'state': 'active', 'applied': len(value['entries'])}
         if args == ['compare-snapshot']:
             ledger.require(self.audit_matches)
             return {'captured_at': value['captured_at'], 'observed_at': self.now, 'entries': len(value['entries'])}
@@ -86,6 +88,20 @@ class LedgerContracts(unittest.TestCase):
         with self.store() as store:
             self.assertEqual(store.apply(self.key, str(uuid.uuid4()), {}), {'state': 'quarantined', 'applied': 2})
         self.assertEqual(self.calls[-2:], ['inspect-snapshot', 'apply-snapshot'])
+
+    def test_resume_authenticates_all_parts_before_loading_source_credentials(self):
+        self.capture()
+        with self.store() as store:
+            result = store.resume(self.key, str(uuid.uuid4()), lambda: {'source': 'private'})
+            self.assertEqual(result, {'state': 'active', 'applied': 2})
+        self.assertEqual(self.calls[-2:], ['inspect-snapshot', 'resume-from-source'])
+        folder, manifest = self.files()
+        (folder / manifest['parts'][-1]['name']).write_bytes(b'corrupt')
+        loaded = []
+        with self.store() as store:
+            with self.assertRaises(ledger.BackupError):
+                store.resume(self.key, str(uuid.uuid4()), lambda: loaded.append(True))
+        self.assertEqual(loaded, [])
 
     def test_exact_original_expiry_removes_only_the_expired_ciphertext(self):
         pointer = self.capture()

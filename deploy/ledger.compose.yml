@@ -48,6 +48,17 @@ services:
     command: [apply]
     networks: [db]
     secrets: [migration_database_url, backup_identity]
+  ledger-resume:
+    <<: *ledger
+    profiles: [ledger-resume]
+    command: [resume]
+    networks: [db, recovery-source]
+    secrets: [migration_database_url, recovery_source_database_url, backup_identity]
+networks:
+  recovery-source:
+    external: true
+    name: ${LIAR_RECOVERY_SOURCE_NETWORK:-liar-recovery-source-not-configured}
 secrets:
+  recovery_source_database_url: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/recovery_source_database_url'}
   backup_recipient: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/backup_recipient'}
   backup_identity: {file: '${LIAR_SECRETS_DIR:?Set restricted host secret directory}/backup_identity'}

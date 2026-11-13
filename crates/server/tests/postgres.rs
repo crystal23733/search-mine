@@ -40,6 +40,8 @@ mod event_retention;
 mod events;
 #[path = "postgres/latest_results.rs"]
 mod latest_results;
+#[path = "postgres/load.rs"]
+mod load;
 #[path = "postgres/main_observation.rs"]
 mod main_observation;
 #[path = "postgres/me.rs"]
@@ -52,6 +54,8 @@ mod optional_retention;
 mod personal;
 #[path = "postgres/recovery.rs"]
 mod recovery;
+#[path = "postgres/recovery_resume.rs"]
+mod recovery_resume;
 #[path = "postgres/recovery_snapshot.rs"]
 mod recovery_snapshot;
 #[path = "postgres/source_retention.rs"]
@@ -598,6 +602,10 @@ async fn serving_dml_role_can_authenticate_but_cannot_migrate_or_create_tables()
     .await
     .unwrap();
     sqlx::query("GRANT SELECT,INSERT,UPDATE,DELETE ON auth_accounts,auth_identities,auth_credentials,auth_sessions,auth_transactions,auth_deletion_tombstones,auth_apple_revoke_queue,auth_apple_notification_receipts,online_match_results,online_match_players TO liar_auth_test_dml").execute(&pool).await.unwrap();
+    sqlx::query("GRANT SELECT ON service_recovery_control TO liar_auth_test_dml")
+        .execute(&pool)
+        .await
+        .unwrap();
     sqlx::query("GRANT SELECT,INSERT,DELETE ON product_events TO liar_auth_test_dml")
         .execute(&pool)
         .await

@@ -6,12 +6,12 @@ use reqwest::Client;
 use serde_json::{Value, json};
 use tokio_tungstenite::{connect_async, tungstenite::client::IntoClientRequest};
 
-struct User {
+pub(super) struct User {
     id: Uuid,
-    cookie: String,
-    csrf: String,
+    pub(super) cookie: String,
+    pub(super) csrf: String,
 }
-async fn user(pool: &sqlx::PgPool, client: &Client, origin: &str, name: &str) -> User {
+pub(super) async fn user(pool: &sqlx::PgPool, client: &Client, origin: &str, name: &str) -> User {
     let bootstrap = client
         .get(format!("{origin}/api/v1/auth/bootstrap"))
         .send()

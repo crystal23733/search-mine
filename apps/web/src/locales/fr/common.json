@@ -447,5 +447,9 @@
   "install.dismissed": "Installation annulée. Vous pouvez continuer à utiliser le site.",
   "install.failed": "Impossible d’ouvrir la demande d’installation. Essayez le menu d’installation du navigateur.",
   "install.network": "L’entraînement hors ligne nécessite un cache prêt sur cet appareil. Les parties en ligne et les classements officiels nécessitent une connexion.",
-  "offline.applying": "Application des modifications. Veuillez patienter."
+  "offline.applying": "Application des modifications. Veuillez patienter.",
+  "consent.pageTitle": "Choix de confidentialité",
+  "consent.pageIntro": "Gérez ici le consentement aux annonces Google. Pour l’appliquer aux statistiques du service, confirmez-le séparément dans votre session connectée actuelle.",
+  "consent.accountOptional": "Vous pouvez gérer le consentement publicitaire sans vous connecter.",
+  "policy.pending": "Le responsable n’a pas encore publié ce document."
 }

@@ -538,3 +538,5 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 #231 FR16/NFR03/04/05/07·TS20/21/28/29/31/34/35 → [ADR0106](../adr/0106-controlled-recovery-resume.md) → OPS231-01~06·원본 fence/명시 재개·실제 main 부하/번들·비밀 비출력 점검/주기 실행 → [검증231](../verification/231-release-operations.md). 실제 장비·외부 계정·원본 미확인 장애의 완전성은 운영 검수다.
 
 #233 FR12/13·TS20/21/23/24/25/30/35/36 → [ADR0107](../adr/0107-google-cmp-bootstrap.md)·[사용자 명시 승인](../workflow/approval-record.md) → Google공식public bootstrap/pause·현재TCF·새문서격리 설계. 제품 연결/실계정검수는 별도이며 설계 문서만으로 동작 완료를 주장하지 않는다.
+
+#235 FR11/12/13/16·TS18/19/20/21/23/24/25/26/29/30/31/35/36 → [ADR0108](../adr/0108-full-viewport-update-interaction.md)·[ADR0109](../adr/0109-current-session-google-consent-evidence.md) → [WEB235-01~07](../verification/235-public-launch-wiring.md). 광고 요청 전 pause, 단일 태그/TCF 현재 문맥·목적 분리, 실제 DB의 현재 세션/CSRF/CAS/철회, 문서별 nonce/referrer와 오프라인 fallback,8언어 미게시/정책 escaping, active HTTP fixture 종료·PC/mobile viewport 장벽을 검증한다. 실제 Google SDK 성공으로 대체하지 않는다.

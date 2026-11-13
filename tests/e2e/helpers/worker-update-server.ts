@@ -78,6 +78,7 @@ export async function createWorkerUpdateServer(): Promise<WorkerUpdateServer> {
       new Promise<void>((accept, reject) => {
         server.close((error) => (error ? reject(error) : accept()));
         server.closeIdleConnections();
+        server.closeAllConnections();
       }),
   };
 }

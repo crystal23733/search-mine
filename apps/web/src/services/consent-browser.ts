@@ -12,6 +12,7 @@ export type ConsentChannel = Pick<
 >;
 export interface ConsentAdapter extends CmpPort {
   dispose(): void;
+  subscribeBroadcast?(listener: () => void): () => void;
 }
 export type ConsentAdapterFactory = (
   context: ConsentContextPort,
@@ -176,12 +177,15 @@ export function createBrowserConsent(
     context.dispose();
     return createConsent();
   }
+  const removeBroadcast = adapter.subscribeBroadcast?.(() =>
+    context.broadcast(),
+  );
   const guard = createConsentGuard(
     {
       read: () => adapter.read(),
       subscribe: (listener) =>
         adapter.subscribe(() => {
-          context.broadcast();
+          if (!adapter.subscribeBroadcast) context.broadcast();
           listener();
         }),
       reopen: (signal) => adapter.reopen(signal),
@@ -197,6 +201,7 @@ export function createBrowserConsent(
       disposed = true;
       consent.dispose();
       guard.dispose();
+      removeBroadcast?.();
       context.dispose();
       try {
         adapter.dispose();

@@ -123,6 +123,7 @@ jobs:
       - run: yarn typecheck
       - run: yarn test
       - run: yarn test:worker-probe
+      - run: yarn test:worker-server
       - run: yarn test:native-worker-trace
       - run: yarn build
       - run: yarn playwright install --with-deps chromium

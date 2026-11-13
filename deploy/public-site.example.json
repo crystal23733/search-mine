@@ -1,0 +1,153 @@
+{
+  "policies": {
+    "en": {
+      "revision": "",
+      "effectiveDate": "",
+      "operator": "",
+      "contact": "",
+      "privacy": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ],
+      "terms": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ]
+    },
+    "ko": {
+      "revision": "",
+      "effectiveDate": "",
+      "operator": "",
+      "contact": "",
+      "privacy": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ],
+      "terms": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ]
+    },
+    "ja": {
+      "revision": "",
+      "effectiveDate": "",
+      "operator": "",
+      "contact": "",
+      "privacy": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ],
+      "terms": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ]
+    },
+    "zh-CN": {
+      "revision": "",
+      "effectiveDate": "",
+      "operator": "",
+      "contact": "",
+      "privacy": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ],
+      "terms": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ]
+    },
+    "es": {
+      "revision": "",
+      "effectiveDate": "",
+      "operator": "",
+      "contact": "",
+      "privacy": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ],
+      "terms": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ]
+    },
+    "pt-BR": {
+      "revision": "",
+      "effectiveDate": "",
+      "operator": "",
+      "contact": "",
+      "privacy": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ],
+      "terms": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ]
+    },
+    "de": {
+      "revision": "",
+      "effectiveDate": "",
+      "operator": "",
+      "contact": "",
+      "privacy": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ],
+      "terms": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ]
+    },
+    "fr": {
+      "revision": "",
+      "effectiveDate": "",
+      "operator": "",
+      "contact": "",
+      "privacy": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ],
+      "terms": [
+        {
+          "heading": "",
+          "body": ""
+        }
+      ]
+    }
+  },
+  "google": {
+    "frame": [],
+    "connect": [],
+    "image": []
+  }
+}

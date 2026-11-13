@@ -447,5 +447,9 @@
   "install.dismissed": "Installation was cancelled. You can keep using the website.",
   "install.failed": "The installation prompt could not be opened. Try your browser’s installation menu.",
   "install.network": "Offline practice needs a prepared cache on this device. Online matches and official rankings require a connection.",
-  "offline.applying": "Applying changes. Please wait."
+  "offline.applying": "Applying changes. Please wait.",
+  "consent.pageTitle": "Privacy choices",
+  "consent.pageIntro": "Manage Google advertising choices here. Applying your choice to service statistics requires a separate, explicit action for your current signed-in session.",
+  "consent.accountOptional": "Signing in is optional. You can manage advertising choices without an account.",
+  "policy.pending": "The operator has not published this document yet."
 }

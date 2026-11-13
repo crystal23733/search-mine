@@ -43,11 +43,11 @@ Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJ
 
 ## 자동 광고
 
-사용자 지시에 따라 [ADR0091](docs/adr/0091-adsense-auto-ads.md)의 AdSense 자동 광고로 전환합니다. 허용 공개 문서/현재 광고 동의에서 교체 가능한 script port를 실행하고 게임 문서를 분리합니다. [#199 연결](docs/verification/199-auto-ads-runtime.md)은 교체 가능한 script와 게임 새문서 경계를 제공합니다. `VITE_ADSENSE_CLIENT_ID`와 실제 CMP/사이트 승인/운영 설정이 없는 실행 앱은 광고0을 유지합니다. [설정 절차](docs/workflow/auto-ads-configuration.md)를 확인하세요. 과거 [#194 정책 검증](docs/verification/194-ad-request-policy.md)의 자체3판 카운터/H5 전면 계획은 대체합니다.
+사용자 지시에 따라 [ADR0091](docs/adr/0091-adsense-auto-ads.md)의 AdSense 자동 광고로 전환합니다. 허용 공개 문서/현재 광고 동의에서 교체 가능한 script port를 실행하고 게임 문서를 분리합니다. [#199 연결](docs/verification/199-auto-ads-runtime.md)은 교체 가능한 script와 게임 새문서 경계를 제공합니다. `VITE_CMP_PROVIDER=google`·`VITE_ADSENSE_CLIENT_ID`·공개 정책/CSP 구성과 실제 사이트 승인/운영 설정이 없는 실행 앱은 광고0을 유지합니다. [설정 절차](docs/workflow/auto-ads-configuration.md)를 확인하세요. 과거 [#194 정책 검증](docs/verification/194-ad-request-policy.md)의 자체3판 카운터/H5 전면 계획은 대체합니다.
 
 ## 공개 locale 문서
 
-홈·튜토리얼 소개·규칙·저장소 고지는8언어 총32개 정적 HTML로 제공하며 JavaScript 없이 읽을 수 있습니다. `VITE_PUBLIC_SITE_ORIGIN`에 확정된 HTTPS origin을 설정하면 canonical·hreflang·OG URL·sitemap을 생성합니다. 미설정 시 도메인을 추정하지 않고 robots crawl을 차단합니다. 개인/게임/인증 문서는 검색 제외합니다. [SEO 설정과 운영 검수](docs/workflow/seo-configuration.md)를 확인하세요.
+홈·튜토리얼 소개·규칙·저장소 고지는8언어 총56개 정적 HTML(개인정보·약관·동의 문서 포함)로 제공하며 JavaScript 없이 읽을 수 있습니다. `VITE_PUBLIC_SITE_ORIGIN`에 확정된 HTTPS origin을 설정하면 canonical·hreflang·OG URL·sitemap을 생성합니다. 미설정 시 도메인을 추정하지 않고 robots crawl을 차단합니다. 개인/게임/인증 문서는 검색 제외합니다. [SEO 설정과 운영 검수](docs/workflow/seo-configuration.md)를 확인하세요.
 
 배포 전 설정 점검·백업/권리 원장 주기·실제 main/WS 부하와 번들 보고는 [운영 도구 절차](docs/workflow/release-operations.md)를 따릅니다. 실제 계정/장비 검수 증거가 없으면 공개 준비 완료를 선언하지 않습니다.
 
@@ -58,6 +58,10 @@ Rust 공유 코어(native/WASM), axum/tokio 서버, TypeScript+Vite+Preact/PixiJ
 ## 서버 정상 종료
 
 SIGTERM/SIGINT를 받으면 새 온라인 매칭을 막고 readiness503을 반환하며 기존 판의 입력·재접속은 유지합니다. 진행 중 준비 작업의 정리와 결과 저장의 완료를 최대300초 기다린 뒤 HTTP를 최대5초 정리합니다. 저장 실패·소유권 상실·시간 초과는 오류 종료합니다. 성공 후 남은 CPU worker 정리는 최대2초입니다. 실제 Docker의 종료 대기 설정·운영 장비 검수는 #24에서 별도로 확인해야 합니다. [종료 drain 검증 #208](docs/verification/208-online-shutdown-drain.md).
+
+## 공개 정책과 광고 동의
+
+`/{locale}/privacy`·`/terms`는 운영자가 확정한8언어 문구를 웹 안에서 게시합니다. 자료가 없으면 미게시로 표시합니다. `/consent`에서 Google 동의와 현재 로그인 세션의 통계 수집 선택을 관리하며, 내 정보·게임·로그인 문서에는 Google 태그를 넣지 않습니다. 실제 운영자 설정과 배포 순서는 [출시 체크리스트](docs/workflow/launch-checklist.md)를 따릅니다. 기본 광고는 비활성이며 실제 Google 계정/SDK 검수는 #147에 남습니다.
 
 ## 오류 화면
 

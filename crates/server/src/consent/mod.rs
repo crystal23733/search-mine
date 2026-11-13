@@ -2,6 +2,8 @@
 mod http;
 mod model;
 mod postgres;
+mod tcf;
+pub use tcf::GoogleConsentVerifier;
 pub(crate) mod view;
 pub use http::*;
 pub use model::*;

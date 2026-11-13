@@ -74,6 +74,7 @@ services:
   server:
     <<: *server
     environment:
+      LIAR_CMP_PROVIDER: ${VITE_CMP_PROVIDER:-}
       LIAR_PUBLIC_ORIGIN: ${LIAR_PUBLIC_ORIGIN:?Set the confirmed HTTPS public origin}
       DATABASE_URL_FILE: /run/secrets/database_url
       LIAR_ONLINE_MATCHES: ${LIAR_ONLINE_MATCHES:-16}
@@ -106,6 +107,7 @@ services:
       args:
         VITE_PUBLIC_SITE_ORIGIN: ${LIAR_PUBLIC_ORIGIN:?Set the confirmed HTTPS public origin}
         VITE_ADSENSE_CLIENT_ID: ${VITE_ADSENSE_CLIENT_ID:-}
+        VITE_CMP_PROVIDER: ${VITE_CMP_PROVIDER:-}
     user: '101:101'
     read_only: true
     cap_drop: [ALL]

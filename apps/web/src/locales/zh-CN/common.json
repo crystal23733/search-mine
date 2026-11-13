@@ -447,5 +447,9 @@
   "install.dismissed": "已取消安装。您可以继续使用网页。",
   "install.failed": "无法打开安装提示。请尝试使用浏览器的安装菜单。",
   "install.network": "离线练习需要本设备已准备好缓存。在线对战和官方排名需要网络连接。",
-  "offline.applying": "正在应用更改，请稍候。"
+  "offline.applying": "正在应用更改，请稍候。",
+  "consent.pageTitle": "隐私选择",
+  "consent.pageIntro": "在此管理 Google 广告同意。要将选择用于服务统计，请在当前登录会话中另行明确应用。",
+  "consent.accountOptional": "无需登录也可以管理广告同意。",
+  "policy.pending": "运营者尚未发布本文档。"
 }

@@ -254,6 +254,21 @@ class Smoke:
         self.run(["node", "deploy/tests/browser.mjs", "http://127.0.0.1:" + str(self.socket_port)], timeout=90)
         self.results["chromium_js_off_and_wasm"] = True
 
+    def google_check(self):
+        if not self.browser:
+            return
+        self.stage("Checking configured Google mode with synthetic SDK and public operator data")
+        section = [{"heading": "Synthetic test heading", "body": "Automated test only. <script>plain text</script>"}]
+        policy = {"revision": "synthetic-test", "effectiveDate": "2026-11-14", "operator": "Synthetic operator for automated tests", "contact": "test@example.test", "privacy": section, "terms": section}
+        config = self.folder / "public-site.json"
+        config.write_text(json.dumps({"policies": {locale: policy for locale in LOCALES}, "google": {kind: ["https://pagead2.googlesyndication.com"] for kind in ["frame", "image", "connect"]}}))
+        self.run(["docker", "build", "--target", "web", "-f", "deploy/Dockerfile", "-t", self.web_image, "--build-arg", "VITE_PUBLIC_SITE_ORIGIN=" + ORIGIN, "--build-arg", "VITE_CMP_PROVIDER=google", "--build-arg", "VITE_ADSENSE_CLIENT_ID=ca-pub-0000000000000001", "--build-arg", "LIAR_PUBLIC_CONFIG_SHA256=" + hashlib.sha256(config.read_bytes()).hexdigest(), "--secret", "id=public_site_config,src=" + str(config), "."], timeout=1200)
+        if hasattr(self, "socket_port"):
+            del self.socket_port
+        self.loopback_fixture()
+        self.run(["node", "deploy/tests/google-browser.mjs", "http://127.0.0.1:" + str(self.socket_port)], timeout=90)
+        self.results["synthetic_google_nonce_pause_and_isolation"] = True
+
     def user(self, name):
         raw = secrets.token_bytes(32)
         token = base64.urlsafe_b64encode(raw).decode().rstrip("=")
@@ -374,6 +389,7 @@ def main():
         smoke.containers()
         smoke.documents()
         smoke.browser_check()
+        smoke.google_check()
         smoke.websocket_and_stop()
         smoke.results["status"] = "passed"
         print("Deployment smoke PASS", flush=True)

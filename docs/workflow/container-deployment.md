@@ -51,7 +51,7 @@ docker compose --env-file /secure/liar/runtime.env -f deploy/compose.yml stop se
 
 서버 PID1은 Rust이며 `stop_grace_period=320s`로300초 drain·5초HTTP·2초CPU 정리보다 여유를 둔다. `stop -t 10` 등으로 이를 줄이면 저장 완료 전에 강제 종료될 수 있다. drain 중 ready503/live200이며 기존 WS/HTTP 재접속 경로는 유지한다. ready 실패를 이유로 기존 origin을 즉시 제거하는 외부 라우팅 규칙을 쓰지 않는다. 정상 종료 status·저장·journal 정리를 실제로 확인하고 이전 인스턴스가 완전히 종료된 후 새 인스턴스를 시작한다. DB owner를 공유한 동시 두 인스턴스를 기동하지 않는다.
 
-nginx는 기존32locale HTML·동일원천 문서 route·개인 noindex/no-store·실제403/404·API/WS를 제공한다. hash asset만 immutable, worker/HTML은 재검증하고 API/cookie는 캐시하지 않는다. access log는 끄고 구조화 앱/DB 로그는 용량 회전한다. rotation 설정은 크기 제한이며7일 보존 실측을 주장하지 않는다. nginx의3MiB transport 상한은 기존2MiB replay+envelope를 통과시키며 실제 허용 입력은 서버가 판정한다. 요청 대기·임시 공간/용량은 실장비26에서 측정한다.
+nginx는56locale HTML(미게시 정책/동의 문서 검색 제외)·동일원천 문서 route·개인 noindex/no-store·실제403/404·API/WS를 제공한다. hash asset만 immutable, worker/HTML은 재검증하고 API/cookie는 캐시하지 않는다. access log는 끄고 구조화 앱/DB 로그는 용량 회전한다. rotation 설정은 크기 제한이며7일 보존 실측을 주장하지 않는다. nginx의3MiB transport 상한은 기존2MiB replay+envelope를 통과시키며 실제 허용 입력은 서버가 판정한다. 요청 대기·임시 공간/용량은 실장비26에서 측정한다.
 
 ## 실제 외부 연결
 
@@ -67,10 +67,12 @@ corepack yarn playwright install chromium
 python3 deploy/tests/smoke.py --browser
 ```
 
-검사는 `liar-smoke-<random>` 프로젝트와 `.tmp`의 합성 비밀만 만든다. 처음 기동 상태에서 host published ports0을 검사한다. 실제 Chromium/WS 연결 단계에서만 생성한 override로127.0.0.1의 임의 포트를 열며 운영 compose에는 이 mapping이 없다. no-JS32문서와 실제 Rust WASM 튜토리얼을 검사한 뒤 제한 계정/세션 fixture로 인증 WS·자연 초기연결 취소의 실제 Docker stop/저장을 확인한다. 이는 실제 OAuth 인증/4분 전체 게임·최종 network ACK·운영 장비/실Tunnel 성공의 증거가 아니다.
+검사는 `liar-smoke-<random>` 프로젝트와 `.tmp`의 합성 비밀만 만든다. 처음 기동 상태에서 host published ports0을 검사한다. 실제 Chromium/WS 연결 단계에서만 생성한 override로127.0.0.1의 임의 포트를 열며 운영 compose에는 이 mapping이 없다. no-JS56문서와 실제 Rust WASM 튜토리얼을 검사한 뒤 제한 계정/세션 fixture로 인증 WS·자연 초기연결 취소의 실제 Docker stop/저장을 확인한다. 이는 실제 OAuth 인증/4분 전체 게임·최종 network ACK·운영 장비/실Tunnel 성공의 증거가 아니다.
 
 성공/실패 뒤에도 소유한 프로젝트의 컨테이너·네트워크·볼륨과 합성 비밀만 정리한다. 이미지/검증 summary는 남는다. 운영 DB에는 `down --volumes`를 사용하지 않는다. 백업·암호화·별도매체/복원·롤백 훈련과 측정 RPO/RTO는 #25, 미니PC 부하/성능은 #26의 미완료 출구다.
 
 암호화 백업 생성/검사/정리는 [백업 절차](encrypted-backups.md)를 따른다. 최신 삭제 기록/서비스 접근 차단과 실제 복구 출구는 #25에서 별도 검증한다.
 
 공개 전 [배포 점검·주기 실행·부하 측정](release-operations.md)을 실행한다. PostgreSQL/Tunnel도 실제 검수된 불변 image로 설정하며, 계정·장비 검수 증거가 없으면 점검은 blocked를 반환한다.
+
+공개 정책/CMP 이미지 빌드는 [출시 체크리스트](launch-checklist.md)의 `deploy/build_web.py`를 사용한다. Google모드는 실제 공개 구성과 publisher ID 없이 켜지지 않으며, 배포 fixture의 합성 SDK 검증은 실제 #147 검수를 대신하지 않는다.

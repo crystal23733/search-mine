@@ -7,6 +7,8 @@ import { HomePage } from "./pages/HomePage";
 import { LatestResultPage } from "./pages/LatestResultPage";
 import { MyInfoPage } from "./pages/MyInfoPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { PolicyPage } from "./pages/PolicyPage";
+import { ConsentPage } from "./pages/ConsentPage";
 import { StoragePage } from "./pages/StoragePage";
 import { TutorialGuidePage } from "./pages/TutorialGuidePage";
 import { RulesPage } from "./pages/RulesPage";
@@ -66,7 +68,13 @@ export function App({ services }: { services: AppServices }) {
     () =>
       applyDocumentHead(
         document,
-        documentMetadata(url, locale, services.i18n, services.publicSiteOrigin),
+        documentMetadata(
+          url,
+          locale,
+          services.i18n,
+          services.publicSiteOrigin,
+          import.meta.env.VITE_POLICY_READY === "true",
+        ),
       ),
     [url, locale, services],
   );
@@ -125,6 +133,10 @@ export function App({ services }: { services: AppServices }) {
       />
     ) : route === "/settings" ? (
       <SettingsPage />
+    ) : route === "/privacy" || route === "/terms" ? (
+      <PolicyPage kind={route === "/privacy" ? "privacy" : "terms"} />
+    ) : route === "/consent" ? (
+      <ConsentPage />
     ) : route === "/storage" ? (
       <StoragePage />
     ) : route === "/login" ? (

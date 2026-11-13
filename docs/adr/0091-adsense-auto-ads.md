@@ -37,3 +37,7 @@ SDK가 시작된 문서에서 허용 범위 밖으로 이동할 때 router는 pu
 승인 근거/요구/시나리오를 담은 #196 PR을 develop에 병합·CLOSED 확인 뒤 제품 이슈에서 구현한다. 사용자 지시로 자동 광고 변경과 기존 리뷰·병합 위임이 있으므로 반복 승인 대기는 하지 않는다.
 
 제품 TDD는 기본 외부요청0·허용 문서/8locale·동의/온라인/visible/첫방문·스크립트 단1회/timeout/취소/실패·게임 navigation 전 barrier·popstate/BFCache·철회/계정/오프라인 reload의 행동Red→Green을 확인한다. 실제 브라우저에서 테스트 script를 네트워크 경계로 주입해 safe 문서의1회 실행과 게임 새 문서의0실행·locale/뒤로가기·차단/timeout 무차단을 검증한다. Rust 원천 삭제 뒤 타입/WASM/기존 native fixture를 재생성/검사하고 전체회귀/coverage·문서/Mermaid·정확head 리뷰/6checks 후 병합한다. #83의 timer/flags/retry/성능 목표는 바꾸지 않는다.
+
+## 2026-11-13 승인된 Google CMP bootstrap 보완
+
+[ADR0107](0107-google-cmp-bootstrap.md)과 사용자 명시 선택은 Google 공식 메시지 bootstrap에 한해 태그를 공개 문서에서 먼저 로드하고 광고 요청을pause하는 경로를 승인한다. 이 문서의 동의 후script시작 조건은 Google모드에서 “현재 광고 동의 후 요청 재개”로 보완한다. 일반미설정/대체adapter, 게임/개인/인증 문서 격리와 거부/실패 광고0은 유지한다.

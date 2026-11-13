@@ -276,3 +276,7 @@
 ## #231 배포 운영 완성 작업 (2026-11-13)
 
 #229 후속으로 원본 writer 차단/최신 비교 뒤 명시 복구 재개, 기존 보존 adapter 정리, 실제 main/인증/WS 부하와 bundle/admission 보고, 비밀 비출력 배포 점검과 timer/receipt를 구현·검증한다. [ADR0106](../adr/0106-controlled-recovery-resume.md)·[검증231](../verification/231-release-operations.md). 상위24/25/26의 실제 장비·매체·이전 이미지·RPO/RTO·성능 출구는 운영자 검수로 유지한다.
+
+## #233 Google CMP 공식 연결 설계 (2026-11-13)
+
+사용자가 Google 개인정보 보호 및 메시지와공개문서태그사전로드/광고요청pause공식방식을명시선택했다. [ADR0107](../adr/0107-google-cmp-bootstrap.md)·approval-record/design-approval에근거를남긴다. 기록PR병합뒤제품연결·8언어정책설정·CSP/ads.txt준비와확인된시험서버teardown경합을진행한다. 실제운영147은유지한다.

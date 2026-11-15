@@ -27,7 +27,7 @@ class Preflight(unittest.TestCase):
         for name,path in [('backup','/backups'),('ledger-capture','/ledger')]:
             self.config['services'][name]['volumes'] = [{'type':'bind','target':path,'source':str(self.root)}]
         self.now = datetime(2026,11,13,tzinfo=timezone.utc)
-        self.evidence = {'version':1,'limits':{},'origin':'https://sweeper.org','images':{'server':image,'web':image},'checks':{k:{'status':'passed','performed_at':'2026-11-12T20:00:00Z','record':'operator restricted record reference'} for k in preflight.EVIDENCE}}
+        self.evidence = {'version':2,'public_settings':{'cmp_provider':'','publisher_id':''},'limits':{},'origin':'https://sweeper.org','images':{'server':image,'web':image},'checks':{k:{'status':'passed','performed_at':'2026-11-12T20:00:00Z','record':'operator restricted record reference'} for k in preflight.EVIDENCE}}
 
     def tearDown(self): self.temp.cleanup()
     def check(self): return preflight.check(self.config,self.evidence,self.now)
@@ -58,5 +58,23 @@ class Preflight(unittest.TestCase):
         self.evidence['images']['web']='sha256:'+'b'*64
         self.assertIn('release_evidence_binding_missing',self.check()['checks'])
     def test_public_origin_requires_confirmed_host(self):
-        for value in ['http://sweeper.org','https://127.0.0.1','https://localhost','https://x.example','https://user:secret@sweeper.org','https://sweeper.org/','https://sweeper.org/path','https://[::1]']:
+        for value in ['http://sweeper.org','https://127.0.0.1','https://localhost','https://x.example','https://user:secret@sweeper.org','https://sweeper.org/','https://sweeper.org/path','https://[::1]','https://sweeper.org:443','https://sweeper.org.','https://Sweeper.org']:
             self.assertFalse(preflight.public_origin(value))
+    def test_google_mode_requires_matching_runtime_valid_id_and_current_public_evidence(self):
+        args=self.config['services']['web']['build']['args']
+        args['VITE_CMP_PROVIDER']='google'
+        self.assertIn('cmp_configuration_mismatch',self.check()['checks'])
+        self.config['services']['server']['environment']['LIAR_CMP_PROVIDER']='google'
+        self.assertIn('google_publisher_invalid',self.check()['checks'])
+        args['VITE_ADSENSE_CLIENT_ID']='ca-pub-1234567890123456'
+        self.assertIn('public_settings_evidence_binding_missing',self.check()['checks'])
+        self.evidence['public_settings']={'cmp_provider':'google','publisher_id':'ca-pub-1234567890123456'}
+        self.assertEqual(self.check()['status'],'ready')
+        args['VITE_ADSENSE_CLIENT_ID']='ca-pub-1234567890123457'
+        self.assertIn('public_settings_evidence_binding_missing',self.check()['checks'])
+        self.assertNotIn('1234567890123457',str(self.check()))
+        args['VITE_CMP_PROVIDER']='unknown'
+        self.assertIn('cmp_configuration_mismatch',self.check()['checks'])
+    def test_legacy_evidence_does_not_claim_current_cmp_configuration(self):
+        self.evidence['version']=1
+        self.assertIn('release_evidence_binding_missing',self.check()['checks'])

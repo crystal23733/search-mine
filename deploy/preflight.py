@@ -20,8 +20,8 @@ def public_origin(value):
         url = urlsplit(value)
         host = url.hostname or ''
         return (url.scheme == 'https' and value == f'https://{url.netloc}'
-                and url.username is None and url.password is None and url.port in (None, 443)
-                and '.' in host and not host.endswith(('.example', '.invalid', '.test', '.localhost'))
+                and url.username is None and url.password is None and url.port is None and host == url.netloc and host.isascii()
+                and '.' in host and not host.endswith(('.', '.example', '.invalid', '.test', '.localhost'))
                 and host != 'localhost' and not re.fullmatch(r'[0-9.]+', host) and ':' not in host)
     except (ValueError, TypeError):
         return False
@@ -56,8 +56,16 @@ def check(config, evidence, now=None):
     origin = server.get('environment', {}).get('LIAR_PUBLIC_ORIGIN')
     if not public_origin(origin):
         errors.add('public_origin_invalid')
-    if services.get('web', {}).get('build', {}).get('args', {}).get('VITE_PUBLIC_SITE_ORIGIN') != origin:
+    web_args = services.get('web', {}).get('build', {}).get('args', {})
+    if web_args.get('VITE_PUBLIC_SITE_ORIGIN') != origin:
         errors.add('web_origin_mismatch')
+    cmp_provider = web_args.get('VITE_CMP_PROVIDER') or ''
+    publisher_id = web_args.get('VITE_ADSENSE_CLIENT_ID') or ''
+    if cmp_provider not in ('', 'google') or (server.get('environment', {}).get('LIAR_CMP_PROVIDER') or '') != cmp_provider:
+        errors.add('cmp_configuration_mismatch')
+    if cmp_provider == 'google' and (not isinstance(publisher_id, str) or not re.fullmatch(r'ca-pub-[0-9]{16}', publisher_id)):
+        errors.add('google_publisher_invalid')
+    public_settings = {'cmp_provider': cmp_provider, 'publisher_id': publisher_id}
     for name, service in services.items():
         if not IMMUTABLE.fullmatch(service.get('image', '')):
             errors.add('immutable_images_required')
@@ -86,9 +94,11 @@ def check(config, evidence, now=None):
             errors.add('independent_backup_mount_required')
     # Evidence binds operator observations to this exact origin and release, never a generic checkbox.
     release = {name: services.get(name, {}).get('image') for name in ['server', 'web']}
-    if not isinstance(evidence, dict) or evidence.get('version') != 1 or evidence.get('origin') != origin or evidence.get('images') != release:
+    if not isinstance(evidence, dict) or evidence.get('version') != 2 or evidence.get('origin') != origin or evidence.get('images') != release:
         errors.add('release_evidence_binding_missing')
         evidence = {}
+    if evidence.get('public_settings') != public_settings:
+        errors.add('public_settings_evidence_binding_missing')
     limits={key:value for key,value in environment.items() if key.startswith(('LIAR_ONLINE_','LIAR_LOBBY_','LIAR_BOARD_','LIAR_BOT_'))}
     if evidence.get('limits')!=limits: errors.add('capacity_evidence_binding_missing')
     checks = evidence.get('checks', {})

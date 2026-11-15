@@ -24,7 +24,7 @@ Google모드는 실제 publisher에 맞는 `/ads.txt`를 생성한다. [Google �
 ## 장비에서 남는 확인
 
 - #25: 별도 매체와 age 키 보관, 백업/권리 checkpoint timer 및 receipt, 이전 release에서의 격리 복원과 삭제/보존 재적용, 실제 RPO/RTO를 기록한다. 원본 중단·최신 비교 없이 복구를 재개하지 않는다.
-- #26: 실제 미니 PC에서 동일한 깨끗한 release로 부하를 반복해 제한과 p95를 정한다. 로컬 fixture의 수치를 운영 동접 한도로 쓰지 않는다. `deploy/preflight.py`와 `deploy/release_report.py`의 실제 증거를 채운다.
+- #26: 실제 미니 PC에서 동일한 깨끗한 release로 부하를 반복해 제한과 p95를 정한다. 로컬 fixture의 수치를 운영 동접 한도로 쓰지 않는다. `deploy/preflight.py`의 version2 증거(현재 CMP/publisher 공개 설정 포함)와 `deploy/release_report.py`의 실제 증거를 채운다.
 - #223: 실제 HTTPS에서 Android/iOS/데스크톱 PWA 설치·실행·업데이트와 오프라인 연습을 확인한다. 8언어/화면낭독기/키보드 검수는 사람이 확인한다.
 - #27: 실제 참가자의 두탭/모바일/대전 관찰을 진행한다. #28의28일 수익·전력·잔존 지표는 출시 후 기간이 지난 뒤 기록한다. 이를 미리 달성한 것으로 표시하지 않는다.
 

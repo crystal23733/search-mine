@@ -1,6 +1,6 @@
 # ADR0108: 업데이트 입력 장벽의 실제 viewport 피복
 
-상태: #235에서 대조 검증 중. FR10/NFR01/02/05/06/07/08, ADR0102의 동기 입력 차단 범위를 보완하는 구현 후보다. 게임 규칙·사용자 데이터·기존 deadline/retry를 바꾸지 않는다.
+상태: #235에서 적용·대조 검증. FR10/NFR01/02/05/06/07/08, ADR0102의 동기 입력 차단 범위를 보완하는 구현 후보다. 게임 규칙·사용자 데이터·기존 deadline/retry를 바꾸지 않는다.
 
 ## 관측과 후보
 
@@ -13,3 +13,5 @@ PR234의 실제 모바일 trace는 두 ACK 이후 Warm Up1과 이전 worker의 s
 실제 Chromium PC/mobile·8언어에서 header와 네 모서리 좌표가 dialog 사각형에 포함되고, showModal 이전 ACK가 없으며 원래 focus가 복원됨을 확인한다. 기존 두탭/게임busy/캐시삭제와 연속입력을 retry0로 반복하고 완전 native trace의 Warm Up/이전 worker 재시작을 별도로 기록한다. 후보가 통과하더라도 Chromium 자체를 수정했다고 하지 않는다. 실패하면 결과를 보존하고 추가 원인을 조사한다.
 
 [기존 관측과 한계](0102-update-interaction-barrier.md), [검증235](../verification/235-public-launch-wiring.md), [Chromium exact revision features](https://raw.githubusercontent.com/chromium/chromium/971a7443b0c9b0a9b2860529b33331b76077ec62/third_party/blink/common/features.cc)를 근거로 삼는다. 이 후보는 동의 관리 설계 변경과 별개의 입력 안전성 검증이다.
+
+로컬의 기존 빌드24회도 통과했으므로 성공률만으로 native Warm Up 원인 해결을 단정하지 않는다. 수정된 viewport 피복은 PC/mobile8언어 반복24회와0276cf0의 전체 CI브라우저163개(flaky0)에서 검증했다. 변경은 실제 입력 장벽의 사각형 보완이며 Chromium 엔진 수정이나 모든 환경의 실패 부재 증명이 아니다.

@@ -36,3 +36,5 @@
 중간 CI2589ac5는 Rust/core coverage/실DB/백업이 통과했다. 계측 server95.13%(13016/13683), Consent domain99.46%(370/372),9개domain 모두95%이상이다. Web은 build전fixture의404로 실패했으므로 순서를 수정해 최신head에서 다시 검증한다. 최신 exact head의 전체checks·PR리뷰·병합은 이와 별도다.
 
 출시 preflight는 version2 증거의 현재 CMP/publisher 공개 설정을 검사한다. web/server CMP 불일치·잘못된 Google ID·설정 변경 뒤 예전 증거·version1을 실제 Red로 확인한 뒤 차단했다. 공개 origin의443/대문자/끝점도 builder와 같은 canonical 조건으로 맞췄다. Python45개 검사가 통과했다.
+
+화면 최종 검토에서 서비스 광고 측정 철회가 Google 광고 표시 동의 철회로 읽히는 표현과, 저장 DTO의 false 값으로 Google 설정 미연결을 표시하는 문제를 확인했다. Google 설정이 사용 가능한 실제 포트 조건의 UI Red를 재현한 뒤8언어에서 Google 광고/서비스 이용 통계/서비스 광고 측정을 구분했다. 서버 적용은 쓰기 동작으로, 수집 중단은 서비스 선택 수집 범위로 표시한다. 현재 Google 상태는 별도 동의 설정에서 확인하며 저장 기록이 연결 실패를 뜻하지 않는다. 전체 웹479개가 통과했다.

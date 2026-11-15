@@ -31,3 +31,5 @@ Google 공개 문서만 요청별 nonce·strict-dynamic CSP와 strict-origin ref
 합성 Google 브라우저의 실제 service-worker ready가90초 내 성립하지 않았다. 동일 검수 이미지에서 `GET /index.html?__WB_REVISION__=fixture`는 실제404였다. 문서 파일명은 Nginx의 공개 문서 URL이 아니므로 precache manifest의 root `index.html`은 `/`, locale HTML은 해당 깨끗한 문서 URL로 변환한다. root fallback handler도 동일한 `/` 키를 사용한다. revision 값·자산·정책 JSON은 유지하며 HTML alias를 공개하거나 기존 query/개인 route 차단을 풀지 않는다. 실제 Nginx의 worker 활성화·제어를 검증 출구에 추가한다.
 
 출시 preflight의 운영 증거는 version2로 현재 공개 설정(`public_settings.cmp_provider`·`publisher_id`)에도 묶는다. web build의 CMP와 server runtime의 CMP가 다르거나 Google모드의 ID가 잘못되면 차단한다. 같은 이미지라도 설정이 바뀌면 예전 CMP 검수 기록을 재사용하지 않는다. 기존 version1은 새 설정을 관측한 증거로 간주하지 않는다. 검사 결과에는 실제 설정값을 출력하지 않는다.
+
+화면은 저장된 서비스 통계/광고 측정 수집과 현재 Google 광고 선택을 각각 표시한다. 서비스 수집 철회 버튼은 그 수집 범위를 이름에 표시하며, 현재 선택 적용은 서버 수집에 반영하는 쓰기 동작임을 안내한다. 저장 DTO의 `cmp_available=false`를 현재 브라우저의 Google 연결 실패 안내로 표시하지 않는다. 현재 Google 설정의 상태와 재열기는 ConsentSettings가 담당한다.

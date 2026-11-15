@@ -250,12 +250,10 @@ test("service measurement withdrawal is distinct from current Google advertising
   const control = {
     read: vi.fn().mockResolvedValue(stored),
     refresh: vi.fn(),
-    withdraw: vi
-      .fn()
-      .mockResolvedValue({
-        ...stored,
-        consent: { ...stored.consent, advertising: "denied" },
-      }),
+    withdraw: vi.fn().mockResolvedValue({
+      ...stored,
+      consent: { ...stored.consent, advertising: "denied" },
+    }),
   };
   await setup("/en/me/privacy", TEST_ACCOUNT, {
     consent,

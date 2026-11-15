@@ -71,3 +71,7 @@ CMP의 필수 동의 처리와 광고 SDK를 분리한다. 분석 동의는 광�
 #199 FR12/13·NFR01/02/05/07/08·TS18/20/23/24/25/30 → [ADR0091](../adr/0091-adsense-auto-ads.md) → 자동광고 script port/현재권한·공개/보호문서 경계·기본0/실제root·194미사용제거 → [검증199](../verification/199-auto-ads-runtime.md). 실제 CMP/Google운영147·상위22/21·83/198은 별도다.
 
 #233 Google 공식 동의 메시지: [ADR0107](../adr/0107-google-cmp-bootstrap.md)·[사용자 선택](../workflow/approval-record.md). Google모드는 공개 문서에서 pause 설정→태그/CMP→현재 목적 선택→광고 허용시만 요청 재개한다. 태그를 읽은 모든 문서에 보호 화면 새 문서 경계를 적용한다. 승인 기록 병합 후 제품에서 구현하고, 미설정/거부/불명/오류 광고0·운영147 조건을 유지한다.
+
+## #235 공식 Google 연결
+
+[ADR0109](../adr/0109-current-session-google-consent-evidence.md)의 bounded 현재 선택 제출을 사용한다. Google vendor755/purposes1·3·4는 광고 요청 허용, publisher1·8·10은 자체 분석, publisher1·7과 Google 광고 동의 교집합은 자체 광고 측정이다. 현재 세션/CSRF/CAS가 계속 권한 경계이며 원문은 저장하지 않는다. 내 정보에서는 공개 `/{locale}/consent#manage`로 이동해 관리하고, 단순 페이지 방문/기존 선택 읽기는 서버 철회를 되돌리지 않는다. 실제 운영자 정책/목적 설정·SDK/CSP 관측은 #147의 외부 출구다.

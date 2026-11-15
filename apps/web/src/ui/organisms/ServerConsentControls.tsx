@@ -59,7 +59,9 @@ export function ServerConsentControls() {
         <Button
           disabled={busy || !cmp.canReopen || cmp.working}
           onClick={() => {
-            void controller.refresh();
+            if (services.consentControl.refreshHere?.() === false)
+              void services.consent.reopen();
+            else void controller.refresh();
           }}
         >
           {t("consent.serverVerify")}

@@ -22,3 +22,5 @@ Google은 공개 문서의 상호 언어 링크와 self canonical을 읽는다. 
 실제 도메인 HTTPS/redirect/nginx 응답과 8언어 공개 내용, 상호 링크/사이트맵, 개인정보/게임의 noindex·no-store를 확인한다. 기존 FR08의 첫 방문 자동 튜토리얼 이동은 유지하므로 실제 검색엔진이 JavaScript까지 실행한 뒤 보는 최종 문서/색인은 #23에서 별도로 검수한다. Search Console 등록이나 색인 성공은 로컬 HTML/브라우저 테스트로 완료 판정하지 않는다. 정책 운영자 정보·법적 번역·CMP/광고 계정 설정과 #83의 자연 간헐 문제도 별도다.
 
 [#204 소개 문서](../verification/204-tutorial-guide-document.md)는 공개 /learn이며 실제 /tutorial 게임은 검색·광고 제외다. 소개 읽기/언어 변경은 학습 완료를 쓰지 않고 명시 링크로 실제 연습에 진입한다.
+
+#235는 개인정보/약관/동의 관리의24문서를 더해 총56HTML을 생성한다. 미게시 정책과 동의 관리는 noindex이며 sitemap에서 제외한다. 정책이 게시되면 개인정보/약관16URL을 포함한48URL이 된다. 공개 정책 구성과 nonce 경계는 [출시 체크리스트](launch-checklist.md)를 따른다.

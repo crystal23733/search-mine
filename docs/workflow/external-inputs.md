@@ -9,7 +9,7 @@
 | #15 Kakao | REST app key/client secret, OIDC 활성화·openid 외 동의 항목 해제 | adapter·최소 claim·계약 테스트; 실제 사용자 동의 화면 검수 |
 | #15 Naver | client ID/secret·검수 앱·callback, 기본 id 외 제공 항목 해제 | code/state/profile id adapter·계약 테스트; 사전 검수/실계정 확인 |
 | #21 정책/CMP | 실제 운영자/연락처·국외 이전/미성년자 처리 방침·인증 CMP 계정 | 선택 동의·고지·번역/거부 경로; 확정 법적 고지·실CMP 검수 |
-| #22 광고 | 실제 publisher/slot ID·서비스 승인 | 무광고 기본·AdsPort cap/실패 테스트; 실제 광고·ads.txt는 승인 후 |
+| #22 광고 | 실제 publisher ID·자동광고/사이트 승인·Google 메시지 게시 | 무광고 기본·paused 단일 태그/동의/보호 문서 격리; slot ID 없이 자동광고, 실제 계정/SDK/CSP 검수는 #147 |
 | #24 홈서버 | 도메인·Tunnel token·미니 PC/OS/회선 정보·host secret | Compose/Tunnel/배포 runbook·격리·CI; 실제 호스트 공개/회선 약관 확인 |
 | #25/26 운영 | 별도 백업 매체·미니 PC·실측 네트워크 환경 | 격리 복구/부하 harness; 해당 장비 RPO/RTO/동접/전력 결과 |
 | #27/28 베타 | 실제 참여자·28일 정산/전력·사용 지표 | 테스트 가이드/분석 도구; 사람의 재미 관찰·현금 손익 결과 |
@@ -17,3 +17,5 @@
 키가 없을 때 비활성 제공자를 성공 응답으로 대체하거나 OAuth 설정을 UI에 노출하지 않는다. 공개 버전의 필수 제공자 4개 연동·정책·운영 검증 게이트는 실제 확인 전 완료로 표시하지 않는다. 후속 사용자 입력 이슈가 생기면 이 표에 연결한다.
 
 네 OAuth 입력/실계정 검수는 [#42](https://github.com/crystal23733/search-mine/issues/42)에 모았다. 구현 #43→44→45→46과 분리하고 상위 #15의 공개 출시 조건으로 유지한다.
+
+최종 실행 순서와 제출할 증거는 [출시 체크리스트](launch-checklist.md)에 모은다. 키·정책의 실제 운영자 정보는 채팅에 붙이지 않고 호스트에서 설정한다.

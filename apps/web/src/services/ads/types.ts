@@ -14,6 +14,12 @@ export interface DocumentNavigation {
 }
 export interface AutoAdsDependencies {
   script: AutoAdsScriptPort;
+  messaging?: {
+    eligible(url: URL): boolean;
+    prepared(): boolean;
+    documentReady?(): boolean;
+    prepare(signal: AbortSignal): Promise<void>;
+  };
   consent: Pick<ConsentPort, "read" | "subscribe">;
   auth: Pick<AuthPort, "read" | "account" | "revision" | "subscribe">;
   activity: Pick<ActivityPort, "read" | "subscribe">;

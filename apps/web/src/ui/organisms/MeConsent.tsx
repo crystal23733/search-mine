@@ -35,11 +35,17 @@ export function MeConsent({
         <h2>{t("me.serverConsent")}</h2>
         <p>{t("me.serverConsentHint")}</p>
         <output>{t(`me.status.${expired ? "expired" : c.status}`)}</output>
-        {!c.cmp_available && <p>{t("me.cmpUnavailable")}</p>}
+        <p>{t("me.googleConsentHint")}</p>
         <dl class="me-details">
           {(["analytics", "advertising"] as const).map((purpose) => (
             <div key={purpose}>
-              <dt>{t(`consent.${purpose}`)}</dt>
+              <dt>
+                {t(
+                  purpose === "advertising"
+                    ? "consent.measurement"
+                    : "consent.analytics",
+                )}
+              </dt>
               <dd>{t(`me.choice.${expired ? "unknown" : c[purpose]}`)}</dd>
             </div>
           ))}

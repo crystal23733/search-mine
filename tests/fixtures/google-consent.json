@@ -1,0 +1,78 @@
+{
+  "allowed": {
+    "cmpId": 300,
+    "cmpStatus": "loaded",
+    "eventStatus": "tcloaded",
+    "isServiceSpecific": true,
+    "gdprApplies": true,
+    "tcfPolicyVersion": 5,
+    "tcString": "CQw4jOcQw4jP2EsABAAAC5FgALAAAAAAAAAAF5wAQF5gAAAA.cGgAAAAAAA",
+    "purpose": {
+      "consents": {
+        "1": true,
+        "3": true,
+        "4": true
+      }
+    },
+    "vendor": {
+      "consents": {
+        "755": true
+      }
+    },
+    "publisher": {
+      "consents": {
+        "1": true,
+        "7": true,
+        "8": true,
+        "10": true
+      },
+      "restrictions": {}
+    }
+  },
+  "denied": {
+    "cmpId": 300,
+    "cmpStatus": "loaded",
+    "eventStatus": "tcloaded",
+    "isServiceSpecific": true,
+    "gdprApplies": true,
+    "tcfPolicyVersion": 5,
+    "tcString": "CQw4jOcQw4jP2EsABAAAC5FgAAAAAAAAAAAAF5wAAAAAAA.YAAAAAAAAA",
+    "purpose": {
+      "consents": {}
+    },
+    "vendor": {
+      "consents": {
+        "755": false
+      }
+    },
+    "publisher": {
+      "consents": {},
+      "restrictions": {}
+    }
+  },
+  "analytics": {
+    "cmpId": 300,
+    "cmpStatus": "loaded",
+    "eventStatus": "tcloaded",
+    "isServiceSpecific": true,
+    "gdprApplies": true,
+    "tcfPolicyVersion": 5,
+    "tcString": "CQw4jOcQw4jP2EsABAAAC5FgAAAAAAAAAAAAF5wAAAAAAA.cCgAAAAAAA",
+    "purpose": {
+      "consents": {}
+    },
+    "vendor": {
+      "consents": {
+        "755": false
+      }
+    },
+    "publisher": {
+      "consents": {
+        "1": true,
+        "8": true,
+        "10": true
+      },
+      "restrictions": {}
+    }
+  }
+}

@@ -4,7 +4,11 @@ import { render } from "preact";
 import { App } from "./App";
 import { createI18n } from "./services/i18n";
 import { createAutoAdsBrowser } from "./services/ads/browser";
-import { createAdSenseScript } from "./services/ads/adsense";
+import { createGooglePublisherClient } from "./services/ads/google";
+import {
+  createGoogleConsentAdapter,
+  type GoogleConsentAdapter,
+} from "./services/consent-google";
 import { createPreferences } from "./services/preferences";
 import { createLearning } from "./services/learning";
 import { createDailyRecords } from "./services/daily-records";
@@ -43,12 +47,14 @@ const locale = chooseLocale(
   preferences.read().locale,
   navigator.languages,
 );
-if (!location.pathname.startsWith(`/${locale}/`))
-  history.replaceState(
-    null,
-    "",
-    localizedPath(location.pathname, locale) + location.search + location.hash,
-  );
+if (!location.pathname.startsWith(`/${locale}/`)) {
+  const target =
+    localizedPath(location.pathname, locale) + location.search + location.hash;
+  if (import.meta.env.VITE_CMP_PROVIDER === "google") {
+    location.replace(target);
+    await new Promise<never>(() => {});
+  } else history.replaceState(null, "", target);
+}
 const i18n = await createI18n(locale);
 const activity = createActivity();
 const interaction = createUpdateInteraction(activity, document, () =>
@@ -87,10 +93,51 @@ const offline = createOffline(activity, {
   enabled: import.meta.env.PROD,
   storage,
 });
-const consent = createBrowserConsent(window, account.auth);
+const publisher = createGooglePublisherClient(
+  document,
+  import.meta.env.VITE_CMP_PROVIDER === "google",
+  import.meta.env.VITE_ADSENSE_CLIENT_ID,
+);
+const messagingDocument = (url: URL) =>
+  url.origin === location.origin &&
+  !url.search &&
+  (!url.hash ||
+    url.hash === "#main" ||
+    (url.hash === "#manage" && url.pathname.endsWith("/consent"))) &&
+  isLocale(url.pathname.split("/")[1]) &&
+  ["", "rules", "consent"].includes(url.pathname.split("/").slice(2).join("/"));
+let googleConsent: GoogleConsentAdapter | undefined;
+const consent = createBrowserConsent(
+  window,
+  account.auth,
+  publisher.configured()
+    ? (context) =>
+        (googleConsent = createGoogleConsentAdapter(
+          window,
+          context,
+          publisher,
+          () => messagingDocument(new URL(location.href)),
+          () =>
+            location.assign(
+              `/${chooseLocale(location.pathname, preferences.read().locale, navigator.languages)}/consent#manage`,
+            ),
+        ))
+    : undefined,
+);
 const learning = createLearning(storage);
 const autoAds = createAutoAdsBrowser(window, {
-  script: createAdSenseScript(document, import.meta.env.VITE_ADSENSE_CLIENT_ID),
+  script: publisher,
+  messaging: publisher.configured()
+    ? {
+        eligible: messagingDocument,
+        documentReady: () =>
+          document
+            .querySelector('meta[name="liar-google-document"]')
+            ?.getAttribute("content") === "ready",
+        prepared: publisher.prepared,
+        prepare: publisher.prepare,
+      }
+    : undefined,
   consent,
   auth: account.auth,
   activity,
@@ -102,8 +149,11 @@ let controlHttp: Promise<ConsentControlPort> | undefined;
 function getConsentHttp(): Promise<ConsentControlPort> {
   return (controlHttp ??= import("./services/privacy/http")
     .then((module) =>
-      module.createConsentHttp(account.auth, window.fetch.bind(window), () =>
-        optionalEvents.cancel(),
+      module.createConsentHttp(
+        account.auth,
+        window.fetch.bind(window),
+        () => optionalEvents.cancel(),
+        () => googleConsent?.evidence(),
       ),
     )
     .catch((error) => {
@@ -112,6 +162,7 @@ function getConsentHttp(): Promise<ConsentControlPort> {
     }));
 }
 const consentControl: ConsentControlPort = {
+  refreshHere: () => Boolean(googleConsent?.evidence()),
   read: async (...args) => (await getConsentHttp()).read(...args),
   refresh: async (...args) => {
     optionalEvents.cancel();
@@ -150,6 +201,7 @@ import.meta.hot?.dispose(() => {
   optionalLanding.dispose();
   optionalEvents.dispose();
   consent.dispose();
+  publisher.dispose();
 });
 root.replaceChildren();
 render(

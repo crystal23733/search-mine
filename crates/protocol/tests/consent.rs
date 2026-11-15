@@ -9,7 +9,8 @@ fn current_consent_accepts_closed_versioned_control_without_client_permission() 
         decode_consent_refresh(br#"{"v":1,"expected_revision":null}"#),
         Ok(ConsentRefreshInput {
             v: 1,
-            expected_revision: None
+            expected_revision: None,
+            evidence: None,
         })
     );
     for (purpose, expected) in [
@@ -89,5 +90,41 @@ fn refresh_revision_is_only_a_canonical_non_nil_cas_condition() {
     assert_eq!(
         decode_consent_withdraw(br#"{"v":1,"purpose":"unknown"}"#),
         Err(ConsentApiError::Malformed)
+    );
+}
+#[test]
+fn evidence_is_bounded_closed_and_redacted_without_accepting_client_purpose_flags() {
+    let encode = |evidence: serde_json::Value| {
+        serde_json::to_vec(&serde_json::json!({"v":1,"expected_revision":null,"evidence":evidence}))
+            .unwrap()
+    };
+    let evidence = serde_json::json!({"provider":"google_tcf_v2","tc_string":"AB-c.DE_f"});
+    let value = decode_consent_refresh(&encode(evidence.clone())).unwrap();
+    assert_eq!(value.evidence.as_ref().unwrap().tc_string, "AB-c.DE_f");
+    assert!(!format!("{value:?}").contains("AB-c.DE_f"));
+    for raw in ["", ".ABC", "ABC.", "A..B", "A.B.C.D.E", "ABC=", "é"] {
+        assert!(
+            decode_consent_refresh(&encode(
+                serde_json::json!({"provider":"google_tcf_v2","tc_string":raw})
+            ))
+            .is_err()
+        );
+    }
+    assert!(
+        decode_consent_refresh(&encode(
+            serde_json::json!({"provider":"google_tcf_v2","tc_string":"A".repeat(MAX_TCF_CHARS+1)})
+        ))
+        .is_err()
+    );
+    for key in ["analytics", "advertising", "account_id"] {
+        let mut invalid = evidence.clone();
+        invalid[key] = serde_json::json!(true);
+        assert!(decode_consent_refresh(&encode(invalid)).is_err());
+    }
+    assert!(
+        decode_consent_refresh(&encode(
+            serde_json::json!({"provider":"other","tc_string":"ABC"})
+        ))
+        .is_err()
     );
 }

@@ -262,7 +262,10 @@ async fn serve() -> ServerResult {
         .map_err(|_| "My info HTTP initialization failed")?;
         let consent = consent_router(
             Arc::new(PgConsentStore::new(auth_pool.clone(), auth_clock.clone())),
-            Arc::new(DisabledConsentVerifier),
+            Arc::new(
+                GoogleConsentVerifier::from_provider(env::var("LIAR_CMP_PROVIDER").ok().as_deref())
+                    .map_err(|_| "Consent provider is invalid")?,
+            ),
             sessions.clone(),
             runtime.security.clone(),
             ConsentAuthentication {

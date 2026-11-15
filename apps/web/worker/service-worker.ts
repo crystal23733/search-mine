@@ -1,5 +1,9 @@
 import { clientsClaim, setCacheNameDetails } from "workbox-core";
-import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
+import {
+  precache,
+  addRoute,
+  createHandlerBoundToURL,
+} from "workbox-precaching";
 import { registerRoute, NavigationRoute } from "workbox-routing";
 import {
   coordinateIdleClients,
@@ -9,15 +13,32 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
 };
 setCacheNameDetails({ prefix: "liar-static", suffix: "v1" });
-precacheAndRoute(self.__WB_MANIFEST);
+precache(self.__WB_MANIFEST);
+const cachedShell = createHandlerBoundToURL("/");
 registerRoute(
-  new NavigationRoute(createHandlerBoundToURL("/index.html"), {
-    allowlist: [
-      /^\/(?:\?.*)?$/,
-      /^\/(?:en|ko|ja|zh-CN|es|pt-BR|de|fr)(?:\/[^?]*)?(?:\?.*)?$/,
-    ],
-  }),
+  new NavigationRoute(
+    async (options) => {
+      if (import.meta.env.VITE_CMP_PROVIDER !== "google")
+        return cachedShell(options);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      try {
+        return await fetch(options.request, { signal: controller.signal });
+      } catch {
+        return cachedShell(options);
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+    {
+      allowlist: [
+        /^\/(?:\?.*)?$/,
+        /^\/(?:en|ko|ja|zh-CN|es|pt-BR|de|fr)(?:\/[^?]*)?(?:\?.*)?$/,
+      ],
+    },
+  ),
 );
+addRoute();
 clientsClaim();
 const inScope = (url: string) => url.startsWith(self.registration.scope);
 const windows = async () =>

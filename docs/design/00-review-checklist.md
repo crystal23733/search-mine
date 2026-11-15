@@ -298,3 +298,5 @@ TS31 → 최소 권한/claim·FR01/NFR02, TS32 → 거래 바인딩·NFR02, TS33
 #231 FR16/NFR03~05/07 배포 운영 완성: [ADR0106](../adr/0106-controlled-recovery-resume.md)·[OPS231 인수](../verification/231-release-operations.md). 원본을 차단한 뒤만 복구 재개하며 과거 checkpoint만으로 재개하지 않는다. 실제 main/WS 부하·초기/lazy/WASM 보고와 운영 설정 점검을 준비하고, 계정/장비/매체/실기기 확인은 별도로 남긴다.
 
 #233 FR12/13·TS20/21/23/24/25/30/35/36: 사용자GoogleCMP공식방식명시승인→[ADR0107](../adr/0107-google-cmp-bootstrap.md). 동의 전 공개 태그는광고요청pause이며기존Google쿠키읽기가능성을고지했다. 미설정/거부광고0·개인/게임/인증문서격리는유지한다. 실제연결/운영은후속.
+
+#235 FR11/12/13/16·TS18/19/20/21/23/24/25/26/29/30/31/35/36: [ADR0108](../adr/0108-full-viewport-update-interaction.md)·[ADR0109](../adr/0109-current-session-google-consent-evidence.md)·[검증235](../verification/235-public-launch-wiring.md). 현재 사용자 TCF 제출은 Google 서명 인증이 아니다. 목적별 자체 통계/Google 광고 교집합·원문 미저장·현재 세션/CAS/철회와 태그 준비 직후부터 문서 격리를 검토한다. 법적 문구가 없는 문서는 미게시이며 Google모드 빌드를 허용하지 않는다.

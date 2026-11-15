@@ -44,6 +44,9 @@ struct Fixture {
 }
 impl Fixture {
     async fn new() -> Self {
+        Self::at(1500).await
+    }
+    async fn at(now: i64) -> Self {
         let pool = auth_pool().await;
         let authorities = AuthorityRegistry::new(64).unwrap();
         let sessions = PgAuthStore::new(pool.clone()).with_invalidations(authorities.clone());
@@ -53,14 +56,14 @@ impl Fixture {
                 Provider::Google,
                 &Uuid::new_v4().to_string(),
                 &token,
-                1000,
+                now - 500,
             ))
             .await
             .unwrap();
-        let row = sessions.session(token.hash(), 1500).await.unwrap().unwrap();
+        let row = sessions.session(token.hash(), now).await.unwrap().unwrap();
         Self {
             pool,
-            clock: Arc::new(Clock(AtomicI64::new(1500))),
+            clock: Arc::new(Clock(AtomicI64::new(now))),
             sessions,
             owner: ConsentSession {
                 account: record.account.id,
@@ -406,4 +409,81 @@ async fn original_consent_deadline_includes_body_time_before_storage() {
 #[ignore = "requires real PostgreSQL18; executed in database CI"]
 async fn original_consent_deadline_bounds_the_session_proof_query() {
     original_deadline_case(true).await;
+}
+
+#[tokio::test]
+#[ignore = "requires real PostgreSQL18; executed in database CI"]
+async fn google_choice_is_explicit_current_session_cas_and_does_not_store_or_echo_tcf() {
+    let f = Fixture::at(1_800_000_000).await;
+    let router = f.router(Arc::new(
+        GoogleConsentVerifier::from_provider(Some("google")).unwrap(),
+    ));
+    let data: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tests/fixtures/google-consent.json"
+    ))
+    .unwrap();
+    let body = serde_json::json!({"v":1,"expected_revision":null,"evidence":{"provider":"google_tcf_v2","tc_string":data["analytics"]["tcString"]}}).to_string();
+    let mut no_csrf = f.request("/api/v1/me/consent/refresh", &body);
+    no_csrf.headers_mut().remove("x-liar-csrf");
+    assert_eq!(
+        router.clone().oneshot(no_csrf).await.unwrap().status(),
+        StatusCode::FORBIDDEN
+    );
+    let view = json(
+        router
+            .clone()
+            .oneshot(f.request("/api/v1/me/consent/refresh", &body))
+            .await
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(view["consent"]["analytics"], "granted");
+    assert_eq!(view["consent"]["advertising"], "denied");
+    assert!(!view.to_string().contains("tc_string"));
+    let stored = f.store().read(f.owner).await.unwrap().unwrap();
+    assert!(stored.analytics && !stored.advertising);
+    assert_eq!(stored.expires_at, 1_800_003_600);
+    let row: String =
+        sqlx::query_scalar("SELECT to_jsonb(s)::text FROM session_consents s WHERE session_id=$1")
+            .bind(f.owner.revision)
+            .fetch_one(&f.pool)
+            .await
+            .unwrap();
+    assert!(
+        !row.to_string()
+            .contains(data["analytics"]["tcString"].as_str().unwrap())
+    );
+    let withdrawn = json(
+        router
+            .clone()
+            .oneshot(f.request("/api/v1/me/consent/withdraw", r#"{"v":1,"purpose":"all"}"#))
+            .await
+            .unwrap(),
+    )
+    .await;
+    assert_ne!(withdrawn["revision"], view["revision"]);
+    let stale = body.replace(
+        "\"expected_revision\":null",
+        &format!("\"expected_revision\":{}", view["revision"]),
+    );
+    assert_eq!(
+        router
+            .clone()
+            .oneshot(f.request("/api/v1/me/consent/refresh", &stale))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::CONFLICT
+    );
+    assert!(!f.store().read(f.owner).await.unwrap().unwrap().analytics);
+    f.sessions.logout(f.owner.hash).await.unwrap();
+    assert_eq!(
+        router
+            .oneshot(f.request("/api/v1/me/consent/refresh", &body))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::UNAUTHORIZED
+    );
+    close_auth_pool(f.pool).await;
 }

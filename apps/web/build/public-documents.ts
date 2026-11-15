@@ -1,3 +1,5 @@
+import type { PublicPolicy } from "../src/services/public-policy.ts";
+import { readSiteConfig } from "./site-config.ts";
 import type { Plugin, ViteDevServer } from "vite";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -36,6 +38,7 @@ export function staticContent(
   route: PublicDocument,
   locale: Locale,
   i18n: I18nPort,
+  policy?: PublicPolicy,
 ): string {
   const t = (key: MessageKey, data?: Record<string, string | number>) =>
     escapeHtml(i18n.t(locale, key, data));
@@ -44,7 +47,15 @@ export function staticContent(
   const basics = () =>
     `<p>${t("basics.goal")}</p><dl>${(["numbers", "flags", "controls", "lies"] as const).map((topic) => `<dt>${t(`basics.${topic}.title`)}</dt><dd>${t(`basics.${topic}`, { open: i18n.t(locale, "board.open"), flag: i18n.t(locale, "board.flag"), accuse: i18n.t(locale, "board.accuse") })}</dd>`).join("")}</dl>`;
   let title: string, body: string;
-  if (route === "/") {
+  if (route === "/privacy" || route === "/terms") {
+    title = t(route.slice(1) as "privacy" | "terms");
+    body = policy
+      ? `<p>${escapeHtml(policy.operator)} · ${escapeHtml(policy.contact)}</p><p>${escapeHtml(policy.effectiveDate)} · ${escapeHtml(policy.revision)}</p>${policy[route.slice(1) as "privacy" | "terms"].map((section) => `<section><h2>${escapeHtml(section.heading)}</h2><p style="white-space:pre-line">${escapeHtml(section.body)}</p></section>`).join("")}`
+      : `<p>${t("policy.pending")}</p>`;
+  } else if (route === "/consent") {
+    title = t("consent.pageTitle");
+    body = `<p>${t("consent.pageIntro")}</p><p>${t("consent.accountOptional")}</p><p>${link("/privacy", t("privacy"))}</p>`;
+  } else if (route === "/") {
     title = `${t("home.title1")} ${t("home.title2")}`;
     body = `<p>${t("home.description")}</p><p>${link("/practice", t("home.practice"))}</p><p>${link("/rules", t("home.learn"))}</p>`;
   } else if (route === "/learn") {
@@ -73,7 +84,12 @@ export function staticContent(
   }
   return `<div class="app-shell"><a class="skip-link" href="#main">${t("skip")}</a><main id="main" class="reading-page" tabindex="-1"><h1>${title}</h1>${body}<p>${link("/", t("home"))} · ${link("/storage", t("storage.pageTitle"))} · ${link("/learn", t("learn.title"))}</p><nav aria-label="${t("language")}">${LOCALES.map((language) => `<a href="${localizedDocument(language, route)}" lang="${language}">${LOCALE_NAMES[language]}</a>`).join(" · ")}</nav></main></div>`;
 }
-export function publicDocuments(originValue: string | undefined): Plugin {
+export function publicDocuments(
+  originValue: string | undefined,
+  configPath?: string,
+  publisher?: string,
+): Plugin {
+  const site = readSiteConfig(configPath);
   const origin = publicOrigin(originValue);
   let root = process.cwd();
   let pending: Promise<I18nPort> | undefined;
@@ -97,8 +113,12 @@ export function publicDocuments(originValue: string | undefined): Plugin {
     origin
       ? `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`
       : "User-agent: *\nDisallow: /\n";
+  const discoverable = PUBLIC_DOCUMENTS.filter(
+    (route) =>
+      route !== "/consent" && (site || !["/privacy", "/terms"].includes(route)),
+  );
   const sitemap = () =>
-    `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${LOCALES.flatMap((locale) => PUBLIC_DOCUMENTS.map((route) => `<url><loc>${escapeHtml(`${origin}${localizedDocument(locale, route)}`)}</loc></url>`)).join("")}</urlset>`;
+    `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${LOCALES.flatMap((locale) => discoverable.map((route) => `<url><loc>${escapeHtml(`${origin}${localizedDocument(locale, route)}`)}</loc></url>`)).join("")}</urlset>`;
   async function html(
     source: string,
     url: URL,
@@ -107,7 +127,13 @@ export function publicDocuments(originValue: string | undefined): Plugin {
       ? (url.pathname.split("/")[1] as Locale)
       : "en";
     const messages = await ready();
-    const value = documentMetadata(url, locale, messages, origin);
+    const value = documentMetadata(
+      url,
+      locale,
+      messages,
+      origin,
+      Boolean(site),
+    );
     const meta = (attributes: string) => `<meta data-liar-seo ${attributes}>`;
     const tags = [
       value.noindex ? meta('name="robots" content="noindex, noarchive"') : "",
@@ -140,11 +166,25 @@ export function publicDocuments(originValue: string | undefined): Plugin {
       "",
     );
     const route = publicPath(documentRoute(url.pathname));
+    const publicGoogle =
+      Boolean(publisher) &&
+      ["/", "/rules", "/consent"].includes(route ?? "") &&
+      !url.search;
+    if (publicGoogle)
+      tags.push('<meta name="liar-google-document" content="ready">');
+    const template = publicGoogle
+      ? clean.replace(
+          'name="referrer" content="no-referrer"',
+          'name="referrer" content="strict-origin"',
+        )
+      : clean;
     const content =
-      !value.noindex && route ? staticContent(route, locale, messages) : "";
+      route && !url.search && isLocale(url.pathname.split("/")[1])
+        ? staticContent(route, locale, messages, site?.policies[locale])
+        : "";
     return {
       private: value.noindex,
-      html: clean
+      html: template
         .replace(/<html\b[^>]*>/, `<html lang="${locale}">`)
         .replace(
           /<title>[^<]*<\/title>/,
@@ -287,7 +327,28 @@ export function publicDocuments(originValue: string | undefined): Plugin {
     async generateBundle(_options, bundle) {
       const entry = bundle["index.html"];
       if (entry?.type !== "asset") throw new Error("Missing built HTML entry");
-      const source = String(entry.source);
+      const source = String(entry.source)
+        .replace(/<script\b/g, '<script nonce="LIAR_DOCUMENT_NONCE"')
+        .replace(
+          /<link\b(?=[^>]*rel="modulepreload")/g,
+          '<link nonce="LIAR_DOCUMENT_NONCE"',
+        );
+      if (publisher) {
+        if (!site || !/^ca-pub-\d{16}$/.test(publisher ?? ""))
+          throw Error("Google publisher configuration incomplete");
+        this.emitFile({
+          type: "asset",
+          fileName: "ads.txt",
+          source: `google.com, ${publisher!.slice(3)}, DIRECT, f08c47fec0942fa0\n`,
+        });
+      }
+      if (site)
+        for (const locale of LOCALES)
+          this.emitFile({
+            type: "asset",
+            fileName: `policies/${locale}.json`,
+            source: JSON.stringify(site.policies[locale]),
+          });
       for (const locale of LOCALES)
         for (const route of PUBLIC_DOCUMENTS) {
           this.emitFile({

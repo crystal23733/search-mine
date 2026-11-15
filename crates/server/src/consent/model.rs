@@ -33,6 +33,19 @@ pub struct VerifiedConsent {
     pub expires_at: i64,
 }
 pub trait ConsentVerifier: Send + Sync {
+    fn verify_submitted(
+        &self,
+        subject: Uuid,
+        now: i64,
+        evidence: Option<&liar_protocol::consent::ConsentEvidence>,
+    ) -> impl Future<Output = Result<VerifiedConsent, ConsentError>> + Send {
+        async move {
+            if evidence.is_some() {
+                return Err(ConsentError::Unavailable);
+            }
+            self.verify(subject, now).await
+        }
+    }
     fn verify(
         &self,
         subject: Uuid,

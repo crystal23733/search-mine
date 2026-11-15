@@ -6,7 +6,7 @@
 
 [컨테이너 절차](container-deployment.md)대로 먼저 source를 검증·빌드하고 실제 이미지ID 또는 registry digest를 기록한다. 이후 배포용 env의 server/web/PostgreSQL/Tunnel/backup/ledger 이미지를 모두 `sha256:<64자리>` 또는 `repository@sha256:<64자리>`로 고정한다. 기본 `:local`/`:latest`/메이저 tag는 개발 빌드용이며 공개 점검을 통과하지 않는다. PostgreSQL과 grant는 같은 `LIAR_POSTGRES_IMAGE`를 사용한다. 고정한 이미지는 같은 호스트에 존재하거나 검수된 registry에서 가져와야 한다. 불변 참조를 지정한 뒤 다시 `compose build`로 덮어쓰지 않는다.
 
-운영 증거 JSON은 저장소 밖에 보관한다. version=1, origin=확정HTTPS origin, images={server:실제고정참조,web:실제고정참조}, limits는 렌더링된 server 환경의 `LIAR_ONLINE_/LIAR_LOBBY_/LIAR_BOARD_/LIAR_BOT_` 설정과 정확히 같은 문자열 사전이며, checks는 아래8개다. 각 항목은 status=`passed`, performed_at=UTC ISO8601, record=비밀을 제외한 제한된 검수 기록 위치를 가진다. 도구는 동일 origin/이미지에 대한7일 이내 실제 검수만 받는다. 샘플을 통과 결과로 복사하지 않는다.
+운영 증거 JSON은 저장소 밖에 보관한다. version=2, origin=확정HTTPS origin, images={server:실제고정참조,web:실제고정참조}, limits는 렌더링된 server 환경의 `LIAR_ONLINE_/LIAR_LOBBY_/LIAR_BOARD_/LIAR_BOT_` 설정과 정확히 같은 문자열 사전이며, public_settings는 현재 web build 설정의 cmp_provider(`VITE_CMP_PROVIDER`, 미설정은 빈 문자열)와 publisher_id(`VITE_ADSENSE_CLIENT_ID`, 미설정은 빈 문자열) 사전이고, checks는 아래8개다. 각 항목은 status=`passed`, performed_at=UTC ISO8601, record=비밀을 제외한 제한된 검수 기록 위치를 가진다. 도구는 동일 origin/이미지/공개 설정에 대한7일 이내 실제 검수만 받는다. web CMP와 server `LIAR_CMP_PROVIDER` 불일치·Google모드의 잘못된 ID는 차단한다. 이전 version1은 새 공개 설정을 관측한 증거로 재사용하지 않는다. 샘플을 통과 결과로 복사하지 않는다.
 
 - `oauth_four_providers`: 네 제공자의 실제 로그인·최소 권한·연결/해제/삭제·Apple 철회.
 - `policies_and_cmp`: 실제 운영자/연락처·정책·8언어·Google 메시지 게시·거부/철회.

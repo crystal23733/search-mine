@@ -76,6 +76,21 @@ test("prepared idle document blocks link input before ACK and restores focus aft
     expect(await modal.evaluate((element) => element.matches(":modal"))).toBe(
       true,
     );
+    const coverage = await modal.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: innerWidth,
+        height: innerHeight,
+      };
+    });
+    expect(coverage.left).toBeLessThanOrEqual(0);
+    expect(coverage.top).toBeLessThanOrEqual(0);
+    expect(coverage.right).toBeGreaterThanOrEqual(coverage.width);
+    expect(coverage.bottom).toBeGreaterThanOrEqual(coverage.height);
     const messages = JSON.parse(
       readFileSync(
         new URL(

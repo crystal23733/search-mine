@@ -34,7 +34,9 @@ describe("localized public document contract", () => {
   for (const locale of LOCALES)
     test(locale, async () => {
       const i18n = await createI18n(locale);
-      for (const route of PUBLIC_DOCUMENTS) {
+      for (const route of PUBLIC_DOCUMENTS.filter((route) =>
+        ["/", "/rules", "/storage", "/learn"].includes(route),
+      )) {
         const url = new URL(
           `/${locale}${route}`,
           "https://untrusted-request.test",
@@ -163,7 +165,7 @@ test("static copy is escaped rather than interpreted as markup", async () => {
   expect(doc.querySelector("img")).toBeNull();
   expect(doc.querySelector("h1")?.textContent).toContain("<img");
 });
-test("build emits exactly 32 public documents, safe fallback and an allowlisted sitemap only when configured", async () => {
+test("build emits exactly 56 documents but indexes only published public information, safe fallback and an allowlisted sitemap only when configured", async () => {
   for (const configured of [undefined, origin]) {
     const plugin = publicDocuments(configured);
     const emitted: Array<{ fileName: string; source: string }> = [];
@@ -186,7 +188,7 @@ test("build emits exactly 32 public documents, safe fallback and an allowlisted 
     );
     expect(
       emitted.filter((asset) => asset.fileName.endsWith(".html")),
-    ).toHaveLength(32);
+    ).toHaveLength(56);
     expect(bundle["index.html"].source).toContain(
       'content="noindex, noarchive"',
     );
@@ -195,11 +197,14 @@ test("build emits exactly 32 public documents, safe fallback and an allowlisted 
     )) {
       const doc = new DOMParser().parseFromString(asset.source, "text/html");
       expect(doc.querySelector("h1")).not.toBeNull();
+      const indexed =
+        configured &&
+        !/\/(?:privacy|terms|consent)\.html$/.test(asset.fileName);
       expect(doc.querySelectorAll('link[rel="canonical"]')).toHaveLength(
-        configured ? 1 : 0,
+        indexed ? 1 : 0,
       );
       expect(doc.querySelectorAll('link[rel="alternate"]')).toHaveLength(
-        configured ? 9 : 0,
+        indexed ? 9 : 0,
       );
       expect(
         doc.querySelector('script[type="module"]')?.getAttribute("src"),
@@ -310,5 +315,120 @@ test("preview preserves the built authority and text without an origin in its cu
     expect((await dispatch("/ko/me", "HEAD")).body).toBeUndefined();
   } finally {
     await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("unpublished policies and consent remain noindex with readable static fallback and escaped operator text", async () => {
+  const i18n = await createI18n("ko");
+  for (const route of ["/privacy", "/terms", "/consent"] as const) {
+    const metadata = documentMetadata(
+      new URL(`${origin}/ko${route}`),
+      "ko",
+      i18n,
+      origin,
+    );
+    expect(metadata.noindex).toBe(true);
+    expect(metadata.canonical).toBeUndefined();
+    expect(staticContent(route, "ko", i18n)).toContain(
+      route === "/consent"
+        ? i18n.t("ko", "consent.pageIntro")
+        : i18n.t("ko", "policy.pending"),
+    );
+  }
+  const policy = {
+    revision: "test",
+    effectiveDate: "2026-11-14",
+    operator: "<Operator>",
+    contact: "test@example.test",
+    privacy: [{ heading: "<script>", body: "<img src=x onerror=alert(1)>" }],
+    terms: [{ heading: "Terms", body: "Test" }],
+  };
+  const doc = new DOMParser().parseFromString(
+    staticContent("/privacy", "ko", i18n, policy),
+    "text/html",
+  );
+  expect(doc.querySelector("script,img")).toBeNull();
+  expect(doc.body.textContent).toContain("<Operator>");
+  expect(
+    documentMetadata(new URL(`${origin}/ko/privacy`), "ko", i18n, origin, true)
+      .canonical,
+  ).toBe(`${origin}/ko/privacy`);
+});
+test("configured public policies build escaped HTML and JSON while Google document markers stay isolated", async () => {
+  const { mkdtemp, writeFile, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const folder = await mkdtemp(join(tmpdir(), "liar-policy-"));
+  try {
+    const policy = {
+      revision: "synthetic",
+      effectiveDate: "2026-11-14",
+      operator: "<Operator>",
+      contact: "test@example.test",
+      privacy: [{ heading: "Privacy", body: "<script>text</script>" }],
+      terms: [{ heading: "Terms", body: "Plain text" }],
+    };
+    const file = join(folder, "site.json");
+    await writeFile(
+      file,
+      JSON.stringify({
+        policies: Object.fromEntries(LOCALES.map((locale) => [locale, policy])),
+        google: {
+          frame: ["https://example.test"],
+          connect: ["https://example.test"],
+          image: ["https://example.test"],
+        },
+      }),
+    );
+    const plugin = publicDocuments(origin, file, "ca-pub-0000000000000001");
+    const emitted: Array<{ fileName: string; source: string }> = [];
+    const bundle = {
+      "index.html": {
+        type: "asset",
+        source:
+          '<html lang="en"><head><title>Liar Sweeper</title><meta name="referrer" content="no-referrer"></head><body><div id="app"></div><script type="module" src="/assets/main.js"></script></body></html>',
+      },
+    };
+    if (typeof plugin.generateBundle !== "function")
+      throw Error("Missing hook");
+    await Reflect.apply(
+      plugin.generateBundle,
+      {
+        emitFile: (asset: { fileName: string; source: string }) =>
+          emitted.push(asset),
+      },
+      [{}, bundle, false],
+    );
+    expect(
+      emitted.filter((asset) => asset.fileName.startsWith("policies/")),
+    ).toHaveLength(8);
+    expect(
+      emitted.find((asset) => asset.fileName === "ads.txt")?.source,
+    ).toContain("pub-0000000000000001");
+    for (const locale of LOCALES) {
+      const privacy = emitted.find(
+        (asset) => asset.fileName === `${locale}/privacy.html`,
+      )!.source;
+      expect(privacy).toContain("&lt;Operator&gt;");
+      expect(privacy).not.toContain('name="liar-google-document"');
+      expect(privacy).not.toContain("<script>text</script>");
+      expect(privacy).toContain(`href="${origin}/${locale}/privacy"`);
+      const home = emitted.find(
+        (asset) => asset.fileName === `${locale}/index.html`,
+      )!.source;
+      expect(home).toContain('name="liar-google-document" content="ready"');
+      expect(home).toContain('name="referrer" content="strict-origin"');
+      expect(home).toContain('nonce="LIAR_DOCUMENT_NONCE"');
+    }
+    expect(bundle["index.html"].source).not.toContain(
+      'name="liar-google-document"',
+    );
+    expect(
+      emitted
+        .find((asset) => asset.fileName === "sitemap.xml")!
+        .source.match(/<url>/g),
+    ).toHaveLength(48);
+  } finally {
+    await rm(folder, { recursive: true, force: true });
   }
 });

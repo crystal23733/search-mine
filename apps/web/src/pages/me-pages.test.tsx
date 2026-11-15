@@ -134,7 +134,7 @@ test("privacy distinguishes the server view from unavailable CMP setup and retai
   await setup("/en/me/privacy");
   const server = await screen.findByTestId("me-server-consent");
   expect(server.textContent).toContain(
-    "Consent settings are not available yet.",
+    "Manage Google advertising in Consent settings.",
   );
   expect(
     screen
@@ -177,11 +177,11 @@ test("privacy controls withdraw the current session without a nickname and clear
   await screen.findByTestId("me-server-consent");
   expect(
     screen
-      .getByRole("button", { name: "Check updated choices" })
+      .getByRole("button", { name: "Apply choices to service" })
       .hasAttribute("disabled"),
   ).toBe(true);
   fireEvent.click(
-    screen.getByRole("button", { name: "Withdraw all optional consent" }),
+    screen.getByRole("button", { name: "Stop optional service collection" }),
   );
   expect(screen.queryByTestId("me-server-consent")).toBeNull();
   expect(api.withdraw.mock.calls[0][1]).toBe("all");
@@ -219,4 +219,63 @@ test("leaving privacy aborts its control request and a late view cannot appear o
   await waitFor(() =>
     expect(screen.queryByTestId("me-server-consent")).toBeNull(),
   );
+});
+test("service measurement withdrawal is distinct from current Google advertising choices", async () => {
+  const consent = {
+    read: () => ({
+      status: "valid" as const,
+      analytics: false,
+      advertising: true,
+      working: false,
+      canReopen: true,
+    }),
+    subscribe: () => () => {},
+    reopen: vi.fn().mockResolvedValue(true),
+    dispose: () => {},
+  };
+  const stored = {
+    v: 1,
+    account_id: TEST_ACCOUNT.id,
+    revision: "c0000000-0000-4000-8000-000000000001",
+    observed_at: ME_NOW,
+    consent: {
+      cmp_available: false,
+      status: "current" as const,
+      analytics: "denied" as const,
+      advertising: "granted" as const,
+      checked_at: ME_NOW,
+      expires_at: ME_NOW + 300,
+    },
+  };
+  const control = {
+    read: vi.fn().mockResolvedValue(stored),
+    refresh: vi.fn(),
+    withdraw: vi.fn().mockResolvedValue({
+      ...stored,
+      consent: { ...stored.consent, advertising: "denied" },
+    }),
+  };
+  await setup("/en/me/privacy", TEST_ACCOUNT, {
+    consent,
+    consentControl: control,
+  });
+  const server = await screen.findByTestId("me-server-consent");
+  expect(server.textContent).toContain("Service ad measurement");
+  expect(server.textContent).not.toContain(
+    "Consent settings are not available yet.",
+  );
+  expect(
+    screen.getByRole("button", { name: "Stop service ad measurement" }),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Apply choices to service" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Google advertising")).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Stop service ad measurement" }),
+  );
+  await waitFor(() => expect(control.withdraw).toHaveBeenCalledOnce());
+  expect(control.withdraw.mock.calls[0][1]).toBe("advertising");
+  expect(consent.read().advertising).toBe(true);
+  expect(consent.reopen).not.toHaveBeenCalled();
 });

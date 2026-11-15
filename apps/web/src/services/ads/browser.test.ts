@@ -414,3 +414,61 @@ test("an SDK document cannot publish the tutorial guide and a guide cannot activ
   );
   expect(guide.script.load).not.toHaveBeenCalled();
 });
+
+test("paused messaging bootstraps without ad permission and leaves a protected route before publishing", () => {
+  const s = setup("/ko/rules");
+  s.choice.status = "denied";
+  s.choice.advertising = false;
+  let prepared = false;
+  const messaging = {
+    eligible: (url: URL) => url.pathname === "/ko/rules",
+    prepared: () => prepared,
+    prepare: vi.fn(async () => {
+      prepared = true;
+    }),
+  };
+  const app = createAutoAdsBrowser(window, { ...s.deps, messaging });
+  cleanup.push(app.dispose);
+  expect(messaging.prepare).toHaveBeenCalledTimes(1);
+  expect(s.script.load).not.toHaveBeenCalled();
+  const publish = vi.fn();
+  app.navigation.subscribe(publish);
+  app.navigation.go("/me/privacy");
+  expect(s.documents.navigate).toHaveBeenCalledWith(
+    `${location.origin}/ko/me/privacy`,
+  );
+  expect(publish).not.toHaveBeenCalled();
+});
+test("consent document can prepare messaging but never activate Auto ads", () => {
+  const s = setup("/ko/consent");
+  let prepared = false;
+  const messaging = {
+    eligible: (url: URL) => url.pathname === "/ko/consent",
+    prepared: () => prepared,
+    prepare: vi.fn(async () => {
+      prepared = true;
+    }),
+  };
+  const app = createAutoAdsBrowser(window, { ...s.deps, messaging });
+  cleanup.push(app.dispose);
+  expect(messaging.prepare).toHaveBeenCalledTimes(1);
+  expect(s.script.load).not.toHaveBeenCalled();
+});
+test("reopening active Google choices navigates to the isolated management document", () => {
+  const s = setup("/ko/rules");
+  const app = createAutoAdsBrowser(window, {
+    ...s.deps,
+    messaging: {
+      eligible: () => true,
+      prepared: () => true,
+      prepare: async () => {},
+    },
+  });
+  cleanup.push(app.dispose);
+  s.choice.working = true;
+  s.notify();
+  expect(s.documents.navigate).toHaveBeenCalledWith(
+    `${location.origin}/ko/consent#manage`,
+  );
+  expect(s.documents.reload).not.toHaveBeenCalled();
+});

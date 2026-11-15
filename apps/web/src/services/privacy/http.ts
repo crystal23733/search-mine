@@ -1,3 +1,4 @@
+import type { ConsentEvidence } from "@liar/protocol";
 import type { AuthenticatedRequests, RequestOwner } from "../auth/requests";
 import { AuthError } from "../auth/types";
 import { readJsonResponse } from "../json-response";
@@ -64,6 +65,7 @@ export function createConsentHttp(
   auth: AuthenticatedRequests,
   fetcher: typeof fetch,
   mutation: () => void = () => {},
+  evidence?: () => ConsentEvidence | undefined,
 ): ConsentControlPort {
   const request = (
     owner: RequestOwner,
@@ -84,9 +86,11 @@ export function createConsentHttp(
     read: (owner, signal) => request(owner, signal, "", { v: 1 }),
     refresh: (owner, expected, signal) => {
       mutation();
+      const submitted = evidence?.();
       return request(owner, signal, "/refresh", {
         v: 1,
         expected_revision: expected,
+        ...(submitted ? { evidence: submitted } : {}),
       }).then((value) => {
         if (
           value.consent.status !== "current" ||

@@ -19,7 +19,15 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cargo install wasm-bindgen-cli --locked
 ARG VITE_PUBLIC_SITE_ORIGIN
 ARG VITE_ADSENSE_CLIENT_ID
+ARG VITE_CMP_PROVIDER
+ARG LIAR_PUBLIC_CONFIG_SHA256
 RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,target=/work/target \
+    --mount=type=secret,id=public_site_config \
+    if [ -f /run/secrets/public_site_config ]; then \
+      test -n "$LIAR_PUBLIC_CONFIG_SHA256" && \
+      echo "$LIAR_PUBLIC_CONFIG_SHA256  /run/secrets/public_site_config" | sha256sum -c - && \
+      export LIAR_PUBLIC_CONFIG_FILE=/run/secrets/public_site_config; \
+    else test -z "$LIAR_PUBLIC_CONFIG_SHA256"; fi && \
     corepack yarn build && node deploy/render-nginx.mjs /work/nginx-routes.conf
 
 FROM debian:trixie-slim AS server

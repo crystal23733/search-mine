@@ -189,7 +189,7 @@ export function registerMyInfoTests(approve: Approve, login: Login) {
             .getByRole("link", { name: messages["me.privacy"], exact: true })
             .click();
           await expect(one.getByTestId("me-server-consent")).toContainText(
-            messages["me.cmpUnavailable"],
+            messages["me.googleConsentHint"],
           );
           await expect(
             one.getByRole("button", {

@@ -284,3 +284,7 @@
 ## #235 공개 웹 연결과 출시 회귀
 
 FR11/12/13/16·TS18/19/20/21/23/24/25/26/29/30/31/35/36 → [ADR0107](../adr/0107-google-cmp-bootstrap.md)·[ADR0108](../adr/0108-full-viewport-update-interaction.md)·[ADR0109](../adr/0109-current-session-google-consent-evidence.md) → 단일 Google paused bootstrap/현재 TCF·명시 세션 선택/CAS·보호 문서 새 탐색·운영자8언어 정책/nonce CSP·시험 fixture 종료와 viewport 입력 장벽 → [검증235](../verification/235-public-launch-wiring.md). 실제 계정·정책 확정·SDK 네트워크/호스트 검수는 #42/#147/#24와 구분한다.
+
+## #237 앱 표시명 Liar Minesweeper
+
+사용자 2026-11-16 명시 지시로 [제품 이름](../product/14-naming.md)을 변경한다. 기존 승인된 웹/PWA/공유 문구 범위이며 설치/저장·운영 식별자와 과거 이력을 유지한다. 선행 #235/PR236 완료. FR11·TS18/19/20/26/30/36 → [검증237](../verification/237-liar-minesweeper-name.md).

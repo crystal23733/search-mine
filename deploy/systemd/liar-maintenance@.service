@@ -1,5 +1,5 @@
 [Unit]
-Description=Liar Sweeper isolated %i maintenance
+Description=Liar Minesweeper isolated %i maintenance
 Requires=docker.service
 After=docker.service
 

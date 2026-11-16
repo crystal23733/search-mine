@@ -1,3 +1,4 @@
+import { APP_NAME } from "../services/app-name";
 import { useEffect, useLayoutEffect, useMemo, useState } from "preact/hooks";
 import type { RequestOwner } from "../services/auth/requests";
 import { OfficialDailyController } from "../services/daily/official";
@@ -78,7 +79,7 @@ export function OfficialDailyPage() {
       ? dailyShare(state.view)
       : null;
   const summary = card
-    ? `Liar Sweeper · ${card.date} UTC · v${card.version}\n${t(card.completed ? "daily.complete" : "daily.incomplete")} · ${t(card.trust === "unverified" ? "daily.unverified" : card.trust === "verified_time" ? "official.verifiedTime" : "official.verifiedCompletion")}\n${card.opened_safe}/${card.safe_total} · ${t(card.trust === "verified_time" ? "ranking.elapsed" : "daily.personalTime")}: ${format(card.elapsed_ms)}\n${t("match.mistakes", { count: card.mistakes })}`
+    ? `${APP_NAME} · ${card.date} UTC · v${card.version}\n${t(card.completed ? "daily.complete" : "daily.incomplete")} · ${t(card.trust === "unverified" ? "daily.unverified" : card.trust === "verified_time" ? "official.verifiedTime" : "official.verifiedCompletion")}\n${card.opened_safe}/${card.safe_total} · ${t(card.trust === "verified_time" ? "ranking.elapsed" : "daily.personalTime")}: ${format(card.elapsed_ms)}\n${t("match.mistakes", { count: card.mistakes })}`
     : "";
   const share = (action: "copy" | "nativeShare") => {
     if (!card || sharing === "busy") return;

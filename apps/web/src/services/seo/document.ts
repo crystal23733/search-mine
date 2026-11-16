@@ -1,3 +1,4 @@
+import { APP_NAME } from "../app-name.ts";
 import { LOCALES, type Locale } from "../locale.ts";
 import { documentRoute, documentStatus } from "../document-route.ts";
 import type { I18nPort } from "../i18n.ts";
@@ -79,7 +80,7 @@ export function documentMetadata(
                   ? t("storage.pageTitle")
                   : page === "/"
                     ? `${t("home.title1")} ${t("home.title2")}`
-                    : "Liar Sweeper";
+                    : APP_NAME;
   const description =
     page === "/privacy"
       ? t("privacy")
@@ -102,7 +103,7 @@ export function documentMetadata(
       : undefined;
   return {
     locale,
-    title: heading === "Liar Sweeper" ? heading : `${heading} | Liar Sweeper`,
+    title: heading === APP_NAME ? heading : `${heading} | ${APP_NAME}`,
     description: readable ? description : undefined,
     noindex: !readable,
     canonical,

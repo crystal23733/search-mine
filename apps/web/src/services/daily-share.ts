@@ -1,3 +1,4 @@
+import { APP_NAME } from "./app-name";
 import type {
   DailyCompletion,
   DailyTrust,
@@ -76,7 +77,7 @@ export function createSharePort(
     },
     async nativeShare(text) {
       if (!nav.share) throw Error("share_unavailable");
-      await nav.share({ title: "Liar Sweeper", text });
+      await nav.share({ title: APP_NAME, text });
     },
   };
 }

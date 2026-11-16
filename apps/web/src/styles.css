@@ -540,10 +540,11 @@ input[type="checkbox"]:checked::before {
   .header {
     gap: 12px;
     min-height: 48px;
+    flex-wrap: wrap;
   }
   .brand {
     gap: 8px;
-    font-size: 1.35rem;
+    font-size: 1.2rem;
   }
   .brand-square {
     width: 32px;

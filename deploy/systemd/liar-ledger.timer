@@ -1,5 +1,5 @@
 [Unit]
-Description=Hourly Liar Sweeper encrypted rights checkpoint
+Description=Hourly Liar Minesweeper encrypted rights checkpoint
 [Timer]
 OnCalendar=hourly
 Persistent=true

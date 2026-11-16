@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart LR
-  Player[PC와 모바일 사용자] --> Game[Liar Sweeper 자체 사이트]
+  Player[PC와 모바일 사용자] --> Game[Liar Minesweeper 자체 사이트]
   Owner[운영자] --> Game
   Game --> Google[Google 광고와 인증 CMP]
   Game --> CF[Cloudflare Tunnel과 DNS]

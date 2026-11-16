@@ -1,5 +1,5 @@
 [Unit]
-Description=Twice-daily Liar Sweeper encrypted database backup
+Description=Twice-daily Liar Minesweeper encrypted database backup
 [Timer]
 OnCalendar=*-*-* 03,15:10:00
 Persistent=true

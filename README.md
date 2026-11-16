@@ -1,4 +1,4 @@
-# Liar Sweeper · search-mine
+# Liar Minesweeper · search-mine
 
 **내 정보:** `/{locale}/me`에서 최근90일 전적을 확인하고, `/me/history`·`/me/account`·`/me/privacy`에서 기록·계정·현재 동의를 관리합니다. [조회 API 검증 #177](docs/verification/177-my-info-read-api.md)과 [화면·파일 제거 검증 #178](docs/verification/178-my-info-pages.md)을 확인하세요. 개인 데이터 파일 다운로드와 구 export/replay API는 제거하며, 이 기기 설정은 로그인 없이 `/settings`에서 사용합니다.
 
@@ -16,7 +16,7 @@
 
 전적·계정·설정·공식 순위는 웹에서 조회·처리하며 데일리 PNG 다운로드도 제공하지 않습니다. 결과는 웹 카드에서 확인하고 복사·텍스트 공유할 수 있습니다. `/{locale}/daily/rankings`에서 두 공식 순위를 조회·새로고침합니다.
 
-`/{locale}/settings`에서 선택적으로 Liar Sweeper를 설치할 수 있습니다. 지원하는 브라우저는 설치 버튼, 그 외에는 브라우저 메뉴·홈 화면 추가 안내를 제공합니다. 설치 없이도 웹 기능을 이용할 수 있습니다. 캐시가 준비된 연습은 오프라인으로, 공식 대전·순위는 연결 후 이용합니다. [설치와 실기기 검수](docs/workflow/pwa-installation.md)·[구현 검증 #221](docs/verification/221-installable-pwa.md)을 확인하세요.
+`/{locale}/settings`에서 선택적으로 Liar Minesweeper를 설치할 수 있습니다. 지원하는 브라우저는 설치 버튼, 그 외에는 브라우저 메뉴·홈 화면 추가 안내를 제공합니다. 설치 없이도 웹 기능을 이용할 수 있습니다. 캐시가 준비된 연습은 오프라인으로, 공식 대전·순위는 연결 후 이용합니다. [설치와 실기기 검수](docs/workflow/pwa-installation.md)·[구현 검증 #221](docs/verification/221-installable-pwa.md)을 확인하세요.
 
 ## 먼저 읽을 문서
 

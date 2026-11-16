@@ -1,5 +1,7 @@
 # OAuth 운영 설정과 별도 검수
 
+제공자 개발자 콘솔의 앱/서비스 표시명은 **Liar Minesweeper**로 등록한다(사용자 2026-11-16 지시). 이 이름 변경은 client ID·callback 경로·쿠키/세션 식별자의 변경을 요구하지 않는다.
+
 #44 서버 계약 설정이다. 실제 키·등록 도메인·제공자 승인·실계정 검수는 [#42](https://github.com/crystal23733/search-mine/issues/42)에 남긴다. 실제 키를 Git/이슈/PR/채팅에 붙이지 않고 홈서버의 secret 저장소에 넣는다. 연결/삭제/Apple credential 처리는 #45, 화면은 #46이다. 둘의 완료 전 공개 OAuth를 출시하지 않는다.
 
 ## 공통

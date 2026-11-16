@@ -49,9 +49,9 @@ test("boots the localized product with a language control and no password collec
   expect(screen.getByRole("combobox", { name: "Language" }).isConnected).toBe(
     true,
   );
-  expect(screen.getByRole("link", { name: "Liar Sweeper" }).isConnected).toBe(
-    true,
-  );
+  expect(
+    screen.getByRole("link", { name: "Liar Minesweeper" }).isConnected,
+  ).toBe(true);
   expect(screen.queryByLabelText(/password/i)).toBeNull();
 });
 test("language changes preserve the current route, invitation query and hash", async () => {
@@ -165,7 +165,7 @@ test("first visits keep the error page and head state is restored when returning
   await waitFor(() => expect(document.title).toContain("404"));
   services.navigation.go("/rules");
   await waitFor(() =>
-    expect(document.title).toBe("How to play | Liar Sweeper"),
+    expect(document.title).toBe("How to play | Liar Minesweeper"),
   );
   expect(document.querySelector('meta[name="robots"]')).toBeNull();
   services.navigation.go("/me/privacy");

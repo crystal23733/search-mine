@@ -71,7 +71,9 @@ test("unconfigured consent ignores delivered peer grants and invalidation while 
     ).consentTestProbe?.channel.close(),
   );
   await peer.close();
-  await page.getByRole("link", { name: "Liar Sweeper", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Liar Minesweeper", exact: true })
+    .click();
   await page
     .getByRole("link", { name: "Practise locally", exact: true })
     .click();
@@ -223,7 +225,9 @@ test("storage notice stays available with denied storage and failed authenticati
   await expect(
     page.getByRole("region", { name: "Consent settings" }).getByRole("status"),
   ).toHaveText(messages("en")["consent.state.unavailable"]);
-  await page.getByRole("link", { name: "Liar Sweeper", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Liar Minesweeper", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Skip tutorial", exact: true })
     .click();

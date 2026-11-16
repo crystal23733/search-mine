@@ -100,12 +100,12 @@ test("SPA metadata follows locale, safe skip fragment and private fragments with
     page.getByRole("combobox", { name: "Language", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-  await expect(page).toHaveTitle("How to play | Liar Sweeper");
+  await expect(page).toHaveTitle("How to play | Liar Minesweeper");
   await page
     .getByRole("combobox", { name: "Language", exact: true })
     .selectOption("ko");
   await expect(page).toHaveTitle(
-    `${JSON.parse(await readFile("apps/web/src/locales/ko/common.json", "utf8"))["rules.title"]} | Liar Sweeper`,
+    `${JSON.parse(await readFile("apps/web/src/locales/ko/common.json", "utf8"))["rules.title"]} | Liar Minesweeper`,
   );
   await expect(page.locator("html")).toHaveAttribute("lang", "ko");
   await page.evaluate(() => {
@@ -120,6 +120,8 @@ test("SPA metadata follows locale, safe skip fragment and private fragments with
     location.hash = "main";
   });
   await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
-  await page.getByRole("link", { name: "Liar Sweeper", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Liar Minesweeper", exact: true })
+    .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
 });

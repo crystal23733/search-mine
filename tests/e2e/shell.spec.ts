@@ -1,6 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 const locales = ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"];
+async function expectHeaderFits(page: Page) {
+  const brand = await page.locator("header .brand").boundingBox();
+  const controls = await page.locator(".header-controls").boundingBox();
+  expect(brand).not.toBeNull();
+  expect(controls).not.toBeNull();
+  expect(brand!.x + brand!.width).toBeLessThanOrEqual(controls!.x);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+}
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() =>
     localStorage.setItem("liar.tutorial.v1", '"skipped"'),
@@ -13,23 +25,16 @@ test("all locale URLs render without overflow at mobile and desktop sizes", asyn
     await page.goto(`/${locale}/`);
     await expect(page.locator("html")).toHaveAttribute("lang", locale);
     await expect(
-      page.getByRole("link", { name: "Liar Sweeper" }),
+      page.getByRole("link", { name: "Liar Minesweeper" }),
     ).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
+    await expect(page.locator("header .brand")).toContainText("Minesweeper");
+    await expectHeaderFits(page);
   }
   if (info.project.name === "chromium") {
     for (const width of [360, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/de/");
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      ).toBe(true);
+      await expectHeaderFits(page);
     }
   }
   if (process.env.LIAR_CAPTURE_DESIGN) {

@@ -278,7 +278,7 @@ test("an explicit deletion ends account authority and presents manual Apple disc
   fireEvent.click(
     screen.getByRole("button", { name: "Delete account permanently" }),
   );
-  await screen.findByText("Your Liar Sweeper account was deleted.");
+  await screen.findByText("Your Liar Minesweeper account was deleted.");
   expect(screen.getByText(/Open your Apple account settings/)).toBeTruthy();
   expect(ports.auth.account()).toBeNull();
   expect(ports.auth.connected()).toBe(false);

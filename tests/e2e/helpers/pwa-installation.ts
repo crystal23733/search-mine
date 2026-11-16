@@ -16,6 +16,8 @@ export function pwaInstallationTests() {
     );
     const manifest = await response.json();
     expect(manifest).toMatchObject({
+      name: "Liar Minesweeper",
+      short_name: "Liar Minesweeper",
       id: "/",
       scope: "/",
       start_url: "/",

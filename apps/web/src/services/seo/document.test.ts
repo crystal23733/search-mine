@@ -173,7 +173,7 @@ test("build emits exactly 56 documents but indexes only published public informa
       "index.html": {
         type: "asset",
         source:
-          '<html lang="ko"><head><title>Liar Sweeper</title></head><body><div id="app"></div><script type="module" src="/assets/main.js"></script></body></html>',
+          '<html lang="ko"><head><title>Liar Minesweeper</title></head><body><div id="app"></div><script type="module" src="/assets/main.js"></script></body></html>',
       },
     };
     const hook = plugin.generateBundle;
@@ -386,7 +386,7 @@ test("configured public policies build escaped HTML and JSON while Google docume
       "index.html": {
         type: "asset",
         source:
-          '<html lang="en"><head><title>Liar Sweeper</title><meta name="referrer" content="no-referrer"></head><body><div id="app"></div><script type="module" src="/assets/main.js"></script></body></html>',
+          '<html lang="en"><head><title>Liar Minesweeper</title><meta name="referrer" content="no-referrer"></head><body><div id="app"></div><script type="module" src="/assets/main.js"></script></body></html>',
       },
     };
     if (typeof plugin.generateBundle !== "function")

@@ -540,3 +540,5 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 #233 FR12/13·TS20/21/23/24/25/30/35/36 → [ADR0107](../adr/0107-google-cmp-bootstrap.md)·[사용자 명시 승인](../workflow/approval-record.md) → Google공식public bootstrap/pause·현재TCF·새문서격리 설계. 제품 연결/실계정검수는 별도이며 설계 문서만으로 동작 완료를 주장하지 않는다.
 
 #235 FR11/12/13/16·TS18/19/20/21/23/24/25/26/29/30/31/35/36 → [ADR0108](../adr/0108-full-viewport-update-interaction.md)·[ADR0109](../adr/0109-current-session-google-consent-evidence.md) → [WEB235-01~07](../verification/235-public-launch-wiring.md). 광고 요청 전 pause, 단일 태그/TCF 현재 문맥·목적 분리, 실제 DB의 현재 세션/CSRF/CAS/철회, 문서별 nonce/referrer와 오프라인 fallback,8언어 미게시/정책 escaping, active HTTP fixture 종료·PC/mobile viewport 장벽을 검증한다. 실제 Google SDK 성공으로 대체하지 않는다.
+
+#237 FR11·TS18/19/20/26/30/36 → [이름 결정](14-naming.md) → [NAME237-01~04](../verification/237-liar-minesweeper-name.md): 표시명·공유/설치·8언어·모바일 피복과 기존 설치/저장 식별자 유지 검증.

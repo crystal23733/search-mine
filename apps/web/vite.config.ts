@@ -1,3 +1,4 @@
+import { APP_NAME } from "./src/services/app-name.ts";
 import { precacheDocumentURL } from "./build/precache-documents.ts";
 import { readSiteConfig } from "./build/site-config.ts";
 import { defineConfig, loadEnv } from "vite";
@@ -47,8 +48,8 @@ export default defineConfig(({ mode }) => {
           id: "/",
           scope: "/",
           start_url: "/",
-          name: "Liar Sweeper",
-          short_name: "Liar Sweeper",
+          name: APP_NAME,
+          short_name: APP_NAME,
           description: "Logic, deception and daily Minesweeper challenges.",
           lang: "en",
           display: "standalone",

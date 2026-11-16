@@ -24,7 +24,7 @@ test("web summaries only copy or share text and never expose a file download ope
   await port.nativeShare("visible result");
   expect(copy).toHaveBeenCalledWith("visible result");
   expect(share).toHaveBeenCalledWith({
-    title: "Liar Sweeper",
+    title: "Liar Minesweeper",
     text: "visible result",
   });
 });
@@ -73,7 +73,7 @@ test("share allowlist ignores names, seed, replay and actual board positions and
   expect(shareMosaic(card).join("")).toHaveLength(64);
   const complete = { ...card, completed: true, opened_safe: 216 };
   expect(shareMosaic(complete).join("")).toBe("🟨".repeat(32));
-  expect(shareText(complete, "Liar Sweeper · local unverified")).toContain(
+  expect(shareText(complete, "Liar Minesweeper · local unverified")).toContain(
     "unverified",
   );
 });

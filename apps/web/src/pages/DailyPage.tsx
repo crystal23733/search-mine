@@ -1,3 +1,4 @@
+import { APP_NAME } from "../services/app-name";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { useUi } from "../ui/context";
 import { useLocalController } from "./useLocalController";
@@ -84,7 +85,7 @@ export function DailyPage() {
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   };
   const summary = card
-    ? `Liar Sweeper · ${card.date} UTC · v${card.version}\n${t(card.completed ? "daily.complete" : "daily.incomplete")} · ${t("daily.unverified")}\n${card.opened_safe}/${card.safe_total} · ${t("daily.personalTime")}: ${formatTime(card.elapsed_ms)}\n${t("match.mistakes", { count: card.mistakes })}`
+    ? `${APP_NAME} · ${card.date} UTC · v${card.version}\n${t(card.completed ? "daily.complete" : "daily.incomplete")} · ${t("daily.unverified")}\n${card.opened_safe}/${card.safe_total} · ${t("daily.personalTime")}: ${formatTime(card.elapsed_ms)}\n${t("match.mistakes", { count: card.mistakes })}`
     : "";
   const share = (action: "copy" | "nativeShare") => {
     if (!card || shareStatus === "busy") return;

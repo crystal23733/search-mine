@@ -1,4 +1,4 @@
-# Liar Sweeper 작업 지침
+# Liar Minesweeper 작업 지침
 
 ## 현재 단계와 우선순위
 

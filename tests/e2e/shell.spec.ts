@@ -6,7 +6,10 @@ async function expectHeaderFits(page: Page) {
   const controls = await page.locator(".header-controls").boundingBox();
   expect(brand).not.toBeNull();
   expect(controls).not.toBeNull();
-  expect(brand!.x + brand!.width).toBeLessThanOrEqual(controls!.x);
+  expect(
+    brand!.x + brand!.width <= controls!.x ||
+      brand!.y + brand!.height <= controls!.y,
+  ).toBe(true);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

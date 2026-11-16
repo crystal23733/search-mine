@@ -41,6 +41,8 @@ try {
   // A management request must survive the active-document retirement boundary.
   await page.getByRole('link',{name:'동의 설정',exact:true}).click();
   await expect(page).toHaveURL(`${base}/ko/consent`);
+  // A fresh document renders controls before the synthetic provider finishes loading.
+  await expect.poll(()=>page.evaluate(()=>window.__googleFixture?.commands.includes('addEventListener'))).toBe(true);
   await page.getByRole('button',{name:'동의 선택 다시 열기',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>window.__googleFixture?.revocations)).toBe(1);
   expect(await page.evaluate(()=>window.__googleFixture.pause)).toEqual([1]);

@@ -2,6 +2,10 @@
 
 > 기본 브랜치 develop. 작업은 선행 PR 병합/이슈 종료 후 시작하고 사용자 위임에 따라 에이전트 리뷰·검사를 마친 PR을 병합한다.
 
+## 개발 실행 문서 보완
+
+[#239](https://github.com/crystal23733/search-mine/issues/239) · M5 · FR16/NFR07 문서 보조: [README](../../README.md#개발-실행)에 macOS zsh·Linux bash·Windows PowerShell 실행, PostgreSQL 시작/중지·migration 환경변수·실DB/인증 E2E, 내부망 바인딩과 도메인 없는 localhost HTTPS 조건을 명시한다. 제품 동작·설계·TS 인수 조건 변경은 없으며 실제 운영 TS28 검증을 대신하지 않는다.
+
 ## 2026-11-01 최신 사용자 변경
 
 [ADR0081](../adr/0081-my-info-and-export-removal.md)에 따라 **#176 내 정보 설계→#177 본인 조회 API→#178 화면 전환/파일 다운로드 제거**를 진행한다. #174/PR175는 병합·종료됐다. 기존 동의 export 후속 계획은 현재 동의의 화면 조회/관리로 대체한다. 과거 완료 이슈의 내보내기 인수 조건은 당시 이력이며 새 다운로드 기능 요구가 아니다. 실제 CMP/외부147·83은 별도로 유지한다.

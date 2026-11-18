@@ -8,11 +8,11 @@ Node≥24.15, 최신 Rust stable, Yarn 4. `corepack enable`과 `yarn install --i
 
 ## 검증 명령
 
-`./scripts/check.ps1`은 fmt/clippy/Rust 단위/WASM 컴파일/생성 타입/TS lint·typecheck·test·build/Playwright/문서·Mermaid를 순서대로 실행하며 실패 즉시 종료한다. Playwright는 먼저 `yarn playwright install chromium`으로 설치한다.
+`pwsh -File scripts/check.ps1`은 fmt/clippy/Rust 단위/WASM 컴파일/생성 타입/TS lint·typecheck·test·build/Playwright/문서·Mermaid를 순서대로 실행하며 실패 즉시 종료한다. macOS·Linux·Windows 모두 PowerShell 7이 필요하며, macOS·Linux 기본 셸에서 `.ps1`을 직접 실행하지 않는다. Playwright는 먼저 `yarn playwright install chromium`으로 설치한다. [README OS별 실행·DB·환경변수](README.md#개발-실행)를 따른다.
 
 실DB 검사는 README의 개발 Compose와 DATABASE_URL을 준비해 `cargo test --locked -p liar-server --test postgres -- --ignored`로 별도 실행한다. GitHub database job은 실제 PostgreSQL18에서 반드시 수행한다. 로컬 Docker 사용 불가는 미실행으로 보고하고 CI 결과를 따로 기록한다.
 
-문서만 바꿨으면 `yarn docs:check`와 `git diff --check`를 수행한다. generated TS는 직접 수정하지 않고 `yarn types:generate`로 만든 뒤 `yarn types:check`를 실행한다. 기획/설계/ADR/시나리오는 제품 코드보다 먼저 갱신한다.
+문서만 바꿨으면 `yarn docs:check`와 `git diff --check`를 수행한다. `yarn docs:check`는 `python` 실행 파일을 요구한다. macOS·Linux에서 `python3`만 제공하면 `python3 scripts/validate_docs.py`와 `node scripts/check_mermaid.mjs .`를 개별 실행한다. generated TS는 직접 수정하지 않고 `yarn types:generate`로 만든 뒤 `yarn types:check`를 실행한다. 기획/설계/ADR/시나리오는 제품 코드보다 먼저 갱신한다.
 
 ## PR 기록
 

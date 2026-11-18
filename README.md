@@ -83,6 +83,54 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 Node.js 24.15 이상, 최신 Rust stable, Yarn 4를 사용합니다. Corepack이 package.json의 packageManager 버전을 선택합니다. 의존성 추가에는 버전을 붙이지 않고 최신 안정 릴리스를 받습니다. 설치 결과는 Cargo.lock/yarn.lock에 기록하고 검증/CI는 locked/immutable로 재현합니다. 기존 Yarn 1을 사용하던 환경에서도 아래 corepack enable 뒤 yarn --version으로 프로젝트 버전을 확인합니다. Corepack이 없는 Node 배포판에서는 먼저 npm install --global corepack으로 설치합니다. [전환 결정과 호환성](docs/adr/0078-yarn-workspace.md)을 확인하세요.
 
+도메인이 없어도 로컬 연습·튜토리얼과 PostgreSQL 통합 검증을 실행할 수 있습니다. 저장소 루트에서 아래 OS별 명령을 실행합니다. macOS는 Xcode Command Line Tools, Linux는 C/C++ 빌드 도구·pkg-config·OpenSSL 개발 패키지를 준비합니다. Docker Compose는 아래 실DB 검증에 필요하며 무계정 웹 연습에는 필요하지 않습니다.
+
+### macOS · zsh
+
+```sh
+corepack enable
+yarn --version
+yarn install --immutable
+rustup update stable
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --locked
+yarn types:check
+yarn wasm:build
+# 터미널 1: http://127.0.0.1:5173/ko/
+yarn dev
+```
+
+새 터미널을 열고 저장소 루트에서 API 서버를 실행합니다. 인증·DB 환경변수가 없는 새 셸을 기준으로 합니다.
+
+```sh
+# 터미널 2: 기본 127.0.0.1:3000, Ctrl+C로 종료
+cargo run --locked -p liar-server
+```
+
+### Linux · bash
+
+```sh
+corepack enable
+yarn --version
+yarn install --immutable
+rustup update stable
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --locked
+yarn types:check
+yarn wasm:build
+# 터미널 1: http://127.0.0.1:5173/ko/
+yarn dev
+```
+
+새 터미널을 열고 저장소 루트에서 API 서버를 실행합니다. 인증·DB 환경변수가 없는 새 셸을 기준으로 합니다.
+
+```sh
+# 터미널 2: 기본 127.0.0.1:3000, Ctrl+C로 종료
+cargo run --locked -p liar-server
+```
+
+### Windows · PowerShell 7
+
 ```powershell
 corepack enable
 yarn --version
@@ -93,9 +141,121 @@ cargo install wasm-bindgen-cli --locked
 yarn types:check
 yarn wasm:build
 yarn dev
-# 다른 터미널: health 서버 (기본 127.0.0.1:3000)
+# 위 명령은 대기한다. 새 터미널을 열고 저장소 루트에서 아래 명령 실행
+# 인증·DB 환경변수가 없는 새 셸: health 서버 (기본 127.0.0.1:3000)
 cargo run --locked -p liar-server
 ```
+
+### PostgreSQL 시작과 환경변수
+
+프로젝트의 재현 가능한 DB 검증은 `tests/compose.postgres.yml`의 PostgreSQL 18을 사용합니다. macOS의 Docker Desktop 또는 Linux의 Docker Engine과 Compose 플러그인을 먼저 실행합니다. 호스트에 PostgreSQL을 따로 설치할 필요는 없습니다.
+
+```sh
+# macOS / Linux / PowerShell 공통: 시작·준비 대기
+docker compose -f tests/compose.postgres.yml up -d --wait
+# 상태 확인
+docker compose -f tests/compose.postgres.yml ps
+docker compose -f tests/compose.postgres.yml exec -T postgres pg_isready -U liar_test -d liar_test
+# 실험 종료 후 중지: DB를 버리지 않고 컨테이너만 중지
+docker compose -f tests/compose.postgres.yml stop
+# 다음 실험은 다시 up -d --wait
+```
+
+DB는 호스트의 `127.0.0.1:54329`에만 열립니다. 아래 검증 예제의 `liar_test`·`development-only`는 이 격리된 개발 DB 전용이며 운영 계정으로 사용하지 않습니다. `down`은 컨테이너를 제거합니다. 이 Compose는 명명된 데이터 볼륨을 지정하지 않으므로 `down` 뒤 다시 `up`하면 기존 데이터가 자동으로 재연결되지 않습니다. 데이터를 이어 쓸 실험은 `stop`을 사용합니다.
+
+이미 설치한 native PostgreSQL을 관리하려면 다음을 사용합니다. macOS의 `postgresql@15`는 기존 설치 예시이며 신규 설치 버전 권고가 아닙니다. 프로젝트의 PostgreSQL 15 호환성은 이 안내로 검증한 것이 아니며 CI 기준은 PostgreSQL 18입니다.
+
+```sh
+# macOS: 설치 버전·서비스 확인
+brew list --versions
+brew services list
+# 기존 postgresql@15를 이번 실험 동안 실행 (로그인 자동 시작 등록 없음)
+brew services run postgresql@15
+pg_isready -h 127.0.0.1 -p 5432
+# 중지
+brew services stop postgresql@15
+```
+
+로그인할 때도 자동 시작하려면 `brew services start postgresql@15`를 사용합니다. `sudo` 없이 현재 사용자로 실행합니다. [Homebrew 서비스 명령](https://docs.brew.sh/Manpage#services-subcommand).
+
+```sh
+# Linux: PostgreSQL이 이미 설치되고 postgresql.service를 제공하는 systemd 배포판
+sudo systemctl start postgresql
+systemctl status postgresql --no-pager
+pg_isready -h 127.0.0.1 -p 5432
+# 중지
+sudo systemctl stop postgresql
+```
+
+Linux의 서비스 이름·클러스터 초기화·관리 계정은 설치 패키지에 따라 다릅니다. native DB를 쓸 때에는 먼저 별도 실험용 역할·DB를 만들고 실제 포트/자격 증명으로 URL을 설정합니다. macOS Homebrew의 초기 관리자 계정이 현재 OS 사용자일 때의 최초 1회 예시입니다. 비밀번호는 프롬프트에서 입력합니다.
+
+```sh
+createuser --pwprompt liar_dev
+createdb --owner=liar_dev liar_dev
+# 접속 확인: 비밀번호를 프롬프트에서 입력
+psql -h 127.0.0.1 -p 5432 -U liar_dev -d liar_dev -W -c 'SELECT version();'
+```
+
+| 환경변수 | 필요할 때와 값 |
+|---|---|
+| `LIAR_BIND` | API 수신 주소. 미설정 시 `127.0.0.1:3000`. 웹의 Vite 포트와 별개 |
+| `DATABASE_URL` | DB 연결 서버·실DB 테스트·인증 E2E. Compose 예시는 `postgres://liar_test:development-only@127.0.0.1:54329/liar_test` |
+| `MIGRATION_DATABASE_URL` | migration 실행 시 필수. 개발 예제는 같은 URL, 운영은 별도 DDL 계정 |
+| `LIAR_MIGRATIONS` | migration 폴더를 바꿀 때만 설정. 기본 `migrations` |
+| `LIAR_PUBLIC_ORIGIN` | 인증을 켤 때 필요한 브라우저 HTTPS origin. 도메인 없는 기본 로컬 실행에서는 미설정 |
+| `LIAR_AUTH_CSRF_KEY` | 인증을 켤 때 필수. CSPRNG 32byte의 padding 없는 base64url |
+| `LIAR_AUTH_DIGEST_KEYS`, `LIAR_AUTH_VAULT_KEYS` | 인증을 켤 때 둘 다 필수. 각각 독립된 키를 사용하는 JSON keyring. [형식](docs/workflow/oauth-configuration.md) |
+| `LIAR_GOOGLE_CLIENT_ID`, `LIAR_GOOGLE_CLIENT_SECRET` | 실제 Google OAuth를 켤 때 둘 다 필요 |
+| `LIAR_KAKAO_CLIENT_ID`, `LIAR_KAKAO_CLIENT_SECRET` | 실제 카카오 OAuth를 켤 때 둘 다 필요 |
+| `LIAR_NAVER_CLIENT_ID`, `LIAR_NAVER_CLIENT_SECRET` | 실제 네이버 OAuth를 켤 때 둘 다 필요 |
+| `LIAR_APPLE_CLIENT_ID`, `LIAR_APPLE_TEAM_ID`, `LIAR_APPLE_KEY_ID`, `LIAR_APPLE_PRIVATE_KEY_FILE` | 실제 Apple OAuth를 켤 때 모두 필요. 알림 연결 시 `LIAR_APPLE_NOTIFICATION_AUDIENCE`도 설정 |
+
+무계정 웹 연습과 DB 없는 health 서버는 위 환경변수 없이 실행합니다. DB를 연결한 서버는 아래 migration을 먼저 수행합니다. 새 빈 DB는 migration이 최초 활성화하며 기존/복구 DB의 격리 오류는 [복구 절차](docs/workflow/recovery-quarantine.md)를 따릅니다. 임의로 활성화하거나 데이터를 삭제해 우회하지 않습니다. 실험용 URL은 현재 터미널에만 설정하고 실제 비밀값은 Git에 저장하지 않습니다. native DB는 `postgres://liar_dev:<URL 인코딩한 비밀번호>@127.0.0.1:5432/liar_dev`처럼 실제 계정·포트로 바꿉니다. serving 바이너리는 `.env` 파일을 자동으로 읽지 않습니다.
+
+macOS · zsh / Linux · bash에서 DB 연결 API 서버를 실행하는 순서입니다. 아래는 인증 변수가 없는 셸과 격리된 Compose DB를 기준으로 합니다. 웹은 별도 터미널에서 `yarn dev`로 실행합니다.
+
+```sh
+docker compose -f tests/compose.postgres.yml up -d --wait
+export DATABASE_URL='postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
+export MIGRATION_DATABASE_URL="$DATABASE_URL"
+cargo run --locked -p liar-server --bin migrate
+unset MIGRATION_DATABASE_URL
+export LIAR_BIND='127.0.0.1:3000'
+cargo run --locked -p liar-server
+```
+
+Windows · PowerShell 7:
+
+```powershell
+docker compose -f tests/compose.postgres.yml up -d --wait
+$env:DATABASE_URL = 'postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
+$env:MIGRATION_DATABASE_URL = $env:DATABASE_URL
+cargo run --locked -p liar-server --bin migrate
+Remove-Item Env:MIGRATION_DATABASE_URL
+$env:LIAR_BIND = '127.0.0.1:3000'
+cargo run --locked -p liar-server
+```
+
+Ctrl+C로 API 서버를 종료한 뒤 DB도 멈추려면 `docker compose -f tests/compose.postgres.yml stop`을 실행합니다. 위 설정만으로 실제 로그인·인증 온라인 기능이 켜지지는 않습니다.
+
+광고·CMP·SEO 변수는 기본 로컬 실행에 필요하지 않습니다. `VITE_PUBLIC_SITE_ORIGIN`, `VITE_CMP_PROVIDER`, `VITE_ADSENSE_CLIENT_ID`, `LIAR_CMP_PROVIDER`는 실제 연결을 준비할 때만 각 운영 절차에 따라 설정합니다. 처리량 제한 변수는 아래 권위 서버/로비 설명의 기본값을 사용합니다.
+
+### 내부망 테스트와 도메인 없는 OAuth의 구분
+
+다른 기기에서 웹 연습 화면을 보려면 Vite의 기본 loopback 바인딩을 변경합니다. macOS·Linux에서는 다음처럼 현재 셸 변수에 맥/서버의 실제 내부망 IPv4를 넣습니다. `192.168.0.10`은 교체할 예시입니다.
+
+```sh
+lan_ip=192.168.0.10
+yarn workspace @liar/web vite --host "$lan_ip" --port 5173 --strictPort
+```
+
+다른 기기에서 `http://192.168.0.10:5173/ko/`에 접속하고 호스트 방화벽에서 해당 실행 프로그램/포트의 수신을 허용합니다. Windows PowerShell은 `yarn workspace @liar/web vite --host 192.168.0.10 --port 5173 --strictPort`를 사용합니다. 공유기 포트포워딩은 필요하지 않습니다. PostgreSQL은 loopback을 유지합니다. HTTP 내부망 IP에서는 PWA/SW 등 보안 컨텍스트 기능도 제한됩니다.
+
+이 명령은 웹 연습용입니다. 기본 Vite는 HTTP이고 API/WS 프록시가 없으므로 Rust 서버를 따로 켠 것만으로 같은 origin의 인증·온라인 기능이 연결되지는 않습니다. API/WS를 쓸 때에는 HTTPS 진입점에서 웹과 `/api/`·WebSocket을 함께 프록시해야 합니다.
+
+구매 도메인이 없어도 **같은 맥의 실제 Google 로그인**은 신뢰하는 인증서와 HTTPS localhost 프록시를 별도로 구성하면 시험할 수 있습니다. 예를 들어 진입점이 `https://localhost:8443`이면 `LIAR_PUBLIC_ORIGIN=https://localhost:8443`, Google 승인 리디렉션 URI는 정확히 `https://localhost:8443/api/v1/auth/google/callback`입니다. Vite 기본 포트 5173이 리디렉션 포트를 결정하지 않습니다. Google의 localhost HTTP 예외와 별개로 현재 제품 인증은 HTTPS/Secure cookie를 요구합니다. [Google URI 규칙](https://developers.google.com/identity/protocols/oauth2/web-server#uri-validation).
+
+다른 기기에서 `localhost`는 그 기기 자신을 가리키므로 위 localhost 로그인 구성을 휴대폰 내부망 로그인으로 사용할 수는 없습니다. 아래 인증 E2E는 구매 도메인·Google 키 없이 HTTPS localhost의 시험 제공자와 실제 DB를 사용합니다. 저장소의 시험 인증서·제공자 대체 경로는 실제 OAuth 실행 설정으로 재사용하지 않습니다.
 
 현재 웹은 제공된 디자인의 홈·규칙·언어·접근성 설정·실제 로컬 봇/학습·UTC 데일리를 제공합니다. `/ko/`, `/en/` 등8언어 URL을 사용하며 OAuth 계정·빠른/친구 온라인 대전 화면을 제공합니다. 재접속·영속 장애 복구·고정 결과 조회를 제공하며 공식 데일리 도전·하트비트·첫 완료 검증·본인 결과/신뢰별 공유와 로그인 없는 두 순위 화면을 제공합니다. 정책·운영 연결은 후속 이슈에서 진행합니다. 첫 방문은 튜토리얼을 시작하고 skip/replay할 수 있습니다. `/ko/practice?difficulty=easy`의 난이도는 easy/normal/hard이며 계정을 만들지 않습니다. 실제 사람의 30초 이해·재미는 #27 관찰 전까지 미확인입니다. 서버 OAuth 설정은 준비됐으며 실제 키·제공자 등록/실계정 검수는 #42 외부 준비 항목입니다. 디자인 토큰 변경은 `yarn tokens:generate`, 형식 검사는 `yarn format:check`로 실행합니다.
 
@@ -113,9 +273,42 @@ cargo run --locked -p liar-server
 
 인증 기반과 실DB/coverage 결과는 [#43 검증](docs/verification/43-auth-foundation.md)을 확인합니다. 네 제공자와 로그인 HTTP는 [#44 검증](docs/verification/44-oauth-providers-http.md)에 기록합니다. 계정 권리는 [#45 검증](docs/verification/45-account-rights-apple-revocation.md)에 기록하며 계정 화면은 [#46 검증](docs/verification/46-oauth-account-ui.md)을 확인합니다. Migration은 serving 시작과 별도로 실행하며 운영에서는 DDL 계정과 DML 계정을 분리합니다. 필수/선택 raw 정리의 SKIP LOCKED에는 각 raw 테이블의 SELECT/DELETE와 최소 UPDATE(id) 열 권한이 필요합니다. payload UPDATE·DDL 권한은 주지 않고 id 변경도 불변 trigger가 거절합니다. 아래는 격리된 테스트 DB 예시입니다.
 
+통합 검사는 PowerShell 7의 `pwsh`가 필요합니다. macOS·Linux에서도 설치 후 `pwsh -File scripts/check.ps1`로 실행합니다. 현재 스크립트 내부의 `yarn docs:check`는 `python` 이름을 사용하므로 `python --version`도 확인합니다. `python3`만 있는 환경에서 문서만 검사할 때는 아래 개별 명령을 사용합니다. 이 저장소에는 `check.sh`가 없습니다.
+
+```sh
+# macOS · zsh / Linux · bash: 문서·Mermaid 검사
+python3 scripts/validate_docs.py
+node scripts/check_mermaid.mjs .
+# 전체 통합 검사: 별도로 설치한 PowerShell 7 필요
+yarn playwright install chromium
+pwsh -File scripts/check.ps1
+```
+
+macOS · zsh / Linux · bash의 실DB 검증입니다. 아래 URL은 위 Compose 전용입니다. native DB를 쓰면 URL을 바꾸고 `docker compose` 시작·종료 명령을 생략합니다.
+
+```sh
+docker compose -f tests/compose.postgres.yml up -d --wait
+export DATABASE_URL='postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
+export MIGRATION_DATABASE_URL="$DATABASE_URL"
+cargo run --locked -p liar-server --bin migrate
+unset MIGRATION_DATABASE_URL
+cargo test --locked -p liar-server --test postgres -- --ignored
+# coverage 도구는 최초 1회 설치
+rustup component add llvm-tools-preview
+cargo install cargo-llvm-cov --locked
+mkdir -p .tmp
+cargo llvm-cov --locked -p liar-server --tests --ignore-filename-regex '[/\\](tests|examples)[/\\]' --json --output-path .tmp/auth-coverage.json -- --include-ignored
+python3 scripts/check_auth_coverage.py .tmp/auth-coverage.json
+# 아래 인증 E2E도 실행할 경우 DB를 켜두고, 모두 마친 뒤 중지
+docker compose -f tests/compose.postgres.yml stop
+unset DATABASE_URL
+```
+
+Windows · PowerShell 7의 동일한 검증입니다.
+
 ```powershell
 yarn playwright install chromium
-./scripts/check.ps1
+pwsh -File scripts/check.ps1
 # 실제 DB 통합 (개발용 loopback DB, 운영 DB는 host 포트 없음)
 docker compose -f tests/compose.postgres.yml up -d --wait
 $env:DATABASE_URL = 'postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
@@ -124,9 +317,13 @@ cargo run --locked -p liar-server --bin migrate
 Remove-Item Env:MIGRATION_DATABASE_URL
 cargo test --locked -p liar-server --test postgres -- --ignored
 # 실제 DB가 실행된 환경에서 인증 coverage (entry point 포함)
+rustup component add llvm-tools-preview
+cargo install cargo-llvm-cov --locked
+New-Item -ItemType Directory -Force .tmp | Out-Null
 cargo llvm-cov --locked -p liar-server --tests --ignore-filename-regex '[/\\](tests|examples)[/\\]' --json --output-path .tmp/auth-coverage.json -- --include-ignored
 python scripts/check_auth_coverage.py .tmp/auth-coverage.json
-docker compose -f tests/compose.postgres.yml down
+docker compose -f tests/compose.postgres.yml stop
+Remove-Item Env:DATABASE_URL
 ```
 
 `yarn docs:check`, `yarn lint/typecheck/test/build/test:e2e`는 각 script를 개별 실행합니다. `yarn build`는 공개 WASM도 생성하며 `wasm:generate`/`fixtures:generate`는 Rust 계약 변경 시 생성 선언/재생 fixture를 갱신합니다. CI는 freshness와 실제 Chromium 재생을 검사합니다. GitHub Actions의 docs/contribution-gate/rust/web/database/coverage를 모두 확인한 뒤 develop에 병합합니다. DB 없는 기본 cargo test에서 무시되는 PostgreSQL 테스트를 통과로 계산하지 않습니다.
@@ -135,7 +332,20 @@ docker compose -f tests/compose.postgres.yml down
 
 코어는 거짓말 없는 생성 인증과 온라인 간파 검증을 분리합니다. [#5 검증 결과](docs/verification/05-generation-solver.md)는 작은 판 전수·seed corpus·개발 PC release 벤치의 실제 근거입니다. 아직 #6 공정성이나 미니 PC 성능 검증을 대신하지 않습니다.
 
+macOS · zsh / Linux · bash:
+
+```sh
+mkdir -p .tmp
+cargo run --locked --release -p liar-core --example generate_bench -- 10000 .tmp/generation.csv
+rustup component add llvm-tools-preview
+cargo install cargo-llvm-cov --locked
+cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](tests|examples)[/\\]' --fail-under-lines 95
+```
+
+Windows · PowerShell 7:
+
 ```powershell
+New-Item -ItemType Directory -Force .tmp | Out-Null
 cargo run --locked --release -p liar-core --example generate_bench -- 10000 .tmp/generation.csv
 rustup component add llvm-tools-preview
 cargo install cargo-llvm-cov --locked
@@ -152,12 +362,34 @@ cargo llvm-cov --locked -p liar-core --tests --ignore-filename-regex '[/\\](test
 
 위의 격리된 PostgreSQL 테스트 DB가 실행되고 `DATABASE_URL`이 설정된 환경에서 아래를 실행한다. 실제 제품 router와 DB를 사용하고 외부 제공자 proof만 시험 port로 대체한다. 저장소의 HTTPS 키는 공개된 loopback 시험 전용이며 운영 키로 사용하지 않는다.
 
+macOS · zsh / Linux · bash:
+
+```sh
+docker compose -f tests/compose.postgres.yml up -d --wait
+export DATABASE_URL='postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
+export MIGRATION_DATABASE_URL="$DATABASE_URL"
+cargo run --locked -p liar-server --bin migrate
+unset MIGRATION_DATABASE_URL
+yarn playwright install chromium
+yarn build
+yarn playwright test --project auth
+docker compose -f tests/compose.postgres.yml stop
+unset DATABASE_URL
+```
+
+Windows · PowerShell 7:
+
 ```powershell
+docker compose -f tests/compose.postgres.yml up -d --wait
+$env:DATABASE_URL = 'postgres://liar_test:development-only@127.0.0.1:54329/liar_test'
 $env:MIGRATION_DATABASE_URL = $env:DATABASE_URL
 cargo run --locked -p liar-server --bin migrate
 Remove-Item Env:MIGRATION_DATABASE_URL
+yarn playwright install chromium
 yarn build
 yarn playwright test --project auth
+docker compose -f tests/compose.postgres.yml stop
+Remove-Item Env:DATABASE_URL
 ```
 
 DB 환경변수가 없는 기본 로컬 실행은 DB 없는 브라우저 프로젝트만 검사하고 auth project는 실행하지 않는다. CI는 별도 PostgreSQL18을 실행하여 HTTPS 계정·내 정보·8언어 초대·빠른/친구 대전·실제 WS·취소·철회·재접속·OS 재시작 후 새 브라우저 결과 발견·양쪽 이탈 시험을 포함한 전체 브라우저 프로젝트를 실행한다. [#70 빠른 대전](docs/verification/70-online-quick-match-ui.md), [#72 친구 방](docs/verification/72-friends-room-ui.md), [#105 최신 결과 검증](docs/verification/105-latest-personal-result.md), [#107 통합 출구](docs/verification/107-reconnect-integration-exit.md)를 확인한다. [#85 업데이트 진단](docs/verification/85-offline-update-observation.md)은 기존 SW 간헐 실패 #83의 trace를 보존하며 원인 해결을 뜻하지 않는다.

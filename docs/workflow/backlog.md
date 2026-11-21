@@ -14,7 +14,7 @@
 | [#248](https://github.com/crystal23733/search-mine/issues/248) | 8언어 web / #247 | FR07/10~14/17/18·TS37~45 | 방 찾기/생성/초대/준비·다인 보드요약/순위·같은 방 다음 판·OAuth/PWA/광고0 |
 | [#249](https://github.com/crystal23733/search-mine/issues/249) | 실제 통합 출구 / #248 | FR01~18/NFR01~08·TS01~45 |4계정 실DB/HTTPS/WS·PC/mobile·재대결/장애/권리·기존 회귀/전체CI. 성능26·실기기223·사람27 별도 |
 
-[#244 설계](../verification/244-multiplayer-design.md)는 PR #250에 병합됐다. [#245 코어 검증](../verification/245-multiplayer-core.md)부터 진행한다. 하위 제품은 선행 PR 병합/이슈 종료 뒤 시나리오 Red→Green→리뷰·checks·squash merge 순서로 진행한다. 기존 실제 OAuth/CMP/기기/운영/사람 검수 이슈는 별도다.
+[#244 설계](../verification/244-multiplayer-design.md)는 PR #250에 병합됐다. [#245 코어](../verification/245-multiplayer-core.md)는 PR #251에 병합됐다. [#246 방 정책과 계약](../verification/246-multiplayer-rooms-policy.md)을 검증하고 있다. 하위 제품은 선행 PR 병합/이슈 종료 뒤 시나리오 Red→Green→리뷰·checks·squash merge 순서로 진행한다. 기존 실제 OAuth/CMP/기기/운영/사람 검수 이슈는 별도다.
 
 > 기본 브랜치 develop. 작업은 선행 PR 병합/이슈 종료 후 시작하고 사용자 위임에 따라 에이전트 리뷰·검사를 마친 PR을 병합한다.
 

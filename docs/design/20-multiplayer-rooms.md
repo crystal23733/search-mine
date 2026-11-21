@@ -109,6 +109,8 @@ flowchart LR
 
 - RoomPolicy는 title/visibility/capacity/membership/ready/host/round binding을 담당하고 Board·SQL·socket을 알지 않는다. RoomService가 Auth/BoardPool/Registry/Journal 포트를 조합한다.
 - RuleEngine/PreparedEngine의 bounded player 집합을 일반화하고 상대 하나를 뜻하는 필드는 별도 v1 adapter로 격리한다. 공유 셀/게이지/지목 코드를 복제한 별도 다인전 엔진은 만들지 않는다. 무작위 공격은 deterministic test source로 검사한다.
+- v2의 방 좌석과 경기 좌석은 별도다. 방 좌석은 대기실 구성원에게 배정하고, 경기 좌석은 시작 예약의 참가 순서를 기준으로 고정한다. 방에 중간 참가한 사람에게는 현재 경기 좌석이 없다. 현재 방을 조회하거나 입장할 때 식별자와 단조 revision을 사용한다.
+- 방 도메인은 시각과 서명된 세션 대신 이미 확인된 내부 계정과 닉네임을 받아 상태를 전이한다. HTTP의 세션·Origin·CSRF, 동일 요청 ID 캐시, 기존 빠른 대전과 공유하는 단일 점유, 시작 권한 재검사와 journal ACK는 #247의 실행 계층에서 연결한다.
 - 새 Rust v2 room intent에는 list/status/create/join/leave/ready/configure/start/kick을 둔다. list는 public bounded metadata, 나머지는 현재 세션/Origin/CSRF·room revision을 확인한다. v1 `/api/v1/lobby`와 기존 초대 링크는 지원을 유지한다. 새 경로/버전을 조용히 v1으로 축소하지 않는다.
 - v2 WS는 같은 인증 경계에서 own board 하나와 opponents 최대3개·본인 cursor·round/result revision을 보낸다. roster는 round-scoped seat와 게임 닉네임만 표시하고 내부 account UUID/provider digest는 공개하지 않는다. 초대 코드는 seat credential이 아니며 HTTP/WS 로그에서 제거한다.
 - 영속 결과·active journal은 participant 행/집합을 N명으로 저장하고 실제 start_at/보존 기준·유일성·권리 삭제·단일 writer·abort를 유지한다. 기존 migration/checksum과90일 기록은 보존하고 forward migration을 추가한다. 닉네임/프로필을 결과 JSON에 새로 복사하지 않는다.

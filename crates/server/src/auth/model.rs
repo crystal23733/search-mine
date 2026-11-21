@@ -1,6 +1,4 @@
 use std::fmt;
-use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
-use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -56,27 +54,9 @@ impl Provider {
 pub struct Nickname(String);
 impl Nickname {
     pub fn parse(value: &str) -> Result<Self, AuthError> {
-        if value.len() > 256 {
-            return Err(AuthError::Invalid);
-        }
-        let value: String = value.nfc().collect();
-        let graphemes: Vec<_> = value.graphemes(true).collect();
-        if !(2..=16).contains(&graphemes.len())
-            || value.len() > 128
-            || value.starts_with(' ')
-            || value.ends_with(' ')
-        {
-            return Err(AuthError::Invalid);
-        }
-        for g in graphemes {
-            if g == " " {
-                continue;
-            }
-            if !g.chars().next().is_some_and(char::is_alphanumeric) || g.chars().any(|c| {
-                !(c.is_alphanumeric()||is_combining_mark(c)) || matches!(c,'\u{034f}'|'\u{180b}'..='\u{180f}'|'\u{fe00}'..='\u{fe0f}'|'\u{e0100}'..='\u{e01ef}')
-            }) {return Err(AuthError::Invalid)}
-        }
-        Ok(Self(value))
+        crate::game_name::normalize(value, 16, 128)
+            .map(Self)
+            .ok_or(AuthError::Invalid)
     }
     pub fn as_str(&self) -> &str {
         &self.0

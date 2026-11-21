@@ -44,7 +44,7 @@ impl RoomCodeSource for OsRoomCodeSource {
         let mut bytes = [0; 8];
         getrandom::fill(&mut bytes).map_err(|_| OnlineError::Unavailable)?;
         for byte in &mut bytes {
-            *byte = b"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[usize::from(*byte & 31)];
+            *byte = liar_protocol::rooms::ROOM_CODE_ALPHABET[usize::from(*byte & 31)];
         }
         RoomCode::parse(std::str::from_utf8(&bytes).expect("ASCII alphabet"))
             .map_err(|_| OnlineError::Malformed)

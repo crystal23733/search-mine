@@ -3,6 +3,7 @@ pub mod auth;
 pub mod consent;
 pub mod daily;
 pub mod events;
+mod game_name;
 pub mod lobby;
 pub mod me;
 pub mod online;
@@ -10,6 +11,7 @@ mod postgres_deadline;
 pub mod recovery;
 pub mod results;
 pub mod room_code;
+pub mod rooms;
 use axum::{
     Json, Router,
     extract::State,

@@ -4,13 +4,10 @@ pub struct RoomCode([u8; 8]);
 pub struct InvalidRoomCode;
 impl RoomCode {
     pub fn parse(value: &str) -> Result<Self, InvalidRoomCode> {
-        let bytes: [u8; 8] = value.as_bytes().try_into().map_err(|_| InvalidRoomCode)?;
-        if !bytes
-            .iter()
-            .all(|b| b"ABCDEFGHJKLMNPQRSTUVWXYZ23456789".contains(b))
-        {
+        if !liar_protocol::rooms::valid_room_code(value) {
             return Err(InvalidRoomCode);
         }
+        let bytes = value.as_bytes().try_into().map_err(|_| InvalidRoomCode)?;
         Ok(Self(bytes))
     }
     pub fn as_str(&self) -> &str {

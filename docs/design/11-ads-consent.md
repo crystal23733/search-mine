@@ -1,6 +1,6 @@
 # 11. 광고·동의·정책 설계
 
-> 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md): 현재 동의의 본인 열람·재열기/철회는 내 정보와 공통 기기 설정으로 연결한다. 파일 다운로드와 동의 export 후속 계획은 제거한다. 로그인 없는 CMP 제어와 실제 CMP 미설정 차단은 유지한다.
+> 현행 기준: [ADR0107](../adr/0107-google-cmp-bootstrap.md)·[ADR0109](../adr/0109-current-session-google-consent-evidence.md)와 #235가 Google 공식 bootstrap/현재 세션 선택을 연결했다. [초기 대비 변경과 남은 출구](19-design-evolution.md). 본인 현재 동의는 내 정보에서 조회/철회하며, Google 선택 관리는 공개 동의 문서로 이동한다. 파일 다운로드는 제거됐다. 아래 이슈별 추적 문단은 당시 단계의 기록이다.
 
 > 대응: FR12/13 · 실제 광고 account ID·CMP·도메인 설정은 사용자 담당.
 
@@ -9,24 +9,25 @@ Google은 해당 지역의 맞춤형 광고 제공 시 Google 인증 CMP와 IAB 
 
 ## 자동 광고와 문서 경계
 
-2026-11-05 사용자 지시와 [ADR0091](../adr/0091-adsense-auto-ads.md)이 수동 결과 전면/3판 cap 설계를 대체한다. Google AdSense Auto ads가 배치와 노출을 결정하고 앱은 현재 광고 동의·허용 공개 문서에서만 script port를 시작한다. 실제 게시자ID/사이트 승인이 없으면 외부 광고를 요청하지 않는다. 자체 빈도 카운터·다중 탭 slot lock·H5/adBreak는 기본 범위에서 제외하며194 정책 구현은 후속에서 제거한다.
+2026-11-05 사용자 지시와 [ADR0091](../adr/0091-adsense-auto-ads.md)이 수동 결과 전면/3판 cap 설계를 대체한다. Google AdSense Auto ads가 배치와 노출을 결정한다. 이후 승인된 ADR0107에 따라 **Google 모드는 태그 준비와 광고 요청을 분리**한다. 설정된 공개 문서에서 태그를 먼저 준비하고 현재 광고 선택을 확인한 홈/규칙에서만 요청을 재개한다. 실제 게시자ID/정책/CSP 구성이 없으면 기본 비활성이며, 사이트 승인·실제 요청 검수는 #147에 남는다. 자체 빈도 카운터·다중 탭 slot lock·H5/adBreak는 기본 범위에서 제외했고 미사용194 정책은 #199에서 제거했다.
 
 ```mermaid
 stateDiagram-v2
   [*] --> Disabled
-  Disabled --> SafeDocument: configured online visible valid purpose
-  SafeDocument --> ScriptStarted: home or rules without query or hash
-  ScriptStarted --> ScriptStarted: same safe document
-  ScriptStarted --> NewDocument: navigate to protected screen
-  ScriptStarted --> NewDocument: revoke offline or owner changed
-  NewDocument --> Disabled: no script in protected document
+  Disabled --> PausedTag: configured Google public document
+  PausedTag --> PausedTag: reject unknown error or consent management
+  PausedTag --> RequestsAllowed: current ad consent on home or rules
+  RequestsAllowed --> PausedTag: revoke expire or context invalid
+  PausedTag --> NewDocument: navigate to protected screen
+  RequestsAllowed --> NewDocument: navigate to protected screen
+  NewDocument --> Disabled: protected document has no Google tag
 ```
 
-8locale 홈/규칙의 공개 문서만 초기 허용한다. 게임/튜토리얼/데일리/매칭/친구/순위·개인 결과/내정보/계정/설정/오류와 query/미허용hash 문서는 제외하고 고정 접근성 #main은 허용한다. 홈 첫방문 tutorial 전환도 제외한다. 광고 미설정/차단/실패는 게임/탐색에서 기다리지 않는다. ScriptPort는 configured/load(signal), 문서당 단1회·3초 기한·취소·자동재시도 없음으로 분리한다. 실제 설정은 AdSense 게시자ID이며 API키를 만들지 않는다.
+Google 태그 준비는8locale 홈/규칙과 공개 `/consent`만 허용한다. 광고 요청 재개는 홈/규칙만 허용하고 `/consent`에서는 항상 pause를 유지한다. 게임/튜토리얼/데일리/매칭/친구/순위·개인 결과/내정보/계정/설정/오류와 query/미허용hash 문서는 제외하고 고정 접근성 #main과 공개 동의 관리의 #manage는 각 허용 경로에서만 허용한다. 홈 첫방문 tutorial 전환도 제외한다. 광고 미설정/차단/실패는 게임/탐색에서 기다리지 않는다. ScriptPort는 configured/load(signal), Google shared client는 prepare(signal)/pause로 태그 준비와 요청 허용을 나눈다. 문서당 단1회·3초 기한·취소·자동재시도 없음으로 분리한다. 실제 설정은 AdSense 게시자ID이며 API키를 만들지 않는다.
 
-script를 시작한 문서는 보호 화면으로 SPA 이동하기 전에 새 문서를 열어 실행 SDK를 격리한다. popstate/BFCache·철회/만료/계정 변경/오프라인을 재검사한다. 노드 삭제를 SDK unload로 간주하지 않는다. 초기 운영은 인페이지 자동 광고만 허용하고 overlay/vignette/anchor/side rail·ad intents는 끈다. 운영 page exclusions도 함께 검수한다. 상세 수명/실제한계·공식근거는 ADR0091을 따른다.
+script를 시작한 문서는 보호 화면으로 SPA 이동하기 전에 새 문서를 열어 실행 SDK를 격리한다. popstate/BFCache·철회/만료/계정 변경/오프라인을 재검사한다. 노드 삭제를 SDK unload로 간주하지 않는다. 동의 전 태그 준비도 Google과 통신하고 기존 Google 쿠키가 읽힐 수 있으므로 외부 연결0으로 안내하지 않는다. 이는 [2026-11-13 명시 승인](../workflow/approval-record.md)에 따른 예외다. 태그 시작 순간부터 광고 거부 여부와 무관하게 보호 문서 격리를 적용한다. 초기 운영은 인페이지 자동 광고만 허용하고 overlay/vignette/anchor/side rail·ad intents는 끈다. 운영 page exclusions도 함께 검수한다. 상세 수명/실제 한계는 ADR0091과 이를 갱신한 ADR0107/0109를 따른다.
 
-CMP의 필수 동의 처리와 광고 SDK를 분리한다. 분석 동의는 광고를 허용하지 않는다. 거부/오류/미설정에서는 게임을 정상 제공한다.8언어 공통 설정에서 동의를 재열거나 철회할 수 있다. 자동 광고의 script load를 실제 impression으로 기록하지 않는다.
+CMP와 광고 요청은 목적을 분리하되 Google 태그는 단일 shared client가 소유한다. 분석 동의는 광고를 허용하지 않는다. 거부/오류/미설정에서는 게임을 정상 제공한다.8언어 공통 설정에서 동의를 재열거나 철회할 수 있다. 자동 광고의 script load를 실제 impression으로 기록하지 않는다.
 
 ## CSP와 문서
 

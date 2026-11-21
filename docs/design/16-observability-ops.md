@@ -1,6 +1,6 @@
 # 16. 관측·배포·복구 운영
 
-> 대응: FR16, NFR07 · 공개 실행은 M5·사용자 계정/장비 작업 이후다.
+> 대응: FR16, NFR07 · 배포·백업/권리 원장·통제된 재개 도구는 구현됨. 실제 호스트·별도 매체·이전 release·RPO/RTO는 #24/#25/#26에서 검수한다. [현행 변경표](19-design-evolution.md). 아래 이슈별 문단의 후속 표기는 당시 기록이다.
 
 ```mermaid
 flowchart LR
@@ -21,7 +21,7 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 ## 업데이트·롤백
 
 1. 리뷰된 develop commit의 image digest·static manifest·rules version을 기록한다.
-2. 백업·disk·schema 호환성 확인. 새 매칭 차단, 최대4분+유예 drain.
+2. 백업·disk·schema 호환성 확인. 새 매칭 차단/readiness503, 기존 판의 입력·재접속과 저장을 최대300초 drain한다. 이후 HTTP는 최대5초, 성공 후 CPU worker 정리는 최대2초다. 저장 실패·owner 상실·시간 초과는 오류 종료한다.
 3. expand migration 후 서버와 정적 자산 배포, health·account·bot/human test·daily 검증.
 4. 실패하면 이전 image/static manifest로 돌아가고 contract migration을 배포와 동시에 하지 않는다.
 5. 결과·측정·복구 시간은 운영 이슈에 기록한다. 무중단 다중 서버 운영은 주장하지 않는다.
@@ -30,11 +30,30 @@ live는 process alive, ready는 DB·schema version·입장 capacity·worker heal
 
 정전·회선: 캐시된 local mode 안내, 온라인 판은 복구 시 abort. DB 장애: 새 공식 대전·순위 쓰기 차단, bounded pending 결과 재시도, 데이터 손실 여부 확인. disk full: admission 중지·백업 공간 정리 정책·임의 삭제 금지. Tunnel 장애: 사용자 계정/토큰/connector 로그 확인, origin 포트 공개로 우회하지 않는다.
 
-복구 훈련: 별도 빈 DB에 최신 백업→checksum→pg_restore→schema/row·대표 순위→서비스 ready→측정된 RPO/RTO 기록. 목표 RPO24h/RTO2h, 실제 성적이 부족하면 공개 전에 개선한다. 계정 삭제가 백업에 최대28일 남는 사실은 정책에 고지한다.
+### 백업 복원과 통제된 재개
+
+복구 훈련은 별도 빈 DB에서 암호화 archive 인증/checksum→pg_restore→migration/schema 확인→quarantine→최신 권리 원장 재적용·보존 정리→명시 재개→대표 인증/순위/readiness→실측 RPO/RTO 기록 순서다. dump 복원 성공이나 checkpoint `matched`만으로 서비스 접근을 열지 않는다. 계정 삭제가 백업에 최대28일 남는 사실은 정책에 고지하고, 삭제된 계정·연결·세션을 복원 서비스에서 되살리지 않는다.
+
+```mermaid
+flowchart TD
+  Restore[별도 DB에 인증한 백업 복원] --> Quarantine[서비스 차단 quarantine]
+  Quarantine --> Compare[전체 인증 checkpoint와 현재 원본 권리 비교]
+  Compare --> Seal[원본 owner 확보와 writer sealed]
+  Seal --> Apply[삭제 연결해제와 세션 정리]
+  Apply --> Retain[원래 보존기간 정리와 incident 재확인]
+  Retain --> Activate[대상 명시 active 전환]
+  Activate --> Verify[일반 시작의 journal abort와 ready 확인]
+  Compare -->|원본 또는 최신 근거 없음| Hold[격리 유지]
+  Retain -->|실패 시간초과 잠긴 행| Hold
+```
+
+원본 writer를 차단한 뒤 대상만 재개하는 [ADR0106](../adr/0106-controlled-recovery-resume.md)을 따른다. 원본 sealed/대상 quarantine 중간 장애는 안전한 재시도 상태다. 원본이나 최신 권리의 완전성을 확인할 자료가 없으면 자동 재개하지 않는다. gate 없는 과거 이미지나 직접 SQL로 우회하지 않는다. 목표 RPO24h/RTO2h·실제 별도 매체·이전 이미지 호환은 훈련 전 달성으로 표시하지 않는다.
+
+실행 명령·키/매체·주기/receipt는 [암호화 백업](../workflow/encrypted-backups.md), [복구 격리](../workflow/recovery-quarantine.md), [암호화 권리 원장](../workflow/encrypted-rights-ledger.md), [release 운영](../workflow/release-operations.md)을 따른다. 이 운영자용 archive는 사용자 데이터 파일 다운로드 기능과 별도다.
 
 ## 운영자 확인 항목
 
-미니 PC 사양·OS, 전력 실측, 디스크/별도 백업 매체, 자동재시작, 유선 회선/통신사 가정용 서비스 제공 약관, 도메인/Cloudflare 계정, AdSense/H5 승인, Google 인증 CMP, 운영자 연락처, 번역 검수·미성년자 방침을 확인한다. 비밀값을 이슈나 채팅에 붙여넣지 않는다.
+미니 PC 사양·OS, 전력 실측, 디스크/별도 백업 매체, 자동재시작, 유선 회선/통신사 가정용 서비스 제공 약관, 도메인/Cloudflare 계정, AdSense 사이트/자동광고 승인, Google 인증 CMP, 운영자 연락처, 번역 검수·미성년자 방침을 확인한다. 비밀값을 이슈나 채팅에 붙여넣지 않는다.
 
 운영 runbook의 독립 구현은 #211에서 고유 로컬 Docker Compose·nginx·DB·stop으로 검증한다. 실제 Tunnel/계정 연결·미니 PC/회선·운영 배포는 사용자 입력과 별도 검수 뒤에만 진행하며 유료 서비스를 생성하지 않는다.
 

@@ -48,6 +48,12 @@ online 비밀 seed와 정답을 숨기고 상대 진행률만 공개한다. 동�
 
 공개 정답 전송 여부는 WebSocket JSON, HTML, WASM online 입력, network cache, DOM aria-label, 로그에서 검사한다. 온라인 DTO와 로컬 Board 직렬화를 분리한다. 단순 화면에서 숨기는 것으로 보안을 충족하지 않는다.
 
+## Google 태그와 복원 데이터의 신뢰 경계
+
+Google모드의 태그 사전 로드는 공개 홈/규칙/동의 관리에만 허용하고 광고 요청 pause와 구분한다. 태그 시작 뒤 보호 화면은 새 문서로 격리한다. 기존 Google 쿠키 읽기 가능성과 승인 예외는 [11 동의](11-ads-consent.md)를 따른다. 브라우저 TCF 선택은 서명된 인증 증명이 아니며 현재 세션의 명시 반영·CSRF/CAS와 저장 transaction 검증이 별도 권한 경계다.
+
+과거 백업에는 삭제 전 개인정보·철회 전 세션이 남을 수 있다. 복원 대상은 quarantine을 유지하고 인증한 최신 원장·원본 writer 차단·삭제/세션 무효화·보존 정리 뒤에만 명시 재개한다. 원본 UUID 일치·최근 capture 시각만으로 최신 완전성을 증명하지 않는다. [16 운영](16-observability-ops.md)과 TS28/29/35를 따른다.
+
 ## 공급망과 운영
 
 lockfile·보안 감사(cargo audit/yarn npm audit --all --recursive)·최소 CI permissions, PR에서 비밀값 접근 금지. secret은 gitignore+host 권한으로 관리, 유출시 commit 삭제만 하지 않고 토큰을 회전한다. 백업·DB 접근은 운영자만; Tunnel 토큰·DB 사용자 분리. 종속성 취약점 예외는 근거·기간·이슈를 명시하고 조용히 감사 실패를 무시하지 않는다.

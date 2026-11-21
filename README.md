@@ -30,6 +30,7 @@
 
 - [PRD: 범위와 인수 조건](docs/product/16-PRD.md)
 - [설계 검토·승인 항목·요구 추적표](docs/design/00-review-checklist.md)
+- [초기 대비 설계 변경·현행 계약·남은 출시 출구](docs/design/19-design-evolution.md)
 - [전체 문서 안내](docs/README.md)
 - [마일스톤·작업 이슈](docs/workflow/backlog.md)
 - [Git·PR 규칙](docs/workflow/git-workflow.md)
@@ -75,7 +76,7 @@ Google·Apple·카카오·네이버는 첫 공개 버전 필수이며 다른 제
 
 ## 작업 흐름
 
-기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~14는 병합·종료됐습니다. OAuth는 #43→44→45→46으로 순차 구현하고 #42 실제 계정 검수는 별도 출시 조건입니다. 일별 코드 리뷰는 Git에서 제외한 로컬 `review/YYYY-MM-DD.md`에 기록합니다. main은 선택적 릴리스용으로 보존합니다.
+기본 브랜치는 **develop**입니다. milestone+issue→`type/issue-short-slug`→TDD/검증→develop PR→에이전트 리뷰·검사→위임에 따라 squash merge→이슈 종료 확인→다음 작업 순서입니다. #2~14와 OAuth #43~46 및 이후 온라인·공식 데일리·내 정보·PWA·Google 연결·운영 도구 구현을 병합했습니다. #42 실제 OAuth와 #147 광고/정책, #223 실기기·#23~28의 남은 출시/관찰 조건은 [설계 현황](docs/design/19-design-evolution.md)에서 구분합니다. 일별 코드 리뷰는 Git에서 제외한 로컬 `review/YYYY-MM-DD.md`에 기록합니다. main은 선택적 릴리스용으로 보존합니다.
 
 [AGENTS.md](AGENTS.md)는 공통 에이전트 규칙, [CLAUDE.md](CLAUDE.md)는 Claude 진입점입니다. `.agents/skills/`에 설계 검토·TDD·이슈/PR 스킬을 두고 `.claude/`에서 공유합니다. 적용한 pm-skills와 출처는 [skill-usage](docs/workflow/skill-usage.md)에 기록했습니다.
 

@@ -8,7 +8,7 @@
 
 #44는 별도 migration `202610080002_auth_locale.sql`로 기존 인증 거래에 8locale allowlist를 추가한다. 기존 migration checksum을 바꾸지 않고 en을 기본값으로 보존한다. public session_revision은 기존 auth_sessions.id를 조회하며 새 secret/개인정보 컬럼이 아니다. [ADR0020](../adr/0020-oauth-providers-and-http.md).
 
-> 대응: FR01/09/14/16 · DB 구현·migration은 M3에서 작성한다.
+> 대응: FR01/09/14/16 · DB/migration·보존 정리는 구현됨. 아래 ERD는 초기 개념 관계이며 실제 테이블·제약은 [migrations](../../migrations)와 후속 ADR을 따른다. 최신 권리 원장·격리 복원은 [16 운영](16-observability-ops.md), 변경 요약은 [19](19-design-evolution.md)를 확인한다.
 
 ```mermaid
 erDiagram

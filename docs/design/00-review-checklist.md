@@ -1,13 +1,19 @@
 # 설계 리뷰·승인 체크리스트
 
-> 2026-11-01 최신 설계 변경: [ADR0081](../adr/0081-my-info-and-export-removal.md)·#176→177→178. 내 정보 중심의 본인 조회와 파일 다운로드 제거가 현행 요구다. 과거 export 검증은 이력으로 보존하며 계정 권한·삭제·보존의 검증을 대체하지 않는다.
+> 2026-11-21 정합성 검토: [초기 대비 변경·현행 계약·남은 출구](19-design-evolution.md). 승인 상태는 approved이며 최신 사용자 위임에 따라 에이전트가 리뷰·검사·병합한다. 실제 OAuth/CMP·정책/번역·PWA 기기·호스트/매체·성능·사람 관찰은 별도 출시 조건이다.
 
-> 아래 초기 검토 결과와 검사 기록은 M0 당시 기록이다. 현재 작업 권한은 [최신 사용자 위임](../workflow/approval-record.md)과 [AGENTS](../../AGENTS.md)가 우선한다. #4·#5는 병합했고 #6은 [공개 후보 전략 ADR0010](../adr/0010-public-certified-attack-strategy.md)과 실제 검증 결과를 추가한다. 제품 코드가 없다는 아래 문장은 초기 시점의 기록이다.
+## 현재 변경 영역의 추적
 
-> 2026-10-06 · **사용자 변경·구현 시작 지시 반영, PR 병합 대기** · M0 문서 PR에 연결.
-> [지시 근거](../workflow/approval-record.md)를 기록했다. 공정성/성능 검증과 PR 병합 승인은 별도다. [승인 상태](../workflow/design-approval.json)
+| 요구 / 시나리오 | 현행 계약과 실제 테스트 경계 | 구현 근거 / 미완료 출구 |
+|---|---|---|
+| FR01/09/10/11/13 · TS17/18/19/20/21/24/26/29/35/36 | 내 정보90일 조회·파일/PNG 제거·선택적 InstallPort | [#178](../verification/178-my-info-pages.md)·[#221](../verification/221-installable-pwa.md), 실제 기기 #223 |
+| FR12/13/16 · TS18/20/23/24/25/29/31/35 | Google shared client의 pause 태그와 광고 요청 분리·보호 문서 새 탐색·현재 세션 명시 선택/TCF·같은 transaction 수집 | [ADR0107](../adr/0107-google-cmp-bootstrap.md)·[ADR0109](../adr/0109-current-session-google-consent-evidence.md)·[#235](../verification/235-public-launch-wiring.md), 운영 #147 |
+| FR10 · TS18/20/26/30 | prepare ACK 전 입력 장벽·전체 viewport·focus/lease·기존 worker 예산 | [#83 대조](../verification/83-activation-recovery.md)·[ADR0108](../adr/0108-full-viewport-update-interaction.md)·[#235](../verification/235-public-launch-wiring.md), #83 CLOSED·실기기 #223 |
+| FR14/16 · TS15/16/20/21/28/29/31/35 | main drain·인증 archive/원장·quarantine·원본 writer sealed 뒤 보존 정리/명시 재개 | [#208](../verification/208-online-shutdown-drain.md)·[ADR0106](../adr/0106-controlled-recovery-resume.md)·[#231](../verification/231-release-operations.md), 운영 #24/#25/#26 |
 
-## 검토 결과
+전체 FR/NFR·TS01~36 추적은 아래 표와 [19 현행 요약](19-design-evolution.md)을 함께 읽는다. 이후의 이슈별 구현 메모는 해당 단계의 이력이며, ‘후속/예정’은 현재 미구현 여부를 뜻하지 않는다. 과거 export·3판 광고 정책은 ADR0081/0091/0101로 대체됐다. 아래 M0 승인 대기·제품0줄·초기 검사 기록은 현재 상태가 아니다.
+
+## 초기 M0 검토 결과
 
 - 기획21개·상세설계18개·ADR9개·TS01~36 작성; 원본 화면18개 연결.
 - SRP: Board truth / PlayerBoard visibility / RuleEngine transition / LieValidator proof / BotPolicy decision 책임 분리. DB·시간·전송은 포트와 어댑터로 분리.
@@ -90,7 +96,7 @@ OAuth 기반 FR01/NFR02·TS01/20/31/32/35 → [ADR0019](../adr/0019-auth-foundat
 3. **판정:** 서버 수신 순서, timeout 동률 draw, 30초 재접속 유예, 모두 끊기면 abandon draw, 서버 장애 abort.
 4. **데일리:** offline replay는 검증 완료/오류 순위, server start·heartbeat가 있는 attempt만 시간 순위. 첫 검증 완료만 공식 기록.
 5. **성능:** JS200KiB를 초기 critical path로 정의하고 game 청크/WASM을 별도 예산으로 측정. 전체 game JS200KiB 충족은 미확인.
-6. **작업 흐름:** develop 기본, Conventional Commits, 이슈별 검토 PR, 1인 공식 review count0+필수checks+사용자 수동 검토, 승인 전 제품 변경 CI 차단.
+6. **작업 흐름:** develop 기본, Conventional Commits, 이슈별 검토 PR, 1인 공식 review count0+필수checks+사용자 위임에 따른 에이전트 코드/diff 리뷰, 승인 전 제품 변경 CI 차단.
 
 ## 운영 전에 채워야 할 정보
 
@@ -105,9 +111,9 @@ OAuth 기반 FR01/NFR02·TS01/20/31/32/35 → [ADR0019](../adr/0019-auth-foundat
 
 제품 코드는 0줄이며 제품 테스트·부하·공정성 실험은 승인 후 수행한다. Mermaid parse는 문법 검증이고 UI 시각 완성도나 제품 동작의 검증을 뜻하지 않는다.
 
-## 구현 시작과 병합 조건
+## 초기 구현 시작과 병합 조건 이력
 
-사용자의 OAuth 변경과 개발 시작 지시를 별도 #3 설계 PR에 기록했다. #29 초기 설정과 #3 PR은 검사 후 사용자 병합 승인을 받아 develop에 순서대로 반영한다. 그 뒤 #4 제품 작업을 시작한다. 이후 코드 PR마다 사용자 검토/병합을 거친다. 설계 기록을 공정성·법적 준수·성능 입증으로 표현하지 않는다.
+사용자의 OAuth 변경과 개발 시작 지시를 별도 #3 설계 PR에 기록했다. #29 초기 설정과 #3 PR은 검사 후 사용자 병합 승인을 받아 develop에 순서대로 반영한다. 그 뒤 #4 제품 작업을 시작한다. 당시의 사용자 병합 대기는 2026-10-07 순차 작업 위임으로 해소됐으며 이후에는 에이전트 리뷰·checks·최신 head 확인 후 병합한다. 설계 기록을 공정성·법적 준수·성능 입증으로 표현하지 않는다.
 
 ## OAuth·화면 변경 추적
 

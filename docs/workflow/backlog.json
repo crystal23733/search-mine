@@ -1298,6 +1298,16 @@
       ],
       "acceptance": "허용context/locked이미지·파일secret/nonroot·DDL/DML/내부망·공개포트0·nginx32locale/오류/API/WS·실Docker build/run/stop·리뷰/필수CI",
       "issue": 211
+    },
+    {
+      "key": "design-evolution-audit",
+      "issue": 241,
+      "milestone": "M5",
+      "title": "docs(design): 초기 대비 설계 변경과 현행 계약 보강",
+      "requirements": "FR01~16, NFR01~08",
+      "scenarios": "TS01~36",
+      "deps": [],
+      "acceptance": "#239/PR240과 #235/PR236 완료 확인; 기존 승인 범위의 초기대비 변경/현행설계/시나리오/테스트포트/미완료출구 정합성; Google pause태그와 요청분리/복구quarantine·최신권리·원본차단; 원문·승인상태·제품코드 유지; 문서/Mermaid/diff리뷰/CI/develop병합·CLOSED"
     }
   ]
 }

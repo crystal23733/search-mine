@@ -2,6 +2,12 @@
 
 > 기본 브랜치 develop. 작업은 선행 PR 병합/이슈 종료 후 시작하고 사용자 위임에 따라 에이전트 리뷰·검사를 마친 PR을 병합한다.
 
+## #241 설계 정합성 보강 (2026-11-21)
+
+[#241](https://github.com/crystal23733/search-mine/issues/241) · M5 · FR01~16/NFR01~08·TS01~36. #239/PR240과 #235/PR236 병합·종료 및 최신 develop을 확인했다. [초기 대비 설계 변경과 현행 계약](../design/19-design-evolution.md)에서 큰 변경·승인/구현 근거·실제 포트·남은 공개 출구를 연결한다. 아키텍처 OAuth/Google 문서 경계, 광고 태그 준비/요청 분리, 복구 격리·최신 권리 원장·원본 차단을 보강한다. 제품 코드·규칙·승인 JSON·planning 원문은 변경하지 않는다.
+
+현재 실제 검수는 #15/#42·#21/#22/#147·#23~28·#223이 OPEN이며, #83은 CLOSED다. 과거 이슈 문단의 ‘현재/다음/미완료’는 작성 당시 기록으로 보존한다. 최신 운영자 실행 순서는 [출시 체크리스트](launch-checklist.md)를 따른다.
+
 ## 개발 실행 문서 보완
 
 [#239](https://github.com/crystal23733/search-mine/issues/239) · M5 · FR16/NFR07 문서 보조: [README](../../README.md#개발-실행)에 macOS zsh·Linux bash·Windows PowerShell 실행, PostgreSQL 시작/중지·migration 환경변수·실DB/인증 E2E, 내부망 바인딩과 도메인 없는 localhost HTTPS 조건을 명시한다. 제품 동작·설계·TS 인수 조건 변경은 없으며 실제 운영 TS28 검증을 대신하지 않는다.

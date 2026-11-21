@@ -1,6 +1,6 @@
 # 08. 클라이언트 구조와 Atomic Design
 
-> 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md): 파일 다운로드 대신 내 정보 조회를 구현하고 #178에서 파일 전용 UI/API/collector·테스트를 제거/전환한다. 아래 export 관련 구현·검증은 과거 이력으로 보존한다. 새 조회는 별도 행동 TDD와 현재 소유권·취소·보존 검증을 적용한다.
+> 현행 기준: 내 정보/파일 제거 #178·공식 데일리 #132·PWA #221·Google 연결/업데이트 보강 #235까지 병합됐다. [초기 대비 변경과 남은 출구](19-design-evolution.md). 아래 이슈별 문단의 export·후속/미구현 표현은 당시 단계의 이력이며 현재 계약은 최신 ADR/검증을 따른다.
 
 #80의 [ADR0038](../adr/0038-bounded-online-reconnect.md)은 같은 owner/복구 후보 동안 OnlineSession을 유지하고 입력 없는 복구 화면·BoundedReconnect·메모리 미확인 명령을 분리한다. 세대/연결 lease·dispose·전체 기한/AbortSignal 수명과 accepted snapshot 이후에만 재전송하는 경계를 따른다.
 
@@ -29,6 +29,12 @@ classDiagram
 ```
 
 MatchController는 intent와 공개 결과 연결만, MatchStore는 공개 상태만, BoardRenderer는 표시만 책임진다. WsNetworkAdapter, WasmCoreAdapter, I18nextAdapter, AdSenseAutoAdsAdapter, IndexedDbAdapter, CertifiedCmpAdapter는 각 포트를 구현한다. composition root에서 online/local 모드를 선택하고 store에 비밀 Board를 넣지 않는다.
+
+## 현재 추가된 화면과 수명
+
+`MyInfoPage`는 본인90일 요약/전적·계정·현재 동의를 조회하고 `SettingsPage`의 기기 설정을 재사용한다. `OfficialDailyPage`와 `DailyRankingsPage`는 공식 시작/현재 계정 제출·두 순위를 제공한다. `TutorialGuidePage`는 학습 전 공개 안내, `ConsentPage`는 공개 Google 선택 관리, `PolicyPage`는 실제 운영자 정책을 표시한다. 파일 export/PNG 다운로드는 제거됐다.
+
+설치 UI는 InstallPort를 통해 명시 사용자 동작에서만 프롬프트를 소비하고 미지원 환경은 메뉴 안내를 제공한다. 설치 상태가 인증/공식 순위 권한을 만들지 않는다. 업데이트는 모든 탭의 activity 준비와 입력 장벽이 성립한 뒤 ACK하며, 전체 viewport를 덮는 장벽과 focus/lease/dispose를 공유한다([ADR0108](../adr/0108-full-viewport-update-interaction.md)). 실제 OS 설치 검수는 #223이다.
 
 ## 컴포넌트 목록과 재사용
 

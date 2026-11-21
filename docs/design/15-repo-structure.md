@@ -1,16 +1,15 @@
 # 15. 모노레포·빌드 경계
 
-> 대응: NFR01/05/08 · **아래 제품 디렉토리는 승인 뒤 생성한다.** 기존 Next/Nest 코드는 재사용하지 않는다.
+> 대응: NFR01/05/08 · 아래는 현재 구현 구조의 요약이다. 기존 Next/Nest 코드는 재사용하지 않는다. [초기 대비 변경](19-design-evolution.md)
 
 ```text
 search-mine/
   AGENTS.md, CLAUDE.md, README.md, CONTRIBUTING.md
-  docs/{planning,product,design,adr,workflow}/
+  docs/{planning,product,design,adr,workflow,verification}/
   .agents/skills/{liar-design-review,liar-tdd,liar-issue-pr}/
   .claude/{rules,skills}/
   .github/{ISSUE_TEMPLATE,workflows}/
   scripts/{validate_docs.py,check_mermaid.mjs}
-  # M1 이후 계획
   Cargo.toml, Cargo.lock
   crates/
     core/           # domain, solver, generator, rules, bot
@@ -19,14 +18,17 @@ search-mine/
     wasm/           # local core boundary
   apps/web/         # Preact atomic UI, Pixi, services, locales
   packages/
+    core-bridge/    # WASM worker client와 경계
     protocol/       # generated TS; 직접 수정 금지
     design-tokens/  # token source and generated CSS/Pixi values
+  migrations/       # PostgreSQL forward migrations와 제약
   config/game-rules.toml
   deploy/           # compose/nginx/tunnel/backup/runbook
-  tests/{fixtures,e2e,load}/
+  tests/{fixtures,e2e}/
+  deploy/tests/     # 실제 컨테이너와 백업/원장 검증
 ```
 
-Rust workspace와 Yarn workspace를 사용한다. 2026-10-18 사용자 교체 지시와 [ADR0078](../adr/0078-yarn-workspace.md)에 따라 node_modules 설치·기존 선언 패치·빌드 허용 목록을 보존한다. 사용자 지시에 따라 cargo add / yarn add에는 버전 인자를 붙이지 않고 최신 안정 릴리스를 추가한다. manifest 자동 생성 범위와 Cargo.lock/yarn.lock으로 실제 해결된 버전을 기록하고 CI는 locked/immutable 설치한다. 최신 릴리스 간 호환성은 검사하며 필요한 toolchain을 갱신한다. workspace root lockfiles를 커밋한다. 제품 파일은 설계 승인 전 생성하지 않는다. 문서 검사 스크립트·GitHub 템플릿·CI는 초기 작업 체계이므로 이번 PR에 포함한다.
+Rust workspace와 Yarn workspace를 사용한다. 2026-10-18 사용자 교체 지시와 [ADR0078](../adr/0078-yarn-workspace.md)에 따라 node_modules 설치·기존 선언 패치·빌드 허용 목록을 보존한다. 사용자 지시에 따라 cargo add / yarn add에는 버전 인자를 붙이지 않고 최신 안정 릴리스를 추가한다. manifest 자동 생성 범위와 Cargo.lock/yarn.lock으로 실제 해결된 버전을 기록하고 CI는 locked/immutable 설치한다. 최신 릴리스 간 호환성은 검사하며 필요한 toolchain을 갱신한다. workspace root lockfiles를 커밋한다. 제품 변경은 승인된 설계/시나리오를 먼저 반영한다. 문서 검사·GitHub 템플릿·제품/배포/백업 CI도 저장소에서 관리한다.
 
 ```mermaid
 flowchart LR
@@ -44,7 +46,7 @@ flowchart LR
 
 TS protocol generator는 schema 변경 PR에서 실행하고 generated diff를 검사한다. 내부 Board/seed 타입은 생성 대상에 넣지 않는다. 버전 불일치·누락은 build fail, Rust native/WASM golden fixtures를 공통으로 읽는다. 규칙은 core 하나이며 i18n·광고·렌더링은 web adapter에 둔다.
 
-문서 원문은 docs/planning에 보존한다. 최신 사용자 지시→AGENTS/워크플로→승인 PRD/설계/ADR→원문 순으로 판단하며 오래된 HANDOFF의 커밋/브랜치 규칙은 최신 workflow가 대체한다.
+문서 원문은 docs/planning에 보존한다. 최신 사용자 지시→승인 PRD/설계/ADR→AGENTS/워크플로→원문 순으로 판단하며 오래된 HANDOFF의 커밋/브랜치 규칙은 최신 workflow가 대체한다.
 
 #101 FR14/16·NFR01/02/05/07/08·TS15/16/20/21/31/35/36 → [ADR0046](../adr/0046-active-match-journal.md) → typed active journal/register/discard/strict final·same-owner startup unknown abort·최소 schema/FK삭제·admitted anchor/seed 상한·실제 PG/관련 gates → [검증101](../verification/101-active-match-journal.md). 공개 admission/main 전환·OS kill-restart 통합은 후속이며 storage foundation을 사용자 복구 완료로 보고하지 않는다.
 

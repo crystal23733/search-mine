@@ -1,9 +1,11 @@
 # 문서 안내
 
+현재 계약의 진입점은 [초기 대비 설계 변경·구현 근거·남은 출시 출구](design/19-design-evolution.md)다(2026-11-21 검토). 코어부터 온라인/공식 데일리·내 정보·Google 연결·PWA·운영 도구까지 구현됐으며, 실제 OAuth/CMP·기기/번역·호스트/복구·성능·사람 관찰 출구는 미완료다. 아래 개별 이슈의 ‘후속’ 문구는 당시 검증 단계의 이력으로 읽는다.
+
 현재 본인 정보는 [#177 조회 API](verification/177-my-info-read-api.md)와 [#178 내 정보 화면·파일 제공 제거](verification/178-my-info-pages.md)를 따른다. [ADR0081](adr/0081-my-info-and-export-removal.md)·[ADR0083](adr/0083-my-info-client-and-export-removal.md)이 현재 계약이며 아래 export 문서는 당시 구현/검증 근거로 보존한다.
 
 1. [제품 비전](product/01-vision.md)과 [PRD](product/16-PRD.md)로 범위·성공 기준을 읽는다.
-2. [설계 리뷰·요구 추적표](design/00-review-checklist.md)에서 승인할 제안을 확인한다.
+2. [설계 리뷰·요구 추적표](design/00-review-checklist.md)에서 승인 상태와 요구→설계→시나리오 경계를 확인한다.
 3. [시스템 구조](design/01-architecture.md), [규칙](design/04-game-rules-spec.md), [간파 알고리즘](design/05-algorithms.md), [프로토콜](design/06-protocol.md)을 검토한다.
 4. [테스트 시나리오](product/19-test-scenarios.md)와 [백로그](workflow/backlog.md)에서 구현·검증 단위를 확인한다.
 5. [Git workflow](workflow/git-workflow.md)와 [스킬 적용 내역](workflow/skill-usage.md)을 따른다.
@@ -12,8 +14,8 @@
 
 - `planning/`: 제공된 브레인스토밍·핸드오프 원문, 내용 그대로 보존.
 - `product/01~21`: 비전·경쟁·세그먼트·여정·가치·경제·리스크·요구·테스트·지표·로드맵.
-- `design/01~18`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준.
-- `adr/0001~0037`: 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀·세션 인증 요청·온라인 화면/친구방·재접속 cursor의 결정.
+- `design/01~19`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준·초기 대비 변경과 현행 계약.
+- `adr/`: 초기0001부터 현재0109까지 의사결정 이력을 보존한다. 아래는 초기 묶음의 요약이다. 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀·세션 인증 요청·온라인 화면/친구방·재접속 cursor의 결정.
 - `workflow/`: develop·이슈/마일스톤·승인 상태·작업 백로그·스킬 출처.
 
 [#16 권위 actor·WS·원자 결과 검증](verification/16-authoritative-match-actor.md)과 [ADR0023](adr/0023-authoritative-match-actor.md)은 인증 철회/직렬 입력/공개 DTO/결과 transaction의 실행 근거와 후속 매칭·클라이언트·운영의 경계를 기록한다.
@@ -22,7 +24,7 @@
 
 [ADR0020](adr/0020-oauth-providers-and-http.md)과 [#44 제공자/HTTP 검증](verification/44-oauth-providers-http.md), [운영 secret 설정](workflow/oauth-configuration.md)은 최소 권한·JWKS·브라우저/세션 경계와 실제 계정 검수 제한을 기록한다.
 
-현재 M0/M1과 #4~14 구현은 develop에 병합됐고 [#14 오프라인/대기 검증](verification/14-public-offline-cache.md)을 마쳤다. 실제 사람의 E1/E2 관찰은 #27/M2 수동 게이트로 유지한다. [#10 Atomic shell](verification/10-atomic-shell.md)도 확인한다. 승인/실행 결과/가정을 구분한다. 참조 기술 문서는 각 실제 구현/공개 시 다시 확인한다.
+초기 M0/M1과 #4~14 구현은 develop에 병합됐고 [#14 오프라인/대기 검증](verification/14-public-offline-cache.md)을 마쳤다. 실제 사람의 E1/E2 관찰은 #27/M2 수동 게이트로 유지한다. [#10 Atomic shell](verification/10-atomic-shell.md)도 확인한다. 승인/실행 결과/가정을 구분한다. 참조 기술 문서는 각 실제 구현/공개 시 다시 확인한다.
 
 [#13 UTC 데일리·개인 미검증 기록·공유 검증](verification/13-utc-daily-records-share.md)과 [ADR0017](adr/0017-deterministic-solo-daily-and-local-records.md)을 추가했다. 공개 캐시/안전 업데이트/제출 대기는 [#14 검증](verification/14-public-offline-cache.md)과 [ADR0018](adr/0018-public-offline-cache-and-safe-update.md)을 확인한다. 공식 기록/순위는 #19다.
 

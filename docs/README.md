@@ -1,5 +1,7 @@
 # 문서 안내
 
+새 사용자 지시는 [2~4인 방 설계20](design/20-multiplayer-rooms.md)·[ADR0110](adr/0110-multiplayer-rooms-and-rankings.md)·[공식 조사](research/2026-11-21-multiplayer-room-flows.md)를 따른다. 기존1:1 구현과 새 다인전 구현/검증 예정은 구분한다.
+
 현재 계약의 진입점은 [초기 대비 설계 변경·구현 근거·남은 출시 출구](design/19-design-evolution.md)다(2026-11-21 검토). 코어부터 온라인/공식 데일리·내 정보·Google 연결·PWA·운영 도구까지 구현됐으며, 실제 OAuth/CMP·기기/번역·호스트/복구·성능·사람 관찰 출구는 미완료다. 아래 개별 이슈의 ‘후속’ 문구는 당시 검증 단계의 이력으로 읽는다.
 
 현재 본인 정보는 [#177 조회 API](verification/177-my-info-read-api.md)와 [#178 내 정보 화면·파일 제공 제거](verification/178-my-info-pages.md)를 따른다. [ADR0081](adr/0081-my-info-and-export-removal.md)·[ADR0083](adr/0083-my-info-client-and-export-removal.md)이 현재 계약이며 아래 export 문서는 당시 구현/검증 근거로 보존한다.
@@ -14,8 +16,8 @@
 
 - `planning/`: 제공된 브레인스토밍·핸드오프 원문, 내용 그대로 보존.
 - `product/01~21`: 비전·경쟁·세그먼트·여정·가치·경제·리스크·요구·테스트·지표·로드맵.
-- `design/01~19`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준·초기 대비 변경과 현행 계약.
-- `adr/`: 초기0001부터 현재0109까지 의사결정 이력을 보존한다. 아래는 초기 묶음의 요약이다. 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀·세션 인증 요청·온라인 화면/친구방·재접속 cursor의 결정.
+- `design/01~20`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준·초기 대비 변경과 현행 계약.
+- `adr/`: 초기0001부터 현재0110까지 의사결정 이력을 보존한다. 아래는 초기 묶음의 요약이다. 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀·세션 인증 요청·온라인 화면/친구방·재접속 cursor의 결정.
 - `workflow/`: develop·이슈/마일스톤·승인 상태·작업 백로그·스킬 출처.
 
 [#16 권위 actor·WS·원자 결과 검증](verification/16-authoritative-match-actor.md)과 [ADR0023](adr/0023-authoritative-match-actor.md)은 인증 철회/직렬 입력/공개 DTO/결과 transaction의 실행 근거와 후속 매칭·클라이언트·운영의 경계를 기록한다.

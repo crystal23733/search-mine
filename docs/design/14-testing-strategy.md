@@ -1,5 +1,7 @@
 # 14. TDD와 검증 전략
 
+> 2026-11-21 다인전 확장: 이 문서의 검사 계약을 바탕으로 [설계20](20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)의 FR17/18·TS37~45를 추가한다. 새2~4인 경로는 단일 코어/최소 공개/기존 호환을 검증한 뒤 활성화하며 설계만으로 구현 완료를 주장하지 않는다.
+
 > 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md): 파일 다운로드 대신 내 정보 조회를 구현하고 #178에서 파일 전용 UI/API/collector·테스트를 제거/전환한다. 아래 export 관련 구현·검증은 과거 이력으로 보존한다. 새 조회는 별도 행동 TDD와 현재 소유권·취소·보존 검증을 적용한다.
 
 > 대응: NFR05/08 · 입력: [실행 가능한 시나리오](../product/19-test-scenarios.md)

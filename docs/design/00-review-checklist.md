@@ -1,5 +1,14 @@
 # 설계 리뷰·승인 체크리스트
 
+> 2026-11-21 새 사용자 범위: [2~4인 방 설계20](20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md). FR17/18·TS37~45를 추가한다. 기존1:1 구현과 새로운 다인전 구현 예정/검증을 구분한다.
+
+| 요구 / 이야기 | 설계 | 시나리오 / 실제 검증 경계 |
+|---|---|---|
+| FR17 · US17 공개/초대 방 | 20·ADR0110·06/09 | TS37 목록/초대·TS38 membership·TS39 준비/시작·TS42 재대결·TS43 권한/최소 공개 · RoomPolicy/RoomService/Auth/실HTTP·WS |
+| FR18 · US18 다인 순위/공격 | 20·ADR0110·03/04/05/07 | TS40 단일 core·무작위 공격/반사·TS41 순위/이탈 · RuleEngine/RandomSource/ResultRepository/실PG |
+| FR01~18/NFR01~08 | 20·08/10/11/12/13/14/16/17 | TS44 8언어/PC·모바일/광고0/PWA·TS45 수용량/장애/기존 호환 · native/WASM/실DB/WS/browser/운영 출구 |
+
+
 > 2026-11-21 정합성 검토: [초기 대비 변경·현행 계약·남은 출구](19-design-evolution.md). 승인 상태는 approved이며 최신 사용자 위임에 따라 에이전트가 리뷰·검사·병합한다. 실제 OAuth/CMP·정책/번역·PWA 기기·호스트/매체·성능·사람 관찰은 별도 출시 조건이다.
 
 ## 현재 변경 영역의 추적

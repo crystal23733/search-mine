@@ -1,5 +1,7 @@
 # 08. 클라이언트 구조와 Atomic Design
 
+> 2026-11-21 다인전 확장: 이 문서의 클라이언트 계약을 바탕으로 [설계20](20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)의 FR17/18·TS37~45를 추가한다. 새2~4인 경로는 단일 코어/최소 공개/기존 호환을 검증한 뒤 활성화하며 설계만으로 구현 완료를 주장하지 않는다.
+
 > 현행 기준: 내 정보/파일 제거 #178·공식 데일리 #132·PWA #221·Google 연결/업데이트 보강 #235까지 병합됐다. [초기 대비 변경과 남은 출구](19-design-evolution.md). 아래 이슈별 문단의 export·후속/미구현 표현은 당시 단계의 이력이며 현재 계약은 최신 ADR/검증을 따른다.
 
 #80의 [ADR0038](../adr/0038-bounded-online-reconnect.md)은 같은 owner/복구 후보 동안 OnlineSession을 유지하고 입력 없는 복구 화면·BoundedReconnect·메모리 미확인 명령을 분리한다. 세대/연결 lease·dispose·전체 기한/AbortSignal 수명과 accepted snapshot 이후에만 재전송하는 경계를 따른다.

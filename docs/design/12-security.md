@@ -1,5 +1,7 @@
 # 12. STRIDE 위협 모델
 
+> 2026-11-21 다인전 확장: 이 문서의 보안 계약을 바탕으로 [설계20](20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)의 FR17/18·TS37~45를 추가한다. 새2~4인 경로는 단일 코어/최소 공개/기존 호환을 검증한 뒤 활성화하며 설계만으로 구현 완료를 주장하지 않는다.
+
 #82 본인 결과 읽기는 [ADR0039](../adr/0039-authenticated-personal-result-read.md)의 Origin/CSRF·본인 참여·최소 DTO·전후 session proof·별도 authority 철회 barrier·전체2초/동시16/초당20회 상한을 따른다. 조회가 WS/로비 소유권을 교체하지 않으며 없는/타 계정/삭제/만료 결과는 같은404다.
 
 > 대응: FR01/07/09/12~14/16, NFR02/07 · 자산: 숨은 판·세션·계정 개인정보·결과·가용성·백업.

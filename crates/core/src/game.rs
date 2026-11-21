@@ -2,10 +2,13 @@
 use crate::{
     board::{Board, Cell, CellId, Observation, ObservedCell},
     policy::{PolicyKnowledge, PublicCellUpdate},
+    random::RandomSource,
     rules::RulesSnapshot,
     solver::SolverBudget,
 };
 use std::collections::BTreeMap;
+
+pub mod multiplayer;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Seat {
     One,
@@ -33,11 +36,11 @@ pub enum Action {
     Accuse(CellId),
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Command {
+pub struct Command<S = Seat> {
     pub id: u128,
     pub seq: u64,
     pub epoch: u32,
-    pub seat: Seat,
+    pub seat: S,
     pub received_at: u64,
     pub action: Action,
 }
@@ -45,6 +48,8 @@ pub struct Command {
 pub enum Rejection {
     InvalidBoard,
     InvalidRules,
+    InvalidSeat,
+    InvalidPlayerCount,
     InvalidTime,
     NotStarted,
     Finished,
@@ -82,9 +87,9 @@ pub enum EndReason {
     Cancelled,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct MatchEnd {
+pub struct MatchEnd<S = Seat> {
     pub reason: EndReason,
-    pub winner: Option<Seat>,
+    pub winner: Option<S>,
     pub at: u64,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -122,7 +127,7 @@ struct Overlay {
     target: CellId,
     truth: u8,
     shown: u8,
-    source: Seat,
+    source: usize,
 }
 struct Cached {
     seq: u64,
@@ -140,59 +145,70 @@ struct Player {
     epoch: u32,
     last_seq: u64,
     disconnected_at: Option<u64>,
+    forfeited: bool,
     commands: BTreeMap<u128, Cached>,
     stats: GameStats,
 }
-// Never Serialize/Debug: Board and hidden overlays stay inside the domain.
-pub struct RuleEngine {
-    solo: bool,
+enum RoundMode {
+    Duel,
+    Solo,
+    Race(Box<dyn RandomSource + Send + Sync>),
+}
+
+// Keep private board, random source and overlays inside the shared rules engine.
+struct Round {
+    mode: RoundMode,
     board: Board,
     rules: RulesSnapshot,
-    players: [Player; 2],
+    players: Vec<Player>,
     start: u64,
     deadline: u64,
     now: u64,
-    public_revision: [u64; 2],
-    end: Option<MatchEnd>,
+    public_revision: Vec<u64>,
+    end: Option<MatchEnd<usize>>,
+    race_result: Option<multiplayer::RaceResult>,
 }
+
+pub struct RuleEngine(Round);
+pub struct PreparedEngine(PreparedRound);
+
 pub struct AnalysisJob {
-    seat: Seat,
+    seat: usize,
     revision: u64,
     knowledge: PolicyKnowledge,
 }
 pub struct AnalysisResult {
-    seat: Seat,
+    seat: usize,
     revision: u64,
     knowledge: PolicyKnowledge,
 }
-// Validated private state has no running clock until admission consumes it.
-pub struct PreparedEngine {
+
+struct PreparedRound {
     board: Board,
     rules: RulesSnapshot,
-    players: [Player; 2],
+    players: Vec<Player>,
 }
-impl PreparedEngine {
-    pub fn rules_hash(&self) -> &str {
-        &self.rules.hash
-    }
 
-    pub fn start(self, now: u64) -> Result<RuleEngine, Rejection> {
+impl PreparedRound {
+    fn start(self, now: u64, mode: RoundMode) -> Result<Round, Rejection> {
         let start = now
             .checked_add(u64::from(self.rules.rules.countdown_ms))
             .ok_or(Rejection::InvalidTime)?;
         let deadline = start
             .checked_add(u64::from(self.rules.rules.duration_ms))
             .ok_or(Rejection::InvalidTime)?;
-        Ok(RuleEngine {
-            solo: false,
+        let public_revision = vec![0; self.players.len()];
+        Ok(Round {
+            mode,
             board: self.board,
             rules: self.rules,
             players: self.players,
             start,
             deadline,
             now,
-            public_revision: [0; 2],
+            public_revision,
             end: None,
+            race_result: None,
         })
     }
 }
@@ -208,11 +224,112 @@ impl AnalysisJob {
         })
     }
 }
+impl PreparedEngine {
+    pub fn rules_hash(&self) -> &str {
+        &self.0.rules.hash
+    }
+
+    pub fn start(self, now: u64) -> Result<RuleEngine, Rejection> {
+        self.0.start(now, RoundMode::Duel).map(RuleEngine)
+    }
+}
+
 impl RuleEngine {
     pub fn new(board: Board, rules: RulesSnapshot, now: u64) -> Result<Self, Rejection> {
         Self::prepare(board, rules)?.start(now)
     }
+
     pub fn prepare(board: Board, rules: RulesSnapshot) -> Result<PreparedEngine, Rejection> {
+        Round::prepare(board, rules, 2).map(PreparedEngine)
+    }
+
+    pub fn new_solo(board: Board, rules: RulesSnapshot, now: u64) -> Result<Self, Rejection> {
+        Round::prepare(board, rules, 2)?
+            .start(now, RoundMode::Solo)
+            .map(Self)
+    }
+
+    pub fn projection(&self, seat: Seat) -> Projection {
+        let round = &self.0;
+        let at = round.projected_at();
+        Projection {
+            rules: round.rules.clone(),
+            own: round.own_view(seat.index(), at),
+            opponent: round.opponent_view(seat.other().index(), at),
+            revision: round.public_revision[seat.index()],
+            countdown_ms: round.countdown_ms(at),
+            remaining_ms: round.remaining_ms(at),
+            end: round.end.map(|end| MatchEnd {
+                reason: end.reason,
+                winner: end.winner.map(|seat| [Seat::One, Seat::Two][seat]),
+                at: end.at,
+            }),
+        }
+    }
+
+    pub fn last_sequence(&self, seat: Seat) -> u64 {
+        self.0.players[seat.index()].last_seq
+    }
+
+    pub fn apply(&mut self, command: Command) -> Ack {
+        self.0.apply(indexed_command(command))
+    }
+
+    pub fn apply_batch(&mut self, commands: Vec<Command>) -> Vec<Ack> {
+        self.0
+            .apply_batch(commands.into_iter().map(indexed_command).collect())
+    }
+
+    pub fn proof_work(&self, seat: Seat) -> AnalysisJob {
+        self.0.proof_work(seat.index())
+    }
+
+    pub fn commit_proof(&mut self, result: AnalysisResult) -> Result<(), Rejection> {
+        self.0.commit_proof(result)
+    }
+
+    pub fn start_ms(&self) -> u64 {
+        self.0.start
+    }
+
+    pub fn advance(&mut self, now: u64) -> Result<(), Rejection> {
+        self.0.advance(now)
+    }
+
+    pub fn cancel_before_start(&mut self, at: u64) -> Result<(), Rejection> {
+        self.0.cancel_before_start(at)
+    }
+
+    pub fn disconnect(&mut self, seat: Seat, now: u64) -> Result<(), Rejection> {
+        self.0.disconnect(seat.index(), now)
+    }
+
+    pub fn resume(&mut self, seat: Seat, epoch: u32, now: u64) -> Result<(), Rejection> {
+        self.0.resume(seat.index(), epoch, now)
+    }
+
+    pub fn abort(&mut self, now: u64) -> Result<(), Rejection> {
+        self.0.abort(now)
+    }
+}
+
+fn indexed_command(command: Command) -> Command<usize> {
+    Command {
+        id: command.id,
+        seq: command.seq,
+        epoch: command.epoch,
+        seat: command.seat.index(),
+        received_at: command.received_at,
+        action: command.action,
+    }
+}
+
+impl Round {
+    fn prepare(
+        board: Board,
+        rules: RulesSnapshot,
+        count: usize,
+    ) -> Result<PreparedRound, Rejection> {
         rules.verify().map_err(|_| Rejection::InvalidRules)?;
         let spec = rules.rules.board_spec();
         if board.spec() != spec || board.cell(spec.opening) != Some(Cell::Number(0)) {
@@ -238,63 +355,79 @@ impl RuleEngine {
             epoch: 1,
             last_seq: 0,
             disconnected_at: None,
+            forfeited: false,
             commands: BTreeMap::new(),
             stats: GameStats::default(),
         };
-        Ok(PreparedEngine {
+        Ok(PreparedRound {
             board,
             rules,
-            players: [player(), player()],
+            players: (0..count).map(|_| player()).collect(),
         })
     }
-    pub fn projection(&self, seat: Seat) -> Projection {
-        let now = self.end.map_or(self.now, |end| end.at);
-        let me = &self.players[seat.index()];
-        let opponent = &self.players[seat.other().index()];
-        Projection {
-            rules: self.rules.clone(),
-            own: OwnView {
-                cells: me.view.clone(),
-                flags: me.flags.clone(),
-                gauge: me.gauge,
-                stun_ms: me.stun_until.saturating_sub(now) as u32,
-                history: me.knowledge.public_history().to_vec(),
-                stats: me.stats,
-            },
-            opponent: OpponentView {
-                opened_safe: opponent.view.opened_safe() as u16,
-                stun_ms: opponent.stun_until.saturating_sub(now) as u32,
-                reconnect_ms: if self.end.is_some() {
-                    None
-                } else {
-                    opponent.disconnected_at.map(|at| {
-                        at.saturating_add(u64::from(self.rules.rules.reconnect_grace_ms))
-                            .saturating_sub(now) as u32
-                    })
-                },
-            },
-            revision: self.public_revision[seat.index()],
-            countdown_ms: self.start.saturating_sub(now) as u32,
-            remaining_ms: self.deadline.saturating_sub(now.max(self.start)) as u32,
-            end: self.end,
+    fn projected_at(&self) -> u64 {
+        self.end.map_or(self.now, |end| end.at)
+    }
+
+    fn countdown_ms(&self, at: u64) -> u32 {
+        self.start.saturating_sub(at) as u32
+    }
+
+    fn remaining_ms(&self, at: u64) -> u32 {
+        self.deadline.saturating_sub(at.max(self.start)) as u32
+    }
+
+    fn own_view(&self, seat: usize, at: u64) -> OwnView {
+        let player = &self.players[seat];
+        OwnView {
+            cells: player.view.clone(),
+            flags: player.flags.clone(),
+            gauge: player.gauge,
+            stun_ms: player.stun_until.saturating_sub(at) as u32,
+            history: player.knowledge.public_history().to_vec(),
+            stats: player.stats,
         }
     }
-    pub fn new_solo(board: Board, rules: RulesSnapshot, now: u64) -> Result<Self, Rejection> {
-        let mut engine = Self::new(board, rules, now)?;
-        engine.solo = true;
-        Ok(engine)
+
+    fn reconnect_deadline(&self, seat: usize) -> Option<u64> {
+        self.players[seat]
+            .disconnected_at
+            .map(|at| at.saturating_add(u64::from(self.rules.rules.reconnect_grace_ms)))
     }
-    pub fn last_sequence(&self, seat: Seat) -> u64 {
-        self.players[seat.index()].last_seq
+
+    fn opponent_view(&self, seat: usize, at: u64) -> OpponentView {
+        let player = &self.players[seat];
+        OpponentView {
+            opened_safe: player.view.opened_safe() as u16,
+            stun_ms: player.stun_until.saturating_sub(at) as u32,
+            reconnect_ms: if self.end.is_some() || player.forfeited {
+                None
+            } else {
+                self.reconnect_deadline(seat)
+                    .map(|until| until.saturating_sub(at) as u32)
+            },
+        }
     }
-    pub fn apply(&mut self, command: Command) -> Ack {
-        let index = command.seat.index();
+
+    fn validate_seat(&self, seat: usize) -> Result<(), Rejection> {
+        if seat < self.players.len() {
+            Ok(())
+        } else {
+            Err(Rejection::InvalidSeat)
+        }
+    }
+
+    fn apply(&mut self, command: Command<usize>) -> Ack {
+        let index = command.seat;
         let reject = |reason, revision| Ack {
             command_id: command.id,
             revision,
             status: ActionStatus::Rejected(reason),
             duplicate: false,
         };
+        if let Err(error) = self.validate_seat(index) {
+            return reject(error, 0);
+        }
         if let Err(error) = self.advance(command.received_at) {
             return reject(error, self.public_revision[index]);
         }
@@ -323,7 +456,7 @@ impl RuleEngine {
             Ok(()) => {
                 match command.action {
                     Action::Attack | Action::ToggleFlag(_) => self.public_revision[index] += 1,
-                    _ => self.bump_both(),
+                    _ => self.bump_all(),
                 }
                 if self.players[index].view.opened_safe() == self.board.safe_total() {
                     self.finish(EndReason::Clear, Some(command.seat), self.now);
@@ -348,29 +481,28 @@ impl RuleEngine {
         );
         ack
     }
-    pub fn apply_batch(&mut self, mut commands: Vec<Command>) -> Vec<Ack> {
+    fn apply_batch(&mut self, mut commands: Vec<Command<usize>>) -> Vec<Ack> {
         commands.sort_by_key(|c| (c.received_at, c.seat, c.seq));
         commands
             .into_iter()
             .map(|command| self.apply(command))
             .collect()
     }
-    fn act(&mut self, seat: Seat, action: Action) -> Result<(), Rejection> {
-        let index = seat.index();
+    fn act(&mut self, index: usize, action: Action) -> Result<(), Rejection> {
         if self.end.is_some() {
             return Err(Rejection::Finished);
         }
         if self.now < self.start {
             return Err(Rejection::NotStarted);
         }
-        if self.players[index].disconnected_at.is_some() {
+        if self.players[index].forfeited || self.players[index].disconnected_at.is_some() {
             return Err(Rejection::Disconnected);
         }
         if self.now < self.players[index].stun_until {
             return Err(Rejection::Stunned);
         }
-        if self.solo
-            && (seat != Seat::One || !matches!(action, Action::Open(_) | Action::ToggleFlag(_)))
+        if matches!(self.mode, RoundMode::Solo)
+            && (index != 0 || !matches!(action, Action::Open(_) | Action::ToggleFlag(_)))
         {
             return Err(Rejection::AttackUnavailable);
         }
@@ -397,7 +529,7 @@ impl RuleEngine {
                     }
                 }
                 let hit_mine = view.cell(cell) == Some(ObservedCell::Mine);
-                self.commit_view(seat, view)?;
+                self.commit_view(index, view)?;
                 let player = &mut self.players[index];
                 let gain = opened.len() as u32 * u32::from(self.rules.rules.safe_gain);
                 player.gauge = (u32::from(player.gauge) + gain)
@@ -418,7 +550,7 @@ impl RuleEngine {
                 let flag = &mut self.players[index].flags[usize::from(cell.0)];
                 *flag = !*flag;
             }
-            Action::Attack => self.attack(seat)?,
+            Action::Attack => self.attack(index)?,
             Action::Accuse(cell) => {
                 if !matches!(
                     self.players[index].view.cell(cell),
@@ -436,11 +568,11 @@ impl RuleEngine {
                     let mut view = self.players[index].view.clone();
                     view.set(cell, ObservedCell::Number(lie.truth))
                         .map_err(|_| Rejection::InvalidBoard)?;
-                    self.commit_view(seat, view)?;
+                    self.commit_view(index, view)?;
                     self.players[index].overlays.remove(lie_index);
                     self.players[index].stats.accusation_attempts += 1;
                     self.players[index].stats.correct_accusations += 1;
-                    let attacker = &mut self.players[source.index()];
+                    let attacker = &mut self.players[source];
                     attacker.gauge = 0;
                     attacker.stun_until = attacker.stun_until.max(
                         self.now
@@ -458,11 +590,20 @@ impl RuleEngine {
         }
         Ok(())
     }
-    fn attack(&mut self, seat: Seat) -> Result<(), Rejection> {
-        let defender = seat.other().index();
-        if self.players[seat.index()].gauge < self.rules.rules.gauge_capacity
-            || self.players[defender].overlays.len() >= usize::from(self.rules.rules.max_lies)
-        {
+    fn attack(&mut self, seat: usize) -> Result<(), Rejection> {
+        if self.players[seat].gauge < self.rules.rules.gauge_capacity {
+            return Err(Rejection::AttackUnavailable);
+        }
+        let defender = match &mut self.mode {
+            RoundMode::Race(random) => {
+                let eligible = (0..self.players.len())
+                    .filter(|&index| index != seat && !self.players[index].forfeited);
+                multiplayer::draw_target(eligible, random.as_mut())
+                    .ok_or(Rejection::AttackUnavailable)?
+            }
+            RoundMode::Duel | RoundMode::Solo => 1 - seat,
+        };
+        if self.players[defender].overlays.len() >= usize::from(self.rules.rules.max_lies) {
             return Err(Rejection::AttackUnavailable);
         }
         for i in 0..self.board.spec().area() {
@@ -492,14 +633,14 @@ impl RuleEngine {
                     shown: proof.displayed(),
                     source: seat,
                 });
-                self.players[seat.index()].gauge = 0;
+                self.players[seat].gauge = 0;
                 return Ok(());
             }
         }
         Err(Rejection::AttackUnavailable)
     }
-    fn commit_view(&mut self, seat: Seat, view: Observation) -> Result<(), Rejection> {
-        let player = &mut self.players[seat.index()];
+    fn commit_view(&mut self, seat: usize, view: Observation) -> Result<(), Rejection> {
+        let player = &mut self.players[seat];
         let mut knowledge = player.knowledge.clone();
         knowledge
             .observe(&view)
@@ -509,16 +650,17 @@ impl RuleEngine {
         player.observation_revision += 1;
         Ok(())
     }
-    pub fn proof_work(&self, seat: Seat) -> AnalysisJob {
-        let player = &self.players[seat.index()];
+    fn proof_work(&self, seat: usize) -> AnalysisJob {
+        let player = &self.players[seat];
         AnalysisJob {
             seat,
             revision: player.observation_revision,
             knowledge: player.knowledge.clone(),
         }
     }
-    pub fn commit_proof(&mut self, result: AnalysisResult) -> Result<(), Rejection> {
-        let player = &mut self.players[result.seat.index()];
+    fn commit_proof(&mut self, result: AnalysisResult) -> Result<(), Rejection> {
+        self.validate_seat(result.seat)?;
+        let player = &mut self.players[result.seat];
         if player.observation_revision != result.revision
             || player.view != *result.knowledge.public_view()
             || player.knowledge.public_history() != result.knowledge.public_history()
@@ -528,7 +670,7 @@ impl RuleEngine {
         player.knowledge = result.knowledge;
         Ok(())
     }
-    pub fn advance(&mut self, now: u64) -> Result<(), Rejection> {
+    fn advance(&mut self, now: u64) -> Result<(), Rejection> {
         if now < self.now {
             return Err(Rejection::InvalidTime);
         }
@@ -542,10 +684,19 @@ impl RuleEngine {
                 .iter()
                 .all(|p| p.view.opened_safe() == self.board.safe_total())
         {
-            self.finish(EndReason::Clear, self.solo.then_some(Seat::One), self.start);
+            let winner = matches!(self.mode, RoundMode::Solo).then_some(0);
+            self.finish(EndReason::Clear, winner, self.start);
             return Ok(());
         }
-        let mut terminal = (self.deadline, EndReason::Timeout, self.progress_winner());
+        if matches!(self.mode, RoundMode::Race(_)) {
+            self.advance_race(now);
+            return Ok(());
+        }
+        let mut terminal = (
+            self.deadline,
+            EndReason::Timeout,
+            self.duel_progress_winner(),
+        );
         let grace = u64::from(self.rules.rules.reconnect_grace_ms);
         let disconnect = match (
             self.players[0].disconnected_at,
@@ -554,8 +705,8 @@ impl RuleEngine {
             (Some(a), Some(b)) => {
                 Some((a.max(b).saturating_add(grace), EndReason::Abandoned, None))
             }
-            (Some(a), None) => Some((a.saturating_add(grace), EndReason::Forfeit, Some(Seat::Two))),
-            (None, Some(b)) => Some((b.saturating_add(grace), EndReason::Forfeit, Some(Seat::One))),
+            (Some(a), None) => Some((a.saturating_add(grace), EndReason::Forfeit, Some(1))),
+            (None, Some(b)) => Some((b.saturating_add(grace), EndReason::Forfeit, Some(0))),
             (None, None) => None,
         };
         if let Some(candidate) = disconnect
@@ -568,32 +719,33 @@ impl RuleEngine {
         }
         Ok(())
     }
-    fn progress_winner(&self) -> Option<Seat> {
+    fn duel_progress_winner(&self) -> Option<usize> {
         match self.players[0]
             .view
             .opened_safe()
             .cmp(&self.players[1].view.opened_safe())
         {
-            std::cmp::Ordering::Greater => Some(Seat::One),
-            std::cmp::Ordering::Less => Some(Seat::Two),
+            std::cmp::Ordering::Greater => Some(0),
+            std::cmp::Ordering::Less => Some(1),
             std::cmp::Ordering::Equal => None,
         }
     }
-    fn finish(&mut self, reason: EndReason, winner: Option<Seat>, at: u64) {
+    fn finish(&mut self, reason: EndReason, winner: Option<usize>, at: u64) {
         if self.end.is_none() {
-            self.end = Some(MatchEnd { reason, winner, at });
-            self.bump_both();
+            let end = MatchEnd { reason, winner, at };
+            self.end = Some(end);
+            if matches!(self.mode, RoundMode::Race(_)) {
+                self.race_result = Some(multiplayer::RaceResult::from_round(self, end));
+            }
+            self.bump_all();
         }
     }
-    fn bump_both(&mut self) {
+    fn bump_all(&mut self) {
         for revision in &mut self.public_revision {
             *revision += 1;
         }
     }
-    pub fn start_ms(&self) -> u64 {
-        self.start
-    }
-    pub fn cancel_before_start(&mut self, at: u64) -> Result<(), Rejection> {
+    fn cancel_before_start(&mut self, at: u64) -> Result<(), Rejection> {
         if self.end.is_some() {
             return Err(Rejection::Finished);
         }
@@ -604,7 +756,8 @@ impl RuleEngine {
         self.finish(EndReason::Cancelled, None, at);
         Ok(())
     }
-    pub fn disconnect(&mut self, seat: Seat, now: u64) -> Result<(), Rejection> {
+    fn disconnect(&mut self, seat: usize, now: u64) -> Result<(), Rejection> {
+        self.validate_seat(seat)?;
         self.advance(now)?;
         if self.end.is_some() {
             return Err(Rejection::Finished);
@@ -613,18 +766,28 @@ impl RuleEngine {
             self.finish(EndReason::Cancelled, None, now);
             return Ok(());
         }
-        let player = &mut self.players[seat.index()];
+        let player = &mut self.players[seat];
+        if player.forfeited {
+            return Err(Rejection::Disconnected);
+        }
         if player.disconnected_at.is_none() {
             player.disconnected_at = Some(now);
+            if matches!(self.mode, RoundMode::Race(_)) {
+                self.bump_all();
+            }
         }
         Ok(())
     }
-    pub fn resume(&mut self, seat: Seat, epoch: u32, now: u64) -> Result<(), Rejection> {
+    fn resume(&mut self, seat: usize, epoch: u32, now: u64) -> Result<(), Rejection> {
+        self.validate_seat(seat)?;
         self.advance(now)?;
         if self.end.is_some() {
             return Err(Rejection::Finished);
         }
-        let player = &mut self.players[seat.index()];
+        let player = &mut self.players[seat];
+        if player.forfeited {
+            return Err(Rejection::Disconnected);
+        }
         if epoch <= player.epoch {
             return Err(Rejection::InvalidEpoch);
         }
@@ -635,10 +798,14 @@ impl RuleEngine {
         }
         player.disconnected_at = None;
         player.epoch = epoch;
-        self.public_revision[seat.index()] += 1;
+        if matches!(self.mode, RoundMode::Race(_)) {
+            self.bump_all();
+        } else {
+            self.public_revision[seat] += 1;
+        }
         self.advance(now)
     }
-    pub fn abort(&mut self, now: u64) -> Result<(), Rejection> {
+    fn abort(&mut self, now: u64) -> Result<(), Rejection> {
         self.advance(now)?;
         if self.end.is_none() {
             self.finish(EndReason::ServerFailure, None, now);

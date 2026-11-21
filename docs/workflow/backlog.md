@@ -1,5 +1,21 @@
 # 마일스톤·작업 백로그
 
+## M7 공개·초대 방과2~4인 레이스 (2026-11-21)
+
+사용자의 명시 선택:2~4명 개인전·기존 규칙 유지·첫 완주 즉시 종료·나머지 열린 안전칸 수 순위·무작위 상대 공격. [공식 조사](../research/2026-11-21-multiplayer-room-flows.md)·[설계20](../design/20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)·[승인 기록](approval-record.md)을 따른다. 과거1:1/배틀로얄 범위 제외는 이 새 레이스 승인을 제한하지 않으며 탈락제를 새로 추가하지 않는다. 기존 구현/운영 출구와 다인전 구현 예정은 구분한다.
+
+| 이슈 | 단계 / 선행 | 요구·시나리오 | 완료 조건 |
+|---|---|---|---|
+| [#243](https://github.com/crystal23733/search-mine/issues/243) | M7 상위 | FR17/18·TS37~45 | 아래 하위 모두 병합/종료·실제 통합 출구. 문서만으로 종료하지 않음 |
+| [#244](https://github.com/crystal23733/search-mine/issues/244) | 설계 / #241·PR242 | FR01~18/NFR01~08·TS37~45 | 조사/현재 코드 대조·사용자 선택·구체 room/rank/random/권한/복구·추적·검사와 설계 기록 병합 |
+| [#245](https://github.com/crystal23733/search-mine/issues/245) | Rust core / #244 | FR02~05/14/15/18·TS40/41/45 | 단일 규칙2~4인·첫 clear 순위·무작위 한명/dedup·원래 source 반사·두 lie·기존 회귀 |
+| [#246](https://github.com/crystal23733/search-mine/issues/246) | 방 정책/v2 DTO / #245 | FR07/17·TS37~39/42/43/45 | 공개/초대·revision/ready/start/정원·host/만료·고정 round/같은 방 반복·Rust 생성 타입 |
+| [#247](https://github.com/crystal23733/search-mine/issues/247) | 권위 runtime/저장 / #246 | FR01/02/07/14/16~18·TS37~43/45 | N권한/전량 입장·public/auth HTTP/WS·forward migration·실PG/복구/삭제/90일·main |
+| [#248](https://github.com/crystal23733/search-mine/issues/248) | 8언어 web / #247 | FR07/10~14/17/18·TS37~45 | 방 찾기/생성/초대/준비·다인 보드요약/순위·같은 방 다음 판·OAuth/PWA/광고0 |
+| [#249](https://github.com/crystal23733/search-mine/issues/249) | 실제 통합 출구 / #248 | FR01~18/NFR01~08·TS01~45 |4계정 실DB/HTTPS/WS·PC/mobile·재대결/장애/권리·기존 회귀/전체CI. 성능26·실기기223·사람27 별도 |
+
+현재 #244 설계를 먼저 수행한다. 하위 제품은 선행 PR 병합/이슈 종료 뒤 시나리오 Red→Green→리뷰·checks·squash merge 순서로 진행한다. 기존 실제 OAuth/CMP/기기/운영/사람 검수 이슈는 별도다.
+
 > 기본 브랜치 develop. 작업은 선행 PR 병합/이슈 종료 후 시작하고 사용자 위임에 따라 에이전트 리뷰·검사를 마친 PR을 병합한다.
 
 ## #241 설계 정합성 보강 (2026-11-21)
@@ -27,6 +43,7 @@
 | [M4 · 동의·광고·다국어 공개 준비](https://github.com/crystal23733/search-mine/milestone/5) | Google 인증 CMP·8언어 정책·실제ads.txt·자동광고/문서 경계·SEO. 동의 거부/실패 무차단. |
 | [M5 · 홈서버 운영 검증](https://github.com/crystal23733/search-mine/milestone/6) | Compose·Tunnel·DB 격리·별도 매체 백업·복구/롤백·실측 용량·회선 약관 확인. |
 | [M6 · 베타와 현금 손익 검증](https://github.com/crystal23733/search-mine/milestone/7) | 플레이테스트·수치튜닝·NSM·광고 정산/전력 실측. 28일 현금 손익을 평가하고 확장은 사용자 결정. |
+| [M7 · 다인전 방과 반복 대전](https://github.com/crystal23733/search-mine/milestone/8) | 공개/초대2~4명·첫 완주 고정 순위·무작위 공격/원래 반사·같은 방 재대결·단일 코어/실DB·WS/8언어·기존 회귀. |
 
 ## 이슈
 

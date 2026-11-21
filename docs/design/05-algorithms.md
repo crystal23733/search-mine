@@ -1,5 +1,7 @@
 # 05. 생성·추론·간파·봇 알고리즘
 
+> 2026-11-21 다인전 확장: 이 문서의 간파 알고리즘 계약을 바탕으로 [설계20](20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)의 FR17/18·TS37~45를 추가한다. 새2~4인 경로는 단일 코어/최소 공개/기존 호환을 검증한 뒤 활성화하며 설계만으로 구현 완료를 주장하지 않는다.
+
 > 대응: FR02/04/06, NFR04 · 생성과 공개 후보 전략의 실행 결과는 [#5](../verification/05-generation-solver.md)·[#6](../verification/06-lie-certification.md)에 기록했다. 전체 출시·재미·실호스트 검증은 남아 있다.
 
 ## 결정론과 노게스 생성

@@ -1,5 +1,13 @@
 # 17. 사용자·Job Stories
 
+2026-11-21 [ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)·[설계20](../design/20-multiplayer-rooms.md)의 새 이야기:
+
+| ID | 사용자 이야기 | 인수 조건 / 시나리오 |
+|---|---|---|
+| US17 | 친구/방문자로서 공개 방을 찾거나 초대해 같은 사람들과 반복 대전한다 | 공개/초대·2/3/4·명시 참가·준비/방장 시작·역할/정원/만료·같은 방 다음 판 / TS37~39/42~45 |
+| US18 | 대전자로서 무작위 숫자 공격에 대응하고 확정된 다인 순위를 본다 | 첫 완주 즉시 전원 고정·열린 안전칸 수/동점·피격자 합계2lie·원래 source 반사·N명 저장/복구 / TS40/41/43~45 |
+
+
 > 적용: pm-execution:user-stories + job-stories · 입력: [PRD](16-PRD.md)
 > Card=각 행의 이야기, Conversation=설계 링크의 경계·예외, Confirmation=인수 조건. INVEST 기준으로 이슈를 나누며 실제 의존성은 로드맵에 명시한다.
 

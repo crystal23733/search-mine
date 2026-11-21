@@ -14,7 +14,7 @@ M0 설계·작업 체계와 M1 코어, M2 웹 #10~14가 develop에 병합됐고 
 
 ## 제품 불변 조건
 
-웹 PC/모바일 전용, 1:1 동일 판 대전·봇·데일리, 자체 광고만, 결제 없음. 집 미니 PC+Docker PostgreSQL+Cloudflare Tunnel, IP/DB/포트 공개 금지. 8언어 en/ko/ja/zh-CN/es/pt-BR/de/fr. 제품 규칙은 Rust 하나, online 정답/seed는 서버만 가진다. 광고는 게임 중 표시하지 않는다. OAuth 전용: Google·Apple·카카오·네이버 필수, provider port로 확장. 비밀번호 미보관; 이메일/실명/사진/전화 등 불필요한 권한·필드 없음. 내부 계정 ID·게임용 nickname·provider subject digest만; Apple 철회 credential 예외는 설계를 따른다. 무계정 로컬 연습은 서버 계정을 만들지 않는다.
+웹 PC/모바일 전용, 1:1 및2~4인 동일 판 레이스(ADR0110)·봇·데일리, 자체 광고만, 결제 없음. 집 미니 PC+Docker PostgreSQL+Cloudflare Tunnel, IP/DB/포트 공개 금지. 8언어 en/ko/ja/zh-CN/es/pt-BR/de/fr. 제품 규칙은 Rust 하나, online 정답/seed는 서버만 가진다. 광고는 게임 중 표시하지 않는다. OAuth 전용: Google·Apple·카카오·네이버 필수, provider port로 확장. 비밀번호 미보관; 이메일/실명/사진/전화 등 불필요한 권한·필드 없음. 내부 계정 ID·게임용 nickname·provider subject digest만; Apple 철회 credential 예외는 설계를 따른다. 무계정 로컬 연습은 서버 계정을 만들지 않는다.
 
 ## 설계와 구현
 

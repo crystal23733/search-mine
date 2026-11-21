@@ -1,5 +1,7 @@
 # 07. PostgreSQL 모델
 
+> 2026-11-21 다인전 확장: 이 문서의 저장/보존 계약을 바탕으로 [설계20](20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)의 FR17/18·TS37~45를 추가한다. 새2~4인 경로는 단일 코어/최소 공개/기존 호환을 검증한 뒤 활성화하며 설계만으로 구현 완료를 주장하지 않는다.
+
 > 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md): 본인 기록의 표시를 내 정보 조회로 전환하고 파일 export를 제거한다. 기존90일/원시 보존·동의 현재1행·계정/세션 cascade는 유지한다. 전적을 위해 새 영구 누적·개인정보나 동의 이력을 추가하지 않는다.
 
 #82의 [ADR0039](../adr/0039-authenticated-personal-result-read.md)은 ResultReader/Pg의 account+match 참여 조건과90일 미만 조회, 중복 seat/오염 fail-closed를 정의한다. seed를 선택하지 않으며 삭제 참여 행/없는 결과/다른 계정은 같은404다. 기존 migration과 저장 retry의 삭제 비복원 계약을 유지한다. 물리 정리 #25는 별도 출구다.

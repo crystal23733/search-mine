@@ -542,3 +542,58 @@ TS15/16/18/19/20/21/26/28/31/35/36: 허용context source/locked빌드·secret제
 #235 FR11/12/13/16·TS18/19/20/21/23/24/25/26/29/30/31/35/36 → [ADR0108](../adr/0108-full-viewport-update-interaction.md)·[ADR0109](../adr/0109-current-session-google-consent-evidence.md) → [WEB235-01~07](../verification/235-public-launch-wiring.md). 광고 요청 전 pause, 단일 태그/TCF 현재 문맥·목적 분리, 실제 DB의 현재 세션/CSRF/CAS/철회, 문서별 nonce/referrer와 오프라인 fallback,8언어 미게시/정책 escaping, active HTTP fixture 종료·PC/mobile viewport 장벽을 검증한다. 실제 Google SDK 성공으로 대체하지 않는다.
 
 #237 FR11·TS18/19/20/26/30/36 → [이름 결정](14-naming.md) → [NAME237-01~04](../verification/237-liar-minesweeper-name.md): 표시명·공유/설치·8언어·모바일 피복과 기존 설치/저장 식별자 유지 검증.
+
+
+## TS37: 공개 방 발견과 초대 복귀 (US17)
+
+- 목적/전제: 공개/초대·만석/빈 방과 로그인 전 방문자.
+- 행동/결과: 공개 목록 조회→초대 방/코드/내부 ID 없음; 생성/직접 코드 참가→명시 OAuth/닉네임/튜토리얼 뒤 같은 목적지 복귀; 방문만으로 자동 참가 없음.
+- 예외/경계: stale 목록/만석/만료/32grapheme·2KiB/32KiB·목록20/제한을 구분. RoomPort/RoomService·HTTP/8언어 browser.
+
+## TS38: 방 membership·역할·준비와 정원 (US17)
+
+- 목적/전제: 정원2/3/4, 계정은 한 membership.
+- 행동/결과:4명까지 참가·5번째 full; 본인 ready만 변경; stale revision/타인/중복 자리 점유 거절; 설정/입퇴장 때 ready 초기화; 방장 이탈 승계.
+- 예외/경계: 추방자는 같은 방에 재입장 불가·bounded deny 목록, 방장/본인 위조/게임 중 추방 거절. 순수 RoomPolicy+현재세션/실PG.
+
+## TS39: N명 원자 준비와 시작 (US17)
+
+- 목적/전제:2~4명 ready와 보드 준비/권한 source 지연.
+- 행동/결과: 방장 start→roster/규칙 고정→N권한/전량 자원·journal ACK 뒤 countdown; 일부 미준비/비방장 start 거절.
+- 예외/경계: leave/unready/철회·capacity/보드 실패·old generation/중복 start·초기 WS 누락에서 판 일부만 시작하지 않는다. RoomService/Registry·실DB/TCP WS.
+
+## TS40: 다인 동일 판·무작위 공격과 원래 source 반사 (US18)
+
+- 목적/전제:2/3/4인·고정 RandomSource·합성된 두 lie와 proof worker.
+- 행동/결과: own projection만 같은 opening; 자기/DNF 제외 한 명 균등 선정; 지정 target 필드 거절; failed candidate는 게이지 보존·재추첨 없음; 같은 UUID는 RNG/효과 재소비0.
+- 예외/경계: 여러 source가 같은 victim에게 동시 공격해도 합계2상한; C의 지목은 그 lie의 원래 source만 반사; 다른 보드/공개 revision이 엉키지 않는다. RuleEngine/PolicyKnowledge·작은판 속성·실WS.
+
+## TS41: 첫 완주 순간 순위·공동 순위·이탈 (US18)
+
+- 목적/전제:3/4명의 다른 진행·동률·명시이탈·끊김과동시 입력.
+- 행동/결과: 첫 clear commit에서 모든 opened_safe/결과 고정→나머지 칸 수 내림차순·1,2,2,4 공동 순위; 늦은 open/attack/재전송은 순위 불변. 시간 만료 동점 공동1위·opening 자체 전원 완주는 공동1위.
+- 예외/경계: 지뢰/깃발/실수 횟수 타이브레이크 없음; DNF와 정상순위 분리; 같은 tick의 전원 유예 만료 abandoned·서버 장애 abort/null; 기존2인 승패 유지. Core/Clock/실PG.
+
+## TS42: 같은 방 재대결과 진행 중 입장 (US17)
+
+- 목적/전제: 진행/결과 상태·새 계정과 오래된 응답.
+- 행동/결과: 여유석 새 참가→다음 판 대기만; 기존 round roster/seat 변경 없음; 결과→같은 room의 모두 unready→명시 start로 새 round/seed/countdown.
+- 예외/경계: old ready/명령/결과/worker/나가기 ACK가 새 판을 덮지 않는다. 빈방 즉시 닫힘·poll로 idle만료 연장0. RoomPolicy/OnlineController·실WS/browser.
+
+## TS43: 최소 공개·권한 철회·N인 결과 보존 (US17/US18)
+
+- 목적/전제:4계정+타계정·방장/비방장·삭제/철회/재시작.
+- 행동/결과: 현재 membership/round authority만 명령/개인 결과 접근; 공개 카드/roster는 게임 닉네임과 bounded 요약만; 삭제/90일/원래 보존 기준·retry 불복원 유지.
+- 예외/경계: 타인 셀/flags/seed/lie source/RNG/초대코드·내부계정ID/세션은 공개·cache·로그0. 삭제닉네임 익명표지·과거 순위 재판정0. 실PG/HTTP/WS·DTO 검사.
+
+## TS44: 8언어 다인 방 UI·접근성과 광고/PWA 경계 (US17/US18)
+
+- 목적/전제:8언어·360/390/PC·키보드/터치·Google 준비 문서/PWA.
+- 행동/결과: 방 목록/빈상태/초대/준비/방장/진행/공동순위를 텍스트로 식별; 본인보드+상대요약; locale 전환/새로고침은 같은 membership·서버순위 유지.
+- 예외/경계: 수평 넘침/버튼 겹침·타인 보드 노출0; 새 보호문서의 로비~결과 광고 태그/요청0·online 응답/cache0·파일 다운로드0; SW prepare ACK/입력 장벽·실패 무차단. DOM/실HTTPS browser·기기223 별도.
+
+## TS45: 수용량·장애 복구와 기존 모드 호환 (US17/US18)
+
+- 목적/전제: 상한의 방/4인 WS·proof 지연·DB writer loss/정상 drain.
+- 행동/결과: N석/권한을 전량 예약하거나 시작 거절; bounded 목록/송신/작업·late proof 폐기; 재시작의 N인 원래 시작시각/abort/자원 정리·정확히 한 번 저장.
+- 예외/경계: 기존1:1/local bot/공식daily/내정보·v1/과거 초대·migration checksum 회귀0. CPU/메모리/동접·RTT 실측은26. Rust/native/WASM·실PG/HTTP/WS·전체CI.

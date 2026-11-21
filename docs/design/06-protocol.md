@@ -1,5 +1,7 @@
 # 06. HTTP·WebSocket 프로토콜
 
+> 2026-11-21 다인전 확장: 이 문서의 기존 v1 프로토콜 계약을 바탕으로 [설계20](20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)의 FR17/18·TS37~45를 추가한다. 새2~4인 경로는 단일 코어/최소 공개/기존 호환을 검증한 뒤 활성화하며 설계만으로 구현 완료를 주장하지 않는다.
+
 > 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md)이 본인 파일 export 계약을 대체한다. 새 overview/history는 #177 구현 대상이며 아래 기존 `/me/export`, `/me/games/export`, `/me/games/replay`는 #178에서 제거할 legacy 경로다. 현재 코드에서 이미 제거됐다는 뜻은 아니다.
 
 #82의 [ADR0039](../adr/0039-authenticated-personal-result-read.md)은 `POST /api/v1/results`의 strict256byte `{v:1,match_id}`와 본인 최소 결과 DTO를 정의한다. actor와 독립된 저장 결과 조회이며 uniform404를 진행/승패로 해석하지 않는다. 저장 hash에 현재 rules를 붙이지 않는다.

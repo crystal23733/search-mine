@@ -20,7 +20,7 @@ DESIGN = [
     "07-database", "08-client-architecture", "09-screens-ux", "10-i18n",
     "11-ads-consent", "12-security", "13-performance", "14-testing-strategy",
     "15-repo-structure", "16-observability-ops", "17-auth-privacy", "18-design-layout",
-    "19-design-evolution",
+    "19-design-evolution", "20-multiplayer-rooms",
 ]
 
 
@@ -74,7 +74,7 @@ def validate():
             errors.append("Approval reviewed_commit must be a full commit SHA")
     scenarios = (ROOT / "docs/product/19-test-scenarios.md").read_text(encoding="utf-8")
     checklist = (ROOT / "docs/design/00-review-checklist.md").read_text(encoding="utf-8")
-    for number in range(1, 37):
+    for number in range(1, 46):
         scenario = f"TS{number:02d}"
         if f"## {scenario}:" not in scenarios or scenario not in checklist:
             errors.append(f"Scenario lacks definition or trace: {scenario}")
@@ -82,7 +82,7 @@ def validate():
         print(error, file=sys.stderr)
     if errors:
         return 1
-    print(f"Validated {len(files)} Markdown files, {len(PRODUCT)} product documents, {len(DESIGN) - 1} designs, 36 scenario traces.")
+    print(f"Validated {len(files)} Markdown files, {len(PRODUCT)} product documents, {len(DESIGN) - 1} designs, 45 scenario traces.")
     return 0
 
 

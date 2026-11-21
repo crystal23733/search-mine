@@ -35,3 +35,19 @@ pub fn shuffle<T>(values: &mut [T], random: &mut (impl RandomSource + ?Sized)) {
         values.swap(index, chosen);
     }
 }
+
+/// Draw one uniform index from a small range with a fixed retry budget.
+pub(crate) fn sample_index(
+    count: usize,
+    random: &mut (impl RandomSource + ?Sized),
+) -> Option<usize> {
+    if count == 0 {
+        return None;
+    }
+    let upper = count as u64;
+    let threshold = upper.wrapping_neg() % upper;
+    (0..8)
+        .map(|_| random.next_u64())
+        .find(|&value| value >= threshold)
+        .map(|value| (value % upper) as usize)
+}

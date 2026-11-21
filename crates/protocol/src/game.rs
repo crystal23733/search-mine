@@ -275,9 +275,10 @@ pub fn from_projection(projection: &Projection, viewer: Seat) -> GameView {
 impl From<Rejection> for PublicError {
     fn from(error: Rejection) -> Self {
         match error {
-            Rejection::InvalidBoard | Rejection::InvalidRules | Rejection::AttackUnavailable => {
-                Self::Unavailable
-            }
+            Rejection::InvalidBoard
+            | Rejection::InvalidRules
+            | Rejection::InvalidPlayerCount
+            | Rejection::AttackUnavailable => Self::Unavailable,
             Rejection::InvalidTime => Self::InvalidTime,
             Rejection::NotStarted => Self::NotStarted,
             Rejection::Finished => Self::Finished,
@@ -286,7 +287,7 @@ impl From<Rejection> for PublicError {
             Rejection::InvalidSequence => Self::InvalidSequence,
             Rejection::CommandConflict => Self::Conflict,
             Rejection::CommandLimit => Self::CommandLimit,
-            Rejection::InvalidCell => Self::InvalidCell,
+            Rejection::InvalidCell | Rejection::InvalidSeat => Self::InvalidCell,
             Rejection::AlreadyOpen => Self::AlreadyOpen,
             Rejection::Flagged => Self::Flagged,
             Rejection::Stunned => Self::Stunned,

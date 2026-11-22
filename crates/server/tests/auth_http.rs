@@ -182,41 +182,45 @@ async fn invitation_callback(
 }
 #[tokio::test]
 async fn invitation_keeps_each_locale_and_returns_new_or_named_accounts_to_the_same_code() {
-    for named in [false, true] {
-        for locale in ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"] {
-            let store = Store::default();
-            if named {
-                *store.0.login_nickname.lock().unwrap() = Some(Nickname::parse("Player").unwrap());
-            }
-            let router = router(store.clone());
-            let (browser, bootstrap) = bootstrap(&router, None).await;
-            let state = invitation_start(
+    for destination in ["friends", "rooms"] {
+        for named in [false, true] {
+            for locale in ["en", "ko", "ja", "zh-CN", "es", "pt-BR", "de", "fr"] {
+                let store = Store::default();
+                if named {
+                    *store.0.login_nickname.lock().unwrap() =
+                        Some(Nickname::parse("Player").unwrap());
+                }
+                let router = router(store.clone());
+                let (browser, bootstrap) = bootstrap(&router, None).await;
+                let state = invitation_start(
                 &router,
                 &browser,
                 bootstrap["csrf"].as_str().unwrap(),
                 &format!(
-                    r#"{{"locale":"{locale}","return_path":"friends","invite_code":"ABCD2345"}}"#
+                    r#"{{"locale":"{locale}","return_path":"{destination}","invite_code":"ABCD2345"}}"#
                 ),
             )
             .await;
-            let response = invitation_callback(&router, &browser, &state, "code=valid-code").await;
-            assert_eq!(response.status(), StatusCode::SEE_OTHER);
-            assert_eq!(
-                response.headers()[header::LOCATION],
-                if named {
-                    format!("/{locale}/friends?code=ABCD2345")
-                } else {
-                    format!("/{locale}/onboarding?return_path=friends&code=ABCD2345")
-                }
-            );
-            assert_eq!(response.headers()["cache-control"], "no-store");
-            assert!(store.0.transactions.lock().unwrap().is_empty());
-            assert_eq!(
-                invitation_callback(&router, &browser, &state, "code=valid-code")
-                    .await
-                    .status(),
-                StatusCode::BAD_REQUEST
-            );
+                let response =
+                    invitation_callback(&router, &browser, &state, "code=valid-code").await;
+                assert_eq!(response.status(), StatusCode::SEE_OTHER);
+                assert_eq!(
+                    response.headers()[header::LOCATION],
+                    if named {
+                        format!("/{locale}/{destination}?code=ABCD2345")
+                    } else {
+                        format!("/{locale}/onboarding?return_path={destination}&code=ABCD2345")
+                    }
+                );
+                assert_eq!(response.headers()["cache-control"], "no-store");
+                assert!(store.0.transactions.lock().unwrap().is_empty());
+                assert_eq!(
+                    invitation_callback(&router, &browser, &state, "code=valid-code")
+                        .await
+                        .status(),
+                    StatusCode::BAD_REQUEST
+                );
+            }
         }
     }
 }

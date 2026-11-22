@@ -74,7 +74,7 @@ impl RoundLifecycle for Room {
     fn begin(&self, _: RoundKey, _: u64, _: &[ConnectionAuthority]) -> bool {
         true
     }
-    fn complete(&self, _: RoundKey, _: u64, _: bool) {}
+    fn complete(&self, _: RoundKey, _: u64, _: Option<liar_protocol::rooms::RoomResultSummary>) {}
 }
 
 #[tokio::test]

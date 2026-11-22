@@ -9,6 +9,7 @@ export const DOCUMENT_ROUTES = [
   "/daily/official",
   "/queue",
   "/friends",
+  "/rooms",
   "/results",
   "/me",
   "/me/history",

@@ -188,7 +188,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 })
         })
         .ok_or("fixture seed")?;
-    let lobby = LobbyService::new(
+    let connection_slots = ConnectionSlots::new(32).map_err(|_| "fixture WebSocket slots")?;
+    let lobby = LobbyService::new_with_round_connections(
         LobbyLimits {
             capacity: 32,
             workers: 2,
@@ -208,6 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             authorities,
             clock: clock.clone(),
         },
+        connection_slots.clone(),
     )
     .map_err(|_| "fixture lobby")?;
     let advance_clock = clock.clone();
@@ -246,7 +248,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(optional_event_router(Arc::new(PgOptionalEventStore::new(pool.clone(),clock.clone())),sessions.clone(),security.clone(),OptionalEventAuthentication{authorities:me_authorities,clock:clock.clone()},4).map_err(|_| "fixture optional event HTTP")?)
         .merge(daily_router(daily_repository,daily_workers,sessions.clone(),security,DailyAuthentication::new(daily_tickets,clock.clone()),4).map_err(|_| "fixture daily HTTP")?)
         .merge(rankings)
-        .merge(websocket_router(ORIGIN, sessions, registry, 32).map_err(|_| "fixture WebSocket")?)
+        .merge(websocket_router_with_slots(ORIGIN, sessions, registry, connection_slots).map_err(|_| "fixture WebSocket")?)
         .merge(
             Router::new()
                 .route("/__fixture/ready", get(|| async { "test-only" }))

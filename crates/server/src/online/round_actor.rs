@@ -4,7 +4,7 @@ use liar_core::game::{AnalysisResult, Rejection};
 use liar_protocol::{
     game::{AckStatus, PublicAction, PublicError},
     online::{OnlineError, RecordingStatus},
-    rooms::ROOM_PROTOCOL_VERSION,
+    rooms::{ROOM_PROTOCOL_VERSION, RoomResultSummary},
     rounds::{RoundEvent, RoundInput, RoundPayload},
 };
 use std::{
@@ -17,7 +17,7 @@ use uuid::Uuid;
 pub trait RoundLifecycle: Send + Sync {
     fn contains(&self, key: RoundKey, account: Uuid) -> bool;
     fn begin(&self, key: RoundKey, now: u64, leases: &[ConnectionAuthority]) -> bool;
-    fn complete(&self, key: RoundKey, now: u64, started: bool);
+    fn complete(&self, key: RoundKey, now: u64, result: Option<RoomResultSummary>);
 }
 
 pub struct RoundAdmission {
@@ -686,7 +686,6 @@ impl Actor {
         if !stored {
             self.admission.journal.fail_closed();
         }
-        self.admission.lifecycle.complete(key, at, self.playing);
         let auth = &self.admission.authentication;
         for (seat, lease) in self.admission.leases.iter().enumerate() {
             if auth
@@ -697,20 +696,20 @@ impl Actor {
                 self.state.anonymize(seat);
             }
         }
+        let recording = if stored {
+            RecordingStatus::Saved
+        } else {
+            RecordingStatus::Failed
+        };
+        let summary = self
+            .playing
+            .then(|| self.state.view(0).and_then(|view| view.result))
+            .flatten()
+            .map(|result| RoomResultSummary { result, recording });
+        self.admission.lifecycle.complete(key, at, summary);
         for seat in 0..self.seats.len() {
             if let Some(view) = self.state.view(seat) {
-                self.emit(
-                    seat,
-                    RoundPayload::End {
-                        view,
-                        recording: if stored {
-                            RecordingStatus::Saved
-                        } else {
-                            RecordingStatus::Failed
-                        },
-                    },
-                    at,
-                );
+                self.emit(seat, RoundPayload::End { view, recording }, at);
             }
         }
     }

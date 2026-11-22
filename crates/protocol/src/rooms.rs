@@ -1,4 +1,5 @@
 //! Version 2 room commands and bounded public projections.
+use crate::{online::RecordingStatus, rounds::RoundResult};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
@@ -150,6 +151,12 @@ pub struct RoomRound {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, TS)]
+pub struct RoomResultSummary {
+    pub result: RoundResult,
+    pub recording: RecordingStatus,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, TS)]
 pub struct RoomView {
     pub room_id: String,
     pub revision: String,
@@ -163,6 +170,9 @@ pub struct RoomView {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub start_error: Option<RoomWireError>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub result_summary: Option<RoomResultSummary>,
     #[ts(type = "number | null")]
     pub expires_at_ms: Option<u64>,
 }
@@ -281,6 +291,7 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         RoomList::decl(config),
         RoomMember::decl(config),
         RoomRound::decl(config),
+        RoomResultSummary::decl(config),
         RoomView::decl(config),
         RoomPayload::decl(config),
         RoomResponse::decl(config),

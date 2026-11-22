@@ -16,6 +16,7 @@ import { documentRoute, documentStatus } from "./services/document-route";
 import { StatusPage } from "./pages/StatusPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { RoomsPage } from "./pages/RoomsPage";
 import { GameRoute } from "./pages/GameRoute";
 import { chooseLocale } from "./services/locale";
 import type { AppServices } from "./services/ports";
@@ -117,6 +118,8 @@ export function App({ services }: { services: AppServices }) {
       />
     ) : route === "/" ? (
       <HomePage />
+    ) : route === "/rooms" ? (
+      <RoomsPage />
     ) : route === "/results" ? (
       <LatestResultPage />
     ) : ["/me", "/me/history", "/me/account", "/me/privacy"].includes(route) ? (

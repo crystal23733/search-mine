@@ -1,4 +1,15 @@
 import { isLocale, localizedPath, type Locale } from "./locale";
+
+function multiplayerInviteRoute(url: URL) {
+  const [, prefix, ...parts] = url.pathname.split("/");
+  const path = isLocale(prefix) ? `/${parts.join("/")}` : url.pathname;
+  return (
+    path === "/rooms" ||
+    ((path === "/login" || path === "/onboarding") &&
+      url.searchParams.get("return_path") === "rooms") ||
+    (path === "/tutorial" && url.searchParams.get("return") === "/rooms")
+  );
+}
 export interface NavigationPort {
   current(): URL;
   go(path: string, query?: Record<string, string | null>): void;
@@ -40,11 +51,19 @@ export function createNavigation(
     },
     go: (path, query) => {
       const url = new URL(browser.location.href);
+      const wasMultiplayer = multiplayerInviteRoute(url);
       const prefix = url.pathname.split("/")[1];
       url.pathname = `/${isLocale(prefix) ? prefix : "en"}${path}`;
       for (const [key, value] of Object.entries(query ?? {})) {
         if (value === null) url.searchParams.delete(key);
         else url.searchParams.set(key, value);
+      }
+      if (wasMultiplayer && !multiplayerInviteRoute(url)) {
+        url.searchParams.delete("code");
+        if (url.searchParams.get("return_path") === "rooms")
+          url.searchParams.delete("return_path");
+        if (url.searchParams.get("return") === "/rooms")
+          url.searchParams.delete("return");
       }
       update(url);
     },

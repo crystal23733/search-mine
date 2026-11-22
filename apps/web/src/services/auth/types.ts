@@ -39,7 +39,7 @@ export const PROVIDERS = [
 export type AuthProvider = (typeof PROVIDERS)[number]["id"];
 export type AuthIntent = "login" | "link" | "reauth";
 export type AuthReturn =
-  "home" | "daily" | "friends" | "settings" | "me" | "account";
+  "home" | "daily" | "friends" | "rooms" | "settings" | "me" | "account";
 export type AuthCode =
   | "auth_required"
   | "auth_invalid"
@@ -126,6 +126,7 @@ export function isProvider(value: unknown): value is AuthProvider {
 export function authReturn(value: string | null): AuthReturn {
   return value === "daily" ||
     value === "friends" ||
+    value === "rooms" ||
     value === "settings" ||
     value === "me" ||
     value === "account"

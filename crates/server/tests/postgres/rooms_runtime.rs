@@ -221,6 +221,19 @@ async fn actual_main_four_rooms_sockets_share_one_start_and_record_one_ranked_re
     let lobby = rooms(&http, &origin, &users[0], json!({"type":"status"})).await;
     assert_eq!(lobby["phase"], "results");
     assert_eq!(lobby["room_id"], room_id);
+    let saved_summary = &lobby["result_summary"];
+    assert_eq!(saved_summary["recording"], "saved");
+    assert_eq!(saved_summary["result"]["winner"], 0);
+    assert_eq!(
+        saved_summary["result"]["standings"]
+            .as_array()
+            .unwrap()
+            .len(),
+        4
+    );
+    assert!(saved_summary["result"]["standings"][1]["nickname"].is_null());
+    let spectator = rooms(&http, &origin, &users[3], json!({"type":"status"})).await;
+    assert!(spectator["result_summary"].is_null());
     drop(sockets);
 
     let mut view = lobby;

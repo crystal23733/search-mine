@@ -106,6 +106,22 @@ const numeric = struct({
   state: one("closed", "safe", "mine"),
   number: optional(int(8)),
 });
+export const decodeOwnBoard = struct({
+  cells: list(cell, 256, 1),
+  gauge: u16,
+  stun_ms: u32,
+  history: list(list(numeric, 256), 8192),
+  stats: struct({
+    mistakes: u16,
+    accusation_attempts: u16,
+    correct_accusations: u16,
+  }),
+});
+export const decodeOpponentProgress = struct({
+  opened_safe: u16,
+  stun_ms: u32,
+  reconnect_ms: optional(u32),
+});
 const game = struct({
   v: one(PROTOCOL_VERSION),
   rules: decodeRulesSnapshot,
@@ -113,22 +129,8 @@ const game = struct({
   phase: one("countdown", "playing", "finished", "aborted", "cancelled"),
   countdown_ms: u32,
   remaining_ms: u32,
-  own: struct({
-    cells: list(cell, 256, 1),
-    gauge: u16,
-    stun_ms: u32,
-    history: list(list(numeric, 256), 8192),
-    stats: struct({
-      mistakes: u16,
-      accusation_attempts: u16,
-      correct_accusations: u16,
-    }),
-  }),
-  opponent: struct({
-    opened_safe: u16,
-    stun_ms: u32,
-    reconnect_ms: optional(u32),
-  }),
+  own: decodeOwnBoard,
+  opponent: decodeOpponentProgress,
   result: optional(
     struct({
       reason: one(

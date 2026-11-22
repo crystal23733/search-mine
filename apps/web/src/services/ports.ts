@@ -18,6 +18,7 @@ import type { DailyChallengeApi } from "./daily/official";
 import type { ConsentPort } from "./consent";
 import type { MePort } from "./me/types";
 import type { ConsentControlPort } from "./privacy/types";
+import type { RoomPort } from "./rooms/types";
 export interface AppServices {
   install: InstallPort;
   publicSiteOrigin?: string;
@@ -27,6 +28,7 @@ export interface AppServices {
   dailyChallenge: DailyChallengeApi;
   dailyRankings: DailyApi["rankings"];
   online: OnlinePort;
+  rooms?: RoomPort;
   auth: AuthPort;
   authEffects: AuthEffects;
   pendingSubmissions: PendingSubmissionsPort;

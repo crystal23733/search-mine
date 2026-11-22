@@ -257,6 +257,22 @@ render(
             (url) => new WebSocket(url),
           )(...args),
       },
+      rooms: {
+        list: async (...args) =>
+          (await import("./services/rooms/http"))
+            .createRoomsHttp(account.auth, window.fetch.bind(window))
+            .list(...args),
+        command: async (...args) =>
+          (await import("./services/rooms/http"))
+            .createRoomsHttp(account.auth, window.fetch.bind(window))
+            .command(...args),
+        connect: async (...args) =>
+          (await import("./services/rooms/socket")).createRoundSocket(
+            account.auth,
+            window.location.origin,
+            (url) => new WebSocket(url),
+          )(...args),
+      },
       authEffects: account.effects,
       pendingSubmissions,
       activity,

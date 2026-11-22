@@ -108,6 +108,8 @@ pub enum ReturnPath {
     Daily,
     Friends,
     FriendsInvite(crate::room_code::RoomCode),
+    Rooms,
+    RoomsInvite(crate::room_code::RoomCode),
     Settings,
     Me,
     Account,
@@ -118,6 +120,7 @@ impl ReturnPath {
             Self::Home => "home",
             Self::Daily => "daily",
             Self::Friends | Self::FriendsInvite(_) => "friends",
+            Self::Rooms | Self::RoomsInvite(_) => "rooms",
             Self::Settings => "settings",
             Self::Me => "me",
             Self::Account => "account",
@@ -128,6 +131,7 @@ impl ReturnPath {
             "home" => Ok(Self::Home),
             "daily" => Ok(Self::Daily),
             "friends" => Ok(Self::Friends),
+            "rooms" => Ok(Self::Rooms),
             "settings" => Ok(Self::Settings),
             "me" => Ok(Self::Me),
             "account" => Ok(Self::Account),
@@ -137,16 +141,22 @@ impl ReturnPath {
     pub fn parse_invite(value: &str, code: Option<&str>) -> Result<Self, AuthError> {
         let path = Self::parse(value)?;
         match (path, code) {
-            (Self::Friends, Some(code)) => Ok(Self::FriendsInvite(
-                crate::room_code::RoomCode::parse(code).map_err(|_| AuthError::Invalid)?,
-            )),
+            (Self::Friends | Self::Rooms, Some(code)) => {
+                let code =
+                    crate::room_code::RoomCode::parse(code).map_err(|_| AuthError::Invalid)?;
+                Ok(if path == Self::Friends {
+                    Self::FriendsInvite(code)
+                } else {
+                    Self::RoomsInvite(code)
+                })
+            }
             (path, None) => Ok(path),
             _ => Err(AuthError::Invalid),
         }
     }
     pub fn invite_code(&self) -> Option<&str> {
         match self {
-            Self::FriendsInvite(code) => Some(code.as_str()),
+            Self::FriendsInvite(code) | Self::RoomsInvite(code) => Some(code.as_str()),
             _ => None,
         }
     }

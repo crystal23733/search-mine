@@ -84,6 +84,7 @@ test("private, game, unrecognized and contaminated URLs never expose metadata UR
     "/en/daily/official",
     "/en/queue",
     "/en/friends?code=private-value",
+    "/en/rooms?code=ABCD2345",
     "/en/results",
     "/en/me",
     "/en/me/history",

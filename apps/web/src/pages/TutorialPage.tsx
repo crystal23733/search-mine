@@ -10,7 +10,14 @@ import { Button } from "../ui/atoms/Button";
 import { Card } from "../ui/atoms/Card";
 import { PlayBasics } from "../ui/molecules/PlayBasics";
 import { coordinate } from "../board/presentation";
-const returnPaths = new Set(["/", "/practice", "/friends", "/daily", "/queue"]);
+const returnPaths = new Set([
+  "/",
+  "/practice",
+  "/friends",
+  "/rooms",
+  "/daily",
+  "/queue",
+]);
 export function TutorialPage() {
   const { t, services } = useUi();
   const [round, setRound] = useState(0);

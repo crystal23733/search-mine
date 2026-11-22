@@ -2,6 +2,7 @@ import type { MessageKey } from "../../services/i18n";
 import { useState } from "preact/hooks";
 import {
   PROVIDERS,
+  authReturn,
   type AuthIntent,
   type AuthProvider,
 } from "../../services/auth/types";
@@ -40,16 +41,7 @@ export function ProviderButton({
           "return_path",
         )
       : null;
-  const return_path =
-    destination === "daily" ||
-    destination === "friends" ||
-    destination === "settings" ||
-    destination === "me" ||
-    destination === "account"
-      ? destination
-      : intent === "login"
-        ? "home"
-        : "account";
+  const return_path = intent === "login" ? authReturn(destination) : "account";
   return (
     <div class="provider-option">
       <Button
@@ -63,7 +55,8 @@ export function ProviderButton({
               intent,
               locale,
               return_path,
-              intent === "login" && return_path === "friends"
+              intent === "login" &&
+                (return_path === "friends" || return_path === "rooms")
                 ? (services.navigation.current().searchParams.get("code") ??
                     undefined)
                 : undefined,

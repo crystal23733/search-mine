@@ -38,6 +38,22 @@ export function MeRecords({ items }: { items: MeRecord[] }) {
               </summary>
               {item.kind === "online" ? (
                 <>
+                  {item.entry.race && (
+                    <p>
+                      {t("rooms.capacity")}{" "}
+                      {number(item.entry.race.participant_count)} ·{" "}
+                      {item.entry.race.forfeited
+                        ? t("rooms.dnf")
+                        : item.entry.race.rank === null
+                          ? t("match.result.abort")
+                          : t(
+                              item.entry.race.tied
+                                ? "rooms.tied"
+                                : "rooms.rank",
+                              { rank: number(item.entry.race.rank) },
+                            )}
+                    </p>
+                  )}
                   <p>
                     {t("me.elapsed")}:{" "}
                     {elapsed(item.entry.result.end_elapsed_ms)}
@@ -49,7 +65,11 @@ export function MeRecords({ items }: { items: MeRecord[] }) {
                       services.auth.read().account?.nickname ??
                       t("auth.nicknameUnset")
                     }
-                    onAgain={() => services.navigation.go("/queue")}
+                    onAgain={() =>
+                      services.navigation.go(
+                        item.entry.race ? "/rooms" : "/queue",
+                      )
+                    }
                   />
                 </>
               ) : (

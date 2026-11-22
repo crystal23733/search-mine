@@ -270,6 +270,31 @@ impl RoomPolicy {
         })
     }
 
+    pub(crate) fn result_names(&self, key: RoundKey) -> Option<Vec<Option<String>>> {
+        let room = self.rooms.get(&key.room_id)?;
+        let Phase::Results(round) = &room.phase else {
+            return None;
+        };
+        if round.key != key {
+            return None;
+        }
+        Some(
+            round
+                .accounts
+                .iter()
+                .map(|account| {
+                    room.members
+                        .iter()
+                        .find(|member| {
+                            member.account == *account
+                                && member.round_generation == Some(key.generation)
+                        })
+                        .map(|member| member.nickname.as_str().to_owned())
+                })
+                .collect(),
+        )
+    }
+
     pub fn list(
         &mut self,
         cursor: Option<&RoomListCursor>,
@@ -651,5 +676,64 @@ impl RoomPolicy {
         } else {
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn results_resolve_only_current_members_of_the_finished_generation() {
+        let mut policy = RoomPolicy::new(4).unwrap();
+        let host = Uuid::from_u128(1);
+        let guest = Uuid::from_u128(2);
+        let room = Uuid::from_u128(3);
+        let round = Uuid::from_u128(4);
+        policy
+            .create(
+                host,
+                Nickname::parse("Host player").unwrap(),
+                room,
+                RoomCode::parse("ABCD2345").unwrap(),
+                RoomSettings::new("Test room", RoomVisibility::Public, 4).unwrap(),
+                0,
+            )
+            .unwrap();
+        let joined = policy
+            .join_public(guest, Nickname::parse("Guest player").unwrap(), room, 0)
+            .unwrap();
+        let ready = policy.ready(host, room, &joined.revision, true, 1).unwrap();
+        let ready = policy.ready(guest, room, &ready.revision, true, 1).unwrap();
+        let key = policy
+            .start(host, room, &ready.revision, round, 1)
+            .unwrap()
+            .key;
+        policy.admit(key, 2).unwrap();
+        policy.begin_round(key, 2).unwrap();
+        assert!(policy.result_names(key).is_none());
+
+        policy.finish(key, 3).unwrap();
+        assert_eq!(
+            policy.result_names(key),
+            Some(vec![
+                Some("Host player".into()),
+                Some("Guest player".into())
+            ])
+        );
+        let mut outdated = key;
+        outdated.round_id = Uuid::from_u128(5);
+        assert!(policy.result_names(outdated).is_none());
+
+        let finished = policy.status(guest, 3).unwrap().unwrap();
+        policy.leave(guest, room, &finished.revision, 4).unwrap();
+        let rejoined = policy
+            .join_public(guest, Nickname::parse("Guest renamed").unwrap(), room, 4)
+            .unwrap();
+        assert!(rejoined.round.is_none());
+        assert_eq!(
+            policy.result_names(key),
+            Some(vec![Some("Host player".into()), None])
+        );
     }
 }

@@ -7,7 +7,10 @@ use crate::{
 };
 use liar_protocol::{
     online::OnlineError,
-    rooms::{RoomEntrance, RoomIntent, RoomList, RoomListCursor, RoomView, RoomWireError},
+    rooms::{
+        RoomEntrance, RoomIntent, RoomList, RoomListCursor, RoomResultSummary, RoomView,
+        RoomWireError,
+    },
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -31,6 +34,7 @@ pub(super) struct RoomState {
     pub(super) leases: HashMap<Uuid, ConnectionAuthority>,
     pub(super) jobs: HashMap<RoundKey, watch::Sender<bool>>,
     pub(super) failures: HashMap<Uuid, RoomWireError>,
+    pub(super) results: HashMap<Uuid, (RoundKey, RoomResultSummary)>,
     replies: HashMap<([u8; 32], Uuid), Reply>,
 }
 
@@ -41,6 +45,7 @@ impl RoomState {
             leases: HashMap::new(),
             jobs: HashMap::new(),
             failures: HashMap::new(),
+            results: HashMap::new(),
             replies: HashMap::new(),
         })
     }
@@ -78,6 +83,7 @@ impl RoomState {
         self.replies.retain(|_, reply| now < reply.expires_at);
         self.jobs.retain(|key, _| self.policy.is_preparing(*key));
         self.failures.retain(|room, _| self.policy.has_room(*room));
+        self.results.retain(|room, _| self.policy.has_room(*room));
         Ok(())
     }
 
@@ -86,6 +92,18 @@ impl RoomState {
         room.start_error = id(&room.room_id)
             .ok()
             .and_then(|id| self.failures.get(&id).copied());
+        if let Some(binding) = &room.round
+            && let Some((key, summary)) =
+                id(&room.room_id).ok().and_then(|id| self.results.get(&id))
+            && binding.round_id == key.round_id.to_string()
+            && let Some(names) = self.policy.result_names(*key)
+        {
+            let mut summary = summary.clone();
+            for entry in &mut summary.result.standings {
+                entry.nickname = names.get(usize::from(entry.seat)).cloned().flatten();
+            }
+            room.result_summary = Some(summary);
+        }
         Some(room)
     }
 

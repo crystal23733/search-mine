@@ -11,12 +11,12 @@ export class OnlineFailure extends Error {
     super(code);
   }
 }
-export interface OnlineConnection {
+export interface OnlineConnection<Input = OnlineInput, Event = OnlineEvent> {
   listen(
-    event: (value: OnlineEvent) => void,
+    event: (value: Event) => void,
     closed: (error: OnlineFailure) => void,
   ): void;
-  send(input: OnlineInput): boolean;
+  send(input: Input): boolean;
   close(): void;
 }
 export interface OnlinePort {

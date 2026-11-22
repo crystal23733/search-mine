@@ -4,6 +4,21 @@ const remove: Array<() => void> = [];
 afterEach(() => {
   for (const fn of remove.splice(0)) fn();
 });
+test("multiplayer invite codes survive their onboarding flow and never reach another document", () => {
+  history.replaceState(null, "", "/ko/rooms?code=ABCD2345");
+  const nav = createNavigation(window);
+  remove.push(nav.dispose);
+  nav.go("/login", { return_path: "rooms" });
+  nav.locale("fr");
+  expect(nav.current().searchParams.get("code")).toBe("ABCD2345");
+  nav.go("/onboarding", { return_path: "rooms" });
+  nav.go("/tutorial", { return: "/rooms", return_path: null });
+  nav.go("/rooms", { return: null });
+  expect(nav.current().pathname).toBe("/fr/rooms");
+  expect(nav.current().searchParams.get("code")).toBe("ABCD2345");
+  nav.go("/");
+  expect(nav.current().search).toBe("");
+});
 test("document guard runs before pushState and before any subscriber sees the target", () => {
   history.replaceState(null, "", "/ko/");
   let allow = false;

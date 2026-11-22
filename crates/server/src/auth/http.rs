@@ -360,7 +360,8 @@ async fn callback<S: AuthStore, V: CredentialVault, D: SubjectDigester, P: OAuth
         complete.or_else(|_| {
             let path = format!("/{locale}/login?error=auth_failed");
             redirect(match destination.invite_code() {
-                Some(code) => format!("{path}&return_path=friends&code={code}"),
+                Some(code) => format!("{path}&return_path={}&code={code}", destination.as_str()),
+                None if destination == ReturnPath::Rooms => format!("{path}&return_path=rooms"),
                 None => path,
             })
         })
@@ -372,7 +373,9 @@ fn return_url(locale: &str, destination: ReturnPath) -> String {
     match destination {
         ReturnPath::Home => format!("/{locale}/"),
         ReturnPath::Account => format!("/{locale}/me/account"),
-        ReturnPath::FriendsInvite(code) => format!("/{locale}/friends?code={}", code.as_str()),
+        ReturnPath::FriendsInvite(code) | ReturnPath::RoomsInvite(code) => {
+            format!("/{locale}/{}?code={}", destination.as_str(), code.as_str())
+        }
         _ => format!("/{locale}/{}", destination.as_str()),
     }
 }

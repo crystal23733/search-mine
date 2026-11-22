@@ -40,6 +40,10 @@ export function HomePage() {
               {t("home.friend")}
               <small>{t("home.friendHint")}</small>
             </NavLink>
+            <NavLink path="/rooms" class="button">
+              <Icon name="users" />
+              {t("rooms.title")}
+            </NavLink>
           </div>
           <div class="desktop-account">
             <AccountCard />

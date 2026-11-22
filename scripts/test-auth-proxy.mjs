@@ -44,7 +44,7 @@ const server = https.createServer(
   },
 );
 server.on("upgrade", (req, client, head) => {
-  if (req.url !== "/api/v1/ws") {
+  if (req.url !== "/api/v1/ws" && req.url !== "/api/v2/ws") {
     client.destroy();
     return;
   }
@@ -52,7 +52,7 @@ server.on("upgrade", (req, client, head) => {
   const upstream = http.request({
     hostname: "127.0.0.1",
     port: 3001,
-    path: "/api/v1/ws",
+    path: req.url,
     method: "GET",
     headers: { ...req.headers, host: "localhost:8443" },
   });

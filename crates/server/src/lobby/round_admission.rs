@@ -8,7 +8,10 @@ use crate::{
     rooms::{RoundKey, RoundReservation},
 };
 use liar_core::{game::multiplayer::PreparedRace, random::SeededRng};
-use liar_protocol::{online::OnlineError, rooms::RoomWireError};
+use liar_protocol::{
+    online::OnlineError,
+    rooms::{RoomResultSummary, RoomWireError},
+};
 use std::{
     sync::{Arc, Weak},
     time::Duration,
@@ -61,7 +64,7 @@ impl RoundLifecycle for RoomLifecycle {
             .unwrap_or(false)
     }
 
-    fn complete(&self, key: RoundKey, now: u64, started: bool) {
+    fn complete(&self, key: RoundKey, now: u64, result: Option<RoomResultSummary>) {
         let Some(service) = self.0.upgrade() else {
             return;
         };
@@ -72,8 +75,13 @@ impl RoundLifecycle for RoomLifecycle {
             return;
         }
         let now = service.now_ms().max(now);
-        if started {
-            let _ = inner.rooms.policy.finish(key, now);
+        if let Some(mut summary) = result {
+            if inner.rooms.policy.finish(key, now).is_ok() {
+                for entry in &mut summary.result.standings {
+                    entry.nickname = None;
+                }
+                inner.rooms.results.insert(key.room_id, (key, summary));
+            }
         } else if inner.rooms.policy.cancel_countdown(key, now).is_ok() {
             inner
                 .rooms

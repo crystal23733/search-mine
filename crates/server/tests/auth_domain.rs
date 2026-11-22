@@ -58,21 +58,25 @@ fn provider_and_return_boundaries_reject_arbitrary_identity_or_redirect_targets(
 }
 
 #[test]
-fn invitation_uses_the_shared_canonical_room_code_and_only_the_friends_destination() {
+fn invitation_uses_the_shared_canonical_room_code_and_only_the_room_destinations() {
     use liar_server::auth::ReturnPath;
     let invite = ReturnPath::parse_invite("friends", Some("ABCD2345")).unwrap();
     assert_eq!(invite.as_str(), "friends");
     assert_eq!(invite.invite_code(), Some("ABCD2345"));
+    let multiplayer = ReturnPath::parse_invite("rooms", Some("ABCD2345")).unwrap();
+    assert_eq!(multiplayer.as_str(), "rooms");
+    assert_eq!(multiplayer.invite_code(), Some("ABCD2345"));
+    assert_ne!(multiplayer, invite);
     assert_eq!(
         invite,
         ReturnPath::FriendsInvite(liar_server::lobby::RoomCode::parse("ABCD2345").unwrap())
     );
-    for path in ["home", "daily", "friends", "settings"] {
+    for path in ["home", "daily", "friends", "rooms", "settings"] {
         assert_eq!(
             ReturnPath::parse_invite(path, None).unwrap(),
             ReturnPath::parse(path).unwrap()
         );
-        if path != "friends" {
+        if !matches!(path, "friends" | "rooms") {
             assert!(ReturnPath::parse_invite(path, Some("ABCD2345")).is_err());
         }
     }
@@ -85,6 +89,7 @@ fn invitation_uses_the_shared_canonical_room_code_and_only_the_friends_destinati
         "ＡBCD2345",
     ] {
         assert!(ReturnPath::parse_invite("friends", Some(code)).is_err());
+        assert!(ReturnPath::parse_invite("rooms", Some(code)).is_err());
         assert!(liar_server::lobby::RoomCode::parse(code).is_err());
     }
 }

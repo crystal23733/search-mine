@@ -5,6 +5,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import { registerOnlineQuickTests } from "./helpers/online-quick";
 import { registerOnlineFriendsTests } from "./helpers/online-friends";
 import { registerMultiplayerRoomTests } from "./helpers/multiplayer-rooms";
+import { registerMultiplayerIntegrationTest } from "./helpers/multiplayer-integration";
 import { registerOnlineReconnectTests } from "./helpers/online-reconnect";
 import { registerAuthRecoveryTests } from "./helpers/auth-recovery";
 import { registerOnlineRecoveryTests } from "./helpers/online-recovery";
@@ -27,6 +28,9 @@ test.describe.configure({ mode: "serial" }); // The fixture's explicit clock con
 registerOnlineQuickTests(approve, login);
 registerOnlineFriendsTests(approve, login);
 registerMultiplayerRoomTests(approve, login);
+registerMultiplayerIntegrationTest(approve, (page, nickname) =>
+  login(page, "Google", undefined, nickname),
+);
 registerOnlineReconnectTests(approve, login);
 registerAuthRecoveryTests(approve, login);
 registerOnlineRecoveryTests(approve, login);
@@ -181,7 +185,12 @@ async function approve(context: BrowserContext, cancel = false) {
     },
   );
 }
-async function login(page: Page, provider = "Google", capture?: number) {
+async function login(
+  page: Page,
+  provider = "Google",
+  capture?: number,
+  nickname = "e\u0301探偵",
+) {
   await page.goto("/en/login");
   if (capture) {
     await mkdir(".tmp/auth-layout", { recursive: true });
@@ -192,7 +201,7 @@ async function login(page: Page, provider = "Google", capture?: number) {
   }
   await page.getByRole("button", { name: `Continue with ${provider}` }).click();
   await expect(page).toHaveURL(/\/en\/onboarding\?/);
-  await page.getByRole("textbox", { name: "Nickname" }).fill("e\u0301探偵");
+  await page.getByRole("textbox", { name: "Nickname" }).fill(nickname);
   if (capture)
     await page.screenshot({
       path: `.tmp/auth-layout/onboarding-${capture}.png`,

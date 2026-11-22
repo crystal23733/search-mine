@@ -1,4 +1,5 @@
 use crate::auth::{InvalidationBarrier, SessionInvalidator};
+use liar_core::game::multiplayer::MAX_RACE_PLAYERS;
 use liar_protocol::online::OnlineError;
 use std::{
     collections::HashMap,
@@ -37,6 +38,7 @@ struct Binding {
 struct LeaseIdentity {
     account: Uuid,
     token: Uuid,
+    hash: [u8; 32],
     owner: Weak<AuthorityRegistry>,
     released: AtomicBool,
 }
@@ -62,6 +64,9 @@ impl ConnectionAuthority {
     }
     pub fn token(&self) -> Uuid {
         self.identity.token
+    }
+    pub(crate) fn session_hash(&self) -> [u8; 32] {
+        self.identity.hash
     }
 }
 impl Drop for LeaseIdentity {
@@ -169,6 +174,7 @@ impl AuthorityRegistry {
         let identity = Arc::new(LeaseIdentity {
             account,
             token,
+            hash,
             owner: Arc::downgrade(self),
             released: AtomicBool::new(false),
         });
@@ -215,9 +221,13 @@ impl AuthorityRegistry {
         now: i64,
         operation: impl FnOnce() -> T,
     ) -> Result<T, OnlineError> {
-        if !(1..=2).contains(&leases.len())
+        if !(1..=MAX_RACE_PLAYERS).contains(&leases.len())
             || now < 0
-            || (leases.len() == 2 && leases[0].account() == leases[1].account())
+            || leases.iter().enumerate().any(|(index, lease)| {
+                leases[..index]
+                    .iter()
+                    .any(|previous| previous.account() == lease.account())
+            })
         {
             return Err(OnlineError::Unauthorized);
         }

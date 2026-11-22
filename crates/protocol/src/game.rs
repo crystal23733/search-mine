@@ -1,7 +1,7 @@
 //! Allowlisted wire projection. This module receives no secret Board or match engine.
 use liar_core::{
     board::ObservedCell,
-    game::{ActionStatus, EndReason, Projection, Rejection, Seat},
+    game::{ActionStatus, EndReason, OwnView, Projection, Rejection, Seat},
 };
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -184,14 +184,7 @@ pub fn cell_value(cell: ObservedCell) -> (CellState, Option<u8>) {
 }
 pub fn from_projection(projection: &Projection, viewer: Seat) -> GameView {
     let result = projection.end.map(|end| {
-        let reason = match end.reason {
-            EndReason::Clear => PublicEndReason::Clear,
-            EndReason::Timeout => PublicEndReason::Timeout,
-            EndReason::Forfeit => PublicEndReason::Forfeit,
-            EndReason::Abandoned => PublicEndReason::Abandoned,
-            EndReason::ServerFailure => PublicEndReason::ServerFailure,
-            EndReason::Cancelled => PublicEndReason::Cancelled,
-        };
+        let reason = end.reason.into();
         let outcome = match end.reason {
             EndReason::ServerFailure => Outcome::Abort,
             EndReason::Cancelled => Outcome::Cancelled,
@@ -221,55 +214,68 @@ pub fn from_projection(projection: &Projection, viewer: Seat) -> GameView {
         phase,
         countdown_ms: projection.countdown_ms,
         remaining_ms: projection.remaining_ms,
-        own: OwnBoard {
-            cells: projection
-                .own
-                .cells
-                .cells()
-                .iter()
-                .enumerate()
-                .map(|(i, &cell)| {
-                    let (state, number) = cell_value(cell);
-                    PublicCell {
-                        cell: i as u16,
-                        state,
-                        number,
-                        flagged: projection.own.flags[i],
-                    }
-                })
-                .collect(),
-            gauge: projection.own.gauge,
-            stun_ms: projection.own.stun_ms,
-            history: projection
-                .own
-                .history
-                .iter()
-                .map(|batch| {
-                    batch
-                        .iter()
-                        .map(|update| {
-                            let (state, number) = cell_value(update.observed);
-                            PublicNumericUpdate {
-                                cell: update.cell.0,
-                                state,
-                                number,
-                            }
-                        })
-                        .collect()
-                })
-                .collect(),
-            stats: MatchStats {
-                mistakes: projection.own.stats.mistakes,
-                accusation_attempts: projection.own.stats.accusation_attempts,
-                correct_accusations: projection.own.stats.correct_accusations,
-            },
-        },
+        own: own_board(&projection.own),
         opponent: OpponentProgress {
             opened_safe: projection.opponent.opened_safe,
             stun_ms: projection.opponent.stun_ms,
             reconnect_ms: projection.opponent.reconnect_ms,
         },
         result,
+    }
+}
+pub(crate) fn own_board(own: &OwnView) -> OwnBoard {
+    OwnBoard {
+        cells: own
+            .cells
+            .cells()
+            .iter()
+            .enumerate()
+            .map(|(i, &cell)| {
+                let (state, number) = cell_value(cell);
+                PublicCell {
+                    cell: i as u16,
+                    state,
+                    number,
+                    flagged: own.flags[i],
+                }
+            })
+            .collect(),
+        gauge: own.gauge,
+        stun_ms: own.stun_ms,
+        history: own
+            .history
+            .iter()
+            .map(|batch| {
+                batch
+                    .iter()
+                    .map(|update| {
+                        let (state, number) = cell_value(update.observed);
+                        PublicNumericUpdate {
+                            cell: update.cell.0,
+                            state,
+                            number,
+                        }
+                    })
+                    .collect()
+            })
+            .collect(),
+        stats: MatchStats {
+            mistakes: own.stats.mistakes,
+            accusation_attempts: own.stats.accusation_attempts,
+            correct_accusations: own.stats.correct_accusations,
+        },
+    }
+}
+impl From<EndReason> for PublicEndReason {
+    fn from(value: EndReason) -> Self {
+        match value {
+            EndReason::Clear => PublicEndReason::Clear,
+            EndReason::Timeout => PublicEndReason::Timeout,
+            EndReason::Forfeit => PublicEndReason::Forfeit,
+            EndReason::Abandoned => PublicEndReason::Abandoned,
+            EndReason::ServerFailure => PublicEndReason::ServerFailure,
+            EndReason::Cancelled => PublicEndReason::Cancelled,
+        }
     }
 }
 impl From<Rejection> for PublicError {

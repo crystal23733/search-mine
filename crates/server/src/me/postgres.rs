@@ -8,7 +8,7 @@ use std::{sync::Arc, time::Duration};
 use uuid::Uuid;
 
 // These projections deliberately exclude replay bodies, board truth and provider credentials.
-const ONLINE: &str = "SELECT r.id,p.account_id,r.rules_hash,r.end_elapsed_ms,r.reason,p.outcome,p.opened_safe,p.mistakes,p.accusations,p.correct_accusations,(EXTRACT(EPOCH FROM r.recorded_at)*1000000)::bigint AS recorded_us,(EXTRACT(EPOCH FROM COALESCE(r.retention_started_at,r.recorded_at))*1000000)::bigint AS retention_us,CASE WHEN other.account_id=$1 AND NOT other.is_bot THEN 2 ELSE 1 END::bigint AS human_seats,other.is_bot AS opponent_bot FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id LEFT JOIN online_match_players other ON other.match_id=p.match_id AND other.seat=1-p.seat WHERE p.account_id=$1 AND NOT p.is_bot AND r.recorded_at>=to_timestamp(0) AND r.recorded_at<=to_timestamp($2::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>=to_timestamp(0) AND COALESCE(r.retention_started_at,r.recorded_at)<=to_timestamp($2::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>to_timestamp($2::double precision)-interval '7776000 seconds' ORDER BY COALESCE(r.retention_started_at,r.recorded_at) DESC,r.recorded_at DESC,r.id DESC LIMIT 10001";
+const ONLINE: &str = "SELECT r.id,p.account_id,r.rules_hash,r.end_elapsed_ms,r.reason,p.outcome,p.opened_safe,p.mistakes,p.accusations,p.correct_accusations,(EXTRACT(EPOCH FROM r.recorded_at)*1000000)::bigint AS recorded_us,(EXTRACT(EPOCH FROM COALESCE(r.retention_started_at,r.recorded_at))*1000000)::bigint AS retention_us,CASE WHEN other.account_id=$1 AND NOT other.is_bot THEN 2 ELSE 1 END::bigint AS human_seats,other.is_bot AS opponent_bot,r.room_id IS NOT NULL AS is_room,r.participant_count,p.rank,p.tied,p.forfeited FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id LEFT JOIN online_match_players other ON r.room_id IS NULL AND other.match_id=p.match_id AND other.seat=1-p.seat WHERE p.account_id=$1 AND NOT p.is_bot AND r.recorded_at>=to_timestamp(0) AND r.recorded_at<=to_timestamp($2::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>=to_timestamp(0) AND COALESCE(r.retention_started_at,r.recorded_at)<=to_timestamp($2::double precision) AND COALESCE(r.retention_started_at,r.recorded_at)>to_timestamp($2::double precision)-interval '7776000 seconds' ORDER BY COALESCE(r.retention_started_at,r.recorded_at) DESC,r.recorded_at DESC,r.id DESC LIMIT 10001";
 const DAILY: &str = "SELECT c.id,c.daily_id,c.attempt_id,c.replay_digest,c.opened_safe,c.mistakes,c.replayed_elapsed_ms,c.verified_elapsed_ms,FLOOR(EXTRACT(EPOCH FROM c.completed_at))::bigint AS completed_at,(EXTRACT(EPOCH FROM c.completed_at)*1000000)::bigint AS completed_us,FLOOR(EXTRACT(EPOCH FROM c.replay_expires_at))::bigint AS replay_expires_at,FLOOR(EXTRACT(EPOCH FROM c.record_expires_at))::bigint AS record_expires_at,d.id AS definition_id,to_char(d.utc_date,'YYYY-MM-DD') AS utc_date,d.seed_version,d.rules_snapshot::text AS rules_snapshot,EXTRACT(EPOCH FROM d.published_at)::bigint AS published_at,EXTRACT(EPOCH FROM d.verification_expires_at)::bigint AS verification_expires_at,EXTRACT(EPOCH FROM (d.utc_date::timestamp AT TIME ZONE 'UTC'))::bigint AS starts_at FROM daily_completions c JOIN daily_definitions d ON d.id=c.daily_id WHERE c.account_id=$1 AND c.completed_at<=to_timestamp($2::double precision) AND c.completed_at>to_timestamp($2::double precision)-interval '7776000 seconds' AND c.record_expires_at>to_timestamp($2::double precision) ORDER BY c.completed_at DESC,c.id DESC LIMIT 10001";
 
 const IDENTITIES: &str = "SELECT provider,EXTRACT(EPOCH FROM linked_at)::bigint AS linked_at FROM auth_identities WHERE account_id=$1 ORDER BY provider LIMIT 5";
@@ -91,15 +91,37 @@ fn online(row: PgRow, account: Uuid) -> Result<MeOnlineRow, MeError> {
     }
     let primary: i64 = row.try_get("retention_us").map_err(db)?;
     let secondary: i64 = row.try_get("recorded_us").map_err(db)?;
-    let opponent = match row.try_get::<Option<bool>, _>("opponent_bot").map_err(db)? {
-        Some(true) => MeOpponent::Bot,
-        Some(false) => MeOpponent::Human,
-        None => MeOpponent::Unknown,
+    let race = if row.try_get::<bool, _>("is_room").map_err(db)? {
+        Some(MeRaceDetails {
+            participant_count: u8::try_from(
+                row.try_get::<i16, _>("participant_count").map_err(db)?,
+            )
+            .map_err(|_| MeError::Unavailable)?,
+            rank: row
+                .try_get::<Option<i16>, _>("rank")
+                .map_err(db)?
+                .map(u8::try_from)
+                .transpose()
+                .map_err(|_| MeError::Unavailable)?,
+            tied: row.try_get("tied").map_err(db)?,
+            forfeited: row.try_get("forfeited").map_err(db)?,
+        })
+    } else {
+        None
+    };
+    let opponent = if race.is_some() {
+        MeOpponent::Human
+    } else {
+        match row.try_get::<Option<bool>, _>("opponent_bot").map_err(db)? {
+            Some(true) => MeOpponent::Bot,
+            Some(false) => MeOpponent::Human,
+            None => MeOpponent::Unknown,
+        }
     };
     let saved = crate::results::stored(row).map_err(|_| MeError::Unavailable)?;
     let id = saved.match_id;
     let result = saved
-        .project(account, id)
+        .project_with_mode(account, id, race.is_some())
         .map_err(|_| MeError::Unavailable)?;
     Ok(MeOnlineRow {
         key: MeKey {
@@ -112,6 +134,7 @@ fn online(row: PgRow, account: Uuid) -> Result<MeOnlineRow, MeError> {
             opponent,
             retention_started_at: primary / 1000000,
             recorded_at: secondary / 1000000,
+            race,
         },
     })
 }

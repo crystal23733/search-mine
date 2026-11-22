@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 use tokio_tungstenite::{connect_async, tungstenite::client::IntoClientRequest};
 
 pub(super) struct User {
-    id: Uuid,
+    pub(super) id: Uuid,
     pub(super) cookie: String,
     pub(super) csrf: String,
 }
@@ -133,7 +133,7 @@ async fn result(client: &Client, origin: &str, user: &User, id: Uuid) -> reqwest
         .await
         .unwrap()
 }
-async fn spawn(pool: &sqlx::PgPool) -> (ObservedServer, String) {
+pub(super) async fn spawn(pool: &sqlx::PgPool) -> (ObservedServer, String) {
     let (mut server, origin) = ObservedServer::spawn(pool).await;
     tokio::time::timeout(Duration::from_secs(8), async {
         loop {

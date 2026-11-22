@@ -43,6 +43,7 @@ pub(super) struct LobbyRate {
     accounts: HashMap<Uuid, Entry>,
     capacity: usize,
     last: i64,
+    public: Window,
 }
 impl LobbyRate {
     pub fn new(capacity: usize) -> Self {
@@ -51,6 +52,7 @@ impl LobbyRate {
             accounts: HashMap::new(),
             capacity,
             last: 0,
+            public: Window { start: 0, count: 0 },
         }
     }
     fn advance(&mut self, now: i64) -> Result<(), LobbyErrorCode> {
@@ -86,6 +88,14 @@ impl LobbyRate {
             entry.joins.permit(now, 60, 5)?;
         }
         Ok(())
+    }
+
+    pub fn public_list(&mut self, now: i64) -> Result<(), LobbyErrorCode> {
+        if now < 0 || now < self.last {
+            return Err(LobbyErrorCode::Unavailable);
+        }
+        self.last = now;
+        self.public.permit(now, 1, 32)
     }
 }
 #[cfg(test)]

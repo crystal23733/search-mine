@@ -7,9 +7,10 @@ use liar_core::{
 use liar_protocol::{
     game::PublicEndReason,
     online::{OnlineError, OnlinePayload},
+    rooms::{RoomEntrance, RoomIntent, RoomOptions, RoomPhase, RoomVisibility, RoomWireError},
 };
 use liar_server::{
-    auth::{AuthClock, SessionInvalidator},
+    auth::{AuthClock, Nickname, SessionInvalidator},
     lobby::*,
     online::*,
 };
@@ -40,6 +41,7 @@ struct Journal {
     held: AtomicBool,
     hold_first: AtomicBool,
     registered: Mutex<Vec<ActiveMatch>>,
+    room_registered: Mutex<Vec<ActiveRace>>,
     discarded: Mutex<Vec<Uuid>>,
     wake: tokio::sync::Notify,
     failed: AtomicUsize,
@@ -86,6 +88,18 @@ impl AdmissionJournal for Journal {
                 Err(OnlineError::Unavailable)
             } else {
                 Ok(())
+            }
+        })
+    }
+    fn register_race(&self, active: ActiveRace) -> PortFuture<'_, Result<SaveResult, OnlineError>> {
+        self.room_registered.lock().unwrap().push(active);
+        Box::pin(async move {
+            loop {
+                let changed = self.wake.notified();
+                if !self.held.load(Ordering::SeqCst) {
+                    return Ok(SaveResult::Saved);
+                }
+                changed.await;
             }
         })
     }
@@ -180,6 +194,233 @@ struct LobbyHarness {
     inner: Arc<LobbyService>,
     authentication: LobbyAuthentication,
 }
+
+#[tokio::test]
+async fn room_round_claims_all_connection_slots_and_accounts_or_none() {
+    let gate = Gate::new(true, false);
+    let fixture = Fixture::new(&gate, 8, 1, 1);
+    let roster = [(); 4].map(|()| Uuid::new_v4());
+    let id = Uuid::new_v4();
+    let insufficient = ConnectionSlots::new(3).unwrap();
+    assert!(matches!(
+        fixture.registry.reserve_race(id, &roster, &insufficient),
+        Err(OnlineError::Capacity)
+    ));
+    let slots = ConnectionSlots::new(4).unwrap();
+    let claim = fixture.registry.reserve_race(id, &roster, &slots).unwrap();
+    assert_eq!(slots.available(), 0);
+    assert!(fixture.registry.is_occupied(roster[3]).unwrap());
+    assert!(!fixture.registry.is_occupied(Uuid::new_v4()).unwrap());
+    assert!(matches!(
+        fixture
+            .registry
+            .reserve_race(Uuid::new_v4(), &roster[..2], &slots),
+        Err(OnlineError::NotMatched)
+    ));
+    assert!(matches!(
+        fixture.registry.by_id(id),
+        Err(OnlineError::NotMatched)
+    ));
+    drop(claim);
+    assert_eq!(slots.available(), 4);
+    assert!(!fixture.registry.is_occupied(roster[3]).unwrap());
+    assert!(fixture.registry.reserve_race(id, &roster, &slots).is_ok());
+}
+
+#[tokio::test]
+async fn room_mutations_share_legacy_membership_and_keep_one_effect_per_authenticated_request() {
+    let gate = Gate::new(true, false);
+    let fixture = Fixture::new(&gate, 4, 2, 1);
+    let lobby = &fixture.service;
+    let first = Uuid::new_v4();
+    let second = Uuid::new_v4();
+    let host = lobby.lease(first).unwrap();
+    let guest = lobby.lease(second).unwrap();
+    let nickname = Nickname::parse("Player").unwrap();
+    let request_id = Uuid::new_v4().to_string();
+    let options = RoomOptions {
+        title: "Friendly race".into(),
+        capacity: 4,
+        visibility: RoomVisibility::Public,
+    };
+    let create = RoomIntent::Create {
+        request_id: request_id.clone(),
+        options: options.clone(),
+    };
+    let room = lobby
+        .inner
+        .room_command(&host, &nickname, create.clone())
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        lobby
+            .inner
+            .room_command(&host, &nickname, create.clone())
+            .unwrap(),
+        Some(room.clone())
+    );
+    assert_eq!(
+        lobby.inner.room_command(
+            &host,
+            &nickname,
+            RoomIntent::Create {
+                request_id,
+                options: RoomOptions {
+                    capacity: 3,
+                    ..options
+                }
+            }
+        ),
+        Err(RoomWireError::Conflict)
+    );
+    assert_eq!(
+        lobby.join(first, Difficulty::Normal),
+        Err(LobbyError::Busy.into())
+    );
+    let legacy = lobby.create_room(second).unwrap().identity().unwrap();
+    let join = || RoomIntent::Join {
+        request_id: Uuid::new_v4().to_string(),
+        entrance: RoomEntrance::Public {
+            room_id: room.room_id.clone(),
+        },
+    };
+    assert_eq!(
+        lobby.inner.room_command(&guest, &nickname, join()),
+        Err(RoomWireError::Busy)
+    );
+    lobby.cancel(second, legacy).unwrap();
+    let guest_room = lobby
+        .inner
+        .room_command(&guest, &nickname, join())
+        .unwrap()
+        .unwrap();
+    assert_eq!(guest_room.members.len(), 2);
+    assert_eq!(lobby.inner.room_list(None).unwrap().rooms.len(), 1);
+    let leave = RoomIntent::Leave {
+        request_id: Uuid::new_v4().to_string(),
+        room_id: room.room_id,
+        revision: guest_room.revision,
+    };
+    assert_eq!(
+        lobby.inner.room_command(&host, &nickname, leave.clone()),
+        Ok(None)
+    );
+    let token = host.token();
+    drop(host);
+    let host = lobby.lease(first).unwrap();
+    assert_ne!(host.token(), token);
+    assert_eq!(lobby.inner.room_command(&host, &nickname, leave), Ok(None));
+    assert_eq!(
+        lobby.inner.room_command(&host, &nickname, create),
+        Err(RoomWireError::NotFound)
+    );
+    let view = lobby
+        .inner
+        .room_command(&guest, &nickname, RoomIntent::Status)
+        .unwrap()
+        .unwrap();
+    assert_eq!(view.host_seat, view.own_seat);
+    assert_eq!(view.members.len(), 1);
+}
+
+#[tokio::test]
+async fn room_start_hides_the_round_until_board_and_four_player_journal_are_ready() {
+    let gate = Gate::new(true, false);
+    let fixture = Fixture::new(&gate, 8, 2, 1);
+    let lobby = &fixture.service;
+    let accounts = [(); 4].map(|()| Uuid::new_v4());
+    let leases = accounts.map(|account| lobby.lease(account).unwrap());
+    let nickname = Nickname::parse("Player").unwrap();
+    let mut view = lobby
+        .inner
+        .room_command(
+            &leases[0],
+            &nickname,
+            RoomIntent::Create {
+                request_id: Uuid::new_v4().to_string(),
+                options: RoomOptions {
+                    title: "Start together".into(),
+                    capacity: 4,
+                    visibility: RoomVisibility::Public,
+                },
+            },
+        )
+        .unwrap()
+        .unwrap();
+    for seat in &leases[1..] {
+        view = lobby
+            .inner
+            .room_command(
+                seat,
+                &nickname,
+                RoomIntent::Join {
+                    request_id: Uuid::new_v4().to_string(),
+                    entrance: RoomEntrance::Public {
+                        room_id: view.room_id,
+                    },
+                },
+            )
+            .unwrap()
+            .unwrap();
+    }
+    for seat in &leases {
+        view = lobby
+            .inner
+            .room_command(
+                seat,
+                &nickname,
+                RoomIntent::Ready {
+                    request_id: Uuid::new_v4().to_string(),
+                    room_id: view.room_id,
+                    revision: view.revision,
+                    ready: true,
+                },
+            )
+            .unwrap()
+            .unwrap();
+    }
+    fixture.journal.held.store(true, Ordering::SeqCst);
+    let preparing = lobby
+        .inner
+        .room_command(
+            &leases[0],
+            &nickname,
+            RoomIntent::Start {
+                request_id: Uuid::new_v4().to_string(),
+                room_id: view.room_id,
+                revision: view.revision,
+            },
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(preparing.phase, RoomPhase::Preparing);
+    assert!(preparing.round.is_none());
+    eventually(|| fixture.journal.room_registered.lock().unwrap().len() == 1).await;
+    let active = fixture.journal.room_registered.lock().unwrap()[0].clone();
+    assert_eq!(active.accounts.as_slice(), &accounts);
+    for account in accounts {
+        assert!(matches!(
+            fixture.registry.round_for_account(account),
+            Err(OnlineError::NotMatched)
+        ));
+    }
+    fixture.journal.release();
+    eventually(|| {
+        fixture
+            .registry
+            .round_for_account(accounts[3])
+            .ok()
+            .is_some()
+    })
+    .await;
+    let accepted = lobby
+        .inner
+        .room_command(&leases[3], &nickname, RoomIntent::Status)
+        .unwrap()
+        .unwrap();
+    assert_eq!(accepted.phase, RoomPhase::Countdown);
+    assert_eq!(accepted.round.unwrap().round_id, active.id.to_string());
+}
 impl LobbyHarness {
     fn lease(&self, account: Uuid) -> Result<ConnectionAuthority, LobbyServiceError> {
         if account.is_nil() {
@@ -250,7 +491,7 @@ impl Fixture {
             authorities: AuthorityRegistry::new(16).unwrap(),
             clock: clock.clone(),
         };
-        let inner = LobbyService::new(
+        let inner = LobbyService::new_with_round_connections(
             LobbyLimits { capacity, workers },
             boards(),
             Arc::new(Preparer(gate.0.clone())),
@@ -261,6 +502,7 @@ impl Fixture {
                 journal: journal.clone(),
             },
             authentication.clone(),
+            ConnectionSlots::new(16).unwrap(),
         )
         .unwrap();
         let service = Arc::new(LobbyHarness {

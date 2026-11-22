@@ -29,9 +29,9 @@ pub(crate) async fn collect_online(
     match_id: Uuid,
     now: i64,
 ) -> Result<(), EventStoreError> {
-    let accounts: Vec<Uuid> = sqlx::query_scalar("SELECT account_id FROM online_match_players WHERE match_id=$1 AND NOT is_bot ORDER BY account_id LIMIT 3")
+    let accounts: Vec<Uuid> = sqlx::query_scalar("SELECT account_id FROM online_match_players WHERE match_id=$1 AND NOT is_bot ORDER BY account_id LIMIT 5")
         .bind(match_id).fetch_all(&mut **tx).await.map_err(db)?;
-    if accounts.len() > 2 {
+    if accounts.len() > liar_core::game::multiplayer::MAX_RACE_PLAYERS {
         return Err(EventStoreError::Invalid);
     }
     for account in accounts {

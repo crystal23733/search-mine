@@ -52,12 +52,16 @@ mod optional_events;
 mod optional_retention;
 #[path = "postgres/personal.rs"]
 mod personal;
+#[path = "postgres/race_journal.rs"]
+mod race_journal;
 #[path = "postgres/recovery.rs"]
 mod recovery;
 #[path = "postgres/recovery_resume.rs"]
 mod recovery_resume;
 #[path = "postgres/recovery_snapshot.rs"]
 mod recovery_snapshot;
+#[path = "postgres/rooms_runtime.rs"]
+mod rooms_runtime;
 #[path = "postgres/source_retention.rs"]
 mod source_retention;
 #[tokio::test]

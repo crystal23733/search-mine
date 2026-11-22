@@ -1,13 +1,16 @@
 use super::*;
 use crate::auth::AuthClock;
-use liar_core::game::{AnalysisResult, Rejection, Seat};
+use liar_core::game::{
+    AnalysisResult, Rejection, Seat,
+    multiplayer::{MAX_RACE_PLAYERS, MIN_RACE_PLAYERS},
+};
 use liar_protocol::online::{OnlineError, OnlineEvent, OnlineInput};
 use std::{
     collections::{HashMap, HashSet},
     sync::{Arc, Mutex, Weak},
     time::Duration,
 };
-use tokio::sync::{Semaphore, mpsc, oneshot};
+use tokio::sync::{OwnedSemaphorePermit, Semaphore, mpsc, oneshot};
 use uuid::Uuid;
 
 struct RegistryState {
@@ -15,6 +18,8 @@ struct RegistryState {
     unresolved: HashSet<Uuid>,
     failed: bool,
     matches: HashMap<Uuid, MatchHandle>,
+    race_reservations: HashSet<Uuid>,
+    rounds: HashMap<Uuid, RoundHandle>,
     accounts: HashMap<Uuid, Uuid>,
 }
 pub struct MatchRegistry {
@@ -27,6 +32,26 @@ pub struct MatchRegistry {
     capacity: Arc<Semaphore>,
     pub(super) proofs: Arc<Semaphore>,
 }
+
+pub struct RaceReservation {
+    id: Uuid,
+    count: usize,
+    registry: Arc<MatchRegistry>,
+    _match_slot: OwnedSemaphorePermit,
+    socket_slots: Arc<OwnedSemaphorePermit>,
+}
+
+impl Drop for RaceReservation {
+    fn drop(&mut self) {
+        if let Ok(mut inner) = self.registry.inner.lock() {
+            inner.race_reservations.remove(&self.id);
+            inner.rounds.remove(&self.id);
+            inner.accounts.retain(|_, id| *id != self.id);
+            inner.failed |= inner.unresolved.remove(&self.id);
+        }
+    }
+}
+
 pub(super) struct HandleInner {
     pub id: Uuid,
     players: [Option<Uuid>; 2],
@@ -112,6 +137,8 @@ impl MatchRegistry {
                 unresolved: HashSet::new(),
                 failed: false,
                 matches: HashMap::new(),
+                race_reservations: HashSet::new(),
+                rounds: HashMap::new(),
                 accounts: HashMap::new(),
             }),
             limits,
@@ -125,6 +152,132 @@ impl MatchRegistry {
     }
     pub fn create(self: &Arc<Self>, state: MatchState) -> Result<MatchHandle, OnlineError> {
         self.create_inner(state, None, None)
+    }
+    pub fn reserve_race(
+        self: &Arc<Self>,
+        id: Uuid,
+        accounts: &[Uuid],
+        connections: &ConnectionSlots,
+    ) -> Result<RaceReservation, OnlineError> {
+        if id.is_nil()
+            || !(MIN_RACE_PLAYERS..=MAX_RACE_PLAYERS).contains(&accounts.len())
+            || accounts
+                .iter()
+                .enumerate()
+                .any(|(index, account)| account.is_nil() || accounts[..index].contains(account))
+        {
+            return Err(OnlineError::Malformed);
+        }
+        let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        if inner.draining {
+            return Err(OnlineError::Unavailable);
+        }
+        if inner.race_reservations.contains(&id)
+            || inner.matches.contains_key(&id)
+            || accounts
+                .iter()
+                .any(|account| inner.accounts.contains_key(account))
+        {
+            return Err(OnlineError::NotMatched);
+        }
+        let match_slot = self
+            .capacity
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| OnlineError::Capacity)?;
+        let socket_slots = connections.reserve(accounts.len() as u32)?;
+        inner.race_reservations.insert(id);
+        for account in accounts {
+            inner.accounts.insert(*account, id);
+        }
+        Ok(RaceReservation {
+            id,
+            count: accounts.len(),
+            registry: self.clone(),
+            _match_slot: match_slot,
+            socket_slots: Arc::new(socket_slots),
+        })
+    }
+
+    pub fn is_occupied(&self, account: Uuid) -> Result<bool, OnlineError> {
+        Ok(self
+            .inner
+            .lock()
+            .map_err(|_| OnlineError::Unavailable)?
+            .accounts
+            .contains_key(&account))
+    }
+
+    pub fn admit_round(
+        self: &Arc<Self>,
+        reservation: RaceReservation,
+        state: RoundState,
+        admission: RoundAdmission,
+    ) -> Result<RoundHandle, OnlineError> {
+        let runtime =
+            tokio::runtime::Handle::try_current().map_err(|_| OnlineError::Unavailable)?;
+        let id = state.key().round_id;
+        if id != reservation.id
+            || reservation.count != state.accounts().len()
+            || !Arc::ptr_eq(self, &reservation.registry)
+            || self.uses_authorities(&admission.authentication.authorities)
+            || !admission
+                .leases
+                .iter()
+                .map(ConnectionAuthority::account)
+                .eq(state.accounts().iter().copied())
+        {
+            return Err(OnlineError::Malformed);
+        }
+        let authentication = admission.authentication.clone();
+        let leases: Vec<_> = admission.leases.clone();
+        let references: Vec<_> = leases.iter().collect();
+        authentication.authorities.with_authorities(
+            &references,
+            authentication.clock.now(),
+            || {
+                let mut inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+                if inner.draining
+                    || !inner.race_reservations.contains(&id)
+                    || inner.rounds.contains_key(&id)
+                    || !state
+                        .accounts()
+                        .iter()
+                        .all(|account| inner.accounts.get(account) == Some(&id))
+                {
+                    return Err(OnlineError::Unavailable);
+                }
+                let round = super::round_actor::spawn(
+                    &runtime,
+                    state,
+                    admission,
+                    self,
+                    reservation.socket_slots.clone(),
+                    reservation,
+                );
+                inner.unresolved.insert(id);
+                inner.rounds.insert(id, round.clone());
+                Ok(round)
+            },
+        )?
+    }
+
+    pub fn round_for_account(&self, account: Uuid) -> Result<RoundHandle, OnlineError> {
+        let inner = self.inner.lock().map_err(|_| OnlineError::Unavailable)?;
+        inner
+            .accounts
+            .get(&account)
+            .and_then(|id| inner.rounds.get(id))
+            .cloned()
+            .ok_or(OnlineError::NotMatched)
+    }
+
+    pub(super) fn release_round_account(&self, id: Uuid, account: Uuid) {
+        if let Ok(mut inner) = self.inner.lock()
+            && inner.accounts.get(&account) == Some(&id)
+        {
+            inner.accounts.remove(&account);
+        }
     }
     pub fn create_admitted(
         self: &Arc<Self>,
@@ -176,6 +329,7 @@ impl MatchRegistry {
         let id = state.id();
         let players = state.players();
         if inner.matches.contains_key(&id)
+            || inner.race_reservations.contains(&id)
             || players
                 .iter()
                 .flatten()
@@ -261,7 +415,7 @@ impl MatchRegistry {
         if !inner.draining || inner.failed {
             return Err(OnlineError::Unavailable);
         }
-        Ok(inner.unresolved.is_empty())
+        Ok(inner.unresolved.is_empty() && inner.race_reservations.is_empty())
     }
     pub(super) fn recorded(&self, id: Uuid, saved: bool) {
         if let Ok(mut inner) = self.inner.lock() {

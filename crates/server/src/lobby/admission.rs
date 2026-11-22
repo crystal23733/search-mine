@@ -12,6 +12,18 @@ pub(super) struct Receipt {
     confirmed: bool,
 }
 impl Receipt {
+    pub(super) fn hold(
+        id: Uuid,
+        journal: Arc<dyn AdmissionJournal>,
+        permit: OwnedSemaphorePermit,
+    ) -> Self {
+        Self {
+            id,
+            journal,
+            _permit: permit,
+            confirmed: false,
+        }
+    }
     pub fn commit(mut self) {
         self.confirmed = true;
     }
@@ -132,12 +144,7 @@ impl AdmissionWork {
             return;
         }
         report_progress("register", true);
-        let receipt = Receipt {
-            id,
-            journal: self.journal,
-            _permit: permit,
-            confirmed: false,
-        };
+        let receipt = Receipt::hold(id, self.journal, permit);
         if *canceled.borrow() {
             receipt.discard().await;
             return;

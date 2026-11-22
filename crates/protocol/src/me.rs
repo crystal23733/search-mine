@@ -98,6 +98,13 @@ pub struct MeConsent {
     pub expires_at: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+pub struct MeRaceDetails {
+    pub participant_count: u8,
+    pub rank: Option<u8>,
+    pub tied: bool,
+    pub forfeited: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct MeOnlineRecord {
     pub result: PersonalResult,
     pub opponent: MeOpponent,
@@ -105,6 +112,9 @@ pub struct MeOnlineRecord {
     pub retention_started_at: i64,
     #[ts(type = "number")]
     pub recorded_at: i64,
+    #[ts(optional)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub race: Option<MeRaceDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct MeDailyRecord {
@@ -195,6 +205,7 @@ pub fn declarations(config: &ts_rs::Config) -> Vec<String> {
         MeChoice::decl(config),
         MeConsentStatus::decl(config),
         MeConsent::decl(config),
+        MeRaceDetails::decl(config),
         MeOnlineRecord::decl(config),
         MeDailyRecord::decl(config),
         MeRecord::decl(config),

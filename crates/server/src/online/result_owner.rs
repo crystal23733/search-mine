@@ -1,6 +1,6 @@
-use super::journal_postgres;
 use super::postgres::{persist_result, validate_result};
 use super::{ActiveMatch, FinishedMatch, PortFuture, ResultRepository, SaveResult};
+use super::{ActiveRace, FinishedRace, journal_postgres, race_journal_postgres};
 use crate::auth::AuthClock;
 use liar_protocol::online::OnlineError;
 use sqlx::{Connection, PgConnection, PgPool};
@@ -75,6 +75,9 @@ enum Command {
     Save(FinishedMatch),
     Register(ActiveMatch),
     Discard(Uuid),
+    RegisterRace(ActiveRace),
+    StartRace(Uuid),
+    SaveRace(FinishedRace),
 }
 struct Job {
     command: Command,
@@ -209,13 +212,34 @@ impl PgResultRuntime {
                 .map(|_| ())
         })
     }
+    pub(super) async fn register_race(&self, race: ActiveRace) -> Result<SaveResult, OnlineError> {
+        let now = self.clock.now();
+        race_journal_postgres::validate_active(&race, now)?;
+        self.submit(Command::RegisterRace(race), now).await
+    }
+    pub(super) async fn start_race(&self, id: Uuid) -> Result<SaveResult, OnlineError> {
+        let now = self.clock.now();
+        if id.is_nil() || !journal_postgres::valid_start_time(now) {
+            return Err(OnlineError::Malformed);
+        }
+        self.submit(Command::StartRace(id), now).await
+    }
+    pub(super) async fn save_race(&self, race: FinishedRace) -> Result<SaveResult, OnlineError> {
+        let now = self.clock.now();
+        race_journal_postgres::validate_result(&race, now)?;
+        self.submit(Command::SaveRace(race), now).await
+    }
     async fn submit(&self, command: Command, recorded_at: i64) -> Result<SaveResult, OnlineError> {
         if !self.health.available() {
             return Err(OnlineError::Unavailable);
         }
         let deadline = Instant::now() + DEADLINE;
         let (reply, received) = oneshot::channel();
-        let guard = matches!(&command, Command::Register(_)).then(|| RegistrationGuard {
+        let guard = matches!(
+            &command,
+            Command::Register(_) | Command::RegisterRace(_) | Command::StartRace(_)
+        )
+        .then(|| RegistrationGuard {
             progress: Arc::new(AtomicU8::new(QUEUED)),
             health: self.health.clone(),
             abort: self.abort.clone(),
@@ -305,6 +329,15 @@ async fn execute(
         }
         (Mode::Journal(owner), Command::Discard(id)) => {
             journal_postgres::discard(connection, owner, id).await
+        }
+        (Mode::Journal(owner), Command::RegisterRace(race)) => {
+            race_journal_postgres::register(connection, owner, race, recorded_at).await
+        }
+        (Mode::Journal(owner), Command::StartRace(id)) => {
+            race_journal_postgres::start(connection, owner, id, recorded_at).await
+        }
+        (Mode::Journal(owner), Command::SaveRace(result)) => {
+            race_journal_postgres::finish(connection, owner, result, recorded_at).await
         }
         _ => Err(OnlineError::Malformed),
     }

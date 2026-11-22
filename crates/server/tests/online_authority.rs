@@ -1,3 +1,4 @@
+use liar_protocol::online::OnlineError;
 use liar_server::{auth::SessionInvalidator, online::AuthorityRegistry};
 use uuid::Uuid;
 #[test]
@@ -111,4 +112,58 @@ fn exact_expiry_and_account_revocation_remove_authority_without_affecting_other_
     assert!(registry.with_authority(&second, 199, || ()).is_ok());
     assert!(registry.with_authority(&second, 200, || ()).is_err());
     assert!(registry.with_authority(&second, 100, || ()).is_err());
+}
+
+#[test]
+fn multiplayer_admission_checks_every_member_under_the_same_revocation_guard() {
+    let registry = AuthorityRegistry::new(5).unwrap();
+    let seats = [1, 2, 3, 4, 5].map(|index| {
+        registry
+            .bind(0, Uuid::new_v4(), [index; 32], 200, 100)
+            .unwrap()
+    });
+    let leases = seats.each_ref();
+    for count in [2, 3, 4] {
+        assert_eq!(
+            registry.with_authorities(&leases[..count], 100, || count),
+            Ok(count)
+        );
+    }
+    assert_eq!(
+        registry.with_authorities(&leases, 100, || panic!("Oversized roster committed")),
+        Err::<(), _>(OnlineError::Unauthorized)
+    );
+    let [first, second, third, fourth, _] = leases;
+    assert_eq!(
+        registry.with_authorities(&[first, second, third, first], 100, || {
+            panic!("Duplicate account committed")
+        }),
+        Err::<(), _>(OnlineError::Unauthorized)
+    );
+    let barrier = registry.session([4; 32]);
+    assert!(*fourth.revoked().borrow());
+    assert_eq!(
+        registry.with_authorities(&leases[..4], 100, || panic!(
+            "Revoked fourth seat committed"
+        )),
+        Err::<(), _>(OnlineError::Unauthorized)
+    );
+    assert_eq!(registry.with_authorities(&leases[..3], 100, || 7), Ok(7));
+    drop(barrier);
+    let fourth = registry
+        .bind(
+            registry.generation().unwrap(),
+            fourth.account(),
+            [9; 32],
+            150,
+            100,
+        )
+        .unwrap();
+    let roster = [first, second, third, &fourth];
+    assert_eq!(registry.with_authorities(&roster, 149, || 7), Ok(7));
+    assert_eq!(
+        registry.with_authorities(&roster, 150, || panic!("Expired fourth seat committed")),
+        Err::<(), _>(OnlineError::Unauthorized)
+    );
+    assert!(*fourth.revoked().borrow());
 }

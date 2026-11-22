@@ -19,12 +19,15 @@ use std::{
 };
 use tokio::sync::Semaphore;
 use uuid::Uuid;
+#[path = "rooms_http.rs"]
+mod rooms_http;
 struct Context {
     service: Arc<LobbyService>,
     authentication: LobbyAuthentication,
     sessions: Arc<dyn SessionReader>,
     security: Arc<BrowserSecurity>,
     requests: Arc<Semaphore>,
+    public_requests: Arc<Semaphore>,
     rate: Mutex<super::http_rate::LobbyRate>,
 }
 type Failure = (StatusCode, LobbyErrorCode);
@@ -50,6 +53,7 @@ pub fn disabled_lobby_router() -> Router {
             "/api/v1/lobby",
             post(|| async { failure(error(LobbyErrorCode::Unavailable)) }),
         )
+        .route("/api/v2/rooms", post(rooms_http::disabled))
         .layer(middleware::map_response(no_store))
 }
 async fn no_store(mut response: Response) -> Response {
@@ -79,11 +83,20 @@ pub fn lobby_router(
         sessions,
         security,
         requests: Arc::new(Semaphore::new(requests)),
+        public_requests: Arc::new(Semaphore::new(requests.min(8))),
         rate: Mutex::new(super::http_rate::LobbyRate::new(4096)),
     });
     Ok(Router::new()
-        .route("/api/v1/lobby", post(handle))
-        .layer(DefaultBodyLimit::max(MAX_LOBBY_BYTES))
+        .route(
+            "/api/v1/lobby",
+            post(handle).layer(DefaultBodyLimit::max(MAX_LOBBY_BYTES)),
+        )
+        .route(
+            "/api/v2/rooms",
+            post(rooms_http::handle).layer(DefaultBodyLimit::max(
+                liar_protocol::rooms::MAX_ROOM_INPUT_BYTES,
+            )),
+        )
         .layer(middleware::map_response(no_store))
         .with_state(context))
 }

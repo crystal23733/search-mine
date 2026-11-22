@@ -60,11 +60,25 @@ async fn journal_schema_is_minimal_bounded_and_cascades_erasure() {
     for (table, expected) in [
         (
             "online_active_matches",
-            vec!["admitted_at", "id", "owner_id", "rules_hash"],
+            vec![
+                "admitted_at",
+                "id",
+                "owner_id",
+                "participant_count",
+                "room_id",
+                "rules_hash",
+                "started_at",
+            ],
         ),
         (
             "online_active_players",
-            vec!["account_id", "is_bot", "match_id", "seat"],
+            vec![
+                "account_id",
+                "is_bot",
+                "match_id",
+                "participant_count",
+                "seat",
+            ],
         ),
     ] {
         let columns:Vec<String>=sqlx::query_scalar("SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=$1 ORDER BY column_name")

@@ -44,7 +44,7 @@ impl RoomSettings {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RoundKey {
     pub room_id: Uuid,
     pub round_id: Uuid,
@@ -213,11 +213,61 @@ impl RoomPolicy {
 
     pub fn status(&mut self, caller: Uuid, now: u64) -> Result<Option<RoomView>, RoomError> {
         self.advance(now)?;
-        Ok(self
-            .membership
+        Ok(self.current(caller))
+    }
+
+    pub(crate) fn current(&self, caller: Uuid) -> Option<RoomView> {
+        self.membership
             .get(&caller)
             .and_then(|id| self.rooms.get(id))
-            .map(|room| room.view(caller)))
+            .map(|room| room.view(caller))
+    }
+
+    pub(crate) fn contains(&self, account: Uuid) -> bool {
+        self.membership.contains_key(&account)
+    }
+
+    pub(crate) fn members(&self) -> usize {
+        self.membership.len()
+    }
+
+    pub(crate) fn has_room(&self, id: Uuid) -> bool {
+        self.rooms.contains_key(&id)
+    }
+
+    pub(crate) fn preparation(&self, account: Uuid) -> Option<RoundReservation> {
+        let room = self.rooms.get(self.membership.get(&account)?)?;
+        match &room.phase {
+            Phase::Preparing(reservation) => Some(reservation.clone()),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn is_preparing(&self, key: RoundKey) -> bool {
+        self.rooms.get(&key.room_id).is_some_and(
+            |room| matches!(&room.phase, Phase::Preparing(reservation) if reservation.key == key),
+        )
+    }
+
+    pub(crate) fn names(&self, reservation: &RoundReservation) -> Option<Vec<Nickname>> {
+        let room = self.rooms.get(&reservation.key.room_id)?;
+        reservation
+            .accounts
+            .iter()
+            .map(|account| {
+                room.members
+                    .iter()
+                    .find(|member| member.account == *account)
+                    .map(|member| member.nickname.clone())
+            })
+            .collect()
+    }
+
+    pub(crate) fn round_member(&self, key: RoundKey, account: Uuid) -> bool {
+        self.rooms.get(&key.room_id).is_some_and(|room| {
+            matches!(&room.phase, Phase::Countdown(round) | Phase::Playing(round) if round.key == key)
+                && room.members.iter().any(|member| member.account == account && member.round_generation == Some(key.generation))
+        })
     }
 
     pub fn list(
@@ -452,15 +502,24 @@ impl RoomPolicy {
         now: u64,
     ) -> Result<(), RoomError> {
         self.advance(now)?;
-        let room = self.member_room(caller, id, revision)?;
+        self.member_room(caller, id, revision)?;
+        self.evict(caller, now);
+        Ok(())
+    }
+
+    pub(crate) fn evict(&mut self, caller: Uuid, now: u64) {
+        let Some(id) = self.membership.remove(&caller) else {
+            return;
+        };
+        let Some(room) = self.rooms.get_mut(&id) else {
+            return;
+        };
         room.members.retain(|member| member.account != caller);
         room.reset_preparation();
         room.touch(now);
         if room.members.is_empty() {
             self.rooms.remove(&id);
         }
-        self.membership.remove(&caller);
-        Ok(())
     }
 
     pub fn start(

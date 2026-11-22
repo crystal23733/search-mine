@@ -20,23 +20,58 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+#[path = "round_ws.rs"]
+mod round_ws;
 
 struct Context {
     origin: String,
     sessions: Arc<dyn SessionReader>,
     registry: Arc<MatchRegistry>,
-    connections: Arc<Semaphore>,
+    connections: ConnectionSlots,
+    round_handshakes: Arc<Semaphore>,
 }
+
+#[derive(Clone)]
+pub struct ConnectionSlots(Arc<Semaphore>);
+
+impl ConnectionSlots {
+    pub fn new(count: usize) -> Result<Self, OnlineError> {
+        if !(1..=20000).contains(&count) {
+            return Err(OnlineError::Capacity);
+        }
+        Ok(Self(Arc::new(Semaphore::new(count))))
+    }
+
+    pub fn available(&self) -> usize {
+        self.0.available_permits()
+    }
+
+    pub(super) fn reserve(&self, count: u32) -> Result<OwnedSemaphorePermit, OnlineError> {
+        self.0
+            .clone()
+            .try_acquire_many_owned(count)
+            .map_err(|_| OnlineError::Capacity)
+    }
+}
+
 pub fn websocket_router(
     origin: &str,
     sessions: Arc<dyn SessionReader>,
     registry: Arc<MatchRegistry>,
     connections: usize,
 ) -> Result<Router, OnlineError> {
+    let connections = ConnectionSlots::new(connections).map_err(|_| OnlineError::Malformed)?;
+    websocket_router_with_slots(origin, sessions, registry, connections)
+}
+
+pub fn websocket_router_with_slots(
+    origin: &str,
+    sessions: Arc<dyn SessionReader>,
+    registry: Arc<MatchRegistry>,
+    connections: ConnectionSlots,
+) -> Result<Router, OnlineError> {
     let url = url::Url::parse(origin).map_err(|_| OnlineError::Malformed)?;
-    if connections == 0
-        || connections > 20000
-        || url.scheme() != "https"
+    if url.scheme() != "https"
         || !matches!(url.host(), Some(url::Host::Domain(_)))
         || url.path() != "/"
         || url.query().is_some()
@@ -50,10 +85,12 @@ pub fn websocket_router(
         origin: url.origin().ascii_serialization(),
         sessions,
         registry,
-        connections: Arc::new(Semaphore::new(connections)),
+        connections,
+        round_handshakes: Arc::new(Semaphore::new(16)),
     });
     Ok(Router::new()
         .route("/api/v1/ws", get(upgrade))
+        .route("/api/v2/ws", get(round_ws::upgrade))
         .layer(middleware::map_response(
             |mut response: Response| async move {
                 response.headers_mut().insert(
@@ -74,23 +111,11 @@ async fn upgrade(
     headers: HeaderMap,
     upgrade: WebSocketUpgrade,
 ) -> Response {
-    if headers.get_all(header::ORIGIN).iter().count() != 1
-        || headers.get(header::ORIGIN).and_then(|h| h.to_str().ok())
-            != Some(context.origin.as_str())
-    {
-        return failure(StatusCode::FORBIDDEN, OnlineError::Unauthorized);
-    }
-    if uri.query().is_some() || headers.contains_key(header::SEC_WEBSOCKET_PROTOCOL) {
-        return failure(StatusCode::BAD_REQUEST, OnlineError::Malformed);
-    }
-    let hash = match BrowserCookies::parse(&headers)
-        .ok()
-        .and_then(|cookies| cookies.session)
-    {
-        Some(token) => token.hash(),
-        None => return failure(StatusCode::UNAUTHORIZED, OnlineError::Unauthorized),
+    let hash = match handshake(&context, &uri, &headers) {
+        Ok(hash) => hash,
+        Err((status, code)) => return failure(status, code),
     };
-    let Ok(permit) = context.connections.clone().try_acquire_owned() else {
+    let Ok(permit) = context.connections.reserve(1) else {
         return failure(StatusCode::SERVICE_UNAVAILABLE, OnlineError::Capacity);
     };
     let Ok(generation) = context.registry.authorities.generation() else {
@@ -125,6 +150,27 @@ async fn upgrade(
         .max_message_size(MAX_INPUT_BYTES)
         .on_upgrade(move |socket| run(socket, connection, context, permit))
         .into_response()
+}
+
+fn handshake(
+    context: &Context,
+    uri: &Uri,
+    headers: &HeaderMap,
+) -> Result<[u8; 32], (StatusCode, OnlineError)> {
+    if headers.get_all(header::ORIGIN).iter().count() != 1
+        || headers.get(header::ORIGIN).and_then(|h| h.to_str().ok())
+            != Some(context.origin.as_str())
+    {
+        return Err((StatusCode::FORBIDDEN, OnlineError::Unauthorized));
+    }
+    if uri.query().is_some() || headers.contains_key(header::SEC_WEBSOCKET_PROTOCOL) {
+        return Err((StatusCode::BAD_REQUEST, OnlineError::Malformed));
+    }
+    BrowserCookies::parse(headers)
+        .ok()
+        .and_then(|cookies| cookies.session)
+        .map(|token| token.hash())
+        .ok_or((StatusCode::UNAUTHORIZED, OnlineError::Unauthorized))
 }
 async fn send(socket: &mut WebSocket, message: Message) -> bool {
     matches!(

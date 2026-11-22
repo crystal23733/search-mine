@@ -48,6 +48,7 @@ impl Room {
                         })
                 }),
             expires_at_ms: self.expires_at(),
+            start_error: None,
         }
     }
 

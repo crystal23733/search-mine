@@ -417,7 +417,7 @@ impl LobbyState {
         );
         Ok(())
     }
-    fn used(&self) -> usize {
+    pub(super) fn used(&self) -> usize {
         self.waiting.len()
             + self
                 .rooms

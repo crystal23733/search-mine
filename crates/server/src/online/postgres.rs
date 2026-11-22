@@ -103,12 +103,13 @@ pub(super) async fn validate_duplicate(
 ) -> Result<(), OnlineError> {
     let reason = reason(result.reason);
     let row = sqlx::query(
-        "SELECT rules_hash,secret_seed,end_elapsed_ms,reason FROM online_match_results WHERE id=$1",
+        "SELECT rules_hash,secret_seed,end_elapsed_ms,reason FROM online_match_results WHERE id=$1 AND room_id IS NULL",
     )
     .bind(result.id)
-    .fetch_one(&mut *connection)
+    .fetch_optional(&mut *connection)
     .await
-    .map_err(db_error)?;
+    .map_err(db_error)?
+    .ok_or(OnlineError::Malformed)?;
     let seed: Option<Vec<u8>> = row.try_get("secret_seed").map_err(db_error)?;
     let same = row.try_get::<String, _>("rules_hash").map_err(db_error)? == result.rules_hash
         && seed.is_none_or(|seed| seed == result.seed)

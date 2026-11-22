@@ -52,6 +52,32 @@ test("ordinary me reads use current self proofs, closed bodies and no-store with
     JSON.stringify({ v: 1, kind: "online", opponent: "all", cursor: null }),
   );
 });
+test("four-player history exposes only the owner's frozen standing", async () => {
+  const base = overview();
+  const entry = {
+    ...base.recent_online[0],
+    opponent: "human",
+    race: { participant_count: 4, rank: 2, tied: true, forfeited: false },
+  };
+  const f = await fixture({ ...base, recent_online: [entry] });
+  expect((await f.api.overview(f.owner, f.signal)).recent_online).toEqual([
+    entry,
+  ]);
+  for (const race of [
+    { ...entry.race, rank: 5 },
+    { ...entry.race, rank: null },
+    { ...entry.race, forfeited: true },
+    { ...entry.race, invite_code: "ABCD2345" },
+  ]) {
+    const invalid = await fixture({
+      ...base,
+      recent_online: [{ ...entry, race }],
+    });
+    await expect(
+      invalid.api.overview(invalid.owner, invalid.signal),
+    ).rejects.toBeInstanceOf(MeFailure);
+  }
+});
 test("foreign owners, filter mismatches, secret extra fields and invalid summaries cannot become views", async () => {
   for (const value of [
     {

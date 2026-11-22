@@ -139,6 +139,10 @@ impl RaceEngine {
         self.0.players.get(seat).map(|player| player.last_seq)
     }
 
+    pub fn revision(&self, seat: usize) -> Option<u64> {
+        self.0.public_revision.get(seat).copied()
+    }
+
     pub fn projection(&self, seat: usize) -> Option<RaceProjection> {
         let round = &self.0;
         let player = round.players.get(seat)?;
@@ -201,7 +205,13 @@ impl RaceEngine {
     }
 
     pub fn forfeit(&mut self, seat: usize, now: u64) -> Result<(), Rejection> {
-        self.0.validate_seat(seat)?;
+        self.forfeit_many(&[seat], now)
+    }
+
+    pub fn forfeit_many(&mut self, seats: &[usize], now: u64) -> Result<(), Rejection> {
+        for &seat in seats {
+            self.0.validate_seat(seat)?;
+        }
         self.0.advance(now)?;
         if self.0.end.is_some() {
             return Err(Rejection::Finished);
@@ -209,7 +219,9 @@ impl RaceEngine {
         if now < self.0.start {
             return self.0.cancel_before_start(now);
         }
-        self.0.mark_forfeited(seat);
+        for &seat in seats {
+            self.0.mark_forfeited(seat);
+        }
         self.0.settle_departures(now);
         Ok(())
     }

@@ -29,8 +29,18 @@ pub trait ResultReader: Send + Sync {
 }
 impl StoredPersonalResult {
     pub fn project(self, account: Uuid, match_id: Uuid) -> Result<PersonalResult, ResultError> {
+        self.project_with_mode(account, match_id, false)
+    }
+    pub(crate) fn project_with_mode(
+        self,
+        account: Uuid,
+        match_id: Uuid,
+        race: bool,
+    ) -> Result<PersonalResult, ResultError> {
+        let abandoned_race = race && self.reason == PublicEndReason::Abandoned;
         let compatible = match self.reason {
             PublicEndReason::ServerFailure => self.outcome == Outcome::Abort,
+            PublicEndReason::Abandoned if abandoned_race => self.outcome == Outcome::Abort,
             PublicEndReason::Cancelled => self.outcome == Outcome::Cancelled,
             _ => matches!(self.outcome, Outcome::Win | Outcome::Loss | Outcome::Draw),
         };
@@ -68,7 +78,7 @@ impl StoredPersonalResult {
             result: GameResult {
                 reason: self.reason,
                 outcome: self.outcome,
-                completed: self.reason.completed(),
+                completed: self.reason.completed() && !abandoned_race,
             },
             own: self.own,
         })

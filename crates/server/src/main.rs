@@ -200,7 +200,9 @@ async fn serve() -> ServerResult {
             runtime.store.clone(),
             auth_clock.clone(),
         ));
-        let service = LobbyService::new(
+        let connection_slots = ConnectionSlots::new(online.connections)
+            .map_err(|_| "Online connection limits are invalid")?;
+        let service = LobbyService::new_with_round_connections(
             lobby_config.limits,
             Arc::new(
                 BoardPool::start(
@@ -223,6 +225,7 @@ async fn serve() -> ServerResult {
                 authorities: lobby_authorities,
                 clock: auth_clock.clone(),
             },
+            connection_slots.clone(),
         )
         .map_err(|_| "Lobby initialization failed")?;
         lifecycle = Some((service.clone(), registry.clone()));
@@ -306,7 +309,7 @@ async fn serve() -> ServerResult {
             daily_config.requests,
         )
         .map_err(|_| "Daily HTTP initialization failed")?;
-        let ws = websocket_router(&origin, sessions, registry, online.connections)
+        let ws = websocket_router_with_slots(&origin, sessions, registry, connection_slots)
             .map_err(|_| "WebSocket initialization failed")?;
         tokio::spawn(runtime.maintenance);
         runtime

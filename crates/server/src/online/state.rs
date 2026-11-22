@@ -1,14 +1,10 @@
 //! Pure application state. Secret engine and result metadata never implement Serialize or Debug.
-use liar_core::{
-    board::CellId,
-    game::{
-        Action, ActionStatus, AnalysisJob, AnalysisResult, Command, Rejection, RuleEngine, Seat,
-    },
+use liar_core::game::{
+    Action, ActionStatus, AnalysisJob, AnalysisResult, Command, Rejection, RuleEngine, Seat,
 };
 use liar_protocol::{
     game::{
-        AckStatus, CellState, GameView, Outcome, PublicAction, PublicEndReason, PublicError,
-        from_projection,
+        AckStatus, CellState, GameView, Outcome, PublicEndReason, PublicError, from_projection,
     },
     online::{OnlineError, OnlineInput, OnlinePayload},
 };
@@ -182,12 +178,7 @@ impl MatchState {
                 duplicate: false,
             };
         }
-        let action = match input.action {
-            PublicAction::Open { cell } => Action::Open(CellId(cell)),
-            PublicAction::Flag { cell } => Action::ToggleFlag(CellId(cell)),
-            PublicAction::Accuse { cell } => Action::Accuse(CellId(cell)),
-            PublicAction::Attack => Action::Attack,
-        };
+        let action = super::round_state::core_action(input.action);
         let ack = self.engine.apply(Command {
             id: id.as_u128(),
             seq: u64::from(input.client_seq),
@@ -344,7 +335,10 @@ impl MatchState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use liar_core::{board::Board, rules::RulesSnapshot};
+    use liar_core::{
+        board::{Board, CellId},
+        rules::RulesSnapshot,
+    };
 
     #[test]
     fn bot_system_input_cannot_claim_human_authority_or_bypass_mine_stun() {

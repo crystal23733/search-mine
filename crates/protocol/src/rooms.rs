@@ -160,6 +160,9 @@ pub struct RoomView {
     pub host_seat: u8,
     pub members: Vec<RoomMember>,
     pub round: Option<RoomRound>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub start_error: Option<RoomWireError>,
     #[ts(type = "number | null")]
     pub expires_at_ms: Option<u64>,
 }

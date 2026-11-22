@@ -9,6 +9,7 @@ pub mod me;
 pub mod online;
 pub mod results;
 pub mod rooms;
+pub mod rounds;
 pub mod tutorial;
 pub use liar_core::rules::{BotProfiles, BotSettings, GameRules, RulesSnapshot};
 use serde::Serialize;
@@ -47,6 +48,7 @@ pub fn public_types() -> String {
     declarations.extend(online::declarations(&config));
     declarations.extend(lobby::declarations(&config));
     declarations.extend(rooms::declarations(&config));
+    declarations.extend(rounds::declarations(&config));
     declarations.extend(results::declarations(&config));
     declarations.extend(me::declarations(&config));
     declarations.extend(tutorial::declarations(&config));

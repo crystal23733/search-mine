@@ -3,6 +3,7 @@ import type {
   MeHistory,
   MeRecord,
   MeConsent,
+  MeOnlineRecord,
 } from "@liar/protocol";
 import {
   bool,
@@ -72,12 +73,35 @@ const consent = struct({
 });
 const personal = (value: unknown) =>
   decodePersonalResult({ v: 1, result: value }, uuid(object(value).match_id));
-const online = struct({
+const onlineFields = {
   result: personal,
   opponent: one("human", "bot", "unknown"),
   retention_started_at: time,
   recorded_at: time,
+};
+const onlineDuel = struct(onlineFields);
+const onlineRace = struct({
+  ...onlineFields,
+  race: struct({
+    participant_count: int(4, 2),
+    rank: optional(int(4, 1)),
+    tied: bool,
+    forfeited: bool,
+  }),
 });
+function online(value: unknown): MeOnlineRecord {
+  if (!Object.hasOwn(object(value), "race")) return onlineDuel(value);
+  const entry = onlineRace(value);
+  const { race } = entry;
+  if (
+    entry.opponent !== "human" ||
+    (race.rank === null && race.tied) ||
+    (race.rank !== null &&
+      (race.rank > race.participant_count || race.forfeited))
+  )
+    fail();
+  return entry;
+}
 const daily = struct({
   completion_id: uuid,
   date: dateValue,

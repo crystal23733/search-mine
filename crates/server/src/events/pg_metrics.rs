@@ -161,7 +161,7 @@ async fn proofs(
     now: i64,
 ) -> Result<Vec<Proof>, MetricReadError> {
     let mut query = sqlx::QueryBuilder::new(
-        "SELECT p.account_id,r.id,EXTRACT(EPOCH FROM r.recorded_at)::bigint AS at,EXTRACT(EPOCH FROM COALESCE(r.retention_started_at,r.recorded_at))::bigint AS retention,EXTRACT(EPOCH FROM a.created_at)::bigint AS created,(r.recorded_at=date_trunc('second',r.recorded_at) AND COALESCE(r.retention_started_at,r.recorded_at)=date_trunc('second',COALESCE(r.retention_started_at,r.recorded_at)) AND a.created_at=date_trunc('second',a.created_at)) AS whole,r.reason,(SELECT count(*) FROM online_match_players WHERE match_id=r.id) AS seats,(SELECT count(*) FROM online_match_players WHERE match_id=r.id AND is_bot) AS bots FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id JOIN auth_accounts a ON a.id=p.account_id WHERE NOT p.is_bot AND r.reason IN ('clear','timeout') AND p.account_id=ANY(",
+        "SELECT p.account_id,r.id,EXTRACT(EPOCH FROM r.recorded_at)::bigint AS at,EXTRACT(EPOCH FROM COALESCE(r.retention_started_at,r.recorded_at))::bigint AS retention,EXTRACT(EPOCH FROM a.created_at)::bigint AS created,(r.recorded_at=date_trunc('second',r.recorded_at) AND COALESCE(r.retention_started_at,r.recorded_at)=date_trunc('second',COALESCE(r.retention_started_at,r.recorded_at)) AND a.created_at=date_trunc('second',a.created_at)) AS whole,r.reason,(SELECT count(*) FROM online_match_players WHERE match_id=r.id) AS seats,(SELECT count(*) FROM online_match_players WHERE match_id=r.id AND is_bot) AS bots,r.participant_count,r.room_id IS NOT NULL AS is_room FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id JOIN auth_accounts a ON a.id=p.account_id WHERE NOT p.is_bot AND r.reason IN ('clear','timeout') AND p.account_id=ANY(",
     );
     query.push_bind(accounts).push(")");
     if history {
@@ -198,11 +198,10 @@ async fn proofs(
             return Err(EventError::Conflict.into());
         }
         let opponent = pg_source::online_source(
+            &row,
             at,
             retention,
             row.try_get("whole").map_err(unavailable)?,
-            row.try_get("seats").map_err(unavailable)?,
-            row.try_get("bots").map_err(unavailable)?,
             now,
         )
         .map_err(|_| MetricReadError::Policy(EventError::Incomplete))?;

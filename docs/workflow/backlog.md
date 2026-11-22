@@ -10,7 +10,7 @@
 | [#244](https://github.com/crystal23733/search-mine/issues/244) | 설계 / #241·PR242 | FR01~18/NFR01~08·TS37~45 | 조사/현재 코드 대조·사용자 선택·구체 room/rank/random/권한/복구·추적·검사와 설계 기록 병합 |
 | [#245](https://github.com/crystal23733/search-mine/issues/245) | Rust core / #244 | FR02~05/14/15/18·TS40/41/45 | 단일 규칙2~4인·첫 clear 순위·무작위 한명/dedup·원래 source 반사·두 lie·기존 회귀 |
 | [#246](https://github.com/crystal23733/search-mine/issues/246) | 방 정책/v2 DTO / #245 | FR07/17·TS37~39/42/43/45 | 공개/초대·revision/ready/start/정원·host/만료·고정 round/같은 방 반복·Rust 생성 타입 |
-| [#247](https://github.com/crystal23733/search-mine/issues/247) | 권위 runtime/저장 / #246 | FR01/02/07/14/16~18·TS37~43/45 | N권한/전량 입장·public/auth HTTP/WS·forward migration·실PG/복구/삭제/90일·main |
+| [#247](https://github.com/crystal23733/search-mine/issues/247) | 권위 runtime/저장 / #246 | FR01/02/07/14/16~18·TS37~43/45 | 전원 권한과 일괄 입장, 공개·인증 HTTP와 WS, 실DB 저장·복구·삭제·90일 [검증](../verification/247-multiplayer-runtime.md) |
 | [#248](https://github.com/crystal23733/search-mine/issues/248) | 8언어 web / #247 | FR07/10~14/17/18·TS37~45 | 방 찾기/생성/초대/준비·다인 보드요약/순위·같은 방 다음 판·OAuth/PWA/광고0 |
 | [#249](https://github.com/crystal23733/search-mine/issues/249) | 실제 통합 출구 / #248 | FR01~18/NFR01~08·TS01~45 |4계정 실DB/HTTPS/WS·PC/mobile·재대결/장애/권리·기존 회귀/전체CI. 성능26·실기기223·사람27 별도 |
 

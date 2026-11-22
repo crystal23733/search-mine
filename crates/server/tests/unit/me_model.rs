@@ -34,6 +34,7 @@ fn row(id: u128, at: i64, outcome: Outcome, opponent: MeOpponent) -> MeOnlineRow
             },
             opponent,
             retention_started_at: at,
+            race: None,
             recorded_at: at,
         },
     }

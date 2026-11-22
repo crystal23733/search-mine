@@ -121,6 +121,69 @@ struct Fixture {
     sockets: Arc<AuthorityRegistry>,
     security: Arc<BrowserSecurity>,
 }
+
+#[tokio::test]
+async fn public_v2_listing_has_no_identity_or_invites_and_mutations_still_require_csrf() {
+    let fixture = Fixture::new(2, false);
+    let host = fixture.user(None);
+    let mut create = fixture.request(&host, json!({"type":"status"}));
+    *create.body_mut() = Body::from(
+        json!({ "v": 2, "intent": {
+            "type": "create", "request_id": Uuid::new_v4().to_string(),
+            "options": { "title": "Public race", "visibility": "public", "capacity": 4 }
+        }})
+        .to_string(),
+    );
+    *create.uri_mut() = "/api/v2/rooms".parse().unwrap();
+    let response = fixture.app.clone().oneshot(create).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 32768).await.unwrap()).unwrap();
+    assert!(body["payload"]["room"]["code"].is_string());
+    let reads = fixture.sessions.reads.load(Ordering::SeqCst);
+    let anonymous = |origin, intent| {
+        Request::post("/api/v2/rooms")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::ORIGIN, origin)
+            .body(Body::from(json!({"v":2,"intent":intent}).to_string()))
+            .unwrap()
+    };
+    let list = fixture
+        .app
+        .clone()
+        .oneshot(anonymous(
+            "https://game.example",
+            json!({"type":"list", "cursor":null}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(list.status(), StatusCode::OK);
+    assert_eq!(list.headers()[header::CACHE_CONTROL], "no-store");
+    let body = to_bytes(list.into_body(), 32768).await.unwrap();
+    let text = std::str::from_utf8(&body).unwrap();
+    assert!(text.contains("Public race"));
+    for private in ["code", "nickname", "host_seat", "account_id"] {
+        assert!(!text.contains(private));
+    }
+    assert_eq!(fixture.sessions.reads.load(Ordering::SeqCst), reads);
+    let foreign = fixture
+        .app
+        .clone()
+        .oneshot(anonymous(
+            "https://other.example",
+            json!({"type":"list", "cursor":null}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(foreign.status(), StatusCode::FORBIDDEN);
+    let private = fixture
+        .app
+        .clone()
+        .oneshot(anonymous("https://game.example", json!({"type":"status"})))
+        .await
+        .unwrap();
+    assert_eq!(private.status(), StatusCode::FORBIDDEN);
+}
 impl Fixture {
     fn new(requests: usize, pending: bool) -> Self {
         let clock = Arc::new(Clock {

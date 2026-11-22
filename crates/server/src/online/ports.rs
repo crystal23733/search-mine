@@ -1,4 +1,4 @@
-use super::FinishedMatch;
+use super::{ActiveRace, FinishedMatch, FinishedRace};
 use liar_protocol::online::OnlineError;
 use std::{future::Future, pin::Pin, time::Instant};
 pub type PortFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
@@ -34,6 +34,18 @@ pub trait AdmissionJournal: Send + Sync {
     fn fail_closed(&self);
     fn register(&self, active: ActiveMatch) -> PortFuture<'_, Result<SaveResult, OnlineError>>;
     fn discard(&self, id: uuid::Uuid) -> PortFuture<'_, Result<(), OnlineError>>;
+    fn register_race(
+        &self,
+        _active: ActiveRace,
+    ) -> PortFuture<'_, Result<SaveResult, OnlineError>> {
+        Box::pin(async { Err(OnlineError::Unavailable) })
+    }
+    fn start_race(&self, _id: uuid::Uuid) -> PortFuture<'_, Result<SaveResult, OnlineError>> {
+        Box::pin(async { Err(OnlineError::Unavailable) })
+    }
+    fn save_race(&self, _result: FinishedRace) -> PortFuture<'_, Result<SaveResult, OnlineError>> {
+        Box::pin(async { Err(OnlineError::Unavailable) })
+    }
 }
 pub trait SessionReader: Send + Sync {
     fn read(

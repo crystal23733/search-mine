@@ -3,7 +3,7 @@ use super::{
     *,
 };
 use liar_protocol::daily::DailyTrust;
-use sqlx::{Postgres, Row, Transaction};
+use sqlx::{Postgres, Row, Transaction, postgres::PgRow};
 
 pub(super) async fn load(
     tx: &mut Transaction<'_, Postgres>,
@@ -13,7 +13,7 @@ pub(super) async fn load(
 ) -> Result<ProductEvent, EventStoreError> {
     let (at, fact) = match source {
         EventSource::Online { account, match_id } => {
-            let rows = sqlx::query("SELECT r.reason,EXTRACT(EPOCH FROM r.recorded_at)::bigint AS occurred_at,EXTRACT(EPOCH FROM COALESCE(r.retention_started_at,r.recorded_at))::bigint AS retention_at,(r.recorded_at=date_trunc('second',r.recorded_at)) AS whole_second,(SELECT count(*) FROM online_match_players WHERE match_id=r.id) AS seats,(SELECT count(*) FROM online_match_players WHERE match_id=r.id AND is_bot) AS bots FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id WHERE r.id=$1 AND p.account_id=$2 AND NOT p.is_bot LIMIT 2 FOR SHARE OF r,p")
+            let rows = sqlx::query("SELECT r.reason,EXTRACT(EPOCH FROM r.recorded_at)::bigint AS occurred_at,EXTRACT(EPOCH FROM COALESCE(r.retention_started_at,r.recorded_at))::bigint AS retention_at,(r.recorded_at=date_trunc('second',r.recorded_at)) AS whole_second,(SELECT count(*) FROM online_match_players WHERE match_id=r.id) AS seats,(SELECT count(*) FROM online_match_players WHERE match_id=r.id AND is_bot) AS bots,r.participant_count,r.room_id IS NOT NULL AS is_room FROM online_match_results r JOIN online_match_players p ON p.match_id=r.id WHERE r.id=$1 AND p.account_id=$2 AND NOT p.is_bot LIMIT 2 FOR SHARE OF r,p")
                 .bind(match_id.uuid()).bind(account.uuid()).fetch_all(&mut **tx).await.map_err(db)?;
             if rows.len() > 1 {
                 return Err(EventStoreError::Unavailable);
@@ -21,14 +21,11 @@ pub(super) async fn load(
             let row = rows.first().ok_or(EventStoreError::Missing)?;
             let at: i64 = row.try_get("occurred_at").map_err(db)?;
             let retention: i64 = row.try_get("retention_at").map_err(db)?;
-            let seats: i64 = row.try_get("seats").map_err(db)?;
-            let bots: i64 = row.try_get("bots").map_err(db)?;
             let opponent = online_source(
+                row,
                 at,
                 retention,
                 row.try_get("whole_second").map_err(db)?,
-                seats,
-                bots,
                 now,
             )?;
             let reason = crate::results::reason(&row.try_get::<String, _>("reason").map_err(db)?)
@@ -69,14 +66,23 @@ pub(super) async fn load(
     ProductEvent::server(event_id, source.account(), at, fact).map_err(policy)
 }
 pub(super) fn online_source(
+    row: &PgRow,
     at: i64,
     retention: i64,
     whole_second: bool,
-    seats: i64,
-    bots: i64,
     now: i64,
 ) -> Result<OpponentKind, EventStoreError> {
-    if !whole_second || !(1..=2).contains(&seats) || !(0..=1).contains(&bots) || bots >= seats {
+    let seats: i64 = row.try_get("seats").map_err(db)?;
+    let bots: i64 = row.try_get("bots").map_err(db)?;
+    let count: i16 = row.try_get("participant_count").map_err(db)?;
+    let is_room: bool = row.try_get("is_room").map_err(db)?;
+    if !whole_second
+        || !(1..=i64::from(count)).contains(&seats)
+        || !(0..=1).contains(&bots)
+        || bots >= seats
+        || (is_room && bots != 0)
+        || (!is_room && count != 2)
+    {
         return Err(EventStoreError::Unavailable);
     }
     valid_timestamp(at).map_err(policy)?;

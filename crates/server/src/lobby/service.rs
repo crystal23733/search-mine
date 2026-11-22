@@ -3,8 +3,8 @@ use super::*;
 use crate::{
     auth::AuthClock,
     online::{
-        AdmissionJournal, AuthorityRegistry, BotExecutor, ConnectionAuthority, MatchAdmission,
-        MatchRegistry, MatchState,
+        AdmissionJournal, AuthorityRegistry, BotExecutor, ConnectionAuthority, ConnectionSlots,
+        MatchAdmission, MatchRegistry, MatchState,
     },
 };
 use liar_core::{
@@ -19,6 +19,11 @@ use std::{
 };
 use tokio::sync::{Semaphore, oneshot, watch};
 use uuid::Uuid;
+
+#[path = "rooms.rs"]
+mod rooms;
+#[path = "round_admission.rs"]
+mod round_admission;
 
 pub struct PreparedMatch {
     pub(super) engine: PreparedEngine,
@@ -116,6 +121,7 @@ struct Failure {
 struct ServiceState {
     draining: bool,
     policy: LobbyState,
+    rooms: rooms::RoomState,
     leases: HashMap<Uuid, ConnectionAuthority>,
     jobs: HashMap<ReservationKey, Job>,
     failures: HashMap<Uuid, Failure>,
@@ -132,6 +138,7 @@ pub struct LobbyService {
     bots: Arc<BotExecutor>,
     journal: Arc<dyn AdmissionJournal>,
     authentication: LobbyAuthentication,
+    round_connections: Option<ConnectionSlots>,
 }
 impl LobbyService {
     pub(crate) fn authentication(&self) -> &LobbyAuthentication {
@@ -147,6 +154,46 @@ impl LobbyService {
         codes: Arc<dyn RoomCodeSource>,
         matches: LobbyMatchServices,
         authentication: LobbyAuthentication,
+    ) -> Result<Arc<Self>, LobbyServiceError> {
+        Self::new_inner(
+            limits,
+            boards,
+            preparer,
+            codes,
+            matches,
+            authentication,
+            None,
+        )
+    }
+
+    pub fn new_with_round_connections(
+        limits: LobbyLimits,
+        boards: Arc<dyn BoardSource>,
+        preparer: Arc<dyn MatchPreparer>,
+        codes: Arc<dyn RoomCodeSource>,
+        matches: LobbyMatchServices,
+        authentication: LobbyAuthentication,
+        sockets: ConnectionSlots,
+    ) -> Result<Arc<Self>, LobbyServiceError> {
+        Self::new_inner(
+            limits,
+            boards,
+            preparer,
+            codes,
+            matches,
+            authentication,
+            Some(sockets),
+        )
+    }
+
+    fn new_inner(
+        limits: LobbyLimits,
+        boards: Arc<dyn BoardSource>,
+        preparer: Arc<dyn MatchPreparer>,
+        codes: Arc<dyn RoomCodeSource>,
+        matches: LobbyMatchServices,
+        authentication: LobbyAuthentication,
+        round_connections: Option<ConnectionSlots>,
     ) -> Result<Arc<Self>, LobbyServiceError> {
         let LobbyMatchServices {
             registry,
@@ -168,6 +215,7 @@ impl LobbyService {
             inner: Mutex::new(ServiceState {
                 draining: false,
                 policy: LobbyState::new(limits.capacity)?,
+                rooms: rooms::RoomState::new(limits.capacity)?,
                 leases: HashMap::new(),
                 jobs: HashMap::new(),
                 failures: HashMap::new(),
@@ -182,6 +230,7 @@ impl LobbyService {
             bots,
             journal,
             authentication,
+            round_connections,
         });
         let weak = Arc::downgrade(&service);
         runtime.spawn(async move {
@@ -203,6 +252,7 @@ impl LobbyService {
         if !inner.draining {
             inner.draining = true;
             inner.policy = LobbyState::new(self.limits.capacity)?;
+            inner.rooms = rooms::RoomState::new(self.limits.capacity)?;
             inner.jobs.clear();
             inner.leases.clear();
             inner.failures.clear();
@@ -241,7 +291,7 @@ impl LobbyService {
         difficulty: Difficulty,
     ) -> Result<LobbyView, LobbyServiceError> {
         let account = authority.account();
-        self.change(authority, |policy, now| {
+        self.change(authority, true, |policy, now| {
             let id = match policy.status(account) {
                 Some(LobbyStatus::Queued { id, .. }) => id,
                 _ => Uuid::new_v4(),
@@ -255,7 +305,7 @@ impl LobbyService {
         authority: &ConnectionAuthority,
     ) -> Result<LobbyView, LobbyServiceError> {
         let account = authority.account();
-        self.change(authority, |policy, now| {
+        self.change(authority, true, |policy, now| {
             if matches!(
                 policy.status(account),
                 Some(LobbyStatus::Room { own_seat: 0, .. })
@@ -279,7 +329,7 @@ impl LobbyService {
         code: RoomCode,
     ) -> Result<LobbyView, LobbyServiceError> {
         let account = authority.account();
-        self.change(authority, |policy, now| {
+        self.change(authority, true, |policy, now| {
             policy.join_room(account, code, now)?;
             Ok(())
         })
@@ -291,7 +341,7 @@ impl LobbyService {
         ready: bool,
     ) -> Result<LobbyView, LobbyServiceError> {
         let account = authority.account();
-        self.change(authority, |policy, now| {
+        self.change(authority, false, |policy, now| {
             policy.ready(account, room, ready, now)?;
             Ok(())
         })
@@ -302,7 +352,7 @@ impl LobbyService {
         identity: LobbyIdentity,
     ) -> Result<LobbyView, LobbyServiceError> {
         let account = authority.account();
-        self.change(authority, |policy, now| {
+        self.change(authority, false, |policy, now| {
             if let Some(status) = policy.status(account) {
                 let current = LobbyView::Waiting(status).identity();
                 if current != Some(identity) {
@@ -316,6 +366,7 @@ impl LobbyService {
     fn change(
         &self,
         authority: &ConnectionAuthority,
+        may_join: bool,
         apply: impl FnOnce(&mut LobbyState, u64) -> Result<(), LobbyServiceError>,
     ) -> Result<LobbyView, LobbyServiceError> {
         let account = authority.account();
@@ -337,10 +388,17 @@ impl LobbyService {
             authority,
             self.authentication.clock.now(),
             || {
-                match self.registry.for_account(account) {
-                    Ok(_) => return Err(LobbyError::Busy.into()),
-                    Err(OnlineError::NotMatched) => {}
-                    Err(error) => return Err(error.into()),
+                if inner.rooms.contains(account) {
+                    return Err(LobbyError::Busy.into());
+                }
+                if may_join
+                    && inner.policy.status(account).is_none()
+                    && inner.policy.used() + inner.rooms.members() >= self.limits.capacity
+                {
+                    return Err(LobbyError::Capacity.into());
+                }
+                if self.registry.is_occupied(account)? {
+                    return Err(LobbyError::Busy.into());
                 }
                 apply(&mut inner.policy, now)?;
                 if inner.policy.status(account).is_some() {
@@ -393,6 +451,7 @@ impl LobbyService {
     fn advance(&self, inner: &mut ServiceState, now: u64) -> Result<(), LobbyServiceError> {
         self.discard_revoked(inner, now)?;
         inner.policy.tick(now)?;
+        inner.rooms.advance(&self.authentication, now)?;
         inner.failures.retain(|_, failure| now < failure.expires);
         inner
             .failure_order

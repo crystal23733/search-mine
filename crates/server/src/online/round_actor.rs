@@ -80,6 +80,15 @@ enum Event {
     Tick,
 }
 
+impl Event {
+    fn input_order(&self) -> Option<(usize, u32)> {
+        match self {
+            Self::Input { seat, input, .. } => Some((*seat, input.client_seq)),
+            _ => None,
+        }
+    }
+}
+
 impl Endpoint {
     fn send(&self, event: Event) -> Result<(), OnlineError> {
         let mut previous = self
@@ -288,35 +297,65 @@ impl Actor {
         mut receiver: mpsc::Receiver<(u64, Event)>,
         _reservation: RaceReservation,
     ) {
-        while let Some((at, event)) = receiver.recv().await {
+        let mut deferred = None;
+        loop {
+            let next = match deferred.take() {
+                Some(entry) => Some(entry),
+                None => receiver.recv().await,
+            };
+            let Some((at, event)) = next else {
+                break;
+            };
             let Some(registry) = self.registry.upgrade() else {
                 break;
             };
-            self.check_members(&registry, at);
-            if !self.playing
-                && at >= self.state.starts_at()
-                && self.state.finished().is_none()
-                && (!self.all_connected()
-                    || !registry.accepting()
-                    || !self.start(&registry, at).await)
-            {
-                self.state.cancel(at);
+            let mut batch = vec![event];
+            if batch[0].input_order().is_some() {
+                // Seal the ingress already waiting at this instant. A connection change
+                // is a boundary, so an attach/leave cannot move past a command.
+                for _ in 1..registry.limits.mailbox {
+                    let Ok((received, next)) = receiver.try_recv() else {
+                        break;
+                    };
+                    if received == at && next.input_order().is_some() {
+                        batch.push(next);
+                    } else if received != at || !matches!(next, Event::Tick) {
+                        deferred = Some((received, next));
+                        break;
+                    }
+                }
+                batch.sort_by_key(Event::input_order);
             }
-            if self.playing {
-                let _ = self.state.advance(at);
+            for event in batch {
+                if self.step(&registry, event, at).await {
+                    return;
+                }
             }
-            if let Some(finished) = self.state.finished() {
-                self.finish(&registry, finished, at).await;
-                return;
-            }
-            self.process(&registry, event, at);
-            if let Some(finished) = self.state.finished() {
-                self.finish(&registry, finished, at).await;
-                return;
-            }
-            self.publish(at);
-            self.proofs(&registry);
         }
+    }
+
+    async fn step(&mut self, registry: &MatchRegistry, event: Event, at: u64) -> bool {
+        self.check_members(registry, at);
+        if !self.playing
+            && at >= self.state.starts_at()
+            && self.state.finished().is_none()
+            && (!self.all_connected() || !registry.accepting() || !self.start(registry, at).await)
+        {
+            self.state.cancel(at);
+        }
+        if self.playing {
+            let _ = self.state.advance(at);
+        }
+        if self.state.finished().is_none() {
+            self.process(registry, event, at);
+        }
+        if let Some(finished) = self.state.finished() {
+            self.finish(registry, finished, at).await;
+            return true;
+        }
+        self.publish(at);
+        self.proofs(registry);
+        false
     }
 
     fn all_connected(&self) -> bool {

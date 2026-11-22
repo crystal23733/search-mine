@@ -173,25 +173,34 @@ async fn race_actor_starts_after_all_four_initial_sockets_and_saves_the_first_cl
     assert_eq!(*writer.starts.lock().unwrap(), vec![key.round_id]);
     registry.begin_drain().unwrap();
     assert!(!registry.drained().unwrap());
-    for (seq, cell) in [(1, 8), (2, 2), (3, 6)] {
-        winner
+    let open = |socket: &RoundConnection, seq, cell| {
+        socket
             .send(RoundInput {
                 v: 2,
                 round_id: key.round_id.to_string(),
                 command_id: Uuid::new_v4().to_string(),
                 client_seq: seq,
-                session_epoch: winner.epoch(),
+                session_epoch: socket.epoch(),
                 known_revision: 0,
                 action: PublicAction::Open { cell },
             })
             .unwrap();
+    };
+    for seat in [0, 3] {
+        for (seq, cell) in [(1, 8), (2, 2)] {
+            open(&connections[seat], seq, cell);
+        }
     }
+    // Both final moves have the same server ingress time but enter in reverse seat order.
+    open(&connections[3], 3, 6);
+    open(&connections[0], 3, 6);
+    let observer = &mut connections[3];
     let end = tokio::time::timeout(Duration::from_secs(2), async {
         loop {
             if let RoundPayload::End {
                 view,
                 recording: RecordingStatus::Saved,
-            } = winner.next().await.unwrap().payload
+            } = observer.next().await.unwrap().payload
             {
                 return view.result.unwrap();
             }
@@ -199,7 +208,7 @@ async fn race_actor_starts_after_all_four_initial_sockets_and_saves_the_first_cl
     })
     .await
     .unwrap();
-    assert_eq!(end.winner, Some(3));
+    assert_eq!(end.winner, Some(0));
     tokio::time::timeout(Duration::from_secs(2), async {
         while !registry.drained().unwrap() {
             tokio::task::yield_now().await;
@@ -209,6 +218,6 @@ async fn race_actor_starts_after_all_four_initial_sockets_and_saves_the_first_cl
     .unwrap();
     let saved = writer.saved.lock().unwrap();
     assert_eq!(saved.len(), 1);
-    assert_eq!(saved[0].players[3].account, accounts[3]);
-    assert_eq!(saved[0].players[3].rank, Some(1));
+    assert_eq!(saved[0].players[0].account, accounts[0]);
+    assert_eq!(saved[0].players[0].rank, Some(1));
 }

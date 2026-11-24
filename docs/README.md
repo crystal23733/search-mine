@@ -1,6 +1,6 @@
 # 문서 안내
 
-새 사용자 지시는 [2~4인 방 설계20](design/20-multiplayer-rooms.md)·[ADR0110](adr/0110-multiplayer-rooms-and-rankings.md)·[공식 조사](research/2026-11-21-multiplayer-room-flows.md)를 따른다. 기존1:1 구현과 새 다인전 구현/검증 예정은 구분한다.
+2~4인 공개·초대 방은 [공식 조사](research/2026-11-21-multiplayer-room-flows.md)를 바탕으로 [설계20](design/20-multiplayer-rooms.md)과 [ADR0110](adr/0110-multiplayer-rooms-and-rankings.md)에 정의했다. 기존 1:1 경로 및 다인전 구현은 [시스템 흐름](design/21-system-diagrams.md#온라인-대전)에서, 4인 공격·재대결은 [통합 검증 #249](verification/249-multiplayer-integration.md)에서 확인한다.
 
 현재 계약의 진입점은 [초기 대비 설계 변경·구현 근거·남은 출시 출구](design/19-design-evolution.md)다(2026-11-21 검토). 코어부터 온라인/공식 데일리·내 정보·Google 연결·PWA·운영 도구까지 구현됐으며, 실제 OAuth/CMP·기기/번역·호스트/복구·성능·사람 관찰 출구는 미완료다. 아래 개별 이슈의 ‘후속’ 문구는 당시 검증 단계의 이력으로 읽는다.
 

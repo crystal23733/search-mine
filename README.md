@@ -1,6 +1,6 @@
 # Liar Minesweeper · search-mine
 
-> **새 다인전 작업:** 사용자2026-11-21 선택에 따라 [공개·초대 방과2~4인 레이스](docs/design/20-multiplayer-rooms.md)를 추가합니다. 첫 완주 즉시 종료·나머지 참가자의 열린 안전칸 수 순위·무작위 상대 공격·같은 방 재대결이 목표이며, 현재1:1 구현과 구분해 [M7/#243](https://github.com/crystal23733/search-mine/issues/243)에서 순차 구현/검증합니다.
+> **다인전:** [공개·초대 방과 2~4인 레이스](docs/design/20-multiplayer-rooms.md)의 구현과 [4인 통합 검증](docs/verification/249-multiplayer-integration.md)을 마쳤습니다. 첫 완주 즉시 종료, 나머지 참가자의 열린 안전칸 수 순위, 무작위 상대 공격과 같은 방 재대결을 지원합니다.
 
 **내 정보:** `/{locale}/me`에서 최근90일 전적을 확인하고, `/me/history`·`/me/account`·`/me/privacy`에서 기록·계정·현재 동의를 관리합니다. [조회 API 검증 #177](docs/verification/177-my-info-read-api.md)과 [화면·파일 제거 검증 #178](docs/verification/178-my-info-pages.md)을 확인하세요. 개인 데이터 파일 다운로드와 구 export/replay API는 제거하며, 이 기기 설정은 로그인 없이 `/settings`에서 사용합니다.
 

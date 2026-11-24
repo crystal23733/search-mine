@@ -9,7 +9,7 @@
 현행 배포 설계는 홈 미니 PC를 사용한다. Oracle 서울 VM은 같은 Docker Compose를 옮겨 실행하는 **검토 후보**다. 호스팅 선정과 실제 용량 검수는 [#24](https://github.com/crystal23733/search-mine/issues/24)와 [#26](https://github.com/crystal23733/search-mine/issues/26)에 남는다.
 
 ```mermaid
-flowchart LR
+flowchart TD
     Browser["사용자 브라우저"] -->|"HTTPS · WSS"| Edge["Cloudflare DNS · CDN"]
     Edge -->|"연결된 터널로 요청 전달"| Tunnel
     subgraph Host["Docker 호스트 · 현행 홈 미니 PC · 검토 후보 Oracle 서울 VM"]

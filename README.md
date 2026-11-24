@@ -32,6 +32,7 @@
 
 - [PRD: 범위와 인수 조건](docs/product/16-PRD.md)
 - [설계 검토·승인 항목·요구 추적표](docs/design/00-review-checklist.md)
+- [시스템 흐름·시퀀스·ERD](docs/design/21-system-diagrams.md)
 - [초기 대비 설계 변경·현행 계약·남은 출시 출구](docs/design/19-design-evolution.md)
 - [전체 문서 안내](docs/README.md)
 - [마일스톤·작업 이슈](docs/workflow/backlog.md)

@@ -20,7 +20,7 @@ DESIGN = [
     "07-database", "08-client-architecture", "09-screens-ux", "10-i18n",
     "11-ads-consent", "12-security", "13-performance", "14-testing-strategy",
     "15-repo-structure", "16-observability-ops", "17-auth-privacy", "18-design-layout",
-    "19-design-evolution", "20-multiplayer-rooms",
+    "19-design-evolution", "20-multiplayer-rooms", "21-system-diagrams",
 ]
 
 

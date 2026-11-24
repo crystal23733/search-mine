@@ -8,7 +8,7 @@
 
 1. [제품 비전](product/01-vision.md)과 [PRD](product/16-PRD.md)로 범위·성공 기준을 읽는다.
 2. [설계 리뷰·요구 추적표](design/00-review-checklist.md)에서 승인 상태와 요구→설계→시나리오 경계를 확인한다.
-3. [시스템 구조](design/01-architecture.md), [규칙](design/04-game-rules-spec.md), [간파 알고리즘](design/05-algorithms.md), [프로토콜](design/06-protocol.md)을 검토한다.
+3. [시스템 흐름·시퀀스·ERD](design/21-system-diagrams.md)에서 전체를 둘러보고 [시스템 구조](design/01-architecture.md), [규칙](design/04-game-rules-spec.md), [간파 알고리즘](design/05-algorithms.md), [프로토콜](design/06-protocol.md)을 검토한다.
 4. [테스트 시나리오](product/19-test-scenarios.md)와 [백로그](workflow/backlog.md)에서 구현·검증 단위를 확인한다.
 5. [Git workflow](workflow/git-workflow.md)와 [스킬 적용 내역](workflow/skill-usage.md)을 따른다.
 
@@ -16,7 +16,7 @@
 
 - `planning/`: 제공된 브레인스토밍·핸드오프 원문, 내용 그대로 보존.
 - `product/01~21`: 비전·경쟁·세그먼트·여정·가치·경제·리스크·요구·테스트·지표·로드맵.
-- `design/01~20`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준·초기 대비 변경과 현행 계약.
+- `design/01~21`: 구조·배포·도메인·규칙·알고리즘·프로토콜·DB·client·UX·언어·광고·보안·성능·테스트·repo·운영·OAuth/개인정보·제공된 디자인 기준·초기 대비 변경과 현행 계약·다인전·시스템 흐름과 데이터 관계.
 - `adr/`: 초기0001부터 현재0110까지 의사결정 이력을 보존한다. 아래는 초기 묶음의 요약이다. 공유 코어·DB·홈서버·Preact·Pixi·권위·간파 증명·workflow·최소 OAuth·공개 후보 전략·규칙 snapshot·공개 관측 봇·public WASM·Atomic shell/locale·로컬 연습/데일리·공개 cache·인증/계정 권리·온라인 actor/큐/보드/봇/매치 조립·세션/최초 연결·인증 로비 HTTP·OAuth 초대 복귀·세션 인증 요청·온라인 화면/친구방·재접속 cursor의 결정.
 - `workflow/`: develop·이슈/마일스톤·승인 상태·작업 백로그·스킬 출처.
 

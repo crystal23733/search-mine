@@ -1,5 +1,7 @@
 # 07. PostgreSQL 모델
 
+현재 마이그레이션에 따른 물리 관계는 [PostgreSQL ERD](21-system-diagrams.md#postgresql-erd)에서 확인한다. 아래 ERD는 초기 개념 모델이다.
+
 > 2026-11-21 다인전 확장: 이 문서의 저장/보존 계약을 바탕으로 [설계20](20-multiplayer-rooms.md)·[ADR0110](../adr/0110-multiplayer-rooms-and-rankings.md)의 FR17/18·TS37~45를 추가한다. 새2~4인 경로는 단일 코어/최소 공개/기존 호환을 검증한 뒤 활성화하며 설계만으로 구현 완료를 주장하지 않는다.
 
 > 2026-11-01 [ADR0081](../adr/0081-my-info-and-export-removal.md): 본인 기록의 표시를 내 정보 조회로 전환하고 파일 export를 제거한다. 기존90일/원시 보존·동의 현재1행·계정/세션 cascade는 유지한다. 전적을 위해 새 영구 누적·개인정보나 동의 이력을 추가하지 않는다.
